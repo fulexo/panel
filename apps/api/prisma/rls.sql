@@ -72,7 +72,9 @@ CREATE POLICY audit_ins ON "AuditLog" FOR INSERT WITH CHECK ("tenantId" = app.te
 CREATE POLICY audit_del ON "AuditLog" FOR DELETE USING ("tenantId" = app.tenant_id());
 
 -- Additional non-tenant tables (sessions) — example restrict by user ownership if desired
--- ALTER TABLE "Session" ENABLE ROW LEVEL SECURITY;
--- CREATE POLICY session_select ON "Session" FOR SELECT USING (user_id = current_setting(''app.user_id'', true)::uuid);
+ALTER TABLE "Session" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY session_select ON "Session" FOR SELECT USING ("userId" = NULLIF(current_setting('app.user_id', true), '')::uuid);
+CREATE POLICY session_ins ON "Session" FOR INSERT WITH CHECK ("userId" = NULLIF(current_setting('app.user_id', true), '')::uuid);
+CREATE POLICY session_del ON "Session" FOR DELETE USING ("userId" = NULLIF(current_setting('app.user_id', true), '')::uuid);
 
 -- Note: Application must set `SET LOCAL app.tenant_id = '<tenant-uuid>'` within each transaction.

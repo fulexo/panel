@@ -52,9 +52,12 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
   }
 
   // Set PostgreSQL session variable for RLS per transaction
-  async withTenant<T>(tenantId: string, fn: (tx: PrismaClient) => Promise<T>): Promise<T> {
+  async withTenant<T>(tenantId: string, fn: (tx: PrismaClient) => Promise<T>, userId?: string): Promise<T> {
     return this.$transaction(async (tx) => {
       await (tx as any).$executeRawUnsafe(`SET LOCAL app.tenant_id = '${tenantId}';`);
+      if (userId) {
+        await (tx as any).$executeRawUnsafe(`SET LOCAL app.user_id = '${userId}';`);
+      }
       return fn(tx as any);
     });
   }
