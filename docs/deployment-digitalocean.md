@@ -68,7 +68,7 @@ Script şunları otomatik yapacak:
 
 ### 5. Ortam Değişkenlerini Yapılandırma
 
-Script otomatik olarak güvenli şifreler oluşturacak. Yine de kontrol edin:
+Script otomatik olarak güvenli şifreler oluşturacak. Temel ayarları yapın:
 
 ```bash
 nano /opt/fulexo/compose/.env
@@ -79,16 +79,15 @@ nano /opt/fulexo/compose/.env
 # Domain ayarları (ZORUNLU)
 DOMAIN_API=api.yourdomain.com
 DOMAIN_APP=app.yourdomain.com
-
-# BaseLinker API (isteğe bağlı, sonra eklenebilir)
-BASELINKER_API_KEY=your_baselinker_api_key
-
-# Email ayarları (isteğe bağlı)
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_USER=your-email@gmail.com
-SMTP_PASS=your-app-password
 ```
+
+**NOT:** Email ve BaseLinker ayarları artık panel üzerinden yapılıyor! Kurulum sonrası admin panelinden Ayarlar bölümüne giderek:
+- E-posta ayarlarını
+- BaseLinker API anahtarını
+- Bildirim tercihlerini
+- Genel ayarları
+
+kolayca yapılandırabilirsiniz.
 
 ### 6. SSL Sertifika Kurulumu
 
@@ -120,7 +119,11 @@ docker logs -f compose-api-1
 1. Tarayıcınızda `https://app.yourdomain.com` adresine gidin
 2. Admin hesabı oluşturun
 3. Tenant (kiracı) oluşturun
-4. BaseLinker entegrasyonunu yapılandırın
+4. **Ayarlar** sayfasına gidin ve şunları yapılandırın:
+   - **E-posta Ayarları**: SMTP bilgilerini girin ve test edin
+   - **BaseLinker Entegrasyonu**: API anahtarınızı ekleyin ve bağlantıyı test edin
+   - **Bildirimler**: Slack/Discord webhook'larını ekleyin (isteğe bağlı)
+   - **Genel Ayarlar**: Şirket adı, destek e-postası vb.
 
 ## 🔧 Yönetim Komutları
 
