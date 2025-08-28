@@ -178,11 +178,17 @@ export class OrdersService {
     }
 
     // Determine next order number for tenant
-    const agg = await this.runTenant(tenantId, async (db) => db.order.aggregate({
-      where: { tenantId },
-      _max: { orderNo: true },
-    }));
-    const nextOrderNo = (agg._max.orderNo || 0) + 1;
+    // Atomic per-tenant order number allocation using a dedicated table with upsert
+    await this.runTenant(tenantId, async (db) => db.$executeRawUnsafe(
+      `INSERT INTO "_OrderNoSeq" ("tenantId","value")
+       VALUES ('${tenantId}', 1)
+       ON CONFLICT ("tenantId") DO UPDATE SET "value" = "_OrderNoSeq"."value" + 1`
+    ));
+    // Fetch current value after upsert
+    const current = await this.runTenant(tenantId, async (db) => db.$queryRawUnsafe(
+      `SELECT "value" FROM "_OrderNoSeq" WHERE "tenantId"='${tenantId}'`
+    ));
+    const nextOrderNo = Number((current as any[])?.[0]?.value || 1);
 
     // Create order
     const order = await this.runTenant(tenantId, async (db) => db.order.create({
