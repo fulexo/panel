@@ -13,8 +13,8 @@ Bu kılavuz, Fulexo platformunu DigitalOcean droplet üzerine nasıl kuracağın
 
 ### Domain Gereksinimleri
 - 2 adet subdomain (A kaydı olarak droplet IP'sine yönlendirilmiş):
-  - `api.yourdomain.com` - API servisi için
-  - `app.yourdomain.com` - Web arayüzü için
+  - `api.fulexo.com` - API servisi için
+  - `panel.fulexo.com` - Web arayüzü için
 
 ## 🚀 Kurulum Adımları
 
@@ -31,8 +31,8 @@ Bu kılavuz, Fulexo platformunu DigitalOcean droplet üzerine nasıl kuracağın
 
 Domain yönetim panelinizde:
 ```
-A Record: api.yourdomain.com -> [DROPLET_IP]
-A Record: app.yourdomain.com -> [DROPLET_IP]
+A Record: api.fulexo.com -> [DROPLET_IP]
+A Record: panel.fulexo.com -> [DROPLET_IP]
 ```
 
 DNS yayılması için 5-30 dakika bekleyin.
@@ -49,7 +49,7 @@ Hazırladığımız script ile tüm kurulumu otomatik yapabilirsiniz:
 
 ```bash
 # Script'leri indirin
-git clone https://github.com/yourusername/fulexo.git /opt/fulexo
+git clone https://github.com/fulexo/panel.git /opt/fulexo
 cd /opt/fulexo
 
 # Kurulum scriptini çalıştırın
@@ -76,9 +76,9 @@ nano /opt/fulexo/compose/.env
 
 Önemli ayarlar:
 ```env
-# Domain ayarları (ZORUNLU)
-DOMAIN_API=api.yourdomain.com
-DOMAIN_APP=app.yourdomain.com
+# Domain ayarları (Fulexo için önceden yapılandırılmış)
+DOMAIN_API=api.fulexo.com
+DOMAIN_APP=panel.fulexo.com
 ```
 
 **NOT:** Email ve BaseLinker ayarları artık panel üzerinden yapılıyor! Kurulum sonrası admin panelinden Ayarlar bölümüne giderek:
@@ -95,8 +95,8 @@ Domain ayarlarınız yapıldıktan sonra:
 
 ```bash
 cd /opt/fulexo
-chmod +x scripts/setup-ssl.sh
-./scripts/setup-ssl.sh
+chmod +x scripts/setup-ssl-fulexo.sh
+./scripts/setup-ssl-fulexo.sh
 ```
 
 Email adresinizi girmeniz istenecek (Let's Encrypt bildirimleri için).
@@ -116,7 +116,7 @@ docker logs -f compose-api-1
 
 ### 8. İlk Kurulum
 
-1. Tarayıcınızda `https://app.yourdomain.com` adresine gidin
+1. Tarayıcınızda `https://panel.fulexo.com` adresine gidin
 2. Admin hesabı oluşturun
 3. Tenant (kiracı) oluşturun
 4. **Ayarlar** sayfasına gidin ve şunları yapılandırın:

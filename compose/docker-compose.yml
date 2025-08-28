@@ -57,7 +57,7 @@ services:
     build: ../apps/web
     env_file: .env
     environment:
-      NEXT_PUBLIC_API_BASE: https://${DOMAIN_API}
+      NEXT_PUBLIC_API_BASE: https://api.fulexo.com
       NODE_ENV: ${NODE_ENV}
     depends_on: [api]
     restart: unless-stopped

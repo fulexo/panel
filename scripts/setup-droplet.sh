@@ -102,8 +102,7 @@ print_status "Setting up application..."
 cd /opt/fulexo
 if [ ! -d ".git" ]; then
     print_status "Cloning repository..."
-    # Replace with your actual repository URL
-    git clone https://github.com/yourusername/fulexo.git .
+    git clone https://github.com/fulexo/panel.git .
     chown -R fulexo:fulexo /opt/fulexo
 else
     print_warning "Repository already exists, pulling latest changes..."
