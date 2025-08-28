@@ -1,0 +1,29 @@
+# Node
+node_modules/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-store/
+
+# Build
+/apps/**/dist/
+/apps/**/.next/
+/apps/**/.turbo/
+
+# Env
+compose/.env
+.env
+.env.*
+
+# Docker
+**/.DS_Store
+**/.idea/
+**/.vscode/
+
+# Prisma
+/apps/api/prisma/dev.db
+
+# Misc
+*.swp
+*.swo

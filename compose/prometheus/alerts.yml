@@ -1,0 +1,13 @@
+groups:
+  - name: fulexo-alerts
+    rules:
+      - alert: ApiHighErrorRate
+        expr: sum(rate(http_requests_total{status=~"5.."}[5m])) / sum(rate(http_requests_total[5m])) > 0.01
+        for: 5m
+        labels: { severity: critical }
+        annotations: { summary: "API 5xx > 1%", description: "High error rate detected" }
+      - alert: SyncLagHigh
+        expr: sync_lag_seconds > 1800
+        for: 10m
+        labels: { severity: warning }
+        annotations: { summary: "Sync lag high", description: "Orders sync lag > 30m" }

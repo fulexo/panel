@@ -1,0 +1,374 @@
+datasource db {
+  provider = "postgresql"
+  url = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Tenant {
+  id        String   @id @default(uuid())
+  name      String
+  slug      String   @unique
+  users     User[]
+  blAccounts BLAccount[]
+  ownershipRules OwnershipRule[]
+  customers Customer[]
+  orders    Order[]
+  products  Product[]
+  requests  Request[]
+  policies  Policy[]
+  auditLogs AuditLog[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model User {
+  id            String   @id @default(uuid())
+  tenantId      String
+  email         String   @unique
+  passwordHash  String
+  role          String
+  twofaSecret   String?
+  twofaEnabled  Boolean  @default(false)
+  lastLoginAt   DateTime?
+  failedAttempts Int     @default(0)
+  lockedUntil   DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  tenant        Tenant   @relation(fields: [tenantId], references: [id])
+  sessions      Session[]
+  auditLogs     AuditLog[]
+  requests      Request[]
+  requestComments RequestComment[]
+}
+
+model Session {
+  id          String   @id @default(uuid())
+  userId      String
+  token       String   @unique
+  fingerprint String?
+  ipAddress   String?
+  userAgent   String?
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([token])
+  @@index([userId])
+}
+
+model BLAccount {
+  id             String   @id @default(uuid())
+  tenantId       String?
+  label          String?
+  tokenEncrypted Bytes
+  keyVersion     Int      @default(1)
+  active         Boolean  @default(true)
+  lastSyncAt     DateTime?
+  syncState      Json?
+  rateLimitReset DateTime?
+  tenant         Tenant?  @relation(fields: [tenantId], references: [id])
+  orders         Order[]
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model OwnershipRule {
+  id             String  @id @default(uuid())
+  tenantId       String
+  entityType     String
+  priority       Int
+  conditionsJson Json
+  actionJson     Json
+  active         Boolean @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  tenant         Tenant @relation(fields: [tenantId], references: [id])
+  
+  @@index([tenantId, entityType, priority])
+}
+
+model Policy {
+  id          String   @id @default(uuid())
+  tenantId    String
+  name        String
+  description String?
+  modules     Json     // {orders: true, shipments: true, ...}
+  actions     Json     // {allowDownloadLabels: true, ...}
+  dataScope   Json     // {allowedStatuses: [], ...}
+  piiSettings Json     // {maskEmail: true, ...}
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  
+  @@unique([tenantId, name])
+}
+
+model EntityMap {
+  id         String @id @default(uuid())
+  entityType String
+  blId       String
+  tenantId   String
+  customerId String?
+  createdAt  DateTime @default(now())
+
+  @@unique([entityType, blId])
+  @@index([tenantId])
+}
+
+model Customer {
+  id             String   @id @default(uuid())
+  tenantId       String
+  email          String?
+  emailNormalized String?
+  phoneE164      String?
+  name           String?
+  company        String?
+  vatId          String?
+  addressLine1   String?
+  addressLine2   String?
+  city           String?
+  state          String?
+  postalCode     String?
+  country        String?
+  notes          String?
+  tags           String[]
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  tenant         Tenant   @relation(fields: [tenantId], references: [id])
+  orders         Order[]
+
+  @@unique([tenantId, emailNormalized])
+  @@index([tenantId, phoneE164])
+}
+
+model Order {
+  id             String   @id @default(uuid())
+  tenantId       String
+  customerId     String?
+  accountId      String?
+  blOrderId      String
+  externalOrderNo String?
+  orderSource    String?
+  status         String?
+  mappedStatus   String?
+  total          Decimal? @db.Decimal(14,2)
+  currency       String?
+  customerEmail  String?
+  customerPhone  String?
+  shippingAddress Json?
+  billingAddress Json?
+  paymentMethod  String?
+  notes          String?
+  tags           String[]
+  confirmedAt    DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  tenant         Tenant   @relation(fields: [tenantId], references: [id])
+  customer       Customer? @relation(fields: [customerId], references: [id])
+  account        BLAccount? @relation(fields: [accountId], references: [id])
+  items          OrderItem[]
+  shipments      Shipment[]
+  returns        Return[]
+  invoices       Invoice[]
+
+  @@unique([tenantId, blOrderId])
+  @@index([tenantId, status, confirmedAt])
+  @@index([tenantId, customerEmail])
+  @@index([tenantId, externalOrderNo])
+}
+
+model OrderItem {
+  id      String  @id @default(uuid())
+  orderId String
+  sku     String?
+  name    String?
+  qty     Int
+  price   Decimal? @db.Decimal(14,2)
+  order   Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  
+  @@index([orderId])
+}
+
+model Shipment {
+  id          String   @id @default(uuid())
+  orderId     String
+  blPackageId String?
+  carrier     String?
+  trackingNo  String?
+  status      String?
+  labelUrl    String?
+  protocolUrl String?
+  weight      Decimal? @db.Decimal(10,3)
+  dimensions  Json?
+  shippedAt   DateTime?
+  deliveredAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  order       Order    @relation(fields: [orderId], references: [id])
+  
+  @@index([trackingNo])
+  @@index([orderId])
+}
+
+model Product {
+  id          String   @id @default(uuid())
+  tenantId    String
+  sku         String
+  name        String?
+  description String?
+  price       Decimal? @db.Decimal(14,2)
+  stock       Int?
+  weight      Decimal? @db.Decimal(10,3)
+  dimensions  Json?
+  images      String[]
+  tags        String[]
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+
+  @@unique([tenantId, sku])
+  @@index([tenantId, active])
+}
+
+model Invoice {
+  id         String   @id @default(uuid())
+  orderId    String
+  number     String?
+  series     String?
+  currency   String?
+  total      Decimal? @db.Decimal(14,2)
+  taxAmount  Decimal? @db.Decimal(14,2)
+  pdfUrl     String?
+  issuedAt   DateTime?
+  dueAt      DateTime?
+  paidAt     DateTime?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  order      Order    @relation(fields: [orderId], references: [id])
+  
+  @@index([orderId])
+  @@index([number])
+}
+
+model Return {
+  id          String   @id @default(uuid())
+  orderId     String
+  blReturnId  String?
+  status      String?
+  reason      String?
+  notes       String?
+  refundAmount Decimal? @db.Decimal(14,2)
+  items       Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  order       Order    @relation(fields: [orderId], references: [id])
+  
+  @@index([orderId])
+}
+
+// Requests & Approvals System
+model Request {
+  id           String   @id @default(uuid())
+  tenantId     String
+  customerId   String?
+  createdBy    String
+  type         String   // STOCK_ADJUSTMENT, NEW_PRODUCT, ORDER_NOTE, DOCUMENT_UPLOAD, OTHER
+  status       String   // DRAFT, SUBMITTED, UNDER_REVIEW, APPROVED, REJECTED, APPLIED
+  priority     String   @default("normal") // low, normal, high, critical
+  payload      Json
+  reviewerUserId String?
+  reviewedAt   DateTime?
+  appliedAt    DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  tenant       Tenant   @relation(fields: [tenantId], references: [id])
+  creator      User     @relation(fields: [createdBy], references: [id])
+  comments     RequestComment[]
+  attachments  RequestAttachment[]
+  
+  @@index([tenantId, status, createdAt])
+  @@index([createdBy])
+}
+
+model RequestComment {
+  id        String   @id @default(uuid())
+  requestId String
+  authorId  String
+  message   String
+  isInternal Boolean @default(false)
+  createdAt DateTime @default(now())
+  request   Request  @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  author    User     @relation(fields: [authorId], references: [id])
+  
+  @@index([requestId])
+}
+
+model RequestAttachment {
+  id        String   @id @default(uuid())
+  requestId String
+  fileName  String
+  fileUrl   String
+  mimeType  String?
+  fileSize  Int?
+  createdAt DateTime @default(now())
+  request   Request  @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  
+  @@index([requestId])
+}
+
+// Audit Log
+model AuditLog {
+  id          String   @id @default(uuid())
+  tenantId    String?
+  userId      String?
+  action      String
+  entityType  String?
+  entityId    String?
+  changes     Json?
+  metadata    Json?
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime @default(now())
+  tenant      Tenant?  @relation(fields: [tenantId], references: [id])
+  user        User?    @relation(fields: [userId], references: [id])
+  
+  @@index([tenantId, createdAt])
+  @@index([userId, createdAt])
+  @@index([action, createdAt])
+}
+
+// Sync State
+model SyncState {
+  id          String   @id @default(uuid())
+  accountId   String
+  entityType  String
+  lastSyncAt  DateTime
+  checkpoint  Json?
+  status      String   @default("idle") // idle, running, failed
+  error       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@unique([accountId, entityType])
+  @@index([status])
+}
+
+// JWT Keys for RS256 (persistence and rotation)
+model JwtKey {
+  id         String   @id @default(uuid())
+  kid        String   @unique
+  alg        String
+  publicJwk  Json
+  privatePem String?
+  active     Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  rotatedAt  DateTime?
+  expiresAt  DateTime?
+
+  @@index([active, createdAt])
+}
