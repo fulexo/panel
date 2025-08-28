@@ -26,6 +26,7 @@ model Tenant {
   oauthCredentials OAuthCredential[]
   billingBatches BillingBatch[]
   inboundShipments InboundShipment[]
+  settings  Settings[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -548,4 +549,21 @@ model JwtKey {
   expiresAt  DateTime?
 
   @@index([active, createdAt])
+}
+
+model Settings {
+  id        String   @id @default(uuid())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  category  String   // email, baselinker, notification, general
+  key       String   // smtp_host, smtp_port, baselinker_api_key, etc.
+  value     String?  // encrypted value for sensitive data
+  isSecret  Boolean  @default(false) // whether the value should be encrypted
+  metadata  Json?    // additional configuration
+  updatedBy String?
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+
+  @@unique([tenantId, category, key])
+  @@index([tenantId, category])
 }
