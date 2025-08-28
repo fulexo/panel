@@ -61,4 +61,11 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
       return fn(tx as any);
     });
   }
+
+  async withUser<T>(userId: string, fn: (tx: PrismaClient) => Promise<T>): Promise<T> {
+    return this.$transaction(async (tx) => {
+      await (tx as any).$executeRawUnsafe(`SET LOCAL app.user_id = '${userId}';`);
+      return fn(tx as any);
+    });
+  }
 }
