@@ -1,6 +1,6 @@
 import { randomBytes, createCipheriv, createDecipheriv } from 'crypto';
 
-export type EncryptedPayload = { ciphertext: string; nonce: string; key_version: number; encrypted_data_key?: string; created_at?: string; rotated_at?: string };
+export type EncryptedPayload = { ciphertext: string; nonce: string; key_version: number; encrypted_data_key?: string; encrypted_data_key_iv?: string; created_at?: string; rotated_at?: string };
 
 export class EncryptionService {
 	constructor(private masterKeyHex: string, private keyVersion = 1) {}
@@ -19,13 +19,13 @@ export class EncryptionService {
 		const enc = Buffer.concat([cipher.update(plaintext, 'utf8'), cipher.final()]);
 		const tag = cipher.getAuthTag();
 		const ciphertext = Buffer.concat([enc, tag]).toString('base64');
-		// Envelope: encrypt data key with master key using AES-GCM with zero IV for brevity
-		const iv2 = Buffer.alloc(12, 0);
+		// Envelope: encrypt data key with master key using AES-GCM with RANDOM IV (store IV alongside)
+		const iv2 = randomBytes(12);
 		const c2 = createCipheriv('aes-256-gcm', masterKey, iv2);
 		const edk = Buffer.concat([c2.update(dataKey), c2.final()]);
 		const tag2 = c2.getAuthTag();
 		const encrypted_data_key = Buffer.concat([edk, tag2]).toString('base64');
-		return { ciphertext, nonce: iv.toString('base64'), key_version: this.keyVersion, encrypted_data_key, created_at: new Date().toISOString() };
+		return { ciphertext, nonce: iv.toString('base64'), key_version: this.keyVersion, encrypted_data_key, encrypted_data_key_iv: iv2.toString('base64'), created_at: new Date().toISOString() };
 	}
 
 	decrypt(payload: EncryptedPayload): string {
@@ -34,7 +34,8 @@ export class EncryptionService {
 		const data = Buffer.from(payload.encrypted_data_key || '', 'base64');
 		const edk = data.slice(0, data.length - 16);
 		const tag2 = data.slice(data.length - 16);
-		const iv2 = Buffer.alloc(12, 0);
+		// Backward-compatible: if no iv present (legacy), fall back to zero IV
+		const iv2 = payload.encrypted_data_key_iv ? Buffer.from(payload.encrypted_data_key_iv, 'base64') : Buffer.alloc(12, 0);
 		const d2 = createDecipheriv('aes-256-gcm', masterKey, iv2);
 		d2.setAuthTag(tag2);
 		const dataKey = Buffer.concat([d2.update(edk), d2.final()]);

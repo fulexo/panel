@@ -7,7 +7,7 @@ RETURNS uuid LANGUAGE sql STABLE AS $$
   SELECT NULLIF(current_setting('app.tenant_id', true), '')::uuid;
 $$;
 
--- Tables with tenantId column
+-- Tables with tenantId column (match Prisma model names and camelCase columns)
 DO $$
 DECLARE
   tbl text;
@@ -30,13 +30,13 @@ BEGIN
   LOOP
     EXECUTE format('ALTER TABLE %s ENABLE ROW LEVEL SECURITY;', tbl);
     -- Select policy
-    EXECUTE format('CREATE POLICY IF NOT EXISTS %I_select ON %s FOR SELECT USING (tenant_id = app.tenant_id());', replace(tbl,'"','')::text, tbl);
+    EXECUTE format('CREATE POLICY IF NOT EXISTS %I_select ON %s FOR SELECT USING ("tenantId" = app.tenant_id());', replace(tbl,'"','')::text, tbl);
     -- Insert policy
-    EXECUTE format('CREATE POLICY IF NOT EXISTS %I_insert ON %s FOR INSERT WITH CHECK (tenant_id = app.tenant_id());', replace(tbl,'"','')::text, tbl);
+    EXECUTE format('CREATE POLICY IF NOT EXISTS %I_insert ON %s FOR INSERT WITH CHECK ("tenantId" = app.tenant_id());', replace(tbl,'"','')::text, tbl);
     -- Update policy
-    EXECUTE format('CREATE POLICY IF NOT EXISTS %I_update ON %s FOR UPDATE USING (tenant_id = app.tenant_id()) WITH CHECK (tenant_id = app.tenant_id());', replace(tbl,'"','')::text, tbl);
+    EXECUTE format('CREATE POLICY IF NOT EXISTS %I_update ON %s FOR UPDATE USING ("tenantId" = app.tenant_id()) WITH CHECK ("tenantId" = app.tenant_id());', replace(tbl,'"','')::text, tbl);
     -- Delete policy
-    EXECUTE format('CREATE POLICY IF NOT EXISTS %I_delete ON %s FOR DELETE USING (tenant_id = app.tenant_id());', replace(tbl,'"','')::text, tbl);
+    EXECUTE format('CREATE POLICY IF NOT EXISTS %I_delete ON %s FOR DELETE USING ("tenantId" = app.tenant_id());', replace(tbl,'"','')::text, tbl);
   END LOOP;
 END $$;
 
