@@ -174,3 +174,23 @@ export class OrderQueryDto {
   @IsString()
   customerId?: string;
 }
+
+export class CreateChargeDto {
+  @ApiProperty()
+  @IsString()
+  type: string;
+
+  @ApiProperty()
+  @IsNumber()
+  amount: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  currency?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  notes?: string;
+}

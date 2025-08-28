@@ -11,7 +11,13 @@ import { ProductsModule } from './products/products.module';
 import { InvoicesModule } from './invoices/invoices.module';
 import { ReturnsModule } from './returns/returns.module';
 import { TenantsModule } from './tenants/tenants.module';
+import { SearchModule } from './search/search.module';
 import { RequestsModule } from './requests/requests.module';
+import { CalendarModule } from './calendar/calendar.module';
+import { BillingModule } from './billing/billing.module';
+import { InboundModule } from './inbound/inbound.module';
+import { PolicyModule } from './policy/policy.module';
+import { CustomersModule } from './customers/customers.module';
 
 @Controller('health')
 class HealthController { 
@@ -53,6 +59,12 @@ class JwksController {
     ReturnsModule,
     TenantsModule,
     RequestsModule,
+    SearchModule,
+    CalendarModule,
+    BillingModule,
+    InboundModule,
+    PolicyModule,
+    CustomersModule,
   ],
   controllers: [HealthController, MetricsController, JwksController], 
   providers: [JwtService] 

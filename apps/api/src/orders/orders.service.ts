@@ -2,8 +2,9 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { PrismaService } from '../prisma.service';
 import { CacheService } from '../cache/cache.service';
 import { AuditService } from '../audit/audit.service';
-import { CreateOrderDto, UpdateOrderDto, OrderQueryDto } from './dto';
+import { CreateOrderDto, UpdateOrderDto, OrderQueryDto, CreateChargeDto } from './dto';
 import { Prisma } from '@prisma/client';
+import * as jose from 'jose';
 
 @Injectable()
 export class OrdersService {
@@ -13,7 +14,12 @@ export class OrdersService {
     private audit: AuditService,
   ) {}
 
-  async findAll(tenantId: string, query: OrderQueryDto) {
+  private sanitizeOrderForCustomer = (order: any) => {
+    const { notes, billingAddress, tags, serviceCharges, account, ...rest } = order || {};
+    return rest;
+  };
+
+  async findAll(tenantId: string, query: OrderQueryDto, role?: string) {
     const page = query.page || 1;
     const limit = Math.min(query.limit || 50, 500);
     const offset = (page - 1) * limit;
@@ -88,7 +94,7 @@ export class OrdersService {
     ]);
 
     const result = {
-      data: orders,
+      data: (role && !['FULEXO_ADMIN','FULEXO_STAFF'].includes(role)) ? orders.map(this.sanitizeOrderForCustomer) : orders,
       pagination: {
         page,
         limit,
@@ -103,7 +109,7 @@ export class OrdersService {
     return result;
   }
 
-  async findOne(tenantId: string, id: string) {
+  async findOne(tenantId: string, id: string, role?: string) {
     // Try cache first
     const cacheKey = this.cache.orderDetailKey(id);
     const cached = await this.cache.get(cacheKey);
@@ -128,6 +134,7 @@ export class OrdersService {
             label: true,
           },
         },
+        serviceCharges: true,
       },
     }) as any;
 
@@ -138,7 +145,7 @@ export class OrdersService {
     // Cache for 5 minutes
     await this.cache.set(cacheKey, order, 300);
 
-    return order;
+    return (role && !['FULEXO_ADMIN','FULEXO_STAFF'].includes(role)) ? this.sanitizeOrderForCustomer(order) : order;
   }
 
   async create(tenantId: string, dto: CreateOrderDto, userId: string) {
@@ -166,11 +173,19 @@ export class OrdersService {
       }
     }
 
+    // Determine next order number for tenant
+    const agg = await this.prisma.order.aggregate({
+      where: { tenantId },
+      _max: { orderNo: true },
+    });
+    const nextOrderNo = (agg._max.orderNo || 0) + 1;
+
     // Create order
     const order = await this.prisma.order.create({
       data: {
         tenantId,
         customerId: customer?.id,
+        orderNo: nextOrderNo,
         blOrderId: dto.blOrderId || `MANUAL-${Date.now()}`,
         externalOrderNo: dto.externalOrderNo,
         orderSource: dto.orderSource || 'manual',
@@ -421,5 +436,80 @@ export class OrdersService {
       })),
       dailyStats: ordersByDay,
     };
+  }
+
+  async createShareLink(tenantId: string, orderId: string, userId: string) {
+    const order = await this.prisma.order.findFirst({ where: { id: orderId, tenantId }, select: { id: true, blOrderId: true, orderNo: true } });
+    if (!order) throw new NotFoundException('Order not found');
+    // Create short-lived token (24h) with order reference
+    const secret = new TextEncoder().encode(process.env.SHARE_TOKEN_SECRET || 'dev-share-secret');
+    const token = await new jose.SignJWT({ orderId: order.id })
+      .setProtectedHeader({ alg: 'HS256' })
+      .setIssuedAt()
+      .setExpirationTime('24h')
+      .sign(secret);
+    await this.audit.log({ action: 'order.share.created', userId, tenantId, entityType: 'order', entityId: orderId });
+    return { token, url: `${process.env.SHARE_BASE_URL || 'http://localhost:3001'}/order-info?token=${token}` };
+  }
+
+  async getPublicInfo(token: string) {
+    const secret = new TextEncoder().encode(process.env.SHARE_TOKEN_SECRET || 'dev-share-secret');
+    try {
+      const { payload } = await jose.jwtVerify(token, secret);
+      const order = await this.prisma.order.findFirst({
+        where: { id: String(payload.orderId) },
+        select: {
+          id: true,
+          orderNo: true,
+          blOrderId: true,
+          externalOrderNo: true,
+          status: true,
+          total: true,
+          currency: true,
+          confirmedAt: true,
+          customerEmail: true,
+          items: { select: { id: true, sku: true, name: true, qty: true, price: true } },
+        },
+      });
+      if (!order) throw new NotFoundException('Order not found');
+      return { order };
+    } catch (e) {
+      throw new BadRequestException('Invalid or expired token');
+    }
+  }
+
+  async listCharges(tenantId: string, orderId: string) {
+    const order = await this.prisma.order.findFirst({ where: { id: orderId, tenantId } });
+    if (!order) throw new NotFoundException('Order not found');
+    const charges = await this.prisma.orderServiceCharge.findMany({ where: { orderId }, orderBy: { createdAt: 'desc' } });
+    return { orderId, charges };
+  }
+
+  async addCharge(tenantId: string, orderId: string, dto: CreateChargeDto, userId: string) {
+    const order = await this.prisma.order.findFirst({ where: { id: orderId, tenantId } });
+    if (!order) throw new NotFoundException('Order not found');
+    const charge = await this.prisma.orderServiceCharge.create({
+      data: {
+        orderId,
+        type: dto.type,
+        amount: new Prisma.Decimal(dto.amount),
+        currency: dto.currency || order.currency || 'TRY',
+        notes: dto.notes,
+      },
+    });
+    await this.audit.log({ action: 'order.charge.added', userId, tenantId, entityType: 'order', entityId: orderId, changes: dto });
+    await this.cache.invalidateOrderCache(tenantId, orderId);
+    return charge;
+  }
+
+  async removeCharge(tenantId: string, orderId: string, chargeId: string, userId: string) {
+    const order = await this.prisma.order.findFirst({ where: { id: orderId, tenantId } });
+    if (!order) throw new NotFoundException('Order not found');
+    const existing = await this.prisma.orderServiceCharge.findFirst({ where: { id: chargeId, orderId } });
+    if (!existing) throw new NotFoundException('Charge not found');
+    await this.prisma.orderServiceCharge.delete({ where: { id: chargeId } });
+    await this.audit.log({ action: 'order.charge.removed', userId, tenantId, entityType: 'order', entityId: orderId, changes: { chargeId } });
+    await this.cache.invalidateOrderCache(tenantId, orderId);
+    return { message: 'Charge removed' };
   }
 }

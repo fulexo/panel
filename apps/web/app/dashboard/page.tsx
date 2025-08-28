@@ -35,10 +35,16 @@ export default function DashboardPage() {
     fetchDashboardStats();
   }, []);
 
+  const [dateFrom, setDateFrom] = useState<string>('');
+  const [dateTo, setDateTo] = useState<string>('');
+
   const fetchDashboardStats = async () => {
     try {
       const token = localStorage.getItem('access_token');
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:3000'}/orders/stats/summary`, {
+      const url = new URL(`${process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:3000'}/orders/stats/summary`);
+      if(dateFrom) url.searchParams.set('dateFrom', dateFrom);
+      if(dateTo) url.searchParams.set('dateTo', dateTo);
+      const response = await fetch(url.toString(), {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -142,6 +148,11 @@ export default function DashboardPage() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex gap-2 mb-4">
+          <input type="date" value={dateFrom} onChange={e=>setDateFrom(e.target.value)} className="px-3 py-2 bg-gray-800 border border-gray-700 rounded" />
+          <input type="date" value={dateTo} onChange={e=>setDateTo(e.target.value)} className="px-3 py-2 bg-gray-800 border border-gray-700 rounded" />
+          <button onClick={fetchDashboardStats} className="px-3 py-2 bg-blue-600 rounded">Apply</button>
+        </div>
         {/* Welcome Message */}
         <div className="mb-8">
           <h2 className="text-3xl font-bold text-white mb-2">

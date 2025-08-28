@@ -1,9 +1,17 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
+import { JwtService } from '../jwt';
+import { SessionService } from '../auth/session.service';
+import { AuditService } from '../audit/audit.service';
 
 @Injectable()
 export class TenantsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private jwt: JwtService,
+    private sessions: SessionService,
+    private audit: AuditService,
+  ) {}
 
   async list(page = 1, limit = 50) {
     const take = Math.min(limit, 200);
@@ -19,5 +27,62 @@ export class TenantsService {
     const tenant = await this.prisma.tenant.findUnique({ where: { id } });
     if (!tenant) throw new NotFoundException('Tenant not found');
     return tenant;
+  }
+
+  async impersonate(actingUserId: string, targetTenantId: string) {
+    const tenant = await this.prisma.tenant.findUnique({ where: { id: targetTenantId } });
+    if (!tenant) throw new NotFoundException('Tenant not found');
+
+    const user = await this.prisma.user.findUnique({ where: { id: actingUserId } });
+    if (!user) throw new NotFoundException('User not found');
+
+    const payload = {
+      sub: user.id,
+      email: user.email,
+      role: user.role,
+      tenantId: tenant.id,
+      impersonated: true,
+      originalTenantId: user.tenantId,
+    } as any;
+
+    const tokens = await this.jwt.issueTokens(payload);
+    await this.sessions.createSession(user.id, tokens.access, {});
+
+    await this.audit.log({
+      action: 'tenant.impersonation.start',
+      userId: user.id,
+      tenantId: tenant.id,
+      metadata: { originalTenantId: user.tenantId },
+    });
+
+    return { tokens, context: { tenantId: tenant.id, impersonated: true, originalTenantId: user.tenantId } };
+  }
+
+  async stopImpersonation(userPayload: any) {
+    const { sub: userId, originalTenantId, impersonated } = userPayload || {};
+    if (!impersonated || !originalTenantId) {
+      throw new BadRequestException('Not impersonating');
+    }
+
+    const user = await this.prisma.user.findUnique({ where: { id: String(userId) } });
+    if (!user) throw new NotFoundException('User not found');
+
+    const payload = {
+      sub: user.id,
+      email: user.email,
+      role: user.role,
+      tenantId: originalTenantId,
+    } as any;
+
+    const tokens = await this.jwt.issueTokens(payload);
+    await this.sessions.createSession(user.id, tokens.access, {});
+
+    await this.audit.log({
+      action: 'tenant.impersonation.stop',
+      userId: user.id,
+      tenantId: originalTenantId,
+    });
+
+    return { tokens, context: { tenantId: originalTenantId, impersonated: false } };
   }
 }

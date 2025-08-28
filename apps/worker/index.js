@@ -139,6 +139,20 @@ const jobProcessors = {
     
     return { success: true, reportType, tenantId };
   },
+  'sync-google-calendar': async (job) => {
+    const { tenantId } = job.data;
+    console.log(`Syncing Google Calendar for tenant ${tenantId}`);
+    // TODO: fetch OAuth creds from API or DB and sync events
+    await new Promise(r => setTimeout(r, 1000));
+    return { success: true, tenantId };
+  },
+  'email-stats': async (job) => {
+    const { tenantId, period } = job.data;
+    console.log(`Emailing stats ${period} for tenant ${tenantId}`);
+    // TODO: call API to get stats and send email via SMTP provider
+    await new Promise(r => setTimeout(r, 1000));
+    return { success: true, tenantId, period };
+  },
 };
 
 // Create worker
@@ -193,6 +207,18 @@ async function scheduleRecurringJobs() {
   // Clean sessions every 6 hours
   await schedulerQueue.add('cleanup-sessions', {}, {
     repeat: { pattern: '0 */6 * * *' },
+    removeOnComplete: true,
+  });
+
+  // Google calendar sync every 30 minutes
+  await schedulerQueue.add('sync-google-calendar', { tenantId: 'ALL' }, {
+    repeat: { every: 30 * 60 * 1000 },
+    removeOnComplete: true,
+  });
+
+  // Weekly stats email every Monday 08:00
+  await schedulerQueue.add('email-stats', { tenantId: 'ALL', period: 'weekly' }, {
+    repeat: { pattern: '0 8 * * 1' },
     removeOnComplete: true,
   });
 

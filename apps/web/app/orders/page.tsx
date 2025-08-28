@@ -27,10 +27,10 @@ export default function OrdersPage(){
       <h1 className="text-2xl font-bold mb-4">Orders</h1>
       <div className="grid gap-3">
         {items.map((o:any) => (
-          <div key={o.id} className="bg-gray-800 p-4 rounded border border-gray-700">
+          <a href={`/orders/${o.id}`} key={o.id} className="bg-gray-800 p-4 rounded border border-gray-700 block">
             <div className="text-sm text-gray-400">{o.blOrderId} • {o.status}</div>
             <div className="font-semibold">{o.customerEmail || '—'} — {o.total} {o.currency}</div>
-          </div>
+          </a>
         ))}
         {items.length===0 && <div className="text-gray-400">No orders</div>}
       </div>

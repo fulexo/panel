@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Query } from '@nestjs/common';
+import { Controller, Get, Param, Query, Post, Body } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { ReturnsService } from './returns.service';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
@@ -21,5 +21,17 @@ export class ReturnsController {
   @ApiOperation({ summary: 'Get return by ID' })
   async get(@CurrentUser() user: any, @Param('id') id: string) {
     return this.returnsService.get(user.tenantId, id);
+  }
+
+  @Post(':id/photos')
+  @ApiOperation({ summary: 'Add photo to return' })
+  async addPhoto(@CurrentUser() user: any, @Param('id') id: string, @Body() dto: { fileUrl: string; note?: string }) {
+    return this.returnsService.addPhoto(user.tenantId, id, dto.fileUrl, dto.note);
+  }
+
+  @Post(':id/notify')
+  @ApiOperation({ summary: 'Send customer notification about return' })
+  async notify(@CurrentUser() user: any, @Param('id') id: string, @Body() dto: { channel: string; subject?: string; message?: string }) {
+    return this.returnsService.notify(user.tenantId, id, dto.channel, dto.subject, dto.message);
   }
 }
