@@ -100,13 +100,17 @@ chown fulexo:fulexo /opt/fulexo
 # Clone repository (if not exists)
 print_status "Setting up application..."
 cd /opt/fulexo
-if [ ! -d ".git" ]; then
-    print_status "Cloning repository..."
-    git clone https://github.com/fulexo/panel.git .
-    chown -R fulexo:fulexo /opt/fulexo
+if [ "${SKIP_CLONE:-false}" = "true" ]; then
+    print_warning "SKIP_CLONE=true → skipping repository clone/update step"
 else
-    print_warning "Repository already exists, pulling latest changes..."
-    sudo -u fulexo git pull
+    if [ ! -d ".git" ]; then
+        print_status "Cloning repository..."
+        git clone https://github.com/fulexo/panel.git .
+        chown -R fulexo:fulexo /opt/fulexo
+    else
+        print_warning "Repository already exists, pulling latest changes..."
+        sudo -u fulexo git pull
+    fi
 fi
 
 # Setup environment file

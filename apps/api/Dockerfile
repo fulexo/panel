@@ -8,6 +8,8 @@ RUN npx tsc
 
 FROM node:20-alpine
 WORKDIR /app
+# Install wget for HEALTHCHECK
+RUN apk add --no-cache wget
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/node_modules ./node_modules
 COPY package*.json ./
