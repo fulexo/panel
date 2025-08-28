@@ -19,6 +19,7 @@
 - [Orta] Sipariş numarası üretilmesi yarış durumu riski: `orders.service.ts` max(orderNo)+1 yaklaşımı paralelde yarışa açık. Sekans/lock mekanizması önerilir.
 - [Orta] Redis cache invalidation `KEYS` komutu kullanıyor: Büyük ölçeklerde bloklayıcı. Yerine `SCAN` ile tarama yapılmalı.
 - [Orta] 2FA sırları düz metin: `twofaSecret` DB’de şifrelenmeden saklanıyor. En azından AES-GCM ile (doğru IV kullanımıyla) şifrelenmeli.
+- [Orta] RLS entegrasyonu pratikte devrede değil: `PrismaService.withTenant` var ama kodda kullanılmıyor; şu an tenant izolasyonu uygulama seviyesinde `where: { tenantId }` ile yapılıyor. Gerçek RLS için istek bazında transaction ve `SET LOCAL app.tenant_id` uygulanmalı.
 - [Düşük] Web Docker imajı optimize değil: Final stage tüm build içeriğini kopyalıyor ve `npx next start` çalıştırıyor. Daha küçük üretim imajları için yalnızca `.next`, `node_modules` (prod), `package.json`, `next.config.js`, `public` kopyalanmalı.
 - [Düşük] Jaeger var ama uygulamada tracing yok: OpenTelemetry enstrümantasyonu eklenmemiş. Ya kaldırın ya da ekleyin.
 - [Düşük] Grafana admin parolası compose’ta sabit (`grafana_admin_pass`). `.env` üzerinden yönetilmeli.
@@ -38,12 +39,14 @@
 - Oran Sınırlama: Redis tabanlı Lua script ile sağlam. `UnauthorizedException` yerine 429 dönmeli.
 - Cache: `ioredis` ile basit JSON cache; invalidation’da `KEYS` kullanımı ölçek riskli.
 - RLS: `prisma/rls.sql` mevcut fakat sütun adları yanlış (`tenant_id`). Prisma şemanız `tenantId` kullanıyor. Politikalar uygulanamaz durumda.
+- Ayrıca, `withTenant()` sarmalayıcısı tanımlı ancak servislerde çağrılmıyor; RLS gerçekten kullanılmıyor. Tutarlılık için ya tüm veri erişimini `withTenant` ile transaction’a alın ya da RLS’i devre dışı bırakıp yalnız uygulama seviyesinde kalın.
 - Veri Modelleri: Prisma şema kapsamlı; uygun index’ler var. `Order` numaralandırması yarışa açık (bkz. performans).
 - Güvenlik: `crypto.ts` zarf şifrelemesinde GCM için sabit IV kullanımı kritik hatalı.
 
 Öneriler (Backend):
 - `crypto.ts`: Zarf şifrelemede IV’yi rastgele üretin ve EDK ile birlikte saklayın. Örn. `iv2` için `randomBytes(12)` ve `encrypted_data_key_iv` alanı ekleyin.
 - RLS: `rls.sql`’i Prisma tablo ve sütun adlarıyla hizalayın (örn. `"Order"."tenantId" = app.tenant_id()`). Politika isimleri ve tabloları gözden geçirin; migrasyonla uygulayın.
+- Servis çağrılarında RLS’i etkin kılmak için request bağlamında `PrismaService.withTenant(tenantId, fn)` kullanın veya Prisma middleware ile otomatikleştirin. PgBouncer transaction pool kullanıyorsanız `SET LOCAL` stratejisini sürdürün.
 - `RateLimitGuard`: 429 TooManyRequests döndürün; `Retry-After` başlığı ekleyin.
 - `orders.service.ts`: `orderNo` üretimi için per-tenant sequence tablosu veya `INSERT ... RETURNING` ile advisory lock/sequence kullanın.
 - `CacheService.flush`: `SCAN` ile pattern taraması yapın; büyük anahtar uzayında bloklamayı önleyin.
