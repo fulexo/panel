@@ -14,6 +14,10 @@ export class OrdersService {
     private audit: AuditService,
   ) {}
 
+  private async runTenant<T>(tenantId: string, fn: (db: any) => Promise<T>): Promise<T> {
+    return this.prisma.withTenant(tenantId, fn as any);
+  }
+
   private sanitizeOrderForCustomer = (order: any) => {
     const { notes, billingAddress, tags, serviceCharges, account, ...rest } = order || {};
     return rest;
@@ -60,8 +64,8 @@ export class OrdersService {
     }
 
     // Execute query
-    const [orders, total] = await Promise.all([
-      this.prisma.order.findMany({
+    const [orders, total] = await this.runTenant(tenantId, async (db) => Promise.all([
+      db.order.findMany({
         where,
         include: {
           customer: {
@@ -90,8 +94,8 @@ export class OrdersService {
         take: limit,
         skip: offset,
       }),
-      this.prisma.order.count({ where }),
-    ]);
+      db.order.count({ where }),
+    ]));
 
     const result = {
       data: (role && !['FULEXO_ADMIN','FULEXO_STAFF'].includes(role)) ? orders.map(this.sanitizeOrderForCustomer) : orders,
@@ -117,7 +121,7 @@ export class OrdersService {
       return cached;
     }
 
-    const order = await this.prisma.order.findFirst({
+    const order = await this.runTenant(tenantId, async (db) => db.order.findFirst({
       where: {
         id,
         tenantId,
@@ -136,7 +140,7 @@ export class OrdersService {
         },
         serviceCharges: true,
       },
-    }) as any;
+    }) as any);
 
     if (!order) {
       throw new NotFoundException('Order not found');
@@ -174,14 +178,14 @@ export class OrdersService {
     }
 
     // Determine next order number for tenant
-    const agg = await this.prisma.order.aggregate({
+    const agg = await this.runTenant(tenantId, async (db) => db.order.aggregate({
       where: { tenantId },
       _max: { orderNo: true },
-    });
+    }));
     const nextOrderNo = (agg._max.orderNo || 0) + 1;
 
     // Create order
-    const order = await this.prisma.order.create({
+    const order = await this.runTenant(tenantId, async (db) => db.order.create({
       data: {
         tenantId,
         customerId: customer?.id,
@@ -212,7 +216,7 @@ export class OrdersService {
       include: {
         items: true,
       },
-    });
+    }));
 
     // Audit log
     await this.audit.log({
@@ -232,16 +236,16 @@ export class OrdersService {
 
   async update(tenantId: string, id: string, dto: UpdateOrderDto, userId: string) {
     // Check if order exists
-    const existing = await this.prisma.order.findFirst({
+    const existing = await this.runTenant(tenantId, async (db) => db.order.findFirst({
       where: { id, tenantId },
-    });
+    }));
 
     if (!existing) {
       throw new NotFoundException('Order not found');
     }
 
     // Update order
-    const order = await this.prisma.order.update({
+    const order = await this.runTenant(tenantId, async (db) => db.order.update({
       where: { id },
       data: {
         status: dto.status,
@@ -251,7 +255,7 @@ export class OrdersService {
         billingAddress: dto.billingAddress,
         updatedAt: new Date(),
       },
-    });
+    }));
 
     // Audit log
     await this.audit.log({
@@ -270,9 +274,9 @@ export class OrdersService {
   }
 
   async remove(tenantId: string, id: string, userId: string) {
-    const order = await this.prisma.order.findFirst({
+    const order = await this.runTenant(tenantId, async (db) => db.order.findFirst({
       where: { id, tenantId },
-    });
+    }));
 
     if (!order) {
       throw new NotFoundException('Order not found');
@@ -280,9 +284,9 @@ export class OrdersService {
 
     // Soft delete by setting a flag or moving to archive
     // For now, we'll actually delete
-    await this.prisma.order.delete({
+    await this.runTenant(tenantId, async (db) => db.order.delete({
       where: { id },
-    });
+    }));
 
     // Audit log
     await this.audit.log({
@@ -396,25 +400,11 @@ export class OrdersService {
       totalRevenue,
       statusCounts,
       ordersByDay,
-    ] = await Promise.all([
-      // Total orders
-      this.prisma.order.count({ where }),
-      
-      // Total revenue
-      this.prisma.order.aggregate({
-        where,
-        _sum: { total: true },
-      }),
-      
-      // Orders by status
-      this.prisma.order.groupBy({
-        by: ['status'],
-        where,
-        _count: true,
-      }),
-      
-      // Orders by day (last 30 days)
-      this.prisma.$queryRaw`
+    ] = await this.runTenant(tenantId, async (db) => Promise.all([
+      db.order.count({ where }),
+      db.order.aggregate({ where, _sum: { total: true } }),
+      db.order.groupBy({ by: ['status'], where, _count: true }),
+      db.$queryRaw`
         SELECT 
           DATE("confirmedAt") as date,
           COUNT(*) as count,
@@ -425,7 +415,7 @@ export class OrdersService {
         GROUP BY DATE("confirmedAt")
         ORDER BY date DESC
       `,
-    ]);
+    ]));
 
     return {
       totalOrders,
@@ -479,16 +469,16 @@ export class OrdersService {
   }
 
   async listCharges(tenantId: string, orderId: string) {
-    const order = await this.prisma.order.findFirst({ where: { id: orderId, tenantId } });
+    const order = await this.runTenant(tenantId, async (db) => db.order.findFirst({ where: { id: orderId, tenantId } }));
     if (!order) throw new NotFoundException('Order not found');
-    const charges = await this.prisma.orderServiceCharge.findMany({ where: { orderId }, orderBy: { createdAt: 'desc' } });
+    const charges = await this.runTenant(tenantId, async (db) => db.orderServiceCharge.findMany({ where: { orderId }, orderBy: { createdAt: 'desc' } }));
     return { orderId, charges };
   }
 
   async addCharge(tenantId: string, orderId: string, dto: CreateChargeDto, userId: string) {
-    const order = await this.prisma.order.findFirst({ where: { id: orderId, tenantId } });
+    const order = await this.runTenant(tenantId, async (db) => db.order.findFirst({ where: { id: orderId, tenantId } }));
     if (!order) throw new NotFoundException('Order not found');
-    const charge = await this.prisma.orderServiceCharge.create({
+    const charge = await this.runTenant(tenantId, async (db) => db.orderServiceCharge.create({
       data: {
         orderId,
         type: dto.type,
@@ -496,18 +486,18 @@ export class OrdersService {
         currency: dto.currency || order.currency || 'TRY',
         notes: dto.notes,
       },
-    });
+    }));
     await this.audit.log({ action: 'order.charge.added', userId, tenantId, entityType: 'order', entityId: orderId, changes: dto });
     await this.cache.invalidateOrderCache(tenantId, orderId);
     return charge;
   }
 
   async removeCharge(tenantId: string, orderId: string, chargeId: string, userId: string) {
-    const order = await this.prisma.order.findFirst({ where: { id: orderId, tenantId } });
+    const order = await this.runTenant(tenantId, async (db) => db.order.findFirst({ where: { id: orderId, tenantId } }));
     if (!order) throw new NotFoundException('Order not found');
-    const existing = await this.prisma.orderServiceCharge.findFirst({ where: { id: chargeId, orderId } });
+    const existing = await this.runTenant(tenantId, async (db) => db.orderServiceCharge.findFirst({ where: { id: chargeId, orderId } }));
     if (!existing) throw new NotFoundException('Charge not found');
-    await this.prisma.orderServiceCharge.delete({ where: { id: chargeId } });
+    await this.runTenant(tenantId, async (db) => db.orderServiceCharge.delete({ where: { id: chargeId } }));
     await this.audit.log({ action: 'order.charge.removed', userId, tenantId, entityType: 'order', entityId: orderId, changes: { chargeId } });
     await this.cache.invalidateOrderCache(tenantId, orderId);
     return { message: 'Charge removed' };
