@@ -39,7 +39,7 @@ services:
 
   api:
     build: ../apps/api
-    env_file: .env
+    env_file: ${ENV_FILE:-.env}
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       REDIS_URL: ${REDIS_URL}
@@ -59,7 +59,7 @@ services:
       dockerfile: Dockerfile
       args:
         NEXT_PUBLIC_API_BASE: https://${DOMAIN_API}
-    env_file: .env
+    env_file: ${ENV_FILE:-.env}
     environment:
       NEXT_PUBLIC_API_BASE: https://${DOMAIN_API}
       NODE_ENV: ${NODE_ENV}
@@ -70,7 +70,7 @@ services:
     build:
       context: ..
       dockerfile: apps/worker/Dockerfile
-    env_file: .env
+    env_file: ${ENV_FILE:-.env}
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       REDIS_URL: ${REDIS_URL}

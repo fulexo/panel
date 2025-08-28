@@ -30,14 +30,18 @@ if [[ $EUID -ne 0 ]]; then
    exit 1
 fi
 
-# Check if .env file exists
-if [ ! -f "/opt/fulexo/compose/.env" ]; then
-    print_error ".env file not found. Please run setup-droplet.sh first!"
+# Locate environment file (externalized)
+if [ -f "/etc/fulexo/fulexo.env" ]; then
+    ENV_FILE="/etc/fulexo/fulexo.env"
+elif [ -f "/opt/fulexo/compose/.env" ]; then
+    ENV_FILE="/opt/fulexo/compose/.env"
+else
+    print_error "Environment file not found. Please run setup-droplet.sh first!"
     exit 1
 fi
 
 # Load environment variables
-source /opt/fulexo/compose/.env
+source "$ENV_FILE"
 
 # Check required variables
 if [ -z "${DOMAIN_API:-}" ] || [ -z "${DOMAIN_APP:-}" ]; then
@@ -126,9 +130,9 @@ After=network.target
 
 [Service]
 Type=oneshot
-ExecStartPre=/usr/bin/docker compose -f /opt/fulexo/compose/docker-compose.yml stop nginx
+ExecStartPre=/usr/bin/docker compose --env-file /etc/fulexo/fulexo.env -f /opt/fulexo/compose/docker-compose.yml stop nginx
 ExecStart=/usr/bin/certbot renew --quiet --standalone
-ExecStartPost=/usr/bin/docker compose -f /opt/fulexo/compose/docker-compose.yml start nginx
+ExecStartPost=/usr/bin/docker compose --env-file /etc/fulexo/fulexo.env -f /opt/fulexo/compose/docker-compose.yml start nginx
 EOF
 
 cat > /etc/systemd/system/certbot-renewal.timer << EOF
