@@ -5,8 +5,12 @@ import { PrismaService } from '../prisma.service';
 export class PolicyService {
   constructor(private prisma: PrismaService) {}
 
+  private async runTenant<T>(tenantId: string, fn: (db: any) => Promise<T>): Promise<T> {
+    return this.prisma.withTenant(tenantId, fn as any);
+  }
+
   async getVisibility(tenantId: string) {
-    const pol = await this.prisma.policy.findMany({ where: { tenantId, active: true } });
+    const pol = await this.runTenant(tenantId, async (db) => db.policy.findMany({ where: { tenantId, active: true } }));
     const modules: any = {};
     const actions: any = {};
     const dataScope: any = {};

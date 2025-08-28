@@ -13,5 +13,7 @@ jobs:
         with: { node-version: 20 }
       - run: npm ci --prefix apps/api || npm i --prefix apps/api
       - run: npm ci --prefix apps/web || npm i --prefix apps/web
+      - run: npm ci --prefix apps/worker || npm i --prefix apps/worker
+      - run: npx prisma generate --schema apps/api/prisma/schema.prisma
       - run: npm run build --prefix apps/api || echo "api build"
       - run: npm run build --prefix apps/web || echo "web build"

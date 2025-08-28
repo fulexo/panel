@@ -49,9 +49,17 @@ export class CacheService {
 
   async flush(pattern: string): Promise<void> {
     try {
-      const keys = await this.redis.keys(pattern);
-      if (keys.length > 0) {
-        await this.redis.del(...keys);
+      // Use SCAN to avoid blocking Redis with KEYS on large datasets
+      let cursor = '0';
+      const toDelete: string[] = [];
+      do {
+        const res: any = await (this.redis as any).scan(cursor, 'MATCH', pattern, 'COUNT', 1000);
+        cursor = res[0];
+        const batch: string[] = res[1] || [];
+        if (batch.length) toDelete.push(...batch);
+      } while (cursor !== '0');
+      if (toDelete.length > 0) {
+        await this.redis.del(...toDelete);
       }
     } catch (error) {
       console.error('Cache flush error:', error);

@@ -30,10 +30,13 @@ export class AuthController {
     return result;
   }
 
-  @Public()
   @Post('register')
-  @ApiOperation({ summary: 'Register new user (admin only in production)' })
-  async register(@Body() dto: RegisterDto) {
+  @ApiOperation({ summary: 'Register new user (admin only)' })
+  async register(@CurrentUser() user: any, @Body() dto: RegisterDto) {
+    // Allow only platform admins or staff to register new users
+    if (!user || !['FULEXO_ADMIN', 'FULEXO_STAFF'].includes(user.role)) {
+      throw new UnauthorizedException('Not allowed');
+    }
     return this.authService.register(dto);
   }
 

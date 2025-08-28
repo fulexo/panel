@@ -2,10 +2,32 @@ import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import * as speakeasy from 'speakeasy';
 import * as QRCode from 'qrcode';
+import { EncryptionService } from '../crypto';
 
 @Injectable()
 export class TwoFactorService {
-  constructor(private prisma: PrismaService) {}
+  private enc: EncryptionService;
+
+  constructor(private prisma: PrismaService) {
+    const key = process.env.MASTER_KEY_HEX || process.env.ENCRYPTION_KEY || ''.padEnd(64,'0');
+    this.enc = new EncryptionService(key);
+  }
+
+  private encryptSecret(secretBase32: string): string {
+    const payload = this.enc.encrypt(secretBase32);
+    return JSON.stringify(payload);
+  }
+
+  private tryDecryptSecret(value: string | null | undefined): string | null {
+    if (!value) return null;
+    try {
+      const parsed = JSON.parse(value);
+      if (parsed && parsed.ciphertext && parsed.nonce) {
+        return this.enc.decrypt(parsed);
+      }
+    } catch {}
+    return value;
+  }
 
   async enableTwoFactor(userId: string) {
     const user = await this.prisma.user.findUnique({
@@ -26,11 +48,11 @@ export class TwoFactorService {
       issuer: 'Fulexo Platform',
     });
 
-    // Save secret temporarily (not enabled yet)
+    // Save secret temporarily (not enabled yet) — encrypted at rest
     await this.prisma.user.update({
       where: { id: userId },
       data: {
-        twofaSecret: secret.base32,
+        twofaSecret: this.encryptSecret(secret.base32),
       },
     });
 
@@ -53,8 +75,9 @@ export class TwoFactorService {
       throw new BadRequestException('2FA setup not initiated');
     }
 
+    const base32 = this.tryDecryptSecret(user.twofaSecret);
     const verified = speakeasy.totp.verify({
-      secret: user.twofaSecret,
+      secret: base32 || '',
       encoding: 'base32',
       token,
       window: 2,
@@ -82,8 +105,9 @@ export class TwoFactorService {
       return false;
     }
 
+    const base32 = this.tryDecryptSecret(user.twofaSecret);
     return speakeasy.totp.verify({
-      secret: user.twofaSecret,
+      secret: base32 || '',
       encoding: 'base32',
       token,
       window: 2,

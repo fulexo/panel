@@ -1,4 +1,4 @@
-import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
+import { CanActivate, ExecutionContext, Injectable, UnauthorizedException, HttpException, HttpStatus } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import Redis from 'ioredis';
 import { RedisRateLimiter } from './ratelimit';
@@ -22,14 +22,19 @@ export class RateLimitGuard implements CanActivate {
 
     if (!opts) return true;
 
-    const req = context.switchToHttp().getRequest();
+    const httpRef = context.switchToHttp();
+    const req = httpRef.getRequest();
+    const res = httpRef.getResponse();
     const user = req.user;
     const id = opts.scope === 'user' && user?.sub ? user.sub : req.ip;
     const key = `rl:${opts.name}:${id}`;
 
-    const res = await this.limiter.check(key, opts.limit, opts.windowMs);
-    if (!res.allowed) {
-      throw new UnauthorizedException('Rate limit exceeded');
+    const rl = await this.limiter.check(key, opts.limit, opts.windowMs);
+    if (!rl.allowed) {
+      if (rl.retryAfterMs) {
+        try { res.setHeader('Retry-After', Math.ceil(Number(rl.retryAfterMs) / 1000)); } catch {}
+      }
+      throw new HttpException('Rate limit exceeded', HttpStatus.TOO_MANY_REQUESTS);
     }
     return true;
   }

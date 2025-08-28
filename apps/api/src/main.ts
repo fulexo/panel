@@ -83,9 +83,15 @@ async function bootstrap(){
 
   // CORS configuration
   app.enableCors({
-    origin: process.env.NODE_ENV === 'production' 
-      ? [process.env.DOMAIN_APP!, process.env.DOMAIN_API!]
-      : true,
+    origin: (origin, cb) => {
+      if (process.env.NODE_ENV !== 'production') return cb(null, true);
+      const allowed = new Set([
+        `https://${process.env.DOMAIN_APP}`,
+        `https://${process.env.DOMAIN_API}`,
+      ]);
+      if (!origin || allowed.has(origin)) return cb(null, true);
+      cb(new Error('CORS not allowed'));
+    },
     credentials: true,
   });
 
@@ -94,15 +100,17 @@ async function bootstrap(){
   await jwt.init();
   
   // Swagger documentation
-  const config = new DocumentBuilder()
-    .setTitle('Fulexo API')
-    .setDescription('BaseLinker Integration Platform API')
-    .setVersion('1.0')
-    .addBearerAuth()
-    .addServer(process.env.NODE_ENV === 'production' ? `https://${process.env.DOMAIN_API}` : 'http://localhost:3000')
-    .build();
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('docs', app, document);
+  if (process.env.NODE_ENV !== 'production') {
+    const config = new DocumentBuilder()
+      .setTitle('Fulexo API')
+      .setDescription('BaseLinker Integration Platform API')
+      .setVersion('1.0')
+      .addBearerAuth()
+      .addServer('http://localhost:3000')
+      .build();
+    const document = SwaggerModule.createDocument(app, config);
+    SwaggerModule.setup('docs', app, document);
+  }
   
   const port = process.env.PORT || 3000;
   await app.listen(port);
