@@ -118,6 +118,9 @@ cp "$NGINX_CONF" "${NGINX_CONF}.backup"
 # Update domain names and SSL paths
 sed -i "s/api.example.com/$DOMAIN_API/g" "$NGINX_CONF"
 sed -i "s/app.example.com/$DOMAIN_APP/g" "$NGINX_CONF"
+# Also replace default fulexo placeholders if present
+sed -i "s/api.fulexo.com/$DOMAIN_API/g" "$NGINX_CONF"
+sed -i "s/panel.fulexo.com/$DOMAIN_APP/g" "$NGINX_CONF"
 
 print_status "Nginx configuration updated!"
 

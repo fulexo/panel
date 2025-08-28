@@ -197,19 +197,32 @@ print_status "Creating backup script..."
 mkdir -p /opt/fulexo/scripts
 cat > /opt/fulexo/scripts/backup.sh << 'EOF'
 #!/bin/bash
+set -euo pipefail
+
 BACKUP_DIR="/opt/fulexo/backups"
 DATE=$(date +%Y%m%d_%H%M%S)
-mkdir -p $BACKUP_DIR
+mkdir -p "$BACKUP_DIR"
+
+# Load environment from external file if present
+ENV_FILE="/etc/fulexo/fulexo.env"
+if [ -f "$ENV_FILE" ]; then
+  set -a
+  source "$ENV_FILE"
+  set +a
+fi
+
+PG_USER="${POSTGRES_USER:-fulexo}"
+PG_DB="${POSTGRES_DB:-fulexo}"
 
 # Backup database
-docker exec compose-postgres-1 pg_dump -U ${POSTGRES_USER} ${POSTGRES_DB} | gzip > $BACKUP_DIR/db_$DATE.sql.gz
+docker exec compose-postgres-1 pg_dump -U "$PG_USER" "$PG_DB" | gzip > "$BACKUP_DIR/db_${DATE}.sql.gz"
 
 # Backup volumes
-docker run --rm -v compose_pgdata:/data -v $BACKUP_DIR:/backup alpine tar czf /backup/pgdata_$DATE.tar.gz -C /data .
-docker run --rm -v compose_miniodata:/data -v $BACKUP_DIR:/backup alpine tar czf /backup/miniodata_$DATE.tar.gz -C /data .
+docker run --rm -v compose_pgdata:/data -v "$BACKUP_DIR":/backup alpine tar czf "/backup/pgdata_${DATE}.tar.gz" -C /data .
+docker run --rm -v compose_miniodata:/data -v "$BACKUP_DIR":/backup alpine tar czf "/backup/miniodata_${DATE}.tar.gz" -C /data .
 
 # Keep only last 7 days of backups
-find $BACKUP_DIR -type f -mtime +7 -delete
+find "$BACKUP_DIR" -type f -mtime +7 -delete
 EOF
 
 chmod +x /opt/fulexo/scripts/backup.sh

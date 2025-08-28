@@ -49,6 +49,8 @@ services:
       S3_BUCKET: ${S3_BUCKET}
       JWT_SECRET: ${JWT_SECRET}
       ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+      DOMAIN_API: ${DOMAIN_API}
+      DOMAIN_APP: ${DOMAIN_APP}
       NODE_ENV: ${NODE_ENV}
     depends_on: [postgres, valkey, minio]
     restart: unless-stopped
