@@ -100,21 +100,28 @@ chown fulexo:fulexo /opt/fulexo
 # Clone repository (if not exists)
 print_status "Setting up application..."
 cd /opt/fulexo
-if [ ! -d ".git" ]; then
-    print_status "Cloning repository..."
-    git clone https://github.com/fulexo/panel.git .
-    chown -R fulexo:fulexo /opt/fulexo
+if [ "${SKIP_CLONE:-false}" = "true" ]; then
+    print_warning "SKIP_CLONE=true → skipping repository clone/update step"
 else
-    print_warning "Repository already exists, pulling latest changes..."
-    sudo -u fulexo git pull
+    if [ ! -d ".git" ]; then
+        print_status "Cloning repository..."
+        git clone https://github.com/fulexo/panel.git .
+        chown -R fulexo:fulexo /opt/fulexo
+    else
+        print_warning "Repository already exists, pulling latest changes..."
+        sudo -u fulexo git pull
+    fi
 fi
 
-# Setup environment file
+# Setup environment file (stored outside repo to avoid git operations)
 print_status "Setting up environment configuration..."
-if [ ! -f "compose/.env" ]; then
-    cp compose/.env.example compose/.env
-    print_warning "Environment file created. Please edit /opt/fulexo/compose/.env with your configuration!"
-    
+ENV_DIR="/etc/fulexo"
+ENV_PATH="${ENV_DIR}/fulexo.env"
+mkdir -p "$ENV_DIR"
+if [ ! -f "$ENV_PATH" ]; then
+    cp compose/.env.example "$ENV_PATH"
+    print_warning "Environment file created. Please edit $ENV_PATH with your configuration!"
+
     # Generate secure passwords
     POSTGRES_PASS=$(openssl rand -base64 32 | tr -d "=+/" | cut -c1-25)
     JWT_SECRET=$(openssl rand -base64 64 | tr -d "=+/" | cut -c1-64)
@@ -122,16 +129,16 @@ if [ ! -f "compose/.env" ]; then
     MINIO_ACCESS=$(openssl rand -base64 20 | tr -d "=+/" | cut -c1-20)
     MINIO_SECRET=$(openssl rand -base64 40 | tr -d "=+/" | cut -c1-40)
     GRAFANA_PASS=$(openssl rand -base64 20 | tr -d "=+/" | cut -c1-20)
-    
-    # Update .env with generated passwords
-    sed -i "s/your_secure_postgres_password/$POSTGRES_PASS/g" compose/.env
-    sed -i "s/your_very_long_and_secure_jwt_secret_key/$JWT_SECRET/g" compose/.env
-    sed -i "s/your_32_character_encryption_key/$ENCRYPTION_KEY/g" compose/.env
-    sed -i "s/your_minio_access_key/$MINIO_ACCESS/g" compose/.env
-    sed -i "s/your_minio_secret_key/$MINIO_SECRET/g" compose/.env
-    sed -i "s/your_secure_grafana_password/$GRAFANA_PASS/g" compose/.env
-    
-    print_status "Generated secure passwords and updated .env file"
+
+    # Update env with generated passwords
+    sed -i "s/your_secure_postgres_password/$POSTGRES_PASS/g" "$ENV_PATH"
+    sed -i "s/your_very_long_and_secure_jwt_secret_key/$JWT_SECRET/g" "$ENV_PATH"
+    sed -i "s/your_32_character_encryption_key/$ENCRYPTION_KEY/g" "$ENV_PATH"
+    sed -i "s/your_minio_access_key/$MINIO_ACCESS/g" "$ENV_PATH"
+    sed -i "s/your_minio_secret_key/$MINIO_SECRET/g" "$ENV_PATH"
+    sed -i "s/your_secure_grafana_password/$GRAFANA_PASS/g" "$ENV_PATH"
+
+    print_status "Generated secure passwords and updated env file"
     print_warning "IMPORTANT: Save these credentials securely!"
     echo "================================================"
     echo "PostgreSQL Password: $POSTGRES_PASS"
@@ -140,8 +147,11 @@ if [ ! -f "compose/.env" ]; then
     echo "Grafana Admin Password: $GRAFANA_PASS"
     echo "================================================"
 else
-    print_warning "Environment file already exists, skipping..."
+    print_warning "Environment file already exists at $ENV_PATH, skipping..."
 fi
+
+# Optional: maintain a symlink for local compose convenience
+ln -sf "$ENV_PATH" /opt/fulexo/compose/.env || true
 
 # Create systemd service
 print_status "Creating systemd service..."
@@ -156,9 +166,10 @@ Type=oneshot
 RemainAfterExit=yes
 User=fulexo
 WorkingDirectory=/opt/fulexo/compose
-ExecStart=/usr/bin/docker compose up -d
-ExecStop=/usr/bin/docker compose down
-ExecReload=/usr/bin/docker compose restart
+Environment=ENV_FILE=/etc/fulexo/fulexo.env
+ExecStart=/usr/bin/docker compose --env-file /etc/fulexo/fulexo.env -f /opt/fulexo/compose/docker-compose.yml up -d
+ExecStop=/usr/bin/docker compose --env-file /etc/fulexo/fulexo.env -f /opt/fulexo/compose/docker-compose.yml down
+ExecReload=/usr/bin/docker compose --env-file /etc/fulexo/fulexo.env -f /opt/fulexo/compose/docker-compose.yml restart
 
 [Install]
 WantedBy=multi-user.target
@@ -186,19 +197,32 @@ print_status "Creating backup script..."
 mkdir -p /opt/fulexo/scripts
 cat > /opt/fulexo/scripts/backup.sh << 'EOF'
 #!/bin/bash
+set -euo pipefail
+
 BACKUP_DIR="/opt/fulexo/backups"
 DATE=$(date +%Y%m%d_%H%M%S)
-mkdir -p $BACKUP_DIR
+mkdir -p "$BACKUP_DIR"
+
+# Load environment from external file if present
+ENV_FILE="/etc/fulexo/fulexo.env"
+if [ -f "$ENV_FILE" ]; then
+  set -a
+  source "$ENV_FILE"
+  set +a
+fi
+
+PG_USER="${POSTGRES_USER:-fulexo}"
+PG_DB="${POSTGRES_DB:-fulexo}"
 
 # Backup database
-docker exec compose-postgres-1 pg_dump -U ${POSTGRES_USER} ${POSTGRES_DB} | gzip > $BACKUP_DIR/db_$DATE.sql.gz
+docker exec compose-postgres-1 pg_dump -U "$PG_USER" "$PG_DB" | gzip > "$BACKUP_DIR/db_${DATE}.sql.gz"
 
 # Backup volumes
-docker run --rm -v compose_pgdata:/data -v $BACKUP_DIR:/backup alpine tar czf /backup/pgdata_$DATE.tar.gz -C /data .
-docker run --rm -v compose_miniodata:/data -v $BACKUP_DIR:/backup alpine tar czf /backup/miniodata_$DATE.tar.gz -C /data .
+docker run --rm -v compose_pgdata:/data -v "$BACKUP_DIR":/backup alpine tar czf "/backup/pgdata_${DATE}.tar.gz" -C /data .
+docker run --rm -v compose_miniodata:/data -v "$BACKUP_DIR":/backup alpine tar czf "/backup/miniodata_${DATE}.tar.gz" -C /data .
 
 # Keep only last 7 days of backups
-find $BACKUP_DIR -type f -mtime +7 -delete
+find "$BACKUP_DIR" -type f -mtime +7 -delete
 EOF
 
 chmod +x /opt/fulexo/scripts/backup.sh

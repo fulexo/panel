@@ -1,6 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { SettingsService } from '../settings/settings.service';
-import fetch from 'node-fetch';
 
 @Injectable()
 export class BaseLinkerService {
