@@ -100,12 +100,9 @@ obtain_certificate() {
     return 1
 }
 
-# Get email for Let's Encrypt
-read -p "Enter email for Let's Encrypt notifications: " LETSENCRYPT_EMAIL
-if [ -z "$LETSENCRYPT_EMAIL" ]; then
-    print_error "Email is required for Let's Encrypt!"
-    exit 1
-fi
+# Use predefined email for Let's Encrypt
+LETSENCRYPT_EMAIL="fulexo@fulexo.com"
+print_status "Using email for Let's Encrypt: $LETSENCRYPT_EMAIL"
 
 # Validate email format
 if ! [[ "$LETSENCRYPT_EMAIL" =~ ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$ ]]; then

@@ -177,6 +177,11 @@ EOF
     sed -i "s/your_secure_grafana_password/$GRAFANA_PASS/g" "$ENV_PATH"
     SHARE_SECRET=$(openssl rand -base64 32 | tr -d "=+/" | cut -c1-32)
     sed -i "s/your_share_token_secret_32_chars/$SHARE_SECRET/g" "$ENV_PATH"
+    
+    # Set Fulexo domains automatically
+    sed -i "s/api.yourdomain.com/api.fulexo.com/g" "$ENV_PATH"
+    sed -i "s/panel.yourdomain.com/panel.fulexo.com/g" "$ENV_PATH"
+    sed -i "s/https:\/\/panel.yourdomain.com/https:\/\/panel.fulexo.com/g" "$ENV_PATH"
 
     print_status "Generated secure passwords and updated env file"
     print_warning "IMPORTANT: Save these credentials securely!"
