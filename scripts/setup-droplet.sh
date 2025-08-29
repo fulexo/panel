@@ -50,7 +50,8 @@ apt-get install -y \
     git \
     htop \
     vim \
-    wget
+    wget \
+    build-essential
 
 # Install Docker
 print_status "Installing Docker..."
@@ -65,6 +66,15 @@ else
     print_warning "Docker already installed, skipping..."
 fi
 
+# Install Node.js 20
+print_status "Installing Node.js 20..."
+if ! command -v node &> /dev/null || [[ $(node -v | cut -d'v' -f2 | cut -d'.' -f1) -lt 20 ]]; then
+    curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+    apt-get install -y nodejs
+else
+    print_warning "Node.js 20+ already installed, skipping..."
+fi
+
 # Configure firewall
 print_status "Configuring firewall..."
 ufw default deny incoming
@@ -73,7 +83,8 @@ ufw allow ssh
 ufw allow 80/tcp
 ufw allow 443/tcp
 ufw allow 9000:9001/tcp  # MinIO ports (restrict in production)
-ufw allow 3001/tcp       # Uptime Kuma (restrict in production)
+ufw allow 3001/tcp       # Uptime Kuma (restrict in production)  
+ufw allow 3002/tcp       # Grafana (restrict in production)
 ufw allow 9093/tcp       # Alertmanager (restrict in production)
 ufw allow 16686/tcp      # Jaeger (restrict in production)
 ufw --force enable
@@ -119,7 +130,34 @@ ENV_DIR="/etc/fulexo"
 ENV_PATH="${ENV_DIR}/fulexo.env"
 mkdir -p "$ENV_DIR"
 if [ ! -f "$ENV_PATH" ]; then
-    cp compose/.env.example "$ENV_PATH"
+    # Create environment file from template
+    if [ -f "compose/env-template" ]; then
+        cp compose/env-template "$ENV_PATH"
+    elif [ -f "env.example" ]; then
+        cp env.example "$ENV_PATH"
+    else
+        print_error "No environment template found! Creating basic template..."
+        cat > "$ENV_PATH" << 'EOF'
+# Fulexo Platform Environment Configuration
+DOMAIN_API=api.yourdomain.com
+DOMAIN_APP=panel.yourdomain.com
+NODE_ENV=production
+POSTGRES_DB=fulexo
+POSTGRES_USER=fulexo_user
+POSTGRES_PASSWORD=your_secure_postgres_password
+REDIS_URL=redis://valkey:6379/0
+JWT_SECRET=your_very_long_and_secure_jwt_secret_key_minimum_64_characters_long
+ENCRYPTION_KEY=your_32_character_encryption_key
+S3_ENDPOINT=http://minio:9000
+S3_ACCESS_KEY=your_minio_access_key
+S3_SECRET_KEY=your_minio_secret_key
+S3_BUCKET=fulexo-cache
+GF_SECURITY_ADMIN_PASSWORD=your_secure_grafana_password
+SHARE_TOKEN_SECRET=your_share_token_secret_32_chars
+NEXT_PUBLIC_APP_URL=https://panel.yourdomain.com
+PORT=3000
+EOF
+    fi
     print_warning "Environment file created. Please edit $ENV_PATH with your configuration!"
 
     # Generate secure passwords
@@ -132,11 +170,13 @@ if [ ! -f "$ENV_PATH" ]; then
 
     # Update env with generated passwords
     sed -i "s/your_secure_postgres_password/$POSTGRES_PASS/g" "$ENV_PATH"
-    sed -i "s/your_very_long_and_secure_jwt_secret_key/$JWT_SECRET/g" "$ENV_PATH"
+    sed -i "s/your_very_long_and_secure_jwt_secret_key_minimum_64_characters_long/$JWT_SECRET/g" "$ENV_PATH"
     sed -i "s/your_32_character_encryption_key/$ENCRYPTION_KEY/g" "$ENV_PATH"
     sed -i "s/your_minio_access_key/$MINIO_ACCESS/g" "$ENV_PATH"
     sed -i "s/your_minio_secret_key/$MINIO_SECRET/g" "$ENV_PATH"
     sed -i "s/your_secure_grafana_password/$GRAFANA_PASS/g" "$ENV_PATH"
+    SHARE_SECRET=$(openssl rand -base64 32 | tr -d "=+/" | cut -c1-32)
+    sed -i "s/your_share_token_secret_32_chars/$SHARE_SECRET/g" "$ENV_PATH"
 
     print_status "Generated secure passwords and updated env file"
     print_warning "IMPORTANT: Save these credentials securely!"
@@ -177,6 +217,13 @@ EOF
 
 systemctl daemon-reload
 systemctl enable fulexo.service
+
+# Database setup
+print_status "Setting up database..."
+cd /opt/fulexo/apps/api
+sudo -u fulexo npm install
+sudo -u fulexo npm run prisma:generate
+print_status "Database dependencies installed"
 
 # Setup log rotation
 print_status "Setting up log rotation..."
@@ -255,15 +302,16 @@ print_status "Installation completed!"
 echo ""
 echo "================================================"
 echo "NEXT STEPS:"
-echo "1. Edit environment variables: vim /opt/fulexo/compose/.env"
-echo "2. Update domain names in: /opt/fulexo/compose/nginx/conf.d/app.conf"
+echo "1. Edit environment variables: vim /etc/fulexo/fulexo.env"
+echo "2. Update your domain names in the .env file"
 echo "3. Setup SSL certificates: /opt/fulexo/scripts/setup-ssl.sh"
 echo "4. Start the application: systemctl start fulexo"
-echo "5. Check status: systemctl status fulexo"
-echo "6. View logs: docker logs -f compose-api-1"
+echo "5. Initialize database: cd /opt/fulexo/apps/api && npm run prisma:migrate:deploy && npm run prisma:seed"
+echo "6. Check status: systemctl status fulexo"
+echo "7. View logs: docker logs -f compose-api-1"
 echo ""
 echo "IMPORTANT URLS (after configuration):"
-echo "- Application: https://app.yourdomain.com"
+echo "- Application: https://panel.yourdomain.com"
 echo "- API: https://api.yourdomain.com"
 echo "- MinIO Console: http://your-ip:9001"
 echo "- Uptime Kuma: http://your-ip:3001"

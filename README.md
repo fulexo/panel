@@ -31,11 +31,17 @@ cd fulexo
 
 ### 2. Environment Setup
 ```bash
-# Copy the environment file
-cp compose/.env.example compose/.env
+# Copy the environment template file
+cp compose/env-template compose/.env
 
 # Edit the .env file with your settings
 nano compose/.env
+
+# Update the following required values:
+# - DOMAIN_API and DOMAIN_APP with your actual domains
+# - All password fields with secure passwords
+# - JWT_SECRET with a 64+ character random string
+# - ENCRYPTION_KEY with a 32 character random string
 ```
 
 ### 3. Database Setup
