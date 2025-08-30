@@ -1,0 +1,43 @@
+import { Controller, Get, Put, Delete, Param, Body, Query } from '@nestjs/common';
+import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { UsersService } from './users.service';
+
+@ApiTags('users')
+@ApiBearerAuth()
+@Controller('users')
+export class UsersController {
+  constructor(private readonly users: UsersService) {}
+
+  @Get()
+  @Roles('FULEXO_ADMIN', 'FULEXO_STAFF', 'CUSTOMER_ADMIN')
+  @ApiOperation({ summary: 'List users' })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'search', required: false, type: String })
+  async list(@CurrentUser() user: any, @Query('page') page = 1, @Query('limit') limit = 50, @Query('search') search?: string) {
+    return this.users.list(user, Number(page), Number(limit), search);
+  }
+
+  @Get(':id')
+  @Roles('FULEXO_ADMIN', 'FULEXO_STAFF', 'CUSTOMER_ADMIN')
+  @ApiOperation({ summary: 'Get user' })
+  async get(@CurrentUser() user: any, @Param('id') id: string) {
+    return this.users.get(user, id);
+  }
+
+  @Put(':id')
+  @Roles('FULEXO_ADMIN', 'FULEXO_STAFF', 'CUSTOMER_ADMIN')
+  @ApiOperation({ summary: 'Update user' })
+  async update(@CurrentUser() user: any, @Param('id') id: string, @Body() body: any) {
+    return this.users.update(user, id, body);
+  }
+
+  @Delete(':id')
+  @Roles('FULEXO_ADMIN')
+  @ApiOperation({ summary: 'Delete user (admin only)' })
+  async remove(@CurrentUser() user: any, @Param('id') id: string) {
+    return this.users.remove(user, id);
+  }
+}

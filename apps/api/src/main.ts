@@ -7,6 +7,7 @@ import { JwtService } from './jwt';
 import { AuthModule } from './auth/auth.module';
 import { OrdersModule } from './orders/orders.module';
 import { ShipmentsModule } from './shipments/shipments.module';
+import { UsersModule } from './users/users.module';
 import { ProductsModule } from './products/products.module';
 import { InvoicesModule } from './invoices/invoices.module';
 import { ReturnsModule } from './returns/returns.module';
@@ -52,6 +53,7 @@ class JwksController {
 
 @Module({ 
   imports: [
+    UsersModule,
     AuthModule,
     OrdersModule,
     ShipmentsModule,

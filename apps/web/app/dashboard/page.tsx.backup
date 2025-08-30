@@ -118,6 +118,33 @@ export default function DashboardPage() {
         </div>
       </header>
 
+      {/* Navigation */}
+      <nav className="bg-gray-800 border-b border-gray-700">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex space-x-8">
+            <a href="/dashboard" className="text-white py-3 px-1 border-b-2 border-blue-500">
+              Dashboard
+            </a>
+            <a href="/orders" className="text-gray-300 hover:text-white py-3 px-1">
+              Orders
+            </a>
+            <a href="/shipments" className="text-gray-300 hover:text-white py-3 px-1">
+              Shipments
+            </a>
+            <a href="/products" className="text-gray-300 hover:text-white py-3 px-1">
+              Products
+            </a>
+            <a href="/customers" className="text-gray-300 hover:text-white py-3 px-1">
+              Customers
+            </a>
+            {(user?.role === 'FULEXO_ADMIN' || user?.role === 'FULEXO_STAFF') && (
+              <a href="/settings" className="text-gray-300 hover:text-white py-3 px-1">
+                Settings
+              </a>
+            )}
+          </div>
+        </div>
+      </nav>
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
