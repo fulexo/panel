@@ -88,7 +88,7 @@ async function bootstrap(){
   // CORS configuration
   app.enableCors({
     origin: (origin, cb) => {
-      return cb(null, true);
+      if (process.env.NODE_ENV !== 'production') return cb(null, true);
       const allowed = new Set([
         `https://${process.env.DOMAIN_APP}`,
         `https://${process.env.DOMAIN_API}`,
