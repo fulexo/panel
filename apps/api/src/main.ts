@@ -71,7 +71,8 @@ class JwksController {
     PrismaModule,
   ],
   controllers: [HealthController, MetricsController, JwksController], 
-  providers: [JwtService] 
+  providers: [JwtService],
+  exports: [JwtService]
 })
 class AppModule {}
 

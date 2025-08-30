@@ -3,7 +3,6 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { SessionService } from './session.service';
 import { TwoFactorService } from './twofactor.service';
-import { JwtService } from '../jwt';
 import { PrismaService } from '../prisma.service';
 import { AuditService } from '../audit/audit.service';
 import { APP_GUARD } from '@nestjs/core';
@@ -17,7 +16,6 @@ import { RateLimitGuard } from '../rate-limit.guard';
     AuthService,
     SessionService,
     TwoFactorService,
-    JwtService,
     PrismaService,
     AuditService,
     {
