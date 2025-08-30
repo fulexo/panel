@@ -1,10 +1,10 @@
 Linux fulexo-panel 6.14.0-29-generic #29-Ubuntu SMP PREEMPT_DYNAMIC Thu Aug  7 18:32:38 UTC 2025 x86_64 x86_64 x86_64 GNU/Linux
 Filesystem      Size  Used Avail Use% Mounted on
-tmpfs           197M  1.6M  196M   1% /run
-/dev/vda1        33G   17G   17G  51% /
+tmpfs           197M  1.5M  196M   1% /run
+/dev/vda1        33G   19G   15G  57% /
 tmpfs           984M     0  984M   0% /dev/shm
 tmpfs           5.0M     0  5.0M   0% /run/lock
-tmpfs           984M   24K  984M   1% /tmp
+tmpfs           984M   32K  984M   1% /tmp
 tmpfs           1.0M     0  1.0M   0% /run/credentials/systemd-journald.service
 tmpfs           1.0M     0  1.0M   0% /run/credentials/systemd-resolved.service
 /dev/vda13      989M  128M  794M  14% /boot
@@ -12,13 +12,12 @@ tmpfs           1.0M     0  1.0M   0% /run/credentials/systemd-resolved.service
 tmpfs           1.0M     0  1.0M   0% /run/credentials/systemd-networkd.service
 tmpfs           1.0M     0  1.0M   0% /run/credentials/getty@tty1.service
 tmpfs           1.0M     0  1.0M   0% /run/credentials/serial-getty@ttyS0.service
-overlay          33G   17G   17G  51% /var/lib/docker/overlay2/a44d2cb6617a27ba5fa89fa47041aac7a080a2d6cfb8524025b884b59dd081b2/merged
-overlay          33G   17G   17G  51% /var/lib/docker/overlay2/2c7a856d85ec56f5397a31bcda66bb7d46386e41d7dc56d6f7715c1d426620b5/merged
-overlay          33G   17G   17G  51% /var/lib/docker/overlay2/525c35489ec6519ce476f2d6d9f4ae0a8150a38032e51713d7cc4981a78638cf/merged
+overlay          33G   19G   15G  57% /var/lib/docker/overlay2/a44d2cb6617a27ba5fa89fa47041aac7a080a2d6cfb8524025b884b59dd081b2/merged
+overlay          33G   19G   15G  57% /var/lib/docker/overlay2/2c7a856d85ec56f5397a31bcda66bb7d46386e41d7dc56d6f7715c1d426620b5/merged
+overlay          33G   19G   15G  57% /var/lib/docker/overlay2/525c35489ec6519ce476f2d6d9f4ae0a8150a38032e51713d7cc4981a78638cf/merged
 tmpfs           197M   12K  197M   1% /run/user/0
-overlay          33G   17G   17G  51% /var/lib/docker/overlay2/d9b56a3572d58287c7bf6e5dafdf9f3dd3ac99f812ecd9eb3cef4da712db4444/merged
-overlay          33G   17G   17G  51% /var/lib/docker/overlay2/e838086e713ed479fb471212dbb1a85487633031d797b7ea853686f00225a667/merged
-overlay          33G   17G   17G  51% /var/lib/docker/overlay2/801340e76cb6a1c345d0ea4d98673d8316bb9ea5b13c14b6ed2c159bba9ad988/merged
+overlay          33G   19G   15G  57% /var/lib/docker/overlay2/d9b56a3572d58287c7bf6e5dafdf9f3dd3ac99f812ecd9eb3cef4da712db4444/merged
+overlay          33G   19G   15G  57% /var/lib/docker/overlay2/e838086e713ed479fb471212dbb1a85487633031d797b7ea853686f00225a667/merged
                total        used        free      shared  buff/cache   available
-Mem:           1.9Gi       1.2Gi       172Mi        22Mi       750Mi       709Mi
+Mem:           1.9Gi       1.3Gi        81Mi        22Mi       725Mi       593Mi
 Swap:             0B          0B          0B

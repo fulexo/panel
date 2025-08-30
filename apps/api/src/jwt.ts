@@ -7,7 +7,7 @@ export type JwtPair = { access: string; refresh: string };
 
 @Injectable()
 export class JwtService {
-  private alg = process.env.NODE_ENV === "production" ? "RS256" : "HS256";
+  private alg = "HS256";
   private privateKey?: any;
   private publicKey?: any;
   private publicJwks?: any;
