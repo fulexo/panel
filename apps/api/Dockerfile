@@ -1,7 +1,7 @@
 FROM node:20-alpine as build
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci || npm i
+RUN npm install
 COPY . .
 RUN npx prisma generate
 RUN npx tsc

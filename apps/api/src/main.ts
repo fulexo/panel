@@ -18,6 +18,7 @@ import { BillingModule } from './billing/billing.module';
 import { InboundModule } from './inbound/inbound.module';
 import { PolicyModule } from './policy/policy.module';
 import { CustomersModule } from './customers/customers.module';
+import { PrismaModule } from './modules/prisma/prisma.module';
 
 @Controller('health')
 class HealthController { 
@@ -65,6 +66,7 @@ class JwksController {
     InboundModule,
     PolicyModule,
     CustomersModule,
+    PrismaModule,
   ],
   controllers: [HealthController, MetricsController, JwksController], 
   providers: [JwtService] 

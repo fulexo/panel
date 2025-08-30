@@ -279,7 +279,7 @@ export class AuthService {
       tenantId: user.tenantId,
     };
 
-    const tokens = await this.jwtService.issueTokens(payload);
+    const tokens = await this.jwtService.issueTokens(user.id, user.email, user.role);
     return tokens;
   }
 

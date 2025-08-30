@@ -259,7 +259,7 @@ const server = http.createServer(async (req, res) => {
       res.end(JSON.stringify({
         status: 'healthy',
         uptime: process.uptime(),
-        activeJobs: (await worker.getJobs()).length,
+        activeJobs: await worker.getJobCounts(),
       }));
     } else {
       res.writeHead(503, { 'Content-Type': 'application/json' });

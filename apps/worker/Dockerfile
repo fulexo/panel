@@ -4,7 +4,7 @@ RUN apk add --no-cache wget
 
 # Copy worker package and install deps
 COPY apps/worker/package*.json ./
-RUN npm ci || npm i
+RUN npm install
 
 # Copy worker source
 COPY apps/worker/ .

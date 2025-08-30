@@ -26,7 +26,7 @@ export class EmailService {
       throw new Error('Email settings not configured');
     }
 
-    return nodemailer.createTransporter({
+    return nodemailer.createTransport({
       host: settings.smtp_host,
       port: parseInt(settings.smtp_port || '587'),
       secure: settings.smtp_secure === 'true',
