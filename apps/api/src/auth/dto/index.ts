@@ -8,7 +8,7 @@ export class LoginDto {
 
   @ApiProperty({ example: 'Admin123!' })
   @IsString()
-  @MinLength(8)
+  @MinLength(6)
   password: string;
 }
 
@@ -19,7 +19,7 @@ export class RegisterDto {
 
   @ApiProperty({ example: 'SecurePass123!' })
   @IsString()
-  @MinLength(8)
+  @MinLength(6)
   password: string;
 
   @ApiProperty()
@@ -41,7 +41,7 @@ export class RefreshTokenDto {
 export class Enable2FADto {
   @ApiProperty()
   @IsString()
-  @MinLength(8)
+  @MinLength(6)
   password: string;
 }
 
