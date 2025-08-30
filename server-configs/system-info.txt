@@ -25,8 +25,8 @@ tmpfs           197M   12K  197M   1% /run/user/0
 overlay          33G   16G   18G  48% /var/lib/docker/overlay2/6d0a2bbd0c7a9265c9102cec7be20238e94850413536007f0194ece03c557acb/merged
 overlay          33G   16G   18G  48% /var/lib/docker/overlay2/d9b56a3572d58287c7bf6e5dafdf9f3dd3ac99f812ecd9eb3cef4da712db4444/merged
 overlay          33G   16G   18G  48% /var/lib/docker/overlay2/e838086e713ed479fb471212dbb1a85487633031d797b7ea853686f00225a667/merged
-overlay          33G   16G   18G  48% /var/lib/docker/overlay2/43788969ffbbed0eac6ae043e1338b5acee6eaeb74ed6219479088107e16711e/merged
+overlay          33G   16G   18G  48% /var/lib/docker/overlay2/0ce5ce47d9a431399756f0bd5d611ff7dd33dda8532ce198425255fd90f4bcfa/merged
 overlay          33G   16G   18G  48% /var/lib/docker/overlay2/3bef109de45cf5754835d7049c84cf71fa11dec0b94c004686f118613a28bc1e/merged
                total        used        free      shared  buff/cache   available
-Mem:           1.9Gi       1.5Gi        82Mi        23Mi       519Mi       403Mi
+Mem:           1.9Gi       1.5Gi        71Mi        23Mi       513Mi       385Mi
 Swap:             0B          0B          0B
