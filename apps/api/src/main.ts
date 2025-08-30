@@ -7,7 +7,6 @@ import { JwtService } from './jwt';
 import { AuthModule } from './auth/auth.module';
 import { OrdersModule } from './orders/orders.module';
 import { ShipmentsModule } from './shipments/shipments.module';
-import { UsersModule } from './users/users.module';
 import { ProductsModule } from './products/products.module';
 import { InvoicesModule } from './invoices/invoices.module';
 import { ReturnsModule } from './returns/returns.module';
@@ -21,8 +20,10 @@ import { PolicyModule } from './policy/policy.module';
 import { CustomersModule } from './customers/customers.module';
 import { PrismaModule } from './modules/prisma/prisma.module';
 
+import { Public } from './auth/decorators/public.decorator';
 @Controller('health')
 class HealthController { 
+  @Public()
   @Get() 
   health(){ 
     return {
@@ -53,7 +54,6 @@ class JwksController {
 
 @Module({ 
   imports: [
-    UsersModule,
     AuthModule,
     OrdersModule,
     ShipmentsModule,
