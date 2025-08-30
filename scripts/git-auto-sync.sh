@@ -4,10 +4,34 @@ BACKUP_DIR="/opt/fulexo/server-configs"
 
 cd /opt/fulexo
 
-echo "$(date): Auto-sync başlatıldı" >> $LOG_FILE
+echo "$(date): Auto-sync başlatıldı (İki yönlü)" >> $LOG_FILE
+
+# ÖNCE GitHub'dan güncellemeleri çek
+echo "$(date): GitHub'dan güncellemeler kontrol ediliyor..." >> $LOG_FILE
+git fetch origin main
+
+# Remote'da değişiklik var mı kontrol et
+LOCAL=$(git rev-parse HEAD)
+REMOTE=$(git rev-parse origin/main)
+
+if [ "$LOCAL" != "$REMOTE" ]; then
+    echo "$(date): GitHub'da yeni değişiklikler bulundu, çekiliyor..." >> $LOG_FILE
+    git pull origin main
+    
+    # Docker servislerini yeniden başlat (eğer Docker dosyaları değiştiyse)
+    if git diff --name-only HEAD~1 | grep -q "compose\|Dockerfile"; then
+        echo "$(date): Docker dosyaları değişti, servisler yeniden başlatılıyor..." >> $LOG_FILE
+        cd /opt/fulexo/compose
+        docker compose --env-file /etc/fulexo/fulexo.env up -d --build 2>/dev/null
+        cd /opt/fulexo
+        echo "$(date): Docker servisleri güncellendi" >> $LOG_FILE
+    fi
+else
+    echo "$(date): GitHub'da yeni değişiklik yok" >> $LOG_FILE
+fi
 
 # Güncel sistem bilgilerini güncelle
-echo "Sistem bilgileri güncelleniyor..." >> $LOG_FILE
+echo "$(date): Sistem bilgileri güncelleniyor..." >> $LOG_FILE
 
 # Database backup
 cd /opt/fulexo/compose
@@ -20,9 +44,9 @@ df -h >> server-configs/system-info.txt
 free -h >> server-configs/system-info.txt
 docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" > server-configs/docker-status.txt
 
-# Git değişikliklerini kontrol et
+# SONRA local değişiklikleri push et
 if [[ -n $(git status --porcelain) ]]; then
-    echo "$(date): Değişiklikler tespit edildi, senkronizasyon başlatılıyor..." >> $LOG_FILE
+    echo "$(date): Local değişiklikler tespit edildi, GitHub'a gönderiliyor..." >> $LOG_FILE
     
     git add .
     git commit -m "🤖 Auto-sync: $(date '+%Y-%m-%d %H:%M:%S')
@@ -34,15 +58,16 @@ if [[ -n $(git status --porcelain) ]]; then
     git push origin main
     
     if [ $? -eq 0 ]; then
-        echo "$(date): Senkronizasyon tamamlandı ✅" >> $LOG_FILE
+        echo "$(date): Local değişiklikler GitHub'a gönderildi ✅" >> $LOG_FILE
     else
-        echo "$(date): Senkronizasyon hatası ❌" >> $LOG_FILE
+        echo "$(date): GitHub push hatası ❌" >> $LOG_FILE
     fi
 else
-    echo "$(date): Değişiklik yok, senkronizasyon atlandı" >> $LOG_FILE
+    echo "$(date): Local değişiklik yok" >> $LOG_FILE
 fi
 
 # Eski backup'ları temizle (7 günden eski)
 find server-configs/databases/ -name "*.sql" -mtime +7 -delete 2>/dev/null
 
-echo "$(date): Auto-sync tamamlandı" >> $LOG_FILE
+echo "$(date): İki yönlü auto-sync tamamlandı" >> $LOG_FILE
+echo "----------------------------------------" >> $LOG_FILE
