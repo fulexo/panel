@@ -4,7 +4,7 @@ tmpfs           197M  1.6M  196M   1% /run
 /dev/vda1        33G   12G   22G  35% /
 tmpfs           984M     0  984M   0% /dev/shm
 tmpfs           5.0M     0  5.0M   0% /run/lock
-tmpfs           984M   40K  984M   1% /tmp
+tmpfs           984M   48K  984M   1% /tmp
 tmpfs           1.0M     0  1.0M   0% /run/credentials/systemd-journald.service
 tmpfs           1.0M     0  1.0M   0% /run/credentials/systemd-resolved.service
 /dev/vda13      989M  128M  794M  14% /boot
@@ -20,5 +20,5 @@ overlay          33G   12G   22G  35% /var/lib/docker/overlay2/1cbdc0de35581c0a9
 overlay          33G   12G   22G  35% /var/lib/docker/overlay2/50a84a18e7f68c65f219443f39110961a1732fe893de8762a3e487b8d8ff5b88/merged
 overlay          33G   12G   22G  35% /var/lib/docker/overlay2/6314e7b5030833ff726a7f8c38b5567732e5fcd5d8f183daf0ceab41e315f1e1/merged
                total        used        free      shared  buff/cache   available
-Mem:           1.9Gi       1.3Gi       154Mi        22Mi       723Mi       666Mi
+Mem:           1.9Gi       1.3Gi       118Mi        22Mi       757Mi       665Mi
 Swap:             0B          0B          0B
