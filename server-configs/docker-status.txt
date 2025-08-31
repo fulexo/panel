@@ -2,6 +2,6 @@ NAMES                STATUS                  PORTS
 compose-nginx-1      Up 2 hours              0.0.0.0:80->80/tcp, [::]:80->80/tcp, 0.0.0.0:443->443/tcp, [::]:443->443/tcp
 compose-web-1        Up 12 hours             3000/tcp
 compose-api-1        Up 12 hours (healthy)   3000/tcp
-compose-minio-1      Up 12 hours             0.0.0.0:9000-9001->9000-9001/tcp, [::]:9000-9001->9000-9001/tcp
-compose-postgres-1   Up 12 hours             5432/tcp
-compose-valkey-1     Up 12 hours             6379/tcp
+compose-minio-1      Up 13 hours             0.0.0.0:9000-9001->9000-9001/tcp, [::]:9000-9001->9000-9001/tcp
+compose-postgres-1   Up 13 hours             5432/tcp
+compose-valkey-1     Up 13 hours             6379/tcp
