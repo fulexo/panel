@@ -1,10 +1,12 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '../../components/AuthProvider';
 
 export default function LoginPage() {
   const { login } = useAuth();
+  const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -18,7 +20,12 @@ export default function LoginPage() {
     try {
       await login(email, password);
     } catch (err: any) {
-      setError(err.message === '2FA_REQUIRED' ? '2FA kod gerekli' : 'Giriş başarısız');
+      if (err.message === '2FA_REQUIRED') {
+        // 2FA sayfasına yönlendir
+        router.push('/login/2fa');
+        return;
+      }
+      setError('Giriş başarısız');
     } finally {
       setLoading(false);
     }

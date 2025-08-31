@@ -29,13 +29,18 @@ export class RateLimitGuard implements CanActivate {
     const id = opts.scope === 'user' && user?.sub ? user.sub : req.ip;
     const key = `rl:${opts.name}:${id}`;
 
-    const rl = await this.limiter.check(key, opts.limit, opts.windowMs);
-    if (!rl.allowed) {
-      if (rl.retryAfterMs) {
-        try { res.setHeader('Retry-After', Math.ceil(Number(rl.retryAfterMs) / 1000)); } catch {}
+    try {
+      const rl = await this.limiter.check(key, opts.limit, opts.windowMs);
+      if (!rl.allowed) {
+        if (rl.retryAfterMs) {
+          try { res.setHeader('Retry-After', Math.ceil(Number(rl.retryAfterMs) / 1000)); } catch {}
+        }
+        throw new HttpException('Rate limit exceeded', HttpStatus.TOO_MANY_REQUESTS);
       }
-      throw new HttpException('Rate limit exceeded', HttpStatus.TOO_MANY_REQUESTS);
+      return true;
+    } catch (e) {
+      // If Redis/ratelimiter is unavailable, fail-open to avoid blocking auth completely
+      return true;
     }
-    return true;
   }
 }
