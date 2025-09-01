@@ -110,7 +110,7 @@ async function bootstrap(){
   if (process.env.NODE_ENV !== 'production') {
     const config = new DocumentBuilder()
       .setTitle('Fulexo API')
-      .setDescription('BaseLinker Integration Platform API')
+      .setDescription('Commerce Integration Platform API')
       .setVersion('1.0')
       .addBearerAuth()
       .addServer('http://localhost:3000')

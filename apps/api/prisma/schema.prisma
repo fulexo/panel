@@ -12,7 +12,7 @@ model Tenant {
   name      String
   slug      String   @unique
   users     User[]
-  blAccounts BLAccount[]
+  
   ownershipRules OwnershipRule[]
   customers Customer[]
   orders    Order[]
@@ -67,21 +67,6 @@ model Session {
   @@index([userId])
 }
 
-model BLAccount {
-  id             String   @id @default(uuid())
-  tenantId       String?
-  label          String?
-  tokenEncrypted Bytes
-  keyVersion     Int      @default(1)
-  active         Boolean  @default(true)
-  lastSyncAt     DateTime?
-  syncState      Json?
-  rateLimitReset DateTime?
-  tenant         Tenant?  @relation(fields: [tenantId], references: [id])
-  orders         Order[]
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-}
 
 model OwnershipRule {
   id             String  @id @default(uuid())
@@ -173,7 +158,7 @@ model Order {
   id             String   @id @default(uuid())
   tenantId       String
   customerId     String?
-  accountId      String?
+  
   orderNo        Int?
   blOrderId      String
   externalOrderNo String?
@@ -194,14 +179,14 @@ model Order {
   updatedAt      DateTime @updatedAt
   tenant         Tenant   @relation(fields: [tenantId], references: [id])
   customer       Customer? @relation(fields: [customerId], references: [id])
-  account        BLAccount? @relation(fields: [accountId], references: [id])
+  
   items          OrderItem[]
   shipments      Shipment[]
   returns        Return[]
   invoices       Invoice[]
   serviceCharges OrderServiceCharge[]
 
-  @@unique([tenantId, blOrderId])
+  @@index([tenantId, blOrderId])
   @@unique([tenantId, orderNo])
   @@index([tenantId, status, confirmedAt])
   @@index([tenantId, customerEmail])

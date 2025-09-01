@@ -13,10 +13,7 @@ export interface SettingCategory {
     smtp_secure: string;
   };
   baselinker: {
-    api_key: string;
-    api_url: string;
-    sync_interval: string;
-    auto_sync: string;
+    // removed
   };
   notification: {
     slack_webhook: string;
@@ -176,16 +173,12 @@ export class SettingsService {
   }
 
   async testBaseLinkerConnection(tenantId: string): Promise<boolean> {
-    // Import BaseLinker service dynamically to avoid circular dependency
-    const { BaseLinkerService } = await import('../baselinker/baselinker.service');
-    const baseLinkerService = new BaseLinkerService(this);
-    return baseLinkerService.testConnection(tenantId);
+    throw new Error('BaseLinker is not supported');
   }
 
   private getSecretKeys(category: string): string[] {
     const secretKeys: Record<string, string[]> = {
       email: ['smtp_pass'],
-      baselinker: ['api_key'],
       notification: ['slack_webhook', 'discord_webhook'],
     };
 

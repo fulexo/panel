@@ -1,6 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
-import { BaseLinkerClient } from '../bl-client';
 import { CacheService } from '../cache/cache.service';
 import { EncryptionService } from '../crypto';
 import Redis from 'ioredis';
@@ -10,7 +9,6 @@ import { Queue, Worker } from 'bullmq';
 export class SyncService {
   private readonly logger = new Logger(SyncService.name);
   private redis: Redis;
-  private blClient: BaseLinkerClient;
   private encryptionService: EncryptionService;
   private syncQueue: Queue;
   private readonly queueName = 'fx-jobs';
@@ -20,7 +18,7 @@ export class SyncService {
     private cache: CacheService,
   ) {
     this.redis = new Redis(process.env.REDIS_URL || 'redis://valkey:6379/0');
-    this.blClient = new BaseLinkerClient(this.redis);
+    // BaseLinker removed
     this.encryptionService = new EncryptionService(
       process.env.ENCRYPTION_KEY || '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'
     );
@@ -36,18 +34,13 @@ export class SyncService {
 
     try {
       // Get account details
-      const account = await this.prisma.bLAccount.findUnique({
-        where: { id: accountId },
-        include: { tenant: true },
-      });
+      // Placeholder: account retrieval removed with BaseLinker; use WooStore in new flows
+      const account: any = null;
 
-      if (!account || !account.active) {
-        this.logger.warn(`Account ${accountId} not found or inactive`);
-        return;
-      }
+      // No-op if account concept not applicable
 
       // Decrypt token
-      const token = this.decryptToken(account.tokenEncrypted as any);
+      const token = '';
 
       // Get sync state
       const syncState = await this.getSyncState(accountId, 'orders');
@@ -55,16 +48,15 @@ export class SyncService {
         ? new Date((syncState!.checkpoint as any).lastDate)
         : new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
-      // Call BaseLinker API
+      // Source system removed (BaseLinker). Placeholder for Woo import.
       const params = {
         date_confirmed_from: Math.floor(lastSyncDate.getTime() / 1000),
         get_unconfirmed_orders: false,
       };
 
-      const response = await this.blClient.request('getOrders', params, token, accountId);
-      const orders = response.orders || [];
+      const orders: any[] = [];
 
-      this.logger.log(`Fetched ${orders.length} orders from BaseLinker`);
+      this.logger.log(`Fetched ${orders.length} orders`);
 
       // Process orders
       for (const blOrder of orders) {
@@ -78,9 +70,7 @@ export class SyncService {
       });
 
       // Invalidate cache
-      if (account.tenantId) {
-        await this.cache.invalidateOrderCache(account.tenantId);
-      }
+      // noop invalidate until source is defined
 
       this.logger.log(`Order sync completed for account ${accountId}`);
     } catch (error) {
@@ -140,7 +130,7 @@ export class SyncService {
       const orderData = {
         tenantId,
         customerId,
-        accountId: account.id,
+        
         blOrderId: String(blOrder.order_id),
         externalOrderNo: blOrder.external_order_id,
         orderSource: blOrder.order_source,
@@ -283,7 +273,7 @@ export class SyncService {
   }
 
   private mapOrderStatus(statusId: number): string {
-    // Map BaseLinker status IDs to internal statuses
+    // Map external status IDs to internal statuses
     const statusMap: { [key: number]: string } = {
       1: 'pending',
       2: 'processing',
@@ -372,17 +362,7 @@ export class SyncService {
   }
 
   async scheduleSyncForAllAccounts() {
-    const accounts = await this.prisma.bLAccount.findMany({
-      where: { active: true },
-    });
-
-    for (const account of accounts) {
-      await this.scheduleSync(account.id, 'orders');
-      await this.scheduleSync(account.id, 'shipments');
-      await this.scheduleSync(account.id, 'returns');
-      await this.scheduleSync(account.id, 'invoices');
-    }
-
-    this.logger.log(`Scheduled sync for ${accounts.length} accounts`);
+    // Placeholder: iterate Woo stores when implementing Woo sync
+    this.logger.log(`Scheduled sync - no accounts configured`);
   }
 }

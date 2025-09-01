@@ -1,4 +1,4 @@
-import { BaseLinkerSettings } from '../../components/settings/BaseLinkerSettings'
+ 
 
 export default function SettingsPage() {
   return (
@@ -10,13 +10,7 @@ export default function SettingsPage() {
         </div>
 
         <div className="grid gap-6">
-          <div className="rounded-lg border border-gray-800 bg-gray-800 p-6">
-            <div className="mb-4">
-              <h3 className="text-xl font-semibold">BaseLinker Integration</h3>
-              <p className="text-sm text-gray-400">Configure BaseLinker API connection</p>
-            </div>
-            <BaseLinkerSettings />
-          </div>
+          
 
           <div className="rounded-lg border border-gray-800 bg-gray-800 p-6">
             <div className="mb-2">
