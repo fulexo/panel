@@ -20,5 +20,5 @@ overlay          33G   12G   22G  35% /var/lib/docker/overlay2/1cbdc0de35581c0a9
 overlay          33G   12G   22G  35% /var/lib/docker/overlay2/50a84a18e7f68c65f219443f39110961a1732fe893de8762a3e487b8d8ff5b88/merged
 overlay          33G   12G   22G  35% /var/lib/docker/overlay2/6314e7b5030833ff726a7f8c38b5567732e5fcd5d8f183daf0ceab41e315f1e1/merged
                total        used        free      shared  buff/cache   available
-Mem:           1.9Gi       1.3Gi       182Mi        22Mi       702Mi       681Mi
+Mem:           1.9Gi       1.3Gi       172Mi        22Mi       704Mi       673Mi
 Swap:             0B          0B          0B
