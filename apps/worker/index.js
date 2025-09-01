@@ -77,15 +77,113 @@ const jobProcessors = {
   // WooCommerce sync placeholders
   'woo-sync-orders': async (job) => {
     const { storeId } = job.data;
+    const start = Date.now();
     console.log(`Syncing Woo orders for store ${storeId}`);
-    await new Promise(r=>setTimeout(r, 1000));
-    return { success: true };
+    const store = await prisma.wooStore.findUnique({ where: { id: storeId } });
+    if(!store) { throw new Error('Store not found'); }
+    // Determine last sync
+    const last = (store.lastSync && store.lastSync.ordersUpdatedAfter) ? store.lastSync.ordersUpdatedAfter : null;
+    const since = last ? new Date(last) : new Date(Date.now() - 7*24*60*60*1000);
+    const updatedAfter = since.toISOString();
+    let page = 1;
+    let imported = 0;
+    while(true){
+      const url = new URL(`/wp-json/wc/${store.apiVersion}/orders`, store.baseUrl);
+      url.searchParams.set('per_page', '50');
+      url.searchParams.set('page', String(page));
+      url.searchParams.set('orderby', 'date_modified');
+      url.searchParams.set('order', 'asc');
+      url.searchParams.set('modified_after', updatedAfter);
+      const res = await fetch(url, { headers: { Authorization: 'Basic '+Buffer.from(store.consumerKey+':'+store.consumerSecret).toString('base64') } });
+      if(!res.ok){ throw new Error('Woo HTTP '+res.status); }
+      const list = await res.json();
+      if(!Array.isArray(list) || list.length===0) break;
+      for(const o of list){
+        const existing = await prisma.order.findFirst({ where: { tenantId: store.tenantId, externalOrderNo: String(o.number || o.id) } });
+        const orderData = {
+          tenantId: store.tenantId,
+          externalOrderNo: String(o.number || o.id),
+          orderSource: 'woo',
+          status: String(o.status || 'pending'),
+          mappedStatus: String(o.status || 'pending'),
+          total: o.total ? new prisma.Prisma.Decimal(o.total) : null,
+          currency: o.currency || 'TRY',
+          customerEmail: o.billing?.email || null,
+          customerPhone: o.billing?.phone || null,
+          shippingAddress: o.shipping || null,
+          billingAddress: o.billing || null,
+          paymentMethod: o.payment_method || null,
+          confirmedAt: o.date_paid ? new Date(o.date_paid) : (o.date_created ? new Date(o.date_created) : new Date()),
+        };
+        let orderId = existing?.id;
+        if(existing){
+          await prisma.order.update({ where: { id: existing.id }, data: { ...orderData, updatedAt: new Date() } });
+        } else {
+          const created = await prisma.order.create({ data: orderData });
+          orderId = created.id;
+        }
+        imported++;
+        // Items
+        if(Array.isArray(o.line_items)){
+          // simple upsert: delete and recreate items for now
+          if(orderId){
+            await prisma.orderItem.deleteMany({ where: { orderId } });
+            for(const li of o.line_items){
+              await prisma.orderItem.create({ data: {
+                orderId,
+                sku: li.sku || null,
+                name: li.name || null,
+                qty: Number(li.quantity || 0),
+                price: li.total ? new prisma.Prisma.Decimal(li.total) : null,
+              }});
+            }
+          }
+        }
+      }
+      page++;
+    }
+    // update lastSync
+    await prisma.wooStore.update({ where: { id: storeId }, data: { lastSync: { ...(store.lastSync||{}), ordersUpdatedAfter: new Date().toISOString() } } });
+    const dur = (Date.now()-start)/1000;
+    syncLagGauge.set({ account_id: storeId, entity_type: 'orders' }, 0);
+    return { success: true, storeId, imported, duration: dur };
   },
   'woo-sync-products': async (job) => {
     const { storeId } = job.data;
     console.log(`Syncing Woo products for store ${storeId}`);
-    await new Promise(r=>setTimeout(r, 1000));
-    return { success: true };
+    const store = await prisma.wooStore.findUnique({ where: { id: storeId } });
+    if(!store) throw new Error('Store not found');
+    let page = 1; let imported = 0;
+    while(true){
+      const url = new URL(`/wp-json/wc/${store.apiVersion}/products`, store.baseUrl);
+      url.searchParams.set('per_page','50');
+      url.searchParams.set('page', String(page));
+      const res = await fetch(url, { headers: { Authorization: 'Basic '+Buffer.from(store.consumerKey+':'+store.consumerSecret).toString('base64') } });
+      if(!res.ok) throw new Error('Woo HTTP '+res.status);
+      const list = await res.json();
+      if(!Array.isArray(list) || list.length===0) break;
+      for(const p of list){
+        const existing = await prisma.product.findFirst({ where: { tenantId: store.tenantId, sku: p.sku || String(p.id) } });
+        const data = {
+          tenantId: store.tenantId,
+          sku: p.sku || String(p.id),
+          name: p.name || null,
+          price: p.price ? new prisma.Prisma.Decimal(p.price) : null,
+          stock: (typeof p.stock_quantity==='number') ? p.stock_quantity : null,
+          images: Array.isArray(p.images) ? p.images.map(i=>i.src).filter(Boolean) : [],
+          tags: Array.isArray(p.tags) ? p.tags.map(t=>t.name).filter(Boolean) : [],
+          active: p.status !== 'draft' && p.status !== 'trash',
+        };
+        if(existing){
+          await prisma.product.update({ where: { id: existing.id }, data: { ...data, updatedAt: new Date() } });
+        } else {
+          await prisma.product.create({ data });
+        }
+        imported++;
+      }
+      page++;
+    }
+    return { success: true, storeId, imported };
   },
 
   'process-request': async (job) => {

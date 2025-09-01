@@ -1,7 +1,8 @@
-import { Controller, Get, Post, Delete, Param, Body } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Param, Body, Req, HttpCode } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { WooService } from './woo.service';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { Public } from '../auth/decorators/public.decorator';
 
 @ApiTags('woo')
 @ApiBearerAuth()
@@ -37,5 +38,16 @@ export class WooController {
   @ApiOperation({ summary: 'Register Woo webhooks for store' })
   async registerWebhooks(@CurrentUser() user: any, @Param('id') id: string){
     return this.woo.registerWebhooks(user.tenantId, id);
+  }
+
+  @Public()
+  @Post('webhooks/:id')
+  @HttpCode(202)
+  @ApiOperation({ summary: 'Woo webhook receiver (public)' })
+  async webhook(@Param('id') storeId: string, @Req() req: any, @Body() body: any){
+    const topic = req.headers['x-wc-webhook-topic'] || req.headers['X-WC-Webhook-Topic'] || 'unknown';
+    const signature = req.headers['x-wc-webhook-signature'] || req.headers['X-WC-Webhook-Signature'] || '';
+    await this.woo.handleWebhook(storeId, String(topic), String(signature), body);
+    return { ok: true };
   }
 }

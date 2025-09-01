@@ -1,5 +1,6 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
+import * as crypto from 'crypto';
 
 function buildAuthHeader(ck: string, cs: string){
   const token = Buffer.from(`${ck}:${cs}`).toString('base64');
@@ -25,6 +26,19 @@ export class WooService {
       webhookSecret: dto.webhookSecret || null,
       active: true,
     }});
+    // schedule initial syncs via fx-jobs
+    try {
+      const { Queue } = await import('bullmq');
+      const Redis = (await import('ioredis')).default;
+      const connection = new Redis(process.env.REDIS_URL || 'redis://valkey:6379/0', { maxRetriesPerRequest: null });
+      const q = new Queue('fx-jobs', { connection });
+      await q.add('woo-sync-orders', { storeId: store.id });
+      await q.add('woo-sync-products', { storeId: store.id });
+      await q.close();
+      await connection.quit();
+    } catch(e) {
+      // noop if queue unavailable
+    }
     return store;
   }
 
@@ -65,5 +79,40 @@ export class WooService {
       results.push({ topic, ok: r.ok, status: r.status });
     }
     return { results };
+  }
+
+  private verifySignature(payload: any, secret?: string, signature?: string){
+    if (!secret) return true; // allow if no secret configured
+    if (!signature) return false;
+    try{
+      const computed = crypto
+        .createHmac('sha256', secret)
+        .update(JSON.stringify(payload))
+        .digest('base64');
+      return crypto.timingSafeEqual(Buffer.from(computed), Buffer.from(String(signature)));
+    }catch{
+      return false;
+    }
+  }
+
+  async handleWebhook(storeId: string, topic: string, signature: string, payload: any){
+    const s = await this.prisma.wooStore.findFirst({ where: { id: storeId } });
+    if(!s) throw new BadRequestException('Store not found');
+
+    const valid = this.verifySignature(payload, s.webhookSecret || undefined, signature);
+    await this.prisma.webhookEvent.create({ data: {
+      tenantId: s.tenantId,
+      storeId: s.id,
+      provider: 'woocommerce',
+      topic,
+      signature: signature || null,
+      payload,
+      status: valid ? 'received' : 'failed',
+      error: valid ? null : 'invalid_signature',
+    }});
+    if(!valid) return;
+
+    // Basic ingest: keep as event; processing workers can pick it up
+    // Optionally, do light transforms here
   }
 }
