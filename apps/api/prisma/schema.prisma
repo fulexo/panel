@@ -27,6 +27,7 @@ model Tenant {
   billingBatches BillingBatch[]
   inboundShipments InboundShipment[]
   settings  Settings[]
+  wooStores WooStore[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -124,6 +125,22 @@ model EntityMap {
 
   @@unique([entityType, blId])
   @@index([tenantId])
+}
+
+// Generic mapping for remote provider entities (provider-agnostic)
+model RemoteEntityMap {
+  id         String   @id @default(uuid())
+  tenantId   String
+  storeId    String
+  provider   String   // 'woocommerce'
+  entityType String   // 'order' | 'product' | 'customer' | ...
+  remoteId   String
+  localType  String   // maps to local table type
+  localId    String
+  createdAt  DateTime @default(now())
+
+  @@unique([storeId, entityType, remoteId])
+  @@index([tenantId, provider, entityType])
 }
 
 model Customer {
@@ -380,6 +397,25 @@ model OAuthCredential {
   @@unique([tenantId, provider])
 }
 
+// WooCommerce store connection per tenant
+model WooStore {
+  id             String   @id @default(uuid())
+  tenantId       String
+  name           String
+  baseUrl        String   // https://shop.example.com
+  consumerKey    String
+  consumerSecret String
+  apiVersion     String   @default("v3")
+  webhookSecret  String?
+  active         Boolean  @default(true)
+  lastSync       Json?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  tenant         Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, active])
+}
+
 // Billing batch for semi-manual invoicing
 model BillingBatch {
   id         String   @id @default(uuid())
@@ -534,6 +570,24 @@ model SyncState {
   
   @@unique([accountId, entityType])
   @@index([status])
+}
+
+// Ingested webhook events
+model WebhookEvent {
+  id         String   @id @default(uuid())
+  tenantId   String
+  storeId    String
+  provider   String   // 'woocommerce'
+  topic      String
+  signature  String?
+  payload    Json
+  status     String   @default("received") // received, processed, failed
+  attempts   Int      @default(0)
+  error      String?
+  createdAt  DateTime @default(now())
+  processedAt DateTime?
+
+  @@index([tenantId, storeId, topic, status])
 }
 
 // JWT Keys for RS256 (persistence and rotation)

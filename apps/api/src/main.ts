@@ -19,6 +19,7 @@ import { InboundModule } from './inbound/inbound.module';
 import { PolicyModule } from './policy/policy.module';
 import { CustomersModule } from './customers/customers.module';
 import { PrismaModule } from './modules/prisma/prisma.module';
+import { WooModule } from './woocommerce/woo.module';
 
 import { Public } from './auth/decorators/public.decorator';
 @Controller('health')
@@ -69,6 +70,7 @@ class JwksController {
     PolicyModule,
     CustomersModule,
     PrismaModule,
+    WooModule,
   ],
   controllers: [HealthController, MetricsController, JwksController], 
   providers: [JwtService],

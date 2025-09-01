@@ -74,6 +74,20 @@ const jobProcessors = {
     return { success: true, accountId };
   },
 
+  // WooCommerce sync placeholders
+  'woo-sync-orders': async (job) => {
+    const { storeId } = job.data;
+    console.log(`Syncing Woo orders for store ${storeId}`);
+    await new Promise(r=>setTimeout(r, 1000));
+    return { success: true };
+  },
+  'woo-sync-products': async (job) => {
+    const { storeId } = job.data;
+    console.log(`Syncing Woo products for store ${storeId}`);
+    await new Promise(r=>setTimeout(r, 1000));
+    return { success: true };
+  },
+
   'process-request': async (job) => {
     const { requestId, action } = job.data;
     console.log(`Processing request ${requestId} with action ${action}`);
