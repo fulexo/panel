@@ -28,7 +28,7 @@ export default function OrderInfoPublic(){
       {!error && !data && <div className="text-gray-400">Loading...</div>}
       {data?.order && (
         <div className="bg-gray-800 border border-gray-700 rounded p-4">
-          <div className="text-sm text-gray-400">{data.order.blOrderId}{data.order.orderNo? ` • #${data.order.orderNo}`:''}</div>
+          <div className="text-sm text-gray-400">{data.order.orderNo? `#${data.order.orderNo}`:''}</div>
           <div className="font-semibold mb-2">Status: {data.order.status}</div>
           <div className="text-sm mb-2">Total: {data.order.total} {data.order.currency}</div>
           <div className="text-sm mb-4">Confirmed: {data.order.confirmedAt ? new Date(data.order.confirmedAt).toLocaleString() : '—'}</div>

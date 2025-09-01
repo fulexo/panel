@@ -28,7 +28,7 @@ export default function OrdersPage(){
       <div className="grid gap-3">
         {items.map((o:any) => (
           <a href={`/orders/${o.id}`} key={o.id} className="bg-gray-800 p-4 rounded border border-gray-700 block">
-            <div className="text-sm text-gray-400">{o.blOrderId} • {o.status}</div>
+            <div className="text-sm text-gray-400">{o.externalOrderNo || o.id} • {o.status}</div>
             <div className="font-semibold">{o.customerEmail || '—'} — {o.total} {o.currency}</div>
           </a>
         ))}

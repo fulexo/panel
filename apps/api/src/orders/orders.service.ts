@@ -46,7 +46,6 @@ export class OrdersService {
 
     if (query.search) {
       where.OR = [
-        { blOrderId: { contains: query.search, mode: 'insensitive' } },
         { externalOrderNo: { contains: query.search, mode: 'insensitive' } },
         { customerEmail: { contains: query.search, mode: 'insensitive' } },
         { customerPhone: { contains: query.search } },
@@ -132,12 +131,7 @@ export class OrdersService {
         shipments: true,
         returns: true,
         invoices: true,
-        account: {
-          select: {
-            id: true,
-            label: true,
-          },
-        },
+        
         serviceCharges: true,
       },
     }) as any);
@@ -196,7 +190,6 @@ export class OrdersService {
         tenantId,
         customerId: customer?.id,
         orderNo: nextOrderNo,
-        blOrderId: dto.blOrderId || `MANUAL-${Date.now()}`,
         externalOrderNo: dto.externalOrderNo,
         orderSource: dto.orderSource || 'manual',
         status: dto.status || 'pending',
@@ -412,7 +405,7 @@ export class OrdersService {
   }
 
   async createShareLink(tenantId: string, orderId: string, userId: string) {
-    const order = await this.prisma.order.findFirst({ where: { id: orderId, tenantId }, select: { id: true, blOrderId: true, orderNo: true } });
+    const order = await this.prisma.order.findFirst({ where: { id: orderId, tenantId }, select: { id: true, orderNo: true } });
     if (!order) throw new NotFoundException('Order not found');
     // Create short-lived token (24h) with order reference
     const secret = new TextEncoder().encode(process.env.SHARE_TOKEN_SECRET || 'dev-share-secret');
@@ -434,7 +427,7 @@ export class OrdersService {
         select: {
           id: true,
           orderNo: true,
-          blOrderId: true,
+          
           externalOrderNo: true,
           status: true,
           total: true,

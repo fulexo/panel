@@ -56,7 +56,7 @@ export default function OrderDetailPage(){
 
   return (
     <div className="min-h-screen bg-gray-900 text-white p-8">
-      <h1 className="text-2xl font-bold mb-2">Order {order.orderNo ? `#${order.orderNo}` : order.blOrderId}</h1>
+      <h1 className="text-2xl font-bold mb-2">Order {order.orderNo ? `#${order.orderNo}` : order.id}</h1>
       <div className="text-gray-400 mb-6">Status: {order.status} • {order.customerEmail || '—'}</div>
 
       <div className="grid md:grid-cols-2 gap-6">
