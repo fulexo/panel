@@ -53,8 +53,7 @@ GF_SECURITY_ADMIN_PASSWORD=your_secure_grafana_password
 # =============================================================================
 # These can be configured later via the admin panel
 
-# BaseLinker API Token (configure via Settings page)
-# BASELINKER_TOKEN=your_baselinker_api_token
+# WooCommerce integration is configured per store in the admin panel (Stores)
 
 # SMTP Configuration (configure via Settings page)
 # SMTP_HOST=smtp.gmail.com

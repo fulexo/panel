@@ -55,12 +55,7 @@ export class OrdersController {
     return this.ordersService.remove(user.tenantId, id, user.id);
   }
 
-  @Post(':id/refresh')
-  @Roles('FULEXO_ADMIN', 'FULEXO_STAFF')
-  @ApiOperation({ summary: 'Refresh order from BaseLinker' })
-  async refresh(@CurrentUser() user: any, @Param('id') id: string) {
-    return this.ordersService.refreshFromBaseLinker(user.tenantId, id, user.id);
-  }
+  
 
   @Get(':id/timeline')
   @ApiOperation({ summary: 'Get order timeline' })

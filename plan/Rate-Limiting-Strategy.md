@@ -1,19 +1,19 @@
 # Fulexo Platform Rate Limiting & Multi-Tenant Token Management Strategy
 
-## 1. BaseLinker API Rate Limit Management
+## 1. External API Rate Limit Management (WooCommerce & others)
 
 ### Current Limitations
-- **BaseLinker API Limit**: 100 requests per minute per token
-- **Challenge**: Multiple tenants sharing same BL account/token
+- **WooCommerce**: Mağaza başına farklı sınırlamalar/uygulamalar; hosting ve eklentilere bağlı farklı davranışlar
+- **Challenge**: Çoklu tenant çoklu mağaza; bir mağaza kapasitesinin tek tenant tarafından tüketilmesi
 - **Risk**: One tenant consuming entire rate limit
 
-### Solution: Fair-Share Token Pool Management
+### Solution: Fair-Share Credential/Store Pool Management
 
 ```typescript
 interface TokenPoolConfig {
   tokens: {
     id: string;
-    token: string; // encrypted
+    credentialId: string; // ck/cs id (encrypted storage)
     tenants: string[]; // assigned tenants
     weight: number; // priority weight
   }[];
@@ -35,7 +35,7 @@ class MultiTenantRateLimiter {
   }
   
   private initializeQuotas() {
-    const totalCapacity = this.config.tokens.length * 100; // 100 req/min per token
+    const totalCapacity = this.config.tokens.length * 100; // default capacity placeholder
     const reservedTotal = Array.from(this.config.allocation.reservedQuota.values())
       .reduce((sum, quota) => sum + quota, 0);
     

@@ -309,30 +309,7 @@ export class OrdersService {
     return { message: 'Order deleted successfully' };
   }
 
-  async refreshFromBaseLinker(tenantId: string, orderId: string, userId: string) {
-    // This would integrate with BaseLinker API
-    // For now, we'll simulate it
-    
-    const order = await this.findOne(tenantId, orderId);
-    
-    // TODO: Call BaseLinker API to get fresh data
-    // const blClient = new BaseLinkerClient();
-    // const freshData = await blClient.getOrder(order.blOrderId);
-    
-    // Audit log
-    await this.audit.log({
-      action: 'order.refreshed',
-      userId,
-      tenantId,
-      entityType: 'order',
-      entityId: orderId,
-    });
-
-    // Invalidate cache
-    await this.cache.invalidateOrderCache(tenantId, orderId);
-
-    return { message: 'Order refreshed from BaseLinker', order };
-  }
+  
 
   async getOrderTimeline(tenantId: string, orderId: string) {
     const order = await this.findOne(tenantId, orderId);
