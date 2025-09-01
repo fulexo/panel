@@ -12,9 +12,6 @@ export interface SettingCategory {
     smtp_from: string;
     smtp_secure: string;
   };
-  baselinker: {
-    // removed
-  };
   notification: {
     slack_webhook: string;
     discord_webhook: string;
@@ -170,10 +167,6 @@ export class SettingsService {
     const { EmailService } = await import('../email/email.service');
     const emailService = new EmailService(this);
     return emailService.testConnection(tenantId);
-  }
-
-  async testBaseLinkerConnection(tenantId: string): Promise<boolean> {
-    throw new Error('BaseLinker is not supported');
   }
 
   private getSecretKeys(category: string): string[] {

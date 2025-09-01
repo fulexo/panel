@@ -100,17 +100,7 @@ model Policy {
   @@unique([tenantId, name])
 }
 
-model EntityMap {
-  id         String @id @default(uuid())
-  entityType String
-  blId       String
-  tenantId   String
-  customerId String?
-  createdAt  DateTime @default(now())
-
-  @@unique([entityType, blId])
-  @@index([tenantId])
-}
+// EntityMap removed
 
 // Generic mapping for remote provider entities (provider-agnostic)
 model RemoteEntityMap {
@@ -160,7 +150,7 @@ model Order {
   customerId     String?
   
   orderNo        Int?
-  blOrderId      String
+  
   externalOrderNo String?
   orderSource    String?
   status         String?
@@ -186,7 +176,7 @@ model Order {
   invoices       Invoice[]
   serviceCharges OrderServiceCharge[]
 
-  @@index([tenantId, blOrderId])
+  
   @@unique([tenantId, orderNo])
   @@index([tenantId, status, confirmedAt])
   @@index([tenantId, customerEmail])
@@ -208,7 +198,7 @@ model OrderItem {
 model Shipment {
   id          String   @id @default(uuid())
   orderId     String
-  blPackageId String?
+  
   carrier     String?
   trackingNo  String?
   status      String?
@@ -273,7 +263,7 @@ model Invoice {
 model Return {
   id          String   @id @default(uuid())
   orderId     String
-  blReturnId  String?
+  
   status      String?
   reason      String?
   notes       String?
@@ -594,8 +584,8 @@ model Settings {
   id        String   @id @default(uuid())
   tenantId  String
   tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  category  String   // email, baselinker, notification, general
-  key       String   // smtp_host, smtp_port, baselinker_api_key, etc.
+  category  String   // email, notification, general
+  key       String   // smtp_host, smtp_port, etc.
   value     String?  // encrypted value for sensitive data
   isSecret  Boolean  @default(false) // whether the value should be encrypted
   metadata  Json?    // additional configuration

@@ -18,11 +18,7 @@ CREATE POLICY user_ins ON "User" FOR INSERT WITH CHECK ("tenantId" = app.tenant_
 CREATE POLICY user_upd ON "User" FOR UPDATE USING ("tenantId" = app.tenant_id()) WITH CHECK ("tenantId" = app.tenant_id());
 CREATE POLICY user_del ON "User" FOR DELETE USING ("tenantId" = app.tenant_id());
 
-ALTER TABLE "BLAccount" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY bl_select ON "BLAccount" FOR SELECT USING ("tenantId" = app.tenant_id());
-CREATE POLICY bl_ins ON "BLAccount" FOR INSERT WITH CHECK ("tenantId" = app.tenant_id());
-CREATE POLICY bl_upd ON "BLAccount" FOR UPDATE USING ("tenantId" = app.tenant_id()) WITH CHECK ("tenantId" = app.tenant_id());
-CREATE POLICY bl_del ON "BLAccount" FOR DELETE USING ("tenantId" = app.tenant_id());
+-- BLAccount removed
 
 ALTER TABLE "OwnershipRule" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY own_select ON "OwnershipRule" FOR SELECT USING ("tenantId" = app.tenant_id());
@@ -54,11 +50,7 @@ CREATE POLICY pol_ins ON "Policy" FOR INSERT WITH CHECK ("tenantId" = app.tenant
 CREATE POLICY pol_upd ON "Policy" FOR UPDATE USING ("tenantId" = app.tenant_id()) WITH CHECK ("tenantId" = app.tenant_id());
 CREATE POLICY pol_del ON "Policy" FOR DELETE USING ("tenantId" = app.tenant_id());
 
-ALTER TABLE "EntityMap" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY em_select ON "EntityMap" FOR SELECT USING ("tenantId" = app.tenant_id());
-CREATE POLICY em_ins ON "EntityMap" FOR INSERT WITH CHECK ("tenantId" = app.tenant_id());
-CREATE POLICY em_upd ON "EntityMap" FOR UPDATE USING ("tenantId" = app.tenant_id()) WITH CHECK ("tenantId" = app.tenant_id());
-CREATE POLICY em_del ON "EntityMap" FOR DELETE USING ("tenantId" = app.tenant_id());
+-- EntityMap removed
 
 ALTER TABLE "Request" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY req_select ON "Request" FOR SELECT USING ("tenantId" = app.tenant_id());

@@ -265,19 +265,16 @@ class RedisRateLimiter {
 }
 ```
 
-### Circuit Breaker for BaseLinker API
+### Circuit Breaker for External APIs
 ```typescript
-class BaseLinkerCircuitBreaker {
+class ExternalCircuitBreaker {
   private states: Map<string, CircuitState> = new Map();
   private readonly threshold = 5; // failures to open circuit
   private readonly timeout = 30000; // 30 seconds
   private readonly successThreshold = 2; // successes to close circuit
   
-  async execute<T>(
-    tokenId: string,
-    operation: () => Promise<T>
-  ): Promise<T> {
-    const state = this.getState(tokenId);
+  async execute<T>(key: string, operation: () => Promise<T>): Promise<T> {
+    const state = this.getState(key);
     
     if (state.status === 'open') {
       if (Date.now() - state.openedAt > this.timeout) {
@@ -285,7 +282,7 @@ class BaseLinkerCircuitBreaker {
         state.status = 'half-open';
         state.successCount = 0;
       } else {
-        throw new Error(`Circuit breaker open for token ${tokenId}`);
+        throw new Error(`Circuit breaker open for key ${key}`);
       }
     }
     
@@ -313,16 +310,16 @@ class BaseLinkerCircuitBreaker {
     }
   }
   
-  private getState(tokenId: string): CircuitState {
-    if (!this.states.has(tokenId)) {
-      this.states.set(tokenId, {
+  private getState(key: string): CircuitState {
+    if (!this.states.has(key)) {
+      this.states.set(key, {
         status: 'closed',
         failureCount: 0,
         successCount: 0,
         openedAt: 0
       });
     }
-    return this.states.get(tokenId)!;
+    return this.states.get(key)!;
   }
 }
 ```

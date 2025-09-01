@@ -2,7 +2,7 @@
 
 ## 1. Token Management & Encryption
 
-### BaseLinker Token Security
+### External Credential Security (WooCommerce ck/cs)
 ```yaml
 Implementation:
   encryption:
@@ -37,7 +37,7 @@ class KeyRotationService {
     const newKeyVersion = await this.generateNewMasterKey();
     
     // 2. Re-encrypt all tokens with new key
-    const tokens = await this.getAllEncryptedTokens();
+    const tokens = await this.getAllEncryptedCredentials();
     for (const token of tokens) {
       const decrypted = await this.decrypt(token, token.key_version);
       const reencrypted = await this.encrypt(decrypted, newKeyVersion);

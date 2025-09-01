@@ -25,7 +25,7 @@ NODE_ENV: production
 ## AGENT_RULES
 - Always run commands non-interactively. Treat warnings as errors unless specified.
 - After each task, run the specified verify step and check acceptance criteria.
-- Never push BaseLinker writes unless feature flag is explicitly ON.
+- Never push external writes unless feature flag is explicitly ON.
 - Protect secrets: do not print them in logs.
 
 ---
@@ -697,14 +697,14 @@ NODE_ENV: production
 
 ---
 
-## PHASE 13 — Inventory Management (Admin) [Follow Blueprint §33]
-- Implement BL inventory endpoints usage with dry-run and bulk jobs
+## PHASE 13 — Inventory Management (Admin)
+- Implement Woo inventory endpoints usage with dry-run and bulk jobs
 - Build UI: warehouses/catalogs, products list/detail, bulk stock/price import, documents (add/confirm), PO & suppliers
 - Acceptance: perform a bulk stock update (dry-run then execute) and confirm an inventory document
 
 ---
 
-## PHASE 14 — Admin BL Writes (feature-flag) [Blueprint §32]
+## PHASE 14 — Admin External Writes (feature-flag)
 - Implement write actions with dry-run preview + audit
 - Add policy toggles per module/account
 - Acceptance: test setOrderStatus with dry-run and confirm execution under rate-limit
@@ -722,7 +722,7 @@ NODE_ENV: production
 ## PHASE 16 — Security Hardening [Blueprint §11, §19]
 - Enable CSP/HSTS/SRI headers at Nginx
 - Enforce 2FA for admin roles
-- Encrypt BL tokens at-rest
+- Encrypt external tokens at-rest
 - Acceptance: security headers present; MFA required for admin login
 
 ### 16.1 Secrets management (prod)

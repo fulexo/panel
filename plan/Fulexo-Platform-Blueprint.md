@@ -1,12 +1,12 @@
-### Fulexo Platform Blueprint — BaseLinker-Driven (Read-Only v1) — Fully Self‑Hosted
+### Fulexo Platform Blueprint — WooCommerce-Driven (Read-Only v1) — Fully Self‑Hosted
 
 #### Amaç ve Kapsam
-- BaseLinker (BL) tek veri kaynağı; platform salt-okuma (read-only) olarak BL verilerini listeler, görselleştirir, raporlar.
+- WooCommerce tek/çok mağaza veri kaynağı; platform salt-okuma (read-only) olarak verileri listeler, görselleştirir, raporlar.
 - Tüm kontrol sizde: Müşterinin (tenant) ne göreceği ve neler yapabileceği merkezi sahiplik kuralları ve görünürlük politikalarıyla yönetilir.
 - Tamamen self-hosted: Ücretli dış hizmet yok. Tüm bileşenler kendi sunucunuzda (Docker Compose) çalışır.
 
 #### Rollerin Özeti
-- FULEXO_ADMIN: BL hesap/kural/politika/rol yönetimi, tüm tenant ve ayarlar.
+- FULEXO_ADMIN: mağaza/kural/politika/rol yönetimi, tüm tenant ve ayarlar.
 - FULEXO_STAFF: Operasyon (sipariş, kargo, iade, fatura, ürün); sınırlı ayarlar.
 - CUSTOMER_ADMIN: Kendi tenant; kendi kullanıcılarını ve görünürlük ayarlarını yönetebilir.
 - CUSTOMER_USER: Kendi tenant verilerini read-only görüntüler.
@@ -16,7 +16,7 @@
 - Backend API: NestJS (TS), REST (OpenAPI), JWT + opsiyonel 2FA, RBAC guard.
 - Worker: BullMQ (Valkey/Redis) ile artımlı senkron ve batch işler; rate-limit güdümlü.
 - Veri: PostgreSQL (mirror/cache + sahiplik alanları); Valkey/Redis (kısa TTL cache + kuyruk); MinIO (opsiyonel dosya cache/CDN).
-- Entegrasyon: BL Connector API (X‑BLToken, 100 req/dk limit); wrapper + backoff.
+- Entegrasyon: WooCommerce REST API (ck/cs), webhook; backoff ve oran sınırlama.
 - Gözlem: Prometheus (metrics) + Grafana (dash), Loki/Promtail (log), Jaeger/Zipkin (trace), Uptime-Kuma (uptime).
 - Giriş noktası: Nginx reverse proxy + Let's Encrypt (Certbot) TLS sertifikaları.
 
@@ -226,18 +226,18 @@ server {
 ## 4) Sahiplik (Ownership) ve Görünürlük Politikaları
 
 Ownership Modeli
-- bl_accounts(id, tenant_id, ...): BL hesabı doğrudan tenant'a bağlanabilir.
-- ownership_rules: Tek BL hesabında birden çok müşteri varsa kurallar ile eşleme yapılır (öncelik sıralı).
-- entity_map: Manuel eşlemenin kalıcı kaydı (örn. BL order/product id → tenant/customer).
+- woo_stores(id, tenant_id, ...): Woo mağazası tenant'a bağlanır.
+- ownership_rules: Çoklu mağaza varsa kurallar ile eşleme yapılır (öncelik sıralı).
+- remote_entity_map: Manuel eşlemenin kalıcı kaydı (örn. Woo order/product id → tenant/customer).
 
 Eşleme Sırası
 1) Hesap `tenant_id` doluysa → doğrudan o tenant.
 2) Değilse → `ownership_rules` koşulları:
    - order_source / marketplace_code / shop_id
-   - BL tag/etiket
+   - mağaza tag/etiket
    - buyer.email/phone/domain
    - ürün tag/category/manufacturer/custom fields
-3) Eşleşme yoksa → Unassigned kuyruğu; operatör manuel atar (entity_map'a yazılır).
+3) Eşleşme yoksa → Unassigned kuyruğu; operatör manuel atar (remote_entity_map'a yazılır).
 
 Visibility/Policy Modeli (tenant bazlı)
 - Modül görünürlüğü: orders/shipments/returns/invoices/products.
@@ -284,9 +284,9 @@ create table users (
   created_at timestamptz default now()
 );
 
-create table bl_accounts (
+create table woo_stores (
   id uuid primary key default gen_random_uuid(),
-  tenant_id uuid references tenants(id) on delete set null,
+  tenant_id uuid not null references tenants(id) on delete cascade,
   label text,
   token_encrypted bytea not null,
   active boolean default true,
@@ -306,18 +306,18 @@ create table ownership_rules (
 create table entity_map (
   id uuid primary key default gen_random_uuid(),
   entity_type text not null,
-  bl_id text not null,
+  woo_id text not null,
   tenant_id uuid not null references tenants(id) on delete cascade,
   customer_id text,
-  unique(entity_type, bl_id)
+  unique(entity_type, woo_id)
 );
 
 create table orders (
   id uuid primary key default gen_random_uuid(),
   tenant_id uuid not null references tenants(id) on delete cascade,
   customer_id uuid references customers(id),
-  account_id uuid references bl_accounts(id),
-  bl_order_id text not null,
+  account_id uuid references woo_stores(id),
+  woo_order_id text not null,
   external_order_no text,
   status text,
   total numeric(14,2),
@@ -327,7 +327,7 @@ create table orders (
   confirmed_at timestamptz,
   created_at timestamptz default now(),
   updated_at timestamptz default now(),
-  unique(tenant_id, bl_order_id)
+  unique(tenant_id, woo_order_id)
 );
 create index idx_orders_tenant_status_date on orders(tenant_id, status, confirmed_at desc);
 create index idx_orders_email_phone on orders(tenant_id, customer_email, customer_phone);
@@ -358,8 +358,8 @@ create index idx_shipments_tracking on shipments(tracking_no);
 ## 6) Backend (NestJS) — Ayrıntılar
 
 Katmanlar
-- Modules: Auth, RBAC, Tenants, BLAccounts, OwnershipRules, EntityMap, Orders, Shipments, Returns, Invoices, Products, Analytics, Sync, Files, Admin, Health.
-- Services: BLClient, RulesEngine, SyncService, MappingService, CacheService, AuditService, JobService.
+- Modules: Auth, RBAC, Tenants, WooStores, OwnershipRules, EntityMap, Orders, Shipments, Returns, Invoices, Products, Analytics, Sync, Files, Admin, Health.
+- Services: WooClient, RulesEngine, SyncService, MappingService, CacheService, AuditService, JobService.
 - DTO/Serializer: PII maskeleme ve policy tabanlı alan gizleme.
 
 Örnek API Uçları
@@ -376,25 +376,25 @@ Katmanlar
 - Analytics: GET /analytics/summary
 - Health/Admin: GET /health, GET /metrics (Prom), GET /logs (admin)
 
-BLClient (psödo)
+WooClient (psödo)
 ```ts
-async function blRequest(method: string, parameters: any, token: string) {
+async function wooRequest(method: string, parameters: any, token: string) {
   const body = new URLSearchParams({ method, parameters: JSON.stringify(parameters) });
   await rateLimit(token); // token başına pencere sayacı (Redis)
-  const res = await fetch("https://api.baselinker.com/connector.php", {
+  const res = await fetch("https://api.woocommerce.com/connector.php", {
     method: "POST",
-    headers: { "X-BLToken": token },
+    headers: { "X-CKToken": token },
     body
   });
-  if (!res.ok) throw new Error(`BL HTTP ${res.status}`);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const json = await res.json();
-  if (json.status !== "SUCCESS") throw new Error(json.error_message || "BL error");
+  if (json.status !== "SUCCESS") throw new Error(json.error_message || "error");
   return json;
 }
 ```
 
 Rate-Limit (Redis token bucket)
-- Key: `bl:ratelimit:${token}`
+- Key: `woo:ratelimit:${token}`
 - Dakikada 100 jeton; istek öncesi `DECR`, yetersizse bekleme/backoff.
 
 RBAC Guard
@@ -411,7 +411,7 @@ RBAC Guard
 - products:sync:account (opsiyonel) — `getInventoryProductsList` özet mirror.
 - files:cache:cleanup (günlük) — MinIO/FS cache temizliği.
 - cache:warm (15 dk) — Popüler verileri cache'e önceden yükleme
-- reconciliation:daily (günlük) — BL ve internal veri tutarlılık kontrolü
+- reconciliation:daily (günlük) — mağaza ve internal veri tutarlılık kontrolü
 - backup:database (günlük) — PostgreSQL backup işlemi
 - audit:anonymize (haftalık) — GDPR uyumlu PII anonimleştirme
 - metrics:aggregate (5 dk) — Business metrikleri hesaplama
@@ -450,18 +450,18 @@ Güvenlik (UI)
   - `file:label:${shipmentId}`
 
 ## 10) Loglama, Metrik ve İzleme
-- Prometheus: API/Worker `/metrics` endpoint; metrikler: sync_lag_seconds, bl_requests_total, rate_limit_hits_total, job_fail_total, http_request_duration_ms{route,..}
+- Prometheus: API/Worker `/metrics` endpoint; metrikler: sync_lag_seconds, woo_requests_total, rate_limit_hits_total, job_fail_total, http_request_duration_ms{route,..}
 - Alertmanager: kritik alarmlar için e‑posta/Slack entegrasyonu.
 - Grafana: hazır dashboard jsonları (provisioning klasörü).
 - Loki/Promtail: container loglarını Loki'ye gönder; label: svc, tenant, job.
-- Jaeger: trace-id başlıkları; kritik akışlar için span'lar (BL çağrısı, DB IO).
+- Jaeger: trace-id başlıkları; kritik akışlar için span'lar (Woo çağrısı, DB IO).
 - Uptime-Kuma: app/api endpoint'leri için sağlık kontrolleri.
 
 ## 11) Güvenlik Sertleşmesi
 - TLS: Let's Encrypt (certbot) otomatik yenileme; HSTS.
 - Nginx rate-limit: istek başına temel RPS limiti; fail2ban (nginx logları üzerinden).
 - JWT imzalama için güçlü secret/rotasyon; 2FA TOTP opsiyon.
-- BL Token'ları: AES‑GCM ile at-rest şifreli (envelope): master key `.env` + per-record nonce/salt.
+- Woo kimlik bilgileri: AES‑GCM ile at-rest şifreli (envelope): master key `.env` + per-record nonce/salt.
 - DB erişimi: ayrı kullanıcı/rol; en az yetki; pg_hba.conf kısıtları (sadece docker ağı).
 - Firewall (ufw): 80/443/22/9001 gibi gerekli portlar; diğerleri kapalı.
 - Dosya izinleri: docker volumes sadece ilgili servis tarafından yazılabilir.
@@ -499,13 +499,13 @@ sudo usermod -aG docker $USER
 - Log rotasyonu: Loki disk tüketimi limitleri; retention policy.
 
 ## 15) Test Stratejisi
-- Birim: BLClient, RulesEngine, Policy serializer, Rate-limit/backoff, Repos tenant filter.
-- Entegrasyon: BL sandbox; sync uçtan uca; Unassigned→Assign akışı; policy enforcement.
+- Birim: WooClient, RulesEngine, Policy serializer, Rate-limit/backoff, Repos tenant filter.
+- Entegrasyon: Woo sandbox; sync uçtan uca; Unassigned→Assign akışı; policy enforcement.
 - E2E (Playwright): Admin/Portal menü & görünürlük; liste/detay; dosya indirme; PII maskeleme.
-- Yük: BL limitine saygılı job concurrency testi; p95 gecikme hedefleri.
+- Yük: Woo limitlerine saygılı job concurrency testi; p95 gecikme hedefleri.
 
 ## 16) Yol Haritası (6 Hafta)
-- Hafta 1: Monorepo/compose, BLClient, şema, orders sync v1, Rules v1, Orders List v1.
+- Hafta 1: Monorepo/compose, WooClient, şema, orders sync v1, Rules v1, Orders List v1.
 - Hafta 2: Order detail/timeline, Status map, Unassigned v1, Policy Editor v1.
 - Hafta 3: Shipments (list/detail), label/protocol on-demand + cache, tracking updater.
 - Hafta 4: Returns & Invoices (list/detail), invoice PDF on-demand, analytics tiles.
@@ -517,7 +517,7 @@ sudo usermod -aG docker $USER
 - 100 req/dk ihlali yok; sync lag metrikleri hedef altında.
 - RBAC + Policy ile menü/aksiyon/alan ve veri kapsamı doğru kısıtlanır.
 - Listeler p95 < 1 sn; detay p95 < 2 sn (cache'li); dosya indirme çalışır.
-- Audit kritik olayları kaydeder; BL token güvenliği doğrulanır.
+- Audit kritik olayları kaydeder; Woo kimlik bilgisi güvenliği doğrulanır.
 
 ## 18) Ekler (Örnek Konfigler)
 
@@ -580,7 +580,7 @@ server { listen 80; server_name api.example.com; return 301 https://$host$reques
   - Dashboard
   - Orders, Shipments, Returns, Invoices, Products, Customers
   - Analytics, Logs
-  - Settings: Accounts (BL), Ownership Rules, Unassigned, Policies, Users & Roles, Branding
+  - Settings: Stores (Woo), Ownership Rules, Unassigned, Policies, Users & Roles, Branding
 - Müşteri Navigasyon:
   - Dashboard
   - Orders, Shipments, Returns, Invoices, Products
@@ -590,7 +590,7 @@ server { listen 80; server_name api.example.com; return 301 https://$host$reques
 - Tablo kolonları: seçilebilir/gizlenebilir; sürükle-bırak sıralama; kalıcı kullanıcı tercihi
 - Filtre çubuğu: tarih aralığı, durum, kaynak, arama; "Saved Views" (tenant/global)
 - Toplu eylemler: export CSV (policy'ye bağlı), link paylaş (read-only paylaşım token'lı)
-- Satır eylemleri: BL'de aç, ID kopyala, ilişkili varlıklar (shipment/invoice/return)
+- Satır eylemleri: Woo'de aç, ID kopyala, ilişkili varlıklar (shipment/invoice/return)
 - Timeline: ikonlu olaylar; kargo/istatü geçişleri; saat dilimi tenant'a göre
 - Yükleme: skeleton + progressive streaming; boş/doluluk durumları (empty/zero state)
 - Hata durumları: ağ/retry; oran sınırlama uyarıları
@@ -620,12 +620,12 @@ server { listen 80; server_name api.example.com; return 301 https://$host$reques
 - Export: CSV (policy), iş kuyruğunda üretim; hazır olduğunda bildirim/email
 
 ### Order Detail
-- Başlık: BL Order ID, durum rozetleri, hesap/kaynak
+- Başlık: BL Order ID, durum rozetleri, mağaza/kaynak
 - Özet: toplam, para, ödeme özeti, adresler (PII mask policy)
 - Items tablosu: SKU, ad, qty, fiyat (showPrices policy)
-- Timeline: BL statü değişimleri + shipment event'leri
+- Timeline: Woo statü değişimleri + shipment event'leri
 - İlişkili: Shipments, Invoices, Returns panelleri
-- Aksiyonlar: BL'de aç, refresh (policy), export tekil CSV/PDF (opsiyon)
+- Aksiyonlar: Woo'de aç, refresh (policy), export tekil CSV/PDF (opsiyon)
 
 ### Shipments
 - Liste: Paket ID, Carrier, Tracking, Status, UpdatedAt, Order
@@ -637,18 +637,18 @@ server { listen 80; server_name api.example.com; return 301 https://$host$reques
 
 ### Invoices
 - Liste: Number/Series, Total, Currency, Date, Order
-- Detay: PDF indir (policy), kalemler (eğer BL dönerse meta)
+- Detay: PDF indir (policy), kalemler (eğer Woo dönerse meta)
 
 ### Products
 - Liste: SKU, Name, Stock (özet), UpdatedAt, Variants
-- Detay: BL'den on-demand detay (TTL cache), geçmiş sipariş/return ilişkileri
+- Detay: Woo'den on-demand detay (TTL cache), geçmiş sipariş/return ilişkileri
 
 ### Customers
 - Liste: buyer email/phone'dan türetilmiş müşteri profilleri; toplam sipariş/ciro
 - Detay: Müşteriye ait orders/returns/invoices
 
 ### Settings (Admin)
-- BL Accounts: token ekle/sil, test et, tenant bağla; maskeleme ile kısmi göster
+- Stores: ck/cs ekle/sil, test et, tenant bağla; maskeleme ile kısmi göster
 - Ownership Rules: kural listesi; sürükle-sıra; koşul builder (field/op/value); test aracı; yayınla
 - Unassigned: varlık listesi; bulk assign; audit kaydı
 - Policies: modül/aksiyon/alan/PII/allowedStatuses|Sources/warehouses toggles; tenant ve rol bazlı override
@@ -738,9 +738,9 @@ server { listen 80; server_name api.example.com; return 301 https://$host$reques
 
 ## 25) Onboarding Akışları
 - Tenant oluşturma sihirbazı: ad, logo, zaman dilimi, para birimi
-- BL hesap bağlama sihirbazı: token test, hesap adı, varsayılan tenant
+- Woo store bağlama sihirbazı: ck/cs test, mağaza adı, varsayılan tenant
 - İlk Senkron İzleyici: progress bar, tahmini süre, son 7 gün öncelikli
-- Önerilen Kurallar: BL verisinden otomatik kural önerileri (order_source/tag dağılımına göre)
+- Önerilen Kurallar: Woo verisinden otomatik kural önerileri (order_source/tag dağılımına göre)
 
 ## 26) Tasarım Sistemi
 
@@ -776,7 +776,7 @@ server { listen 80; server_name api.example.com; return 301 https://$host$reques
 - Statü adları mapped_state için yerelleştirilmiş label'lar
 
 ## 27) Operasyon Runbook'u
-- Olay: BL API 429 fazlalaştı → Worker concurrency düşür, batch aralığı artır; rate-limit counterları izle
+- Olay: Woo API 429 fazlalaştı → Worker concurrency düşür, batch aralığı artır; rate-limit counterları izle
 - Olay: Sync lag > 30dk → fast-queue önceliklerini yeniden ayarla; sorunlu hesapları geçici devre dışı bırak
 - Olay: Postgres disk doluyor → eski export dosyalarını temizle; VACUUM/REINDEX; MinIO retention kontrolü
 - Olay: SMTP bounces artıyor → DKIM/SPF/DMARC kontrol; throttling artır; problemli domainleri karalisteye ekle
@@ -802,7 +802,7 @@ server { listen 80; server_name api.example.com; return 301 https://$host$reques
 
 Amaç
 - Müşteriler panelden talepler (ör. stok düzeltme, yeni ürün ekleme, sipariş notu/döküman, genel talep) oluşturur.
-- Bu talepler BL'ye gitmez; yalnızca iç sistemde kuyruğa alınır. Onaylanınca iç veri güncellenir; istenirse daha sonra manuel/otomatik BL ile uyarlanabilir (opsiyonel).
+- Bu talepler Woo'ya gitmez; yalnızca iç sistemde kuyruğa alınır. Onaylanınca iç veri güncellenir; istenirse daha sonra manuel/otomatik Woo ile uyarlanabilir (opsiyonel).
 
 Kapsam ve Türler
 - STOCK_ADJUSTMENT: SKU bazlı artı/eksi stok düzeltme (yalnızca iç sistem)
@@ -860,9 +860,9 @@ Payload Örnekleri
 2) Admin/Staff "Requests" ekranında görür; tür, öncelik ve tenant filtreleriyle triage eder (UNDER_REVIEW).
 3) Gerekirse soru/cevap için yorumlar sekmesi (customer ↔ staff) kullanılır.
 4) Onay (APPROVED) veya red (REJECTED). Onay durumunda otomasyon:
-   - STOCK_ADJUSTMENT: `products`/`inventories` iç değerleri günceller (yalnızca iç sistem). BL'ye push YAPILMAZ.
-   - NEW_PRODUCT: `products` tablosuna eklenir (tenant/customer sahibi atanır). BL'ye ekleme opsiyonel, manuel buton.
-   - ORDER_NOTE/DOCUMENT_UPLOAD: İç yorum/dosya referansı saklanır; BL'ye yükleme opsiyonel butonla.
+   - STOCK_ADJUSTMENT: `products`/`inventories` iç değerleri günceller (yalnızca iç sistem). Woo'ye push YAPILMAZ.
+   - NEW_PRODUCT: `products` tablosuna eklenir (tenant/customer sahibi atanır). Woo'ye ekleme opsiyonel, manuel buton.
+   - ORDER_NOTE/DOCUMENT_UPLOAD: İç yorum/dosya referansı saklanır; Woo'ye yükleme opsiyonel butonla.
 5) APPLIED: Uygulama sonrası kapatılır; audit log yazılır; bildirim gönderilir.
 
 UI (Müşteri Portalı)
@@ -899,11 +899,11 @@ Menu Eklemeleri
 
 ---
 
-## 32) Admin için BaseLinker Yazma İşlemleri (Opsiyonel)
+## 32) Admin için WooCommerce Yazma İşlemleri (Opsiyonel)
 
-Not: Varsayılan mimari read-only'dur. Bu bölüm, yalnızca ADMIN için bilinçli olarak etkinleştirilebilen BL yazma yeteneklerini kapsar.
+Not: Varsayılan mimari read-only'dur. Bu bölüm, yalnızca ADMIN için bilinçli olarak etkinleştirilebilen Woo yazma yeteneklerini kapsar.
 
-Kapsam (BL API)
+Kapsam (Woo API)
 - Orders
   - setOrderStatus (statü güncelleme)
   - addOrderProduct / setOrderProductFields / deleteOrderProduct (kalem değişiklikleri)
@@ -919,17 +919,17 @@ Kapsam (BL API)
   - addInventoryProduct, updateInventoryProductsStock, updateInventoryProductsPrices, addInventoryDocument + setInventoryDocumentStatusConfirmed
 
 Güvenlik ve Kontroller
-- Feature flag: "ENABLE_BL_WRITES" (tenant genel veya hesap bazlı)
+- Feature flag: "ENABLE_WOO_WRITES" (tenant genel veya hesap bazlı)
 - Role gate: yalnızca FULEXO_ADMIN (veya açıkça yetkili STAFF rolleri)
-- Two-step confirmation: "dry-run" gösterimi (BL değişim önizlemesi) → onay → gerçek çağrı
+- Two-step confirmation: "dry-run" gösterimi (payload önizlemesi) → onay → gerçek çağrı
 - Rate-limit aware: yazma çağrıları düşük hız penceresinde, queue üzerinden ve geri basınçla
-- Approval flow (opsiyonel): Yazma işlemi önce iç "Change Request" olarak gelir; ikinci onay sonrası BL'ye gönderilir
+- Approval flow (opsiyonel): Yazma işlemi önce iç "Change Request" olarak gelir; ikinci onay sonrası Woo'ye gönderilir
 - Audit: Tüm yazma istek/yanıt gövdesi masked şekilde audit_log'da saklanır
 - Rollback stratejisi: Mümkünse karşı-işlem (örn. statü geri alma); değilse manuel yönerge ve işaretleme
 
 UI (Admin)
 - Order Detail → Actions menüsü:
-  - Change Status (setOrderStatus) → mapped_state seçici + BL status_id eşleme
+  - Change Status (setOrderStatus) → mapped_state seçici + Woo status_id eşleme
   - Edit Items (add/update/remove)
   - Add Payment / Mark Receipt
 - Shipment Detail → Actions:
@@ -939,26 +939,26 @@ UI (Admin)
 - Return Detail → Actions:
   - Create/Edit Return, Change Return Status, Mark Refund
 - Product Detail / Inventory → Actions:
-  - Add Product to BL, Update Stock/Prices (batch), Create/Confirm Inventory Document
+  - Add Product to Woo, Update Stock/Prices (batch), Create/Confirm Inventory Document
 
 Dry-Run Ekranı
-- Yaptığınız seçimlerden doğacak BL payload'ını ve beklenen etkileri (satır/alan değişiklikleri) gösterir
-- "Confirm & Execute" butonu ile kuyrukta BL çağrısı tetiklenir
+- Yaptığınız seçimlerden doğacak Woo payload'ını ve beklenen etkileri (satır/alan değişiklikleri) gösterir
+- "Confirm & Execute" butonu ile kuyrukta Woo çağrısı tetiklenir
 
 Hata Yönetimi
-- BL hata kodu ve mesajı kullanıcıya sadeleştirilmiş şekilde gösterilir; teknik ayrıntı audit'e yazılır
+- Woo hata kodu ve mesajı kullanıcıya sadeleştirilmiş şekilde gösterilir; teknik ayrıntı audit'e yazılır
 - Otomatik retry yerine çoğunlukla manuel müdahale (yazma işlemlerinde 3 deneme sınırı)
 - Başarısızlıkta öneriler: statü uyuşmazlığı, zorunlu alan, kurye hesabı vs.
 
 İzin Politikaları (Policies)
 - Per-module toggle: orders_writes, shipments_writes, invoices_writes, returns_writes, inventory_writes
-- Per-account whitelist: Yazma işlemine izinli BL hesapları listesi
+- Per-account whitelist: Yazma işlemine izinli Woo mağazaları listesi
 - Zorunlu açıklama alanı (why) ve değişim notu
 
 Audit Örnek Kayıt
 ```json
 {
-  "action": "bl.write.setOrderStatus",
+  "action": "woo.write.setOrderStatus",
   "tenantId": "...",
   "actorUserId": "...",
   "request": {"orderId": 12345, "statusId": 678},
@@ -968,14 +968,14 @@ Audit Örnek Kayıt
 ```
 
 Monitoring
-- bl_writes_total{method}, bl_write_failures_total{method}, bl_write_duration_ms
+- woo_writes_total{method}, woo_write_failures_total{method}, woo_write_duration_ms
 - Son 24s yazma işlemleri zaman çizelgesi ve hata oranı
 
 ---
 
-## 33) Admin Inventory Management (BaseLinker Entegrasyonlu)
+## 33) Admin Inventory Management (WooCommerce Entegrasyonlu)
 
-Kapsam (BL Inventory/Katalog)
+Kapsam (Woo Inventory/Katalog)
 - Price Groups: addInventoryPriceGroup, getInventoryPriceGroups, deleteInventoryPriceGroup
 - Warehouses: addInventoryWarehouse, getInventoryWarehouses, deleteInventoryWarehouse
 - Catalogs: addInventory, getInventories, deleteInventory
@@ -991,16 +991,16 @@ UI Akışları (Admin)
   - Ekle/Düzenle: depo adı/kod, adres; katalog meta
 - Ürünler
   - Liste: SKU, ad, stok (depo bazlı), fiyat grubu; filtre (kategori/tag/manufacturer)
-  - Detay: temel alanlar, varyantlar, stok geçmişi, fiyat geçmişi; BL ürün ID gösterimi
+  - Detay: temel alanlar, varyantlar, stok geçmişi, fiyat geçmişi; Woo ürün ID gösterimi
   - Aksiyonlar:
-    - Create/Update Product (BL addInventoryProduct)
+    - Create/Update Product (Woo REST)
     - Update Stock (bulk/tekil) (updateInventoryProductsStock)
     - Update Prices (bulk/tekil) (updateInventoryProductsPrices)
     - Category/Tag/Manufacturer atama
     - Delete Product (dikkat gerektirir)
 - Bulk İşlemler
   - CSV/Excel import (SKU, qty, price, category/tag)
-  - İş kuyruğunda parça parça BL push; dry-run önizleme tablosu
+  - İş kuyruğunda parça parça Woo push; dry-run önizleme tablosu
 - Dökümanlar (Stock Movements)
   - Yeni Belge: giriş/çıkış (IN/OUT), kalemler; taslak oluştur (addInventoryDocument)
   - Onay: setInventoryDocumentStatusConfirmed; stok etkisi
@@ -1026,26 +1026,23 @@ Monitoring
 
 ---
 
-## 34) BaseLinker API Kapsam Haritası ve Uygulama Notları
+## 34) WooCommerce API Kapsam Haritası ve Uygulama Notları
 
 Kimlik Doğrulama ve İstek Formatı
-- URL: https://api.baselinker.com/connector.php
-- Header: X-BLToken: <token>
-- Body (x-www-form-urlencoded):
-  - method=<methodName>
-  - parameters=<JSON string>
-- Response: JSON; `status: SUCCESS|ERROR`, `error_message` varsa başarısızlık; HTTP 200 olsa bile `status` kontrol edilmelidir.
+- URL: https://shop.example.com/wp-json/wc/v3/
+- Auth: Basic (ck/cs)
+- Response: JSON; HTTP 2xx kontrol edilmelidir.
 
 Kodlama ve Dosyalar
 - UTF-8 kullanılır.
 - Bazı uçlar base64 içerik bekler; `+` karakteri `%2B` ile URL-encode edilmelidir.
 
 Oran Sınırı ve Boyut Kısıtları
-- Limit: 100 istek/dk (token başına). Uygulamada Redis token-bucket ve iş kuyruğu kullanılır.
+- Limit: Sunucu barındırma/eklentiye göre değişir; Redis token-bucket ve iş kuyruğu kullanılır.
 - Toplu işlemler: ürün stok/fiyat güncelleme max 1000 öğe; kargo durum geçmişi max 100 paket/istek.
 
 Sayfalama ve Artımlı Senkron
-- getOrders: max 100 sipariş; yalnızca `confirmed` siparişleri çekmek önerilir (`get_unconfirmed_orders=false`).
+- orders: page/per_page ile sayfalama; updated_after ile artımlı çekim.
 - Artımlı çekim önerisi:
   1) `date_confirmed_from` başlangıç verilir
   2) 100 sonuç gelirse son siparişin `date_confirmed` + 1 saniye ile devam edilir
@@ -1056,7 +1053,7 @@ Sayfalama ve Artımlı Senkron
 
 Siparişler (Orders)
 - getOrders: filtreler (date_add, date_confirmed_from/to, order_status_id, source vb.).
-- getOrderStatusList: BL statüleri; iç `mapped_state` ile eşlenir.
+- getOrderStatusList: Woo statüleri; iç `mapped_state` ile eşlenir.
 - setOrderStatus / setOrderStatuses: tekil/çoklu statü değişimi.
 - addOrder / cloneOrder: sipariş oluşturma/klonlama (read-only mimaride sadece admin-opsiyonel).
 - Ürün kalemleri: addOrderProduct, setOrderProductFields, deleteOrderProduct.
@@ -1092,18 +1089,18 @@ Dış Depolar (External Storages)
 - addOrderReturn, setOrderReturnFields, addOrderReturnProduct, setOrderReturnProductFields, deleteOrderReturnProduct.
 - setOrderReturnStatuses, setOrderReturnStatus, setOrderReturnRefund.
 
-BaseLinker Connect
+WooCommerce Connect
 - getConnectIntegrations, getConnectIntegrationContractors, getConnectContractorCreditHistory, addConnectContractorCredit.
 
 Uygulama En İyi Pratikleri
 - Idempotency: Yazma operasyonlarında uygulama tarafı `idempotencyKey` türetip audit ile eşlemek (yinelenen çağrılara karşı).
 - Dry-run: Yazma öncesi payload önizleme ve etki tablosu göstermek.
-- Backoff: BL hata/429 durumlarında artan bekleme (1s→5s→30s→2dk→10dk).
+- Backoff: Woo hata/429 durumlarında artan bekleme (1s→5s→30s→2dk→10dk).
 - Boyutlandırma: Toplu işlemleri 1000 (stok/fiyat) / 100 (kargo) sınırına göre dilimleyip sıraya almak.
 - Veritabanı aynası: Listeler/filtre/analitik için mirror; detayda kısa TTL canlı tazeleme.
 
 Kritik Notlar
-- Status alanı her uçta aynı semantiğe sahip değildir; eşleme tablosu (BL status_id ↔ internal mapped_state) zorunlu.
+- Status alanı her uçta aynı semantiğe sahip değildir; eşleme tablosu (Woo status_id ↔ internal mapped_state) zorunlu.
 - Tarih alanları epoch (saniye) olabilir; doğru timezone ve +1s artış mantığı uygulanmalı.
 - Dosya indirme uçları büyük boyutlu olabilir; MinIO/FS cache ve imzalı URL ile servis ediniz.
 
@@ -1124,19 +1121,19 @@ Blueprint ile Kapsam Uyum Kontrolü
 ## 36) Secrets Yönetimi
 
 - Production: Docker/K8s secrets veya SOPS ile şifreli dosyalar; diskte düz metin yok.
-- Uygulama: BL token'ları AES‑GCM envelope encryption; key rotation + key_version alanı.
+- Uygulama: Woo ck/cs AES‑GCM envelope encryption; key rotation + key_version alanı.
 - CI: Secrets sadece ihtiyaç duyan job/ortamda açılır; masked logs.
 
 ## 37) Initial Backfill Stratejisi
 
-- Tetik: Yeni BL hesabı eklendiğinde veya yeniden indeksleme gerektiğinde.
+- Tetik: Yeni Woo mağazası eklendiğinde veya yeniden indeksleme gerektiğinde.
 - Kuyruk: `backfill:orders|returns|invoices|products` job'ları; büyük tarih aralıklarını dilimleme.
 - Checkpoint: `sync_state` tablosunda per‑account per‑entity son işlenen timestamp/id tutulur.
-- Backoff: BL 429/hata durumlarında artan bekleme; kaldığı yerden devam.
+- Backoff: Woo 429/hata durumlarında artan bekleme; kaldığı yerden devam.
 
 ## 38) Silinen Kayıtlar için Reconciliation
 
-- Gecelik job: BL ve internal mirror farklarını karşılaştır, artık yoksa `archived_at` doldur veya soft delete.
+- Gecelik job: Woo ve internal mirror farklarını karşılaştır, artık yoksa `archived_at` doldur veya soft delete.
 - Politika: Kritik varlıklarda (orders) hard delete yok; arşiv + görünürlükten kaldırma.
 
 ## 39) Alerting Strategy (Observability)
@@ -1146,7 +1143,7 @@ Blueprint ile Kapsam Uyum Kontrolü
   - api_request_p95_ms > 1000 (5m)
   - worker_job_fail_total increase(5m) > 0
   - sync_lag_seconds > 1800 (orders)
-  - bl_429_rate > threshold
+  - woo_429_rate > threshold
   - postgres_disk_usage > 85%
 - Escalation: Slack/email; prod'da sessiz gece pencere politikası yok (kritikler hariç).
 
@@ -1161,15 +1158,15 @@ Blueprint ile Kapsam Uyum Kontrolü
 ## 41) API Sözleşmesi (OpenAPI) ve Hata Modeli
 
 - NestJS Swagger/OpenAPI v1: tüm endpoint/DTO'lar belgelendirilsin.
-- Error sözlüğü: `code`, `message`, `details` alanları; rate‑limit ve BL hataları için standart mapping.
+- Error sözlüğü: `code`, `message`, `details` alanları; rate‑limit ve Woo hataları için standart mapping.
 - CORS ve rate‑limit header'ları: `Retry-After` desteklensin.
 - Not: API `GET /docs` altında Swagger UI sunar; JSON spec `GET /docs-json` ile erişilebilir.
 
 ## 42) Rate‑Limit Uygulama Ayrıntıları (Redis+Lua)
 
 - Dağıtık token bucket: `EVAL` ile atomik `take`/`refill` işlemleri.
-- Anahtar: `bl:ratelimit:{token}`; kapasite 100/dk; burst kontrolü; adil paylaşım.
-- Ölçüm: `bl_requests_total`, `rate_limit_hits_total` metrikleri.
+- Anahtar: `woo:ratelimit:{token}`; kapasite 100/dk; burst kontrolü; adil paylaşım.
+- Ölçüm: `woo_requests_total`, `rate_limit_hits_total` metrikleri.
 
 ## 43) Veri Şeması Ekleri ve İndeksleme
 
