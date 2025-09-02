@@ -3,14 +3,15 @@ import type { NextRequest } from 'next/server';
 
 export function middleware(request: NextRequest) {
   // Public sayfalar (login erişimi olan)
-  const publicPaths = ['/login', '/'];
-  const isPublicPath = publicPaths.includes(request.nextUrl.pathname);
+  const publicPaths = ['/', '/login', '/login/2fa', '/order-info'];
+  const pathname = request.nextUrl.pathname;
+  const isPublicPath = publicPaths.includes(pathname);
 
   // Token kontrolü
   const token = request.cookies.get('access_token')?.value || '';
 
   // Eğer login sayfasındaysa ve token varsa dashboard'a yönlendir
-  if (isPublicPath && token && request.nextUrl.pathname === '/login') {
+  if (isPublicPath && token && pathname === '/login') {
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 

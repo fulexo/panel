@@ -3,6 +3,7 @@ import { Reflector } from '@nestjs/core';
 import { JwtService } from '../jwt';
 import { IS_PUBLIC_KEY } from './decorators/public.decorator';
 import { SessionService } from './session.service';
+import { PrismaService } from '../prisma.service';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -10,6 +11,7 @@ export class AuthGuard implements CanActivate {
     private jwtService: JwtService,
     private reflector: Reflector,
     private sessionService: SessionService,
+    private prisma: PrismaService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -35,7 +37,11 @@ export class AuthGuard implements CanActivate {
       if (!isActive) {
         throw new UnauthorizedException('Session expired or revoked');
       }
-      request.user = payload;
+      const user = await this.prisma.user.findUnique({ where: { id: String((payload as any).sub) } });
+      if (!user) {
+        throw new UnauthorizedException('User not found');
+      }
+      request.user = { id: user.id, email: user.email, role: user.role, tenantId: user.tenantId };
       return true;
     } catch {
       throw new UnauthorizedException('Invalid token');
