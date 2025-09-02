@@ -43,6 +43,12 @@ export default function StoresPage(){
     alert('Webhooks: ' + JSON.stringify(res.results));
   };
 
+  const syncNow = async (id: string) => {
+    const r1 = await api(`/jobs`, { method: 'POST', body: JSON.stringify({ name: 'woo-sync-orders', data: { storeId: id } }) });
+    const r2 = await api(`/jobs`, { method: 'POST', body: JSON.stringify({ name: 'woo-sync-products', data: { storeId: id } }) });
+    if(r1.ok && r2.ok) alert('Sync queued'); else alert('Failed to queue sync');
+  };
+
   const remove = async (id: string) => {
     if(!confirm('Remove store?')) return;
     await api(`/woo/stores/${id}`, { method: 'DELETE' });
@@ -80,6 +86,7 @@ export default function StoresPage(){
             <div className="flex gap-2">
               <button onClick={()=>test(s.id)} className="px-2 py-1 bg-gray-700 rounded text-sm">Test</button>
               <button onClick={()=>registerHooks(s.id)} className="px-2 py-1 bg-purple-600 rounded text-sm">Register Webhooks</button>
+              <button onClick={()=>syncNow(s.id)} className="px-2 py-1 bg-blue-600 rounded text-sm">Sync Now</button>
               <button onClick={()=>remove(s.id)} className="px-2 py-1 bg-red-600 rounded text-sm">Remove</button>
             </div>
           </div>

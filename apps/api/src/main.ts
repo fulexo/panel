@@ -19,6 +19,7 @@ import { InboundModule } from './inbound/inbound.module';
 import { PolicyModule } from './policy/policy.module';
 import { CustomersModule } from './customers/customers.module';
 import { PrismaModule } from './modules/prisma/prisma.module';
+import { JobsController } from './jobs/jobs.controller';
 import { WooModule } from './woocommerce/woo.module';
 
 import { Public } from './auth/decorators/public.decorator';
@@ -72,7 +73,7 @@ class JwksController {
     PrismaModule,
     WooModule,
   ],
-  controllers: [HealthController, MetricsController, JwksController], 
+  controllers: [HealthController, MetricsController, JwksController, JobsController], 
   providers: [JwtService],
   exports: [JwtService]
 })

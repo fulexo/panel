@@ -2,7 +2,7 @@ const { Worker, QueueEvents, Queue } = require('bullmq');
 const Redis = require('ioredis');
 const client = require('prom-client');
 const http = require('http');
-const { PrismaClient } = require('@prisma/client');
+const { PrismaClient, Prisma } = require('@prisma/client');
 
 // Initialize Prometheus metrics
 client.collectDefaultMetrics();
@@ -106,7 +106,7 @@ const jobProcessors = {
           orderSource: 'woo',
           status: String(o.status || 'pending'),
           mappedStatus: String(o.status || 'pending'),
-          total: o.total ? new prisma.Prisma.Decimal(o.total) : null,
+          total: o.total ? new Prisma.Decimal(o.total) : null,
           currency: o.currency || 'TRY',
           customerEmail: o.billing?.email || null,
           customerPhone: o.billing?.phone || null,
@@ -134,7 +134,7 @@ const jobProcessors = {
                 sku: li.sku || null,
                 name: li.name || null,
                 qty: Number(li.quantity || 0),
-                price: li.total ? new prisma.Prisma.Decimal(li.total) : null,
+                price: li.total ? new Prisma.Decimal(li.total) : null,
               }});
             }
           }
@@ -168,7 +168,7 @@ const jobProcessors = {
           tenantId: store.tenantId,
           sku: p.sku || String(p.id),
           name: p.name || null,
-          price: p.price ? new prisma.Prisma.Decimal(p.price) : null,
+          price: p.price ? new Prisma.Decimal(p.price) : null,
           stock: (typeof p.stock_quantity==='number') ? p.stock_quantity : null,
           images: Array.isArray(p.images) ? p.images.map(i=>i.src).filter(Boolean) : [],
           tags: Array.isArray(p.tags) ? p.tags.map(t=>t.name).filter(Boolean) : [],
@@ -184,6 +184,16 @@ const jobProcessors = {
       page++;
     }
     return { success: true, storeId, imported };
+  },
+  'woo-schedule': async () => {
+    const stores = await prisma.wooStore.findMany({ where: { active: true } });
+    const q = new Queue('fx-jobs', { connection });
+    for(const s of stores){
+      await q.add('woo-sync-orders', { storeId: s.id }, { repeat: { pattern: '*/10 * * * *' }, jobId: `woo-sync-orders:${s.id}`, removeOnComplete: true });
+      await q.add('woo-sync-products', { storeId: s.id }, { repeat: { pattern: '*/30 * * * *' }, jobId: `woo-sync-products:${s.id}`, removeOnComplete: true });
+    }
+    await q.close();
+    return { success: true, stores: stores.length };
   },
 
   'process-request': async (job) => {
