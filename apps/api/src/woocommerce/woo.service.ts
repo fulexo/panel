@@ -68,7 +68,7 @@ export class WooService {
       const body = {
         name: `fx-${topic}`,
         topic,
-        delivery_url: `${process.env.PUBLIC_API_BASE || 'https://api.example.com'}/woo/webhooks/${id}`,
+        delivery_url: `https://${process.env.DOMAIN_API || 'api.example.com'}/woo/webhooks/${id}`,
         secret: s.webhookSecret || undefined,
       };
       const r = await fetch(`${s.baseUrl}/wp-json/wc/${s.apiVersion}/webhooks`, {

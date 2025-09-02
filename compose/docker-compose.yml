@@ -59,11 +59,8 @@ services:
     build:
       context: ../apps/web
       dockerfile: Dockerfile
-      args:
-        NEXT_PUBLIC_API_BASE: https://${DOMAIN_API}
     env_file: ${ENV_FILE:-.env}
     environment:
-      NEXT_PUBLIC_API_BASE: https://${DOMAIN_API}
       NODE_ENV: ${NODE_ENV}
     depends_on: [api]
     restart: unless-stopped

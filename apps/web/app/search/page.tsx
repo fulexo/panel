@@ -15,7 +15,7 @@ export default function SearchPage(){
     if(!token){ router.push('/login'); return; }
     setLoading(true);
     try{
-      const url = new URL(`${process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:3000'}/search`);
+      const url = new URL(`/api/search`, window.location.origin);
       url.searchParams.set('q', query);
       url.searchParams.set('types', 'orders,products,customers');
       url.searchParams.set('limitPerType', '10');

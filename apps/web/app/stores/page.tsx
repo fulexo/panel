@@ -13,9 +13,8 @@ export default function StoresPage(){
   const [ck, setCk] = useState('');
   const [cs, setCs] = useState('');
 
-  const apiBase = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:3000';
   const token = () => (typeof window !== 'undefined' ? localStorage.getItem('access_token') : '');
-  const api = (path: string, init?: RequestInit) => fetch(`${apiBase}${path}`, { headers: { Authorization: `Bearer ${token()}`, 'Content-Type': 'application/json' }, ...init });
+  const api = (path: string, init?: RequestInit) => fetch(`/api${path}`, { headers: { Authorization: `Bearer ${token()}`, 'Content-Type': 'application/json' }, ...init });
 
   const load = async () => {
     const t = token(); if(!t){ router.push('/login'); return; }
