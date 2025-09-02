@@ -1,5 +1,5 @@
 NAMES                STATUS                PORTS
-compose-nginx-1      Up 5 hours            0.0.0.0:80->80/tcp, [::]:80->80/tcp, 0.0.0.0:443->443/tcp, [::]:443->443/tcp
+compose-nginx-1      Up 6 hours            0.0.0.0:80->80/tcp, [::]:80->80/tcp, 0.0.0.0:443->443/tcp, [::]:443->443/tcp
 compose-web-1        Up 2 days             3000/tcp
 compose-api-1        Up 2 days (healthy)   3000/tcp
 compose-minio-1      Up 2 days             0.0.0.0:9000-9001->9000-9001/tcp, [::]:9000-9001->9000-9001/tcp
