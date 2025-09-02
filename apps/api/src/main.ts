@@ -20,6 +20,8 @@ import { InboundModule } from './inbound/inbound.module';
 import { PolicyModule } from './policy/policy.module';
 import { CustomersModule } from './customers/customers.module';
 import { PrismaModule } from './modules/prisma/prisma.module';
+import { JobsController } from './jobs/jobs.controller';
+import { WooModule } from './woocommerce/woo.module';
 
 import { Public } from './auth/decorators/public.decorator';
 @Controller('health')
@@ -71,8 +73,8 @@ class JwksController {
     PolicyModule,
     CustomersModule,
     PrismaModule,
+    WooModule,
   ],
-  controllers: [HealthController, MetricsController, JwksController],
 })
 class AppModule {}
 
@@ -108,7 +110,7 @@ async function bootstrap(){
   if (process.env.NODE_ENV !== 'production') {
     const config = new DocumentBuilder()
       .setTitle('Fulexo API')
-      .setDescription('BaseLinker Integration Platform API')
+      .setDescription('Commerce Integration Platform API')
       .setVersion('1.0')
       .addBearerAuth()
       .addServer('http://localhost:3000')

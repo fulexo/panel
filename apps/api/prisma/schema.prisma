@@ -12,7 +12,7 @@ model Tenant {
   name      String
   slug      String   @unique
   users     User[]
-  blAccounts BLAccount[]
+  
   ownershipRules OwnershipRule[]
   customers Customer[]
   orders    Order[]
@@ -27,6 +27,7 @@ model Tenant {
   billingBatches BillingBatch[]
   inboundShipments InboundShipment[]
   settings  Settings[]
+  wooStores WooStore[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -66,21 +67,6 @@ model Session {
   @@index([userId])
 }
 
-model BLAccount {
-  id             String   @id @default(uuid())
-  tenantId       String?
-  label          String?
-  tokenEncrypted Bytes
-  keyVersion     Int      @default(1)
-  active         Boolean  @default(true)
-  lastSyncAt     DateTime?
-  syncState      Json?
-  rateLimitReset DateTime?
-  tenant         Tenant?  @relation(fields: [tenantId], references: [id])
-  orders         Order[]
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-}
 
 model OwnershipRule {
   id             String  @id @default(uuid())
@@ -114,16 +100,22 @@ model Policy {
   @@unique([tenantId, name])
 }
 
-model EntityMap {
-  id         String @id @default(uuid())
-  entityType String
-  blId       String
+// EntityMap removed
+
+// Generic mapping for remote provider entities (provider-agnostic)
+model RemoteEntityMap {
+  id         String   @id @default(uuid())
   tenantId   String
-  customerId String?
+  storeId    String
+  provider   String   // 'woocommerce'
+  entityType String   // 'order' | 'product' | 'customer' | ...
+  remoteId   String
+  localType  String   // maps to local table type
+  localId    String
   createdAt  DateTime @default(now())
 
-  @@unique([entityType, blId])
-  @@index([tenantId])
+  @@unique([storeId, entityType, remoteId])
+  @@index([tenantId, provider, entityType])
 }
 
 model Customer {
@@ -156,9 +148,9 @@ model Order {
   id             String   @id @default(uuid())
   tenantId       String
   customerId     String?
-  accountId      String?
+  
   orderNo        Int?
-  blOrderId      String
+  
   externalOrderNo String?
   orderSource    String?
   status         String?
@@ -177,14 +169,14 @@ model Order {
   updatedAt      DateTime @updatedAt
   tenant         Tenant   @relation(fields: [tenantId], references: [id])
   customer       Customer? @relation(fields: [customerId], references: [id])
-  account        BLAccount? @relation(fields: [accountId], references: [id])
+  
   items          OrderItem[]
   shipments      Shipment[]
   returns        Return[]
   invoices       Invoice[]
   serviceCharges OrderServiceCharge[]
 
-  @@unique([tenantId, blOrderId])
+  
   @@unique([tenantId, orderNo])
   @@index([tenantId, status, confirmedAt])
   @@index([tenantId, customerEmail])
@@ -206,7 +198,7 @@ model OrderItem {
 model Shipment {
   id          String   @id @default(uuid())
   orderId     String
-  blPackageId String?
+  
   carrier     String?
   trackingNo  String?
   status      String?
@@ -271,7 +263,7 @@ model Invoice {
 model Return {
   id          String   @id @default(uuid())
   orderId     String
-  blReturnId  String?
+  
   status      String?
   reason      String?
   notes       String?
@@ -378,6 +370,25 @@ model OAuthCredential {
   tenant     Tenant   @relation(fields: [tenantId], references: [id])
 
   @@unique([tenantId, provider])
+}
+
+// WooCommerce store connection per tenant
+model WooStore {
+  id             String   @id @default(uuid())
+  tenantId       String
+  name           String
+  baseUrl        String   // https://shop.example.com
+  consumerKey    String
+  consumerSecret String
+  apiVersion     String   @default("v3")
+  webhookSecret  String?
+  active         Boolean  @default(true)
+  lastSync       Json?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  tenant         Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, active])
 }
 
 // Billing batch for semi-manual invoicing
@@ -536,6 +547,24 @@ model SyncState {
   @@index([status])
 }
 
+// Ingested webhook events
+model WebhookEvent {
+  id         String   @id @default(uuid())
+  tenantId   String
+  storeId    String
+  provider   String   // 'woocommerce'
+  topic      String
+  signature  String?
+  payload    Json
+  status     String   @default("received") // received, processed, failed
+  attempts   Int      @default(0)
+  error      String?
+  createdAt  DateTime @default(now())
+  processedAt DateTime?
+
+  @@index([tenantId, storeId, topic, status])
+}
+
 // JWT Keys for RS256 (persistence and rotation)
 model JwtKey {
   id         String   @id @default(uuid())
@@ -555,8 +584,8 @@ model Settings {
   id        String   @id @default(uuid())
   tenantId  String
   tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  category  String   // email, baselinker, notification, general
-  key       String   // smtp_host, smtp_port, baselinker_api_key, etc.
+  category  String   // email, notification, general
+  key       String   // smtp_host, smtp_port, etc.
   value     String?  // encrypted value for sensitive data
   isSecret  Boolean  @default(false) // whether the value should be encrypted
   metadata  Json?    // additional configuration

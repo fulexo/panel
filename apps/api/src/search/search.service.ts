@@ -23,7 +23,6 @@ export class SearchService {
           where: {
             tenantId,
             OR: [
-              { blOrderId: { contains: needle, mode: 'insensitive' } },
               { externalOrderNo: { contains: needle, mode: 'insensitive' } },
               { customerEmail: { contains: needle, mode: 'insensitive' } },
               { customerPhone: { contains: needle } },
@@ -34,7 +33,6 @@ export class SearchService {
           take: limitPerType,
           select: {
             id: true,
-            blOrderId: true,
             externalOrderNo: true,
             status: true,
             total: true,

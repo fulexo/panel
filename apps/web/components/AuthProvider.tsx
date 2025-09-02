@@ -29,7 +29,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE || 'https://api.fulexo.com'}/auth/me`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:3000'}/auth/me`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -51,7 +51,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const login = async (email: string, password: string) => {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE || 'https://api.fulexo.com'}/auth/login`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:3000'}/auth/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -66,6 +66,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const data = await response.json();
     
     if (data.requiresTwoFactor) {
+      // tempToken'ı localStorage'a koy ki 2FA sayfasında kullanılabilsin
+      if (data.tempToken) {
+        localStorage.setItem('temp_2fa_token', data.tempToken);
+      }
       throw new Error('2FA_REQUIRED');
     }
 

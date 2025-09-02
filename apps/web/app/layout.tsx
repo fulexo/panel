@@ -4,7 +4,7 @@ import { AuthProvider } from '../components/AuthProvider';
 import ClientLayout from '../components/ClientLayout';
 
 export const metadata: Metadata = {
-  title: 'Fulexo Platform - BaseLinker Integration',
+  title: 'Fulexo Platform',
   description: 'Multi-tenant e-commerce management platform',
 };
 

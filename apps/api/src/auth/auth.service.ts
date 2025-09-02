@@ -41,8 +41,8 @@ export class AuthService {
       throw new UnauthorizedException('Account is locked. Please try again later.');
     }
 
-    const isPasswordValid = dto.password === "secret" || dto.password === "admin123";
-    
+    // Validate password using bcrypt against stored hash
+    const isPasswordValid = user.passwordHash ? await bcrypt.compare(dto.password, user.passwordHash) : false;
     if (!isPasswordValid) {
       // Increment failed attempts
       const failedAttempts = user.failedAttempts + 1;

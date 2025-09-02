@@ -1,13 +1,13 @@
-# Fulexo Platform - BaseLinker Integration System
+# Fulexo Platform - WooCommerce Multi-Tenant Commerce Platform
 
 ## 🚀 Overview
 
-Fulexo is a comprehensive self-hosted platform for managing BaseLinker integrations with multi-tenant support, advanced security features, and real-time synchronization capabilities.
+Fulexo is a comprehensive self-hosted platform for managing multiple WooCommerce stores with multi-tenant support, advanced security features, and synchronization capabilities.
 
 ### Key Features
 - 🔐 **Multi-tenant Architecture** - Isolated data per tenant with Row Level Security
 - 🔑 **Advanced Authentication** - JWT tokens, 2FA support, session management
-- 📊 **Real-time Sync** - Automated BaseLinker data synchronization
+- 📊 **Sync** - Automated WooCommerce data synchronization (jobs + webhooks)
 - 🛡️ **Security First** - AES-256-GCM encryption, rate limiting, audit logging
 - 📈 **Monitoring** - Prometheus, Grafana, Loki, Jaeger integration
 - 🎯 **RBAC** - Role-based access control with 4 permission levels
@@ -122,7 +122,7 @@ After running the seed script, you can login with:
 ## 🔒 Security Features
 
 ### Encryption
-- **BaseLinker Tokens**: AES-256-GCM envelope encryption
+- **Secrets**: AES-256-GCM envelope encryption
 - **JWT**: RS256 in production, HS256 in development
 - **Passwords**: bcrypt with cost factor 10
 - **Sessions**: SHA256 hashed tokens
@@ -164,22 +164,15 @@ After running the seed script, you can login with:
 - SSL certificate monitoring
 - Notification alerts
 
-## 🔄 BaseLinker Integration
+## 🔄 WooCommerce Integration
 
 ### Supported Entities
-- ✅ Orders
-- ✅ Shipments
-- ✅ Returns
-- ✅ Invoices
-- ✅ Products
-- ✅ Customers
+- ✅ Orders, Shipments, Returns, Invoices, Products, Customers
 
 ### Sync Strategy
-- Incremental synchronization
-- Rate limit aware (100 req/min)
-- Multi-tenant fair-share allocation
-- Checkpoint-based recovery
-- Automatic retry with backoff
+- Incremental synchronization (pull) + Webhook ingestion (push)
+- Rate limit/backoff handling
+- Checkpoint-based recovery & idempotent processing
 
 ## 🎨 User Interface Features
 
@@ -249,7 +242,7 @@ The API documentation is automatically generated using Swagger/OpenAPI and is av
 #### Orders
 - `GET /orders` - List orders
 - `GET /orders/:id` - Get order details
-- `POST /orders/:id/refresh` - Refresh from BaseLinker
+ 
 - `GET /orders/stats/summary` - Order statistics
 
 #### Shipments
@@ -302,7 +295,7 @@ echo $DATABASE_URL
 ```bash
 # Check Redis for rate limit status
 docker compose exec valkey redis-cli
-> GET bl:ratelimit:*
+> KEYS rl:*
 ```
 
 #### Authentication Issues

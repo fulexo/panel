@@ -50,7 +50,7 @@ export default function SearchPage(){
             <div className="space-y-2">
               {results.orders.map((o:any)=> (
                 <a key={o.id} href={`/orders`} className="block bg-gray-800 p-3 rounded border border-gray-700">
-                  <div className="text-sm text-gray-400">{o.blOrderId} {o.externalOrderNo? `• ${o.externalOrderNo}`:''}</div>
+                  <div className="text-sm text-gray-400">{o.externalOrderNo || o.id}</div>
                   <div className="text-sm">{o.customerEmail || '—'} — {o.total} {o.currency}</div>
                 </a>
               ))}

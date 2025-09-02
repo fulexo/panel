@@ -24,20 +24,14 @@ SMTP yapılandırması ile sistem e-postalarının gönderimini sağlar.
 - **Yandex**: smtp.yandex.com:465
 - **SendGrid**: smtp.sendgrid.net:587
 
-### 2. BaseLinker Entegrasyonu
-BaseLinker ile veri senkronizasyonu için gerekli ayarlar.
+### 2. Mağaza Entegrasyonları
+WooCommerce mağazalarını bağlayarak sipariş/ürün/stok verilerini senkronize edin.
 
-**Alanlar:**
-- **API Anahtarı**: BaseLinker panelinden alınan API key
-- **API URL**: Varsayılan olarak dolu gelir
-- **Senkronizasyon Aralığı**: Otomatik senkronizasyon periyodu
-- **Otomatik Senkronizasyon**: Aktif/Pasif
-
-**API Anahtarı Alma:**
-1. BaseLinker hesabınıza giriş yapın
-2. Ayarlar → API bölümüne gidin
-3. "Yeni API Anahtarı Oluştur" butonuna tıklayın
-4. Oluşan anahtarı kopyalayıp yapıştırın
+**WooCommerce için gerekenler:**
+- Mağaza Base URL (https://...)
+- Consumer Key / Consumer Secret
+- API Version (genelde v3)
+- (Opsiyonel) Webhook Secret
 
 ### 3. Bildirim Ayarları
 Sistem olayları için bildirim tercihleri.
@@ -88,7 +82,7 @@ Content-Type: application/json
 Authorization: Bearer {token}
 
 {
-  "service": "email" // veya "baselinker"
+  "service": "email"
 }
 ```
 
@@ -111,10 +105,12 @@ await emailService.sendEmail(tenantId, {
 });
 ```
 
-### BaseLinker API Çağrısı
-```typescript
-// BaseLinker service otomatik olarak tenant API key'ini kullanır
-const orders = await baseLinkerService.getOrders(tenantId);
+### WooCommerce Mağaza İşlemleri
+```http
+GET /api/woo/stores
+POST /api/woo/stores { name, baseUrl, consumerKey, consumerSecret }
+POST /api/woo/stores/:id/test
+POST /api/woo/stores/:id/register-webhooks
 ```
 
 ## 📊 Ayar Durumu İzleme
@@ -138,8 +134,8 @@ Eski sistemden yeni ayarlar sistemine geçiş için:
 **S: Gmail ile e-posta gönderemiyorum?**
 C: Gmail için uygulama şifresi oluşturmanız gerekir. 2FA'yı etkinleştirip, güvenlik ayarlarından uygulama şifresi oluşturun.
 
-**S: BaseLinker bağlantı testi başarısız oluyor?**
-C: API anahtarınızın doğru olduğundan ve BaseLinker hesabınızın aktif olduğundan emin olun.
+**S: Woo bağlantı testi başarısız?**
+C: Base URL ve ck/cs değerlerini doğrulayın; sunucu IP engeli ya da firewall olmadığından emin olun.
 
 **S: Ayarlar nerede saklanıyor?**
 C: Tüm ayarlar PostgreSQL veritabanında, tenant bazlı olarak saklanır. Hassas veriler şifrelenmiş olarak tutulur.

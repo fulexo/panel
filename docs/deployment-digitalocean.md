@@ -81,9 +81,9 @@ DOMAIN_API=api.fulexo.com
 DOMAIN_APP=panel.fulexo.com
 ```
 
-**NOT:** Email ve BaseLinker ayarları artık panel üzerinden yapılıyor! Kurulum sonrası admin panelinden Ayarlar bölümüne giderek:
+Email ve mağaza ayarları panel üzerinden yönetilir. Kurulum sonrası:
 - E-posta ayarlarını
-- BaseLinker API anahtarını
+- WooCommerce mağazalarını (Stores ekranından) ekleyin ve test edin
 - Bildirim tercihlerini
 - Genel ayarları
 
@@ -121,7 +121,7 @@ docker logs -f compose-api-1
 3. Tenant (kiracı) oluşturun
 4. **Ayarlar** sayfasına gidin ve şunları yapılandırın:
    - **E-posta Ayarları**: SMTP bilgilerini girin ve test edin
-   - **BaseLinker Entegrasyonu**: API anahtarınızı ekleyin ve bağlantıyı test edin
+   - **Mağazalar (WooCommerce)**: Mağazalarınızı ekleyin ve bağlantıyı test edin
    - **Bildirimler**: Slack/Discord webhook'larını ekleyin (isteğe bağlı)
    - **Genel Ayarlar**: Şirket adı, destek e-postası vb.
 

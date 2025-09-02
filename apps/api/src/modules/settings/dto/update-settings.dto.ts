@@ -33,28 +33,6 @@ export class EmailSettingsDto {
   smtp_secure?: string;
 }
 
-export class BaseLinkerSettingsDto {
-  @ApiProperty({ description: 'BaseLinker API key' })
-  @IsString()
-  @IsOptional()
-  api_key?: string;
-
-  @ApiProperty({ description: 'BaseLinker API URL' })
-  @IsUrl()
-  @IsOptional()
-  api_url?: string;
-
-  @ApiProperty({ description: 'Sync interval in minutes' })
-  @IsString()
-  @IsOptional()
-  sync_interval?: string;
-
-  @ApiProperty({ description: 'Enable automatic sync' })
-  @IsString()
-  @IsOptional()
-  auto_sync?: string;
-}
-
 export class NotificationSettingsDto {
   @ApiProperty({ description: 'Slack webhook URL' })
   @IsUrl()
@@ -100,7 +78,7 @@ export class GeneralSettingsDto {
 }
 
 export class TestConnectionDto {
-  @ApiProperty({ description: 'Service to test', enum: ['email', 'baselinker'] })
-  @IsIn(['email', 'baselinker'])
+  @ApiProperty({ description: 'Service to test', enum: ['email'] })
+  @IsIn(['email'])
   service: string;
 }

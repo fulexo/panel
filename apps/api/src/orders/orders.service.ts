@@ -46,7 +46,6 @@ export class OrdersService {
 
     if (query.search) {
       where.OR = [
-        { blOrderId: { contains: query.search, mode: 'insensitive' } },
         { externalOrderNo: { contains: query.search, mode: 'insensitive' } },
         { customerEmail: { contains: query.search, mode: 'insensitive' } },
         { customerPhone: { contains: query.search } },
@@ -132,12 +131,7 @@ export class OrdersService {
         shipments: true,
         returns: true,
         invoices: true,
-        account: {
-          select: {
-            id: true,
-            label: true,
-          },
-        },
+        
         serviceCharges: true,
       },
     }) as any);
@@ -196,7 +190,6 @@ export class OrdersService {
         tenantId,
         customerId: customer?.id,
         orderNo: nextOrderNo,
-        blOrderId: dto.blOrderId || `MANUAL-${Date.now()}`,
         externalOrderNo: dto.externalOrderNo,
         orderSource: dto.orderSource || 'manual',
         status: dto.status || 'pending',
@@ -309,30 +302,7 @@ export class OrdersService {
     return { message: 'Order deleted successfully' };
   }
 
-  async refreshFromBaseLinker(tenantId: string, orderId: string, userId: string) {
-    // This would integrate with BaseLinker API
-    // For now, we'll simulate it
-    
-    const order = await this.findOne(tenantId, orderId);
-    
-    // TODO: Call BaseLinker API to get fresh data
-    // const blClient = new BaseLinkerClient();
-    // const freshData = await blClient.getOrder(order.blOrderId);
-    
-    // Audit log
-    await this.audit.log({
-      action: 'order.refreshed',
-      userId,
-      tenantId,
-      entityType: 'order',
-      entityId: orderId,
-    });
-
-    // Invalidate cache
-    await this.cache.invalidateOrderCache(tenantId, orderId);
-
-    return { message: 'Order refreshed from BaseLinker', order };
-  }
+  
 
   async getOrderTimeline(tenantId: string, orderId: string) {
     const order = await this.findOne(tenantId, orderId);
@@ -435,7 +405,7 @@ export class OrdersService {
   }
 
   async createShareLink(tenantId: string, orderId: string, userId: string) {
-    const order = await this.prisma.order.findFirst({ where: { id: orderId, tenantId }, select: { id: true, blOrderId: true, orderNo: true } });
+    const order = await this.prisma.order.findFirst({ where: { id: orderId, tenantId }, select: { id: true, orderNo: true } });
     if (!order) throw new NotFoundException('Order not found');
     // Create short-lived token (24h) with order reference
     const secret = new TextEncoder().encode(process.env.SHARE_TOKEN_SECRET || 'dev-share-secret');
@@ -457,7 +427,7 @@ export class OrdersService {
         select: {
           id: true,
           orderNo: true,
-          blOrderId: true,
+          
           externalOrderNo: true,
           status: true,
           total: true,

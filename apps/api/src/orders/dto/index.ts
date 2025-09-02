@@ -21,10 +21,7 @@ export class OrderItemDto {
 }
 
 export class CreateOrderDto {
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  blOrderId?: string;
+  
 
   @ApiPropertyOptional()
   @IsOptional()

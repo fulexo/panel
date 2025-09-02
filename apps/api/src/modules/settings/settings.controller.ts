@@ -17,7 +17,6 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import {
   EmailSettingsDto,
-  BaseLinkerSettingsDto,
   NotificationSettingsDto,
   GeneralSettingsDto,
   TestConnectionDto,
@@ -60,28 +59,7 @@ export class SettingsController {
     return { message: 'Email settings updated successfully' };
   }
 
-  @Get('baselinker')
-  @ApiOperation({ summary: 'Get BaseLinker settings' })
-  @Roles('admin', 'manager')
-  async getBaseLinkerSettings(@Req() req: any) {
-    return this.settingsService.getSettingsByCategory(req.user.tenantId, 'baselinker');
-  }
-
-  @Put('baselinker')
-  @ApiOperation({ summary: 'Update BaseLinker settings' })
-  @Roles('admin')
-  async updateBaseLinkerSettings(
-    @Req() req: any,
-    @Body() dto: BaseLinkerSettingsDto
-  ) {
-    await this.settingsService.updateSettings(
-      req.user.tenantId,
-      'baselinker',
-      dto,
-      req.user.id
-    );
-    return { message: 'BaseLinker settings updated successfully' };
-  }
+  
 
   @Get('notification')
   @ApiOperation({ summary: 'Get notification settings' })
@@ -138,9 +116,6 @@ export class SettingsController {
     switch (dto.service) {
       case 'email':
         result = await this.settingsService.testEmailSettings(req.user.tenantId);
-        break;
-      case 'baselinker':
-        result = await this.settingsService.testBaseLinkerConnection(req.user.tenantId);
         break;
       default:
         throw new Error('Invalid service');

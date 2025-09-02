@@ -166,6 +166,16 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
                       Tenants
                     </a>
                     <a 
+                      href="/stores" 
+                      className={`py-3 px-1 border-b-2 ${
+                        pathname.startsWith('/stores') 
+                          ? 'text-white border-blue-500' 
+                          : 'text-gray-300 hover:text-white border-transparent'
+                      }`}
+                    >
+                      Stores
+                    </a>
+                    <a 
                       href="/settings" 
                       className={`py-3 px-1 border-b-2 ${
                         pathname.startsWith('/settings') 
