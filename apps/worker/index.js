@@ -185,6 +185,79 @@ const jobProcessors = {
     }
     return { success: true, storeId, imported };
   },
+  'process-webhook-events': async () => {
+    // Poll and process pending webhook events
+    const pending = await prisma.webhookEvent.findMany({ where: { status: 'received', provider: 'woocommerce' }, take: 50, orderBy: { createdAt: 'asc' } });
+    for(const evt of pending){
+      try {
+        if(evt.topic?.startsWith('order.')){
+          const o = evt.payload;
+          const store = await prisma.wooStore.findUnique({ where: { id: evt.storeId } });
+          if(!store) throw new Error('Store not found for webhook');
+          const existing = await prisma.order.findFirst({ where: { tenantId: store.tenantId, externalOrderNo: String(o.number || o.id) } });
+          const data = {
+            tenantId: store.tenantId,
+            externalOrderNo: String(o.number || o.id),
+            orderSource: 'woo',
+            status: String(o.status || 'pending'),
+            mappedStatus: String(o.status || 'pending'),
+            total: o.total ? new Prisma.Decimal(o.total) : null,
+            currency: o.currency || 'TRY',
+            customerEmail: o.billing?.email || null,
+            customerPhone: o.billing?.phone || null,
+            shippingAddress: o.shipping || null,
+            billingAddress: o.billing || null,
+            paymentMethod: o.payment_method || null,
+            confirmedAt: o.date_paid ? new Date(o.date_paid) : (o.date_created ? new Date(o.date_created) : new Date()),
+          };
+          let orderId = existing?.id;
+          if(existing){
+            await prisma.order.update({ where: { id: existing.id }, data: { ...data, updatedAt: new Date() } });
+          } else {
+            const created = await prisma.order.create({ data });
+            orderId = created.id;
+          }
+          if(orderId && Array.isArray(o.line_items)){
+            await prisma.orderItem.deleteMany({ where: { orderId } });
+            for(const li of o.line_items){
+              await prisma.orderItem.create({ data: {
+                orderId,
+                sku: li.sku || null,
+                name: li.name || null,
+                qty: Number(li.quantity || 0),
+                price: li.total ? new Prisma.Decimal(li.total) : null,
+              }});
+            }
+          }
+        } else if(evt.topic?.startsWith('product.')){
+          const p = evt.payload;
+          const store = await prisma.wooStore.findUnique({ where: { id: evt.storeId } });
+          if(!store) throw new Error('Store not found for webhook');
+          const existing = await prisma.product.findFirst({ where: { tenantId: store.tenantId, sku: p.sku || String(p.id) } });
+          const data = {
+            tenantId: store.tenantId,
+            sku: p.sku || String(p.id),
+            name: p.name || null,
+            price: p.price ? new Prisma.Decimal(p.price) : null,
+            stock: (typeof p.stock_quantity==='number') ? p.stock_quantity : null,
+            images: Array.isArray(p.images) ? p.images.map(i=>i.src).filter(Boolean) : [],
+            tags: Array.isArray(p.tags) ? p.tags.map(t=>t.name).filter(Boolean) : [],
+            active: p.status !== 'draft' && p.status !== 'trash',
+          };
+          if(existing){
+            await prisma.product.update({ where: { id: existing.id }, data: { ...data, updatedAt: new Date() } });
+          } else {
+            await prisma.product.create({ data });
+          }
+        }
+        await prisma.webhookEvent.update({ where: { id: evt.id }, data: { status: 'processed', processedAt: new Date(), attempts: { increment: 1 } } });
+      } catch (err) {
+        console.error('webhook event failed', evt.id, err);
+        await prisma.webhookEvent.update({ where: { id: evt.id }, data: { status: 'failed', error: String(err?.message || err), attempts: { increment: 1 } } });
+      }
+    }
+    return { success: true, processed: pending.length };
+  },
   'woo-schedule': async () => {
     const stores = await prisma.wooStore.findMany({ where: { active: true } });
     const q = new Queue('fx-jobs', { connection });
@@ -344,6 +417,12 @@ async function scheduleRecurringJobs() {
     removeOnComplete: true,
   });
 
+  // Process webhook events every minute
+  await schedulerQueue.add('process-webhook-events', {}, {
+    repeat: { pattern: '*/1 * * * *' },
+    removeOnComplete: true,
+  });
+
   console.log('Recurring jobs scheduled');
 }
 
@@ -413,6 +492,18 @@ process.on('SIGTERM', async () => {
 async function start() {
   console.log('Worker starting...');
   await scheduleRecurringJobs();
+  // Schedule Woo periodic syncs for all active stores
+  try {
+    const q = new Queue('fx-jobs', { connection });
+    const stores = await prisma.wooStore.findMany({ where: { active: true } });
+    for(const s of stores){
+      await q.add('woo-sync-orders', { storeId: s.id }, { repeat: { pattern: '*/10 * * * *' }, jobId: `woo-sync-orders:${s.id}`, removeOnComplete: true });
+      await q.add('woo-sync-products', { storeId: s.id }, { repeat: { pattern: '*/30 * * * *' }, jobId: `woo-sync-products:${s.id}`, removeOnComplete: true });
+    }
+    await q.close();
+  } catch (e) {
+    console.error('Failed to schedule Woo periodic syncs:', e);
+  }
   console.log('Worker ready and processing jobs');
 }
 
