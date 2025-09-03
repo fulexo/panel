@@ -1,5 +1,6 @@
 import { Injectable, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../modules/prisma/prisma.service';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService {
@@ -157,5 +158,21 @@ export class UsersService {
     await this.prisma.user.delete({ where: { id } });
     
     return { message: 'User deleted successfully' };
+  }
+
+  async resetPassword(currentUser: any, id: string, password?: string) {
+    if (currentUser.role !== 'FULEXO_ADMIN') {
+      throw new ForbiddenException('Only FULEXO_ADMIN can reset passwords');
+    }
+    if (!password || String(password).length < 8) {
+      throw new ForbiddenException('Password must be at least 8 characters');
+    }
+    const user = await this.prisma.user.findUnique({ where: { id } });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    const passwordHash = await bcrypt.hash(password, 10);
+    await this.prisma.user.update({ where: { id }, data: { passwordHash } });
+    return { message: 'Password reset successfully' };
   }
 }

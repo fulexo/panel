@@ -13,7 +13,7 @@ export default function SupportPage(){
   const load = async () => {
     const token = localStorage.getItem('access_token');
     if(!token){ router.push('/login'); return; }
-    const r = await fetch(`${process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:3000'}/requests?page=1&limit=20`, {
+    const r = await fetch(`/api/requests?page=1&limit=20`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     if(!r.ok){ if(r.status===401) router.push('/login'); return; }
@@ -25,7 +25,7 @@ export default function SupportPage(){
     if(!message.trim()) return;
     const token = localStorage.getItem('access_token');
     if(!token){ router.push('/login'); return; }
-    const r = await fetch(`${process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:3000'}/requests`, {
+    const r = await fetch(`/api/requests`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

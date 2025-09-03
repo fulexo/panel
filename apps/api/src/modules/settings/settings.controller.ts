@@ -7,14 +7,11 @@ import {
   Body,
   Param,
   Query,
-  UseGuards,
   Req,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { SettingsService } from './settings.service';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../auth/guards/roles.guard';
-import { Roles } from '../auth/decorators/roles.decorator';
+import { Roles } from '../../auth/decorators/roles.decorator';
 import {
   EmailSettingsDto,
   NotificationSettingsDto,
@@ -24,28 +21,27 @@ import {
 
 @ApiTags('settings')
 @Controller('settings')
-@UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()
 export class SettingsController {
   constructor(private readonly settingsService: SettingsService) {}
 
   @Get()
   @ApiOperation({ summary: 'Get all settings' })
-  @Roles('admin', 'manager')
+  @Roles('FULEXO_ADMIN', 'FULEXO_STAFF')
   async getSettings(@Req() req: any, @Query('category') category?: string) {
     return this.settingsService.getSettings(req.user.tenantId, category);
   }
 
   @Get('email')
   @ApiOperation({ summary: 'Get email settings' })
-  @Roles('admin', 'manager')
+  @Roles('FULEXO_ADMIN', 'FULEXO_STAFF')
   async getEmailSettings(@Req() req: any) {
     return this.settingsService.getSettingsByCategory(req.user.tenantId, 'email');
   }
 
   @Put('email')
   @ApiOperation({ summary: 'Update email settings' })
-  @Roles('admin')
+  @Roles('FULEXO_ADMIN', 'FULEXO_STAFF')
   async updateEmailSettings(
     @Req() req: any,
     @Body() dto: EmailSettingsDto
@@ -63,14 +59,14 @@ export class SettingsController {
 
   @Get('notification')
   @ApiOperation({ summary: 'Get notification settings' })
-  @Roles('admin', 'manager')
+  @Roles('FULEXO_ADMIN', 'FULEXO_STAFF')
   async getNotificationSettings(@Req() req: any) {
     return this.settingsService.getSettingsByCategory(req.user.tenantId, 'notification');
   }
 
   @Put('notification')
   @ApiOperation({ summary: 'Update notification settings' })
-  @Roles('admin')
+  @Roles('FULEXO_ADMIN', 'FULEXO_STAFF')
   async updateNotificationSettings(
     @Req() req: any,
     @Body() dto: NotificationSettingsDto
@@ -86,14 +82,14 @@ export class SettingsController {
 
   @Get('general')
   @ApiOperation({ summary: 'Get general settings' })
-  @Roles('admin', 'manager', 'viewer')
+  @Roles('FULEXO_ADMIN', 'FULEXO_STAFF', 'CUSTOMER_ADMIN', 'CUSTOMER_USER')
   async getGeneralSettings(@Req() req: any) {
     return this.settingsService.getSettingsByCategory(req.user.tenantId, 'general');
   }
 
   @Put('general')
   @ApiOperation({ summary: 'Update general settings' })
-  @Roles('admin')
+  @Roles('FULEXO_ADMIN', 'FULEXO_STAFF')
   async updateGeneralSettings(
     @Req() req: any,
     @Body() dto: GeneralSettingsDto
@@ -109,7 +105,7 @@ export class SettingsController {
 
   @Post('test-connection')
   @ApiOperation({ summary: 'Test service connection' })
-  @Roles('admin')
+  @Roles('FULEXO_ADMIN', 'FULEXO_STAFF')
   async testConnection(@Req() req: any, @Body() dto: TestConnectionDto) {
     let result: boolean;
     
@@ -130,7 +126,7 @@ export class SettingsController {
 
   @Get(':category/:key')
   @ApiOperation({ summary: 'Get specific setting' })
-  @Roles('admin', 'manager')
+  @Roles('FULEXO_ADMIN', 'FULEXO_STAFF')
   async getSetting(
     @Req() req: any,
     @Param('category') category: string,
@@ -146,7 +142,7 @@ export class SettingsController {
 
   @Delete(':category/:key')
   @ApiOperation({ summary: 'Delete specific setting' })
-  @Roles('admin')
+  @Roles('FULEXO_ADMIN', 'FULEXO_STAFF')
   async deleteSetting(
     @Req() req: any,
     @Param('category') category: string,

@@ -26,8 +26,9 @@ export class JwtService {
     console.log("🔑 JWT Service initialized");
   }
 
-  async issueTokens(userId: string, email: string, role: string): Promise<JwtPair> {
-    const payload = { sub: userId, email, role };
+  async issueTokens(userId: string, email: string, role: string, tenantId?: string): Promise<JwtPair> {
+    const payload: any = { sub: userId, email, role };
+    if (tenantId) payload.tenantId = tenantId;
 
     if (this.alg === "RS256") {
       const access = await new jose.SignJWT(payload)

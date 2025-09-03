@@ -41,7 +41,7 @@ export default function DashboardPage() {
   const fetchDashboardStats = async () => {
     try {
       const token = localStorage.getItem('access_token');
-      const url = new URL(`${process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:3000'}/orders/stats/summary`);
+      const url = new URL(`/api/orders/stats/summary`, window.location.origin);
       if(dateFrom) url.searchParams.set('dateFrom', dateFrom);
       if(dateTo) url.searchParams.set('dateTo', dateTo);
       const response = await fetch(url.toString(), {

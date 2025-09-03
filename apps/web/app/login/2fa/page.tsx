@@ -10,7 +10,6 @@ export default function TwoFAPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const apiBase = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:3000';
 
   useEffect(() => {
     const tmp = localStorage.getItem('temp_2fa_token') || '';
@@ -22,7 +21,7 @@ export default function TwoFAPage() {
     setLoading(true);
     setError('');
     try {
-      const r = await fetch(`${apiBase}/auth/2fa/login`, {
+      const r = await fetch(`/api/auth/2fa/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ tempToken, twoFactorToken: token })

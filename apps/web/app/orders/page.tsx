@@ -11,7 +11,7 @@ export default function OrdersPage(){
   useEffect(() => {
     const token = localStorage.getItem('access_token');
     if(!token){ router.push('/login'); return; }
-    fetch(`${process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:3000'}/orders?page=1&limit=20`, {
+    fetch(`/api/orders?page=1&limit=20`, {
       headers: { Authorization: `Bearer ${token}` }
     }).then(async r => {
       if(!r.ok){ if(r.status===401) router.push('/login'); return; }

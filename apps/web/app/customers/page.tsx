@@ -14,11 +14,11 @@ export default function CustomersPage(){
   const [company, setCompany] = useState('');
 
   const token = () => localStorage.getItem('access_token');
-  const api = (path: string, init?: any) => fetch(`${process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:3000'}${path}`, { headers: { Authorization: `Bearer ${token()}`, 'Content-Type': 'application/json' }, ...init });
+  const api = (path: string, init?: any) => fetch(`/api${path}`, { headers: { Authorization: `Bearer ${token()}`, 'Content-Type': 'application/json' }, ...init });
 
   const load = async (search?: string) => {
     const t = token(); if(!t){ router.push('/login'); return; }
-    const url = new URL(`${process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:3000'}/customers`);
+    const url = new URL(`/api/customers`, window.location.origin);
     if(search) url.searchParams.set('search', search);
     const r = await fetch(url.toString(), { headers: { Authorization: `Bearer ${t}` } });
     if(!r.ok){ if(r.status===401) router.push('/login'); return; }

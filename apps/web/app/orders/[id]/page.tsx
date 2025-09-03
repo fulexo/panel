@@ -15,7 +15,7 @@ export default function OrderDetailPage(){
   const load = async () => {
     const token = localStorage.getItem('access_token');
     if(!token){ router.push('/login'); return; }
-    const r = await fetch(`${process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:3000'}/orders/${id}`, {
+    const r = await fetch(`/api/orders/${id}`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     if(!r.ok){ if(r.status===401) router.push('/login'); return; }
@@ -26,7 +26,7 @@ export default function OrderDetailPage(){
   const addCharge = async () => {
     const token = localStorage.getItem('access_token');
     if(!token){ router.push('/login'); return; }
-    const r = await fetch(`${process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:3000'}/orders/${id}/charges`, {
+    const r = await fetch(`/api/orders/${id}/charges`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify({
@@ -42,7 +42,7 @@ export default function OrderDetailPage(){
   const removeCharge = async (chargeId: string) => {
     const token = localStorage.getItem('access_token');
     if(!token){ router.push('/login'); return; }
-    const r = await fetch(`${process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:3000'}/orders/${id}/charges/${chargeId}`, {
+    const r = await fetch(`/api/orders/${id}/charges/${chargeId}`, {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${token}` }
     });

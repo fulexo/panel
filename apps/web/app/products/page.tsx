@@ -12,7 +12,7 @@ export default function ProductsPage(){
   const load = async (query?: string) => {
     const token = localStorage.getItem('access_token');
     if(!token){ router.push('/login'); return; }
-    const url = new URL(`${process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:3000'}/products`);
+    const url = new URL(`/api/products`, window.location.origin);
     url.searchParams.set('page', '1');
     url.searchParams.set('limit', '20');
     if(query) url.searchParams.set('search', query);

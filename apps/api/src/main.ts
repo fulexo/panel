@@ -22,6 +22,7 @@ import { CustomersModule } from './customers/customers.module';
 import { PrismaModule } from './modules/prisma/prisma.module';
 import { JobsController } from './jobs/jobs.controller';
 import { WooModule } from './woocommerce/woo.module';
+import { SettingsModule } from './modules/settings/settings.module';
 
 import { Public } from './auth/decorators/public.decorator';
 @Controller('health')
@@ -74,6 +75,7 @@ class JwksController {
     CustomersModule,
     PrismaModule,
     WooModule,
+    SettingsModule,
   ],
 })
 class AppModule {}
