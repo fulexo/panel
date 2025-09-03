@@ -1,15 +1,15 @@
 NAMES                    STATUS                             PORTS
-compose-web-1            Up 21 hours                        3000/tcp
-compose-promtail-1       Up 21 hours                        
-compose-alertmanager-1   Up 21 hours                        0.0.0.0:9093->9093/tcp, [::]:9093->9093/tcp
-compose-grafana-1        Up 21 hours                        0.0.0.0:3002->3000/tcp, [::]:3002->3000/tcp
-compose-prometheus-1     Up 21 hours                        9090/tcp
-compose-uptimekuma-1     Up 21 hours (healthy)              0.0.0.0:3001->3001/tcp, [::]:3001->3001/tcp
-compose-worker-1         Up 25 seconds (health: starting)   3001/tcp
-compose-api-1            Up 18 hours (unhealthy)            3000/tcp
-compose-loki-1           Up 21 hours                        3100/tcp
-compose-jaeger-1         Up 21 hours                        4317-4318/tcp, 5775/udp, 5778/tcp, 9411/tcp, 14250/tcp, 14268/tcp, 6831-6832/udp, 0.0.0.0:16686->16686/tcp, [::]:16686->16686/tcp
+compose-web-1            Up 22 hours                        3000/tcp
+compose-promtail-1       Up 22 hours                        
+compose-alertmanager-1   Up 22 hours                        0.0.0.0:9093->9093/tcp, [::]:9093->9093/tcp
+compose-grafana-1        Up 22 hours                        0.0.0.0:3002->3000/tcp, [::]:3002->3000/tcp
+compose-prometheus-1     Up 22 hours                        9090/tcp
+compose-uptimekuma-1     Up 22 hours (healthy)              0.0.0.0:3001->3001/tcp, [::]:3001->3001/tcp
+compose-worker-1         Up 19 seconds (health: starting)   3001/tcp
+compose-api-1            Up 19 hours (unhealthy)            3000/tcp
+compose-loki-1           Up 22 hours                        3100/tcp
+compose-jaeger-1         Up 22 hours                        4317-4318/tcp, 5775/udp, 5778/tcp, 9411/tcp, 14250/tcp, 14268/tcp, 6831-6832/udp, 0.0.0.0:16686->16686/tcp, [::]:16686->16686/tcp
 compose-nginx-1          Up 8 hours                         0.0.0.0:80->80/tcp, [::]:80->80/tcp, 0.0.0.0:443->443/tcp, [::]:443->443/tcp
-compose-minio-1          Up 21 hours                        0.0.0.0:9000-9001->9000-9001/tcp, [::]:9000-9001->9000-9001/tcp
+compose-minio-1          Up 22 hours                        0.0.0.0:9000-9001->9000-9001/tcp, [::]:9000-9001->9000-9001/tcp
 compose-postgres-1       Up 3 days                          5432/tcp
 compose-valkey-1         Up 3 days                          6379/tcp
