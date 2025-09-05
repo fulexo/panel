@@ -1,6 +1,6 @@
 Linux fulexo-panel 6.14.0-29-generic #29-Ubuntu SMP PREEMPT_DYNAMIC Thu Aug  7 18:32:38 UTC 2025 x86_64 x86_64 x86_64 GNU/Linux
 Filesystem      Size  Used Avail Use% Mounted on
-tmpfs           197M  2.2M  195M   2% /run
+tmpfs           197M  2.3M  195M   2% /run
 /dev/vda1        33G   17G   17G  50% /
 tmpfs           984M     0  984M   0% /dev/shm
 tmpfs           5.0M     0  5.0M   0% /run/lock
@@ -26,6 +26,7 @@ overlay          33G   17G   17G  50% /var/lib/docker/overlay2/fda64bb584e732ed0
 overlay          33G   17G   17G  50% /var/lib/docker/overlay2/e5f5205de425ed46f58b2d928cc44682949ac18779df2eade1a3ccb70dcd466a/merged
 overlay          33G   17G   17G  50% /var/lib/docker/overlay2/08726c7cc6704946ff367a9087311d2533afea3d12facf693badda42b59cfc86/merged
 overlay          33G   17G   17G  50% /var/lib/docker/overlay2/6314e7b5030833ff726a7f8c38b5567732e5fcd5d8f183daf0ceab41e315f1e1/merged
+overlay          33G   17G   17G  50% /var/lib/docker/overlay2/6c8c4e10a18adf767e88498999239053af8e6a0fd8f7412e7b403f04233aefe6/merged
                total        used        free      shared  buff/cache   available
-Mem:           1.9Gi       1.7Gi        76Mi        23Mi       385Mi       262Mi
+Mem:           1.9Gi       1.7Gi        87Mi        23Mi       351Mi       240Mi
 Swap:             0B          0B          0B
