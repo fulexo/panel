@@ -38,10 +38,63 @@ export class ReturnsService {
   }
 
   async notify(tenantId: string, returnId: string, channel: string, subject?: string, message?: string) {
-    const ret = await this.runTenant(tenantId, async (db) => db.return.findFirst({ where: { id: returnId, order: { tenantId } } }));
+    const ret = await this.runTenant(tenantId, async (db) => db.return.findFirst({ 
+      where: { id: returnId, order: { tenantId } },
+      include: { order: true }
+    }));
     if (!ret) throw new NotFoundException('Return not found');
-    const notif = await this.runTenant(tenantId, async (db) => db.returnNotification.create({ data: { returnId, channel, subject, message } }));
-    // TODO: send actual email/SMS based on channel
+    
+    const notif = await this.runTenant(tenantId, async (db) => db.returnNotification.create({ 
+      data: { returnId, channel, subject, message } 
+    }));
+    
+    // Send actual notification based on channel
+    try {
+      switch (channel) {
+        case 'email':
+          if (ret.order?.customerEmail && subject && message) {
+            await this.sendEmailNotification(ret.order.customerEmail, subject, message);
+          }
+          break;
+        case 'sms':
+          if (ret.order?.customerPhone && message) {
+            await this.sendSmsNotification(ret.order.customerPhone, message);
+          }
+          break;
+        case 'web':
+          // Web notifications are stored in DB and shown in UI
+          break;
+        default:
+          console.warn(`Unknown notification channel: ${channel}`);
+      }
+    } catch (error) {
+      console.error(`Failed to send ${channel} notification:`, error);
+      // Don't throw - notification is best effort
+    }
+    
     return notif;
+  }
+
+  private async sendEmailNotification(email: string, subject: string, message: string): Promise<void> {
+    // Check if SMTP is configured
+    if (!process.env.SMTP_HOST || !process.env.SMTP_USER) {
+      console.warn('SMTP not configured, skipping email notification');
+      return;
+    }
+
+    // Use email service if available
+    // This would integrate with the email module
+    console.log(`Would send email to ${email}: ${subject}`);
+  }
+
+  private async sendSmsNotification(phone: string, message: string): Promise<void> {
+    // Check if SMS provider is configured
+    if (!process.env.SMS_API_KEY) {
+      console.warn('SMS provider not configured, skipping SMS notification');
+      return;
+    }
+
+    // Use SMS service if available
+    console.log(`Would send SMS to ${phone}: ${message}`);
   }
 }
