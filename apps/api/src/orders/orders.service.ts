@@ -62,11 +62,30 @@ export class OrdersService {
       }
     }
 
-    // Execute query
+    // Execute query with optimized selects to avoid N+1
     const [orders, total] = await this.runTenant(tenantId, async (db) => Promise.all([
       db.order.findMany({
         where,
-        include: {
+        select: {
+          id: true,
+          orderNo: true,
+          externalOrderNo: true,
+          orderSource: true,
+          status: true,
+          mappedStatus: true,
+          total: true,
+          currency: true,
+          customerEmail: true,
+          customerPhone: true,
+          shippingAddress: true,
+          billingAddress: true,
+          paymentMethod: true,
+          notes: true,
+          tags: true,
+          confirmedAt: true,
+          createdAt: true,
+          updatedAt: true,
+          // Only select needed fields from relations
           customer: {
             select: {
               id: true,
@@ -74,13 +93,22 @@ export class OrdersService {
               email: true,
             },
           },
-          items: true,
+          items: {
+            select: {
+              id: true,
+              sku: true,
+              name: true,
+              qty: true,
+              price: true,
+            },
+          },
           shipments: {
             select: {
               id: true,
               status: true,
               trackingNo: true,
             },
+            take: 5, // Limit shipments to avoid loading too much data
           },
           _count: {
             select: {

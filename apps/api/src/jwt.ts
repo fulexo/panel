@@ -20,10 +20,23 @@ export class JwtService {
       this.publicKey = publicKey;
       this.publicJwks = await jose.exportJWK(publicKey);
     } else {
-      const secret = process.env.JWT_SECRET || randomBytes(32).toString("hex");
-      this.hsSecret = new TextEncoder().encode(secret);
+      // JWT_SECRET is required in production
+      const secret = process.env.JWT_SECRET;
+      if (!secret) {
+        if (process.env.NODE_ENV === 'production') {
+          throw new Error('JWT_SECRET environment variable is required in production');
+        }
+        // Only use random secret in development
+        console.warn('⚠️ JWT_SECRET not set, using random secret (development only)');
+        this.hsSecret = new TextEncoder().encode(randomBytes(32).toString("hex"));
+      } else {
+        if (secret.length < 64) {
+          throw new Error('JWT_SECRET must be at least 64 characters long');
+        }
+        this.hsSecret = new TextEncoder().encode(secret);
+      }
     }
-    console.log("🔑 JWT Service initialized");
+    console.log("🔑 JWT Service initialized with", this.alg, "algorithm");
   }
 
   async issueTokens(userId: string, email: string, role: string, tenantId?: string): Promise<JwtPair> {

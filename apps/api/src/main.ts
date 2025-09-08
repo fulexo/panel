@@ -23,6 +23,9 @@ import { PrismaModule } from './modules/prisma/prisma.module';
 import { JobsController } from './jobs/jobs.controller';
 import { WooModule } from './woocommerce/woo.module';
 import { SettingsModule } from './modules/settings/settings.module';
+import { LoggerModule } from './logger/logger.module';
+import { LoggerService } from './logger/logger.service';
+import { validateEnvOnStartup } from './config/env.validation';
 
 import { Public } from './auth/decorators/public.decorator';
 @Controller('health')
@@ -58,6 +61,7 @@ class JwksController {
 
 @Module({
   imports: [
+    LoggerModule,
     JwtModule,
     AuthModule,
     OrdersModule,
@@ -77,11 +81,17 @@ class JwksController {
     WooModule,
     SettingsModule,
   ],
+  controllers: [HealthController, MetricsController, JwksController, JobsController],
 })
 class AppModule {}
 
 async function bootstrap(){
-  const app = await NestFactory.create(AppModule);
+  // Validate environment variables first
+  validateEnvOnStartup();
+  
+  const app = await NestFactory.create(AppModule, {
+    logger: new LoggerService(),
+  });
 
   // Global validation pipe
   app.useGlobalPipes(new ValidationPipe({
@@ -93,15 +103,39 @@ async function bootstrap(){
   // CORS configuration
   app.enableCors({
     origin: (origin, cb) => {
-      return cb(null, true);
-      const allowed = new Set([
+      // In development, allow localhost origins
+      const isDevelopment = process.env.NODE_ENV !== 'production';
+      
+      const allowedOrigins = new Set([
         `https://${process.env.DOMAIN_APP}`,
         `https://${process.env.DOMAIN_API}`,
       ]);
-      if (!origin || allowed.has(origin)) return cb(null, true);
-      cb(new Error('CORS not allowed'));
+      
+      // Add localhost origins in development
+      if (isDevelopment) {
+        allowedOrigins.add('http://localhost:3000');
+        allowedOrigins.add('http://localhost:3001');
+        allowedOrigins.add('http://127.0.0.1:3000');
+        allowedOrigins.add('http://127.0.0.1:3001');
+      }
+      
+      // Allow requests with no origin (e.g., mobile apps, Postman)
+      if (!origin) return cb(null, true);
+      
+      // Check if origin is allowed
+      if (allowedOrigins.has(origin)) {
+        return cb(null, true);
+      }
+      
+      // Log rejected origin for debugging
+      console.warn(`CORS rejected origin: ${origin}`);
+      cb(new Error('Not allowed by CORS'));
     },
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    exposedHeaders: ['X-Total-Count', 'X-Page-Count'],
+    maxAge: 86400, // 24 hours
   });
 
   // Initialize JWT service

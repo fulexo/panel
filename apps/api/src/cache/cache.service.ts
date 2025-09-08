@@ -1,13 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import Redis from 'ioredis';
+import { LoggerService } from '../logger/logger.service';
 
 @Injectable()
 export class CacheService {
   private redis: Redis;
   private defaultTTL = 300; // 5 minutes
 
-  constructor() {
+  constructor(private logger: LoggerService) {
     this.redis = new Redis(process.env.REDIS_URL || 'redis://valkey:6379/0');
+    this.logger.log('Cache service initialized', 'CacheService');
   }
 
   async get<T>(key: string): Promise<T | null> {
@@ -15,7 +17,7 @@ export class CacheService {
       const value = await this.redis.get(key);
       return value ? JSON.parse(value) : null;
     } catch (error) {
-      console.error('Cache get error:', error);
+      this.logger.error(`Cache get error for key ${key}: ${error.message}`, error.stack, 'CacheService');
       return null;
     }
   }
@@ -29,7 +31,7 @@ export class CacheService {
         await this.redis.setex(key, this.defaultTTL, serialized);
       }
     } catch (error) {
-      console.error('Cache set error:', error);
+      this.logger.error(`Cache set error for key ${key}: ${error.message}`, error.stack, 'CacheService');
     }
   }
 
@@ -43,7 +45,7 @@ export class CacheService {
         await this.redis.del(key);
       }
     } catch (error) {
-      console.error('Cache delete error:', error);
+      this.logger.error(`Cache delete error: ${error.message}`, error.stack, 'CacheService');
     }
   }
 
@@ -62,7 +64,7 @@ export class CacheService {
         await this.redis.del(...toDelete);
       }
     } catch (error) {
-      console.error('Cache flush error:', error);
+      this.logger.error(`Cache flush error for pattern ${pattern}: ${error.message}`, error.stack, 'CacheService');
     }
   }
 
@@ -111,7 +113,8 @@ export class CacheService {
   private hashObject(obj: any): string {
     const crypto = require('crypto');
     const str = JSON.stringify(obj, Object.keys(obj).sort());
-    return crypto.createHash('md5').update(str).digest('hex');
+    // Use SHA256 instead of MD5 for better security and collision resistance
+    return crypto.createHash('sha256').update(str).digest('hex').substring(0, 16);
   }
 
   // Cache invalidation helpers
