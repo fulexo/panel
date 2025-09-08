@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict XIAsfBIRDR36YCLAdZuTRI5CTeFrybQ8GuruGMmPiaiJI0UhUhxroOQRw0drxG8
+\restrict h6HVqDkTOjSirLsaXjLPthFmki5gvVRyHaUGxbyuXAhtlPoToL30eXdqrVl8cah
 
 -- Dumped from database version 16.10 (Debian 16.10-1.pgdg13+1)
 -- Dumped by pg_dump version 16.10 (Debian 16.10-1.pgdg13+1)
@@ -935,7 +935,7 @@ adfad7f1-e7ad-4964-8edc-73bfffa454ec	Demo Company	demo	2025-08-29 13:42:34.848	2
 --
 
 COPY public."User" (id, "tenantId", email, "passwordHash", role, "twofaSecret", "twofaEnabled", "lastLoginAt", "failedAttempts", "lockedUntil", "createdAt", "updatedAt") FROM stdin;
-5c2e82d5-5ad4-4d8e-ae66-e8501efc9382	adfad7f1-e7ad-4964-8edc-73bfffa454ec	fulexo@fulexo.com	$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi	FULEXO_ADMIN	\N	f	2025-08-30 14:49:08.222	0	\N	2025-08-29 13:55:33.198	2025-08-30 14:49:08.224
+5c2e82d5-5ad4-4d8e-ae66-e8501efc9382	adfad7f1-e7ad-4964-8edc-73bfffa454ec	fulexo@fulexo.com	$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi	FULEXO_ADMIN	\N	f	2025-08-31 09:34:43.398	0	\N	2025-08-29 13:55:33.198	2025-08-31 09:34:43.4
 \.
 
 
@@ -1875,5 +1875,5 @@ ALTER TABLE ONLY public."User"
 -- PostgreSQL database dump complete
 --
 
-\unrestrict XIAsfBIRDR36YCLAdZuTRI5CTeFrybQ8GuruGMmPiaiJI0UhUhxroOQRw0drxG8
+\unrestrict h6HVqDkTOjSirLsaXjLPthFmki5gvVRyHaUGxbyuXAhtlPoToL30eXdqrVl8cah
 
