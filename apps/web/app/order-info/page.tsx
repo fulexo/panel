@@ -12,7 +12,7 @@ export default function OrderInfoPublic(){
   useEffect(() => {
     const run = async () => {
       try{
-        const r = await fetch(`${process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:3000'}/orders/public/${token}`);
+        const r = await fetch(`/api/orders/public/${token}`);
         if(!r.ok){ setError('Invalid or expired link'); return; }
         const d = await r.json();
         setData(d);

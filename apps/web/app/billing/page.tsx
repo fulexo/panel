@@ -11,7 +11,7 @@ export default function BillingPage(){
   const [invoiceIds, setInvoiceIds] = useState('');
 
   const token = () => localStorage.getItem('access_token');
-  const api = (path: string, init?: any) => fetch(`${process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:3000'}${path}`, { headers: { Authorization: `Bearer ${token()}`, 'Content-Type': 'application/json' }, ...init });
+  const api = (path: string, init?: any) => fetch(`/api${path}`, { headers: { Authorization: `Bearer ${token()}`, 'Content-Type': 'application/json' }, ...init });
 
   const load = async () => {
     const t = token(); if(!t){ router.push('/login'); return; }
@@ -73,8 +73,8 @@ export default function BillingPage(){
                 <div className="text-sm">Status: {b.status} • Total: {b.total || 0}</div>
               </div>
               <div className="flex gap-2">
-                <a className="px-2 py-1 bg-gray-700 rounded text-sm" href={`${process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:3000'}/billing/batches/${b.id}/export.csv`} target="_blank">CSV</a>
-                <a className="px-2 py-1 bg-gray-700 rounded text-sm" href={`${process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:3000'}/billing/batches/${b.id}/export.pdf`} target="_blank">PDF</a>
+                <a className="px-2 py-1 bg-gray-700 rounded text-sm" href={`/api/billing/batches/${b.id}/export.csv`} target="_blank">CSV</a>
+                <a className="px-2 py-1 bg-gray-700 rounded text-sm" href={`/api/billing/batches/${b.id}/export.pdf`} target="_blank">PDF</a>
                 {b.status !== 'issued' && <button onClick={()=>issue(b.id)} className="px-2 py-1 bg-green-600 rounded text-sm">Issue</button>}
               </div>
             </div>

@@ -45,7 +45,7 @@ export class TenantsService {
       originalTenantId: user.tenantId,
     } as any;
 
-    const tokens = await this.jwt.issueTokens(user.id, user.email, user.role);
+    const tokens = await this.jwt.issueTokens(user.id, user.email, user.role, tenant.id);
     await this.sessions.createSession(user.id, tokens.access, {});
 
     await this.audit.log({
@@ -74,7 +74,7 @@ export class TenantsService {
       tenantId: originalTenantId,
     } as any;
 
-    const tokens = await this.jwt.issueTokens(user.id, user.email, user.role);
+    const tokens = await this.jwt.issueTokens(user.id, user.email, user.role, originalTenantId);
     await this.sessions.createSession(user.id, tokens.access, {});
 
     await this.audit.log({
