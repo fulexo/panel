@@ -28,36 +28,9 @@ echo "🔒 Fulexo Platform - Güvenlik Kurulumu"
 echo "====================================="
 echo ""
 
-# 1. SSH güvenliği
+# 1. SSH güvenliği (sadece fail2ban ile)
 print_status "1/6 - SSH güvenliği yapılandırılıyor..."
-
-# SSH config backup
-cp /etc/ssh/sshd_config /etc/ssh/sshd_config.backup.$(date +%Y%m%d_%H%M%S)
-
-# SSH güvenlik ayarları
-cat > /etc/ssh/sshd_config.d/99-fulexo-security.conf << 'EOF'
-# Fulexo Security Settings
-Port 22
-Protocol 2
-PermitRootLogin no
-PasswordAuthentication no
-PubkeyAuthentication yes
-AuthorizedKeysFile .ssh/authorized_keys
-PermitEmptyPasswords no
-MaxAuthTries 3
-ClientAliveInterval 300
-ClientAliveCountMax 2
-X11Forwarding no
-AllowTcpForwarding no
-AllowAgentForwarding no
-PermitTunnel no
-ChrootDirectory none
-EOF
-
-# SSH servisini yeniden başlat
-systemctl restart sshd
-
-print_status "SSH güvenliği yapılandırıldı"
+print_info "SSH ayarları değiştirilmiyor, sadece fail2ban koruması aktifleştiriliyor"
 
 # 2. Swap alanı ekleme
 print_status "2/6 - Swap alanı ekleniyor..."
@@ -184,10 +157,8 @@ echo ""
 echo "✅ Yapılan güvenlik iyileştirmeleri:"
 echo ""
 echo "🛡️  SSH Güvenliği:"
-echo "   - Root login devre dışı"
-echo "   - Password authentication devre dışı"
-echo "   - Key-based authentication zorunlu"
-echo "   - Max auth tries: 3"
+echo "   - Fail2ban koruması aktif"
+echo "   - Brute force saldırı koruması"
 echo ""
 echo "🔥 Firewall:"
 echo "   - UFW aktif"
@@ -212,9 +183,8 @@ echo "   - 30 günlük log rotasyonu"
 echo "   - Sıkıştırma aktif"
 echo ""
 echo "⚠️  ÖNEMLİ UYARILAR:"
-echo "1. SSH key'inizi kaydetmeyi unutmayın!"
-echo "2. Root kullanıcısı ile giriş artık mümkün değil"
-echo "3. Sudo kullanıcısı oluşturun: adduser yourusername && usermod -aG sudo yourusername"
-echo "4. Firewall durumunu kontrol edin: ufw status"
+echo "1. Firewall durumunu kontrol edin: ufw status"
+echo "2. Fail2ban durumunu kontrol edin: systemctl status fail2ban"
+echo "3. Sistem güncellemelerini düzenli yapın"
 echo ""
 echo "🎊 Güvenlik kurulumu başarıyla tamamlandı!"

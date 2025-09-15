@@ -18,7 +18,7 @@ Sunucunuzun mevcut durumu:
 Sunucunuzda güvenlik açıkları tespit edildi. Önce bunları düzeltin:
 
 ```bash
-# 1. Güvenlik kurulumu
+# 1. Güvenlik kurulumu (SSH ayarları değiştirilmez)
 chmod +x scripts/setup-security.sh
 ./scripts/setup-security.sh
 
@@ -26,7 +26,7 @@ chmod +x scripts/setup-security.sh
 chmod +x scripts/setup-swap.sh
 ./scripts/setup-swap.sh
 
-# 3. Sudo kullanıcısı oluşturma (root yerine)
+# 3. Sudo kullanıcısı oluşturma (opsiyonel)
 chmod +x scripts/create-sudo-user.sh
 ./scripts/create-sudo-user.sh
 ```
@@ -209,19 +209,28 @@ docker logs -f compose-api-1
 ls -la /opt/fulexo/backups/
 ```
 
+### Build Kalıntı Temizliği
+```bash
+# Manuel temizlik
+/opt/fulexo/scripts/cleanup-build.sh
+
+# Otomatik temizlik (her Pazar 03:00)
+# Cron job: 0 3 * * 0 root /opt/fulexo/scripts/cleanup-build.sh
+```
+
 ## ⚠️ Önemli Uyarılar
 
 ### 1. Güvenlik
-- Root kullanıcısını devre dışı bırakın
-- SSH key'inizi güvenli yerde saklayın
 - Firewall'ı sürekli aktif tutun
 - Fail2ban'ı izleyin
+- Sistem güncellemelerini düzenli yapın
 
 ### 2. Performans
 - Swap alanını kontrol edin
 - Disk alanını izleyin
 - RAM kullanımını takip edin
 - Log dosyalarını temizleyin
+- Build kalıntılarını düzenli temizleyin
 
 ### 3. Yedekleme
 - Düzenli backup alın

@@ -80,13 +80,18 @@ sudo -u fulexo npm run prisma:migrate:deploy
 sudo -u fulexo npm run prisma:seed
 
 # 9. Admin kullanıcısını özelleştir
-print_status "9/10 - Admin kullanıcısı yapılandırılıyor..."
+print_status "9/11 - Admin kullanıcısı yapılandırılıyor..."
 chmod +x /opt/fulexo/scripts/create-admin-user.js
 cd /opt/fulexo/apps/api
 sudo -u fulexo node /opt/fulexo/scripts/create-admin-user.js
 
-# 10. Son kontroller
-print_status "10/10 - Kurulum doğrulanıyor..."
+# 10. Build kalıntılarını temizle
+print_status "10/11 - Build kalıntıları temizleniyor..."
+chmod +x scripts/cleanup-build.sh
+./scripts/cleanup-build.sh
+
+# 11. Son kontroller
+print_status "11/11 - Kurulum doğrulanıyor..."
 sleep 10
 
 # Health check

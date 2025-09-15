@@ -350,6 +350,10 @@ chown -R fulexo:fulexo /opt/fulexo/scripts
 print_status "Setting up automated backups..."
 echo "0 2 * * * fulexo /opt/fulexo/scripts/backup.sh" | crontab -u fulexo -
 
+# Setup cron for cleanup
+print_status "Setting up automated cleanup..."
+echo "0 3 * * 0 root /opt/fulexo/scripts/cleanup-build.sh" | crontab -u root -
+
 # Setup monitoring alerts
 print_status "Setting up basic monitoring..."
 cat > /opt/fulexo/scripts/health-check.sh << 'EOF'
