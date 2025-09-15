@@ -78,14 +78,15 @@ print_info "6/8 - API health check yapılıyor..."
 if [ -f "$ENV_FILE" ]; then
     DOMAIN_API=$(grep "^DOMAIN_API=" "$ENV_FILE" | cut -d'=' -f2)
     
-    if [ -n "$DOMAIN_API" ]; then
-        if curl -s -k "https://$DOMAIN_API/health" | grep -q "ok"; then
-            print_status "API health check başarılı ✓"
-        else
-            print_error "API health check başarısız ✗"
-        fi
+    # Eğer environment dosyasında yoksa varsayılan değeri kullan
+    if [ -z "$DOMAIN_API" ]; then
+        DOMAIN_API="api.fulexo.com"
+    fi
+    
+    if curl -s -k "https://$DOMAIN_API/health" | grep -q "ok"; then
+        print_status "API health check başarılı ✓"
     else
-        print_warning "Domain bilgisi bulunamadı, API test atlanıyor"
+        print_error "API health check başarısız ✗"
     fi
 else
     print_warning "Environment dosyası bulunamadı, API test atlanıyor"
@@ -96,14 +97,15 @@ print_info "7/8 - Web servis kontrol ediliyor..."
 if [ -f "$ENV_FILE" ]; then
     DOMAIN_APP=$(grep "^DOMAIN_APP=" "$ENV_FILE" | cut -d'=' -f2)
     
-    if [ -n "$DOMAIN_APP" ]; then
-        if curl -s -k "https://$DOMAIN_APP" | grep -q "html\|<!DOCTYPE"; then
-            print_status "Web servis çalışıyor ✓"
-        else
-            print_error "Web servis çalışmıyor ✗"
-        fi
+    # Eğer environment dosyasında yoksa varsayılan değeri kullan
+    if [ -z "$DOMAIN_APP" ]; then
+        DOMAIN_APP="panel.fulexo.com"
+    fi
+    
+    if curl -s -k "https://$DOMAIN_APP" | grep -q "html\|<!DOCTYPE"; then
+        print_status "Web servis çalışıyor ✓"
     else
-        print_warning "Domain bilgisi bulunamadı, Web test atlanıyor"
+        print_error "Web servis çalışmıyor ✗"
     fi
 else
     print_warning "Environment dosyası bulunamadı, Web test atlanıyor"
@@ -132,34 +134,41 @@ if [ -f "$ENV_FILE" ]; then
     DOMAIN_API=$(grep "^DOMAIN_API=" "$ENV_FILE" | cut -d'=' -f2)
     DOMAIN_APP=$(grep "^DOMAIN_APP=" "$ENV_FILE" | cut -d'=' -f2)
     
-    if [ -n "$DOMAIN_API" ] && [ -n "$DOMAIN_APP" ]; then
-        # API SSL kontrolü
-        if [ -f "/etc/letsencrypt/live/$DOMAIN_API/fullchain.pem" ]; then
-            API_DAYS=$(openssl x509 -in "/etc/letsencrypt/live/$DOMAIN_API/fullchain.pem" -noout -dates | grep notAfter | cut -d= -f2 | xargs -I {} date -d {} +%s)
-            API_DAYS_LEFT=$(( (API_DAYS - $(date +%s)) / 86400 ))
-            
-            if [ $API_DAYS_LEFT -gt 30 ]; then
-                print_status "API SSL sertifikası geçerli ($API_DAYS_LEFT gün kaldı) ✓"
-            else
-                print_warning "API SSL sertifikası yakında sona erecek ($API_DAYS_LEFT gün kaldı) ⚠"
-            fi
-        else
-            print_error "API SSL sertifikası bulunamadı ✗"
-        fi
+    # Eğer environment dosyasında yoksa varsayılan değerleri kullan
+    if [ -z "$DOMAIN_API" ]; then
+        DOMAIN_API="api.fulexo.com"
+    fi
+    
+    if [ -z "$DOMAIN_APP" ]; then
+        DOMAIN_APP="panel.fulexo.com"
+    fi
+    
+    # API SSL kontrolü
+    if [ -f "/etc/letsencrypt/live/$DOMAIN_API/fullchain.pem" ]; then
+        API_DAYS=$(openssl x509 -in "/etc/letsencrypt/live/$DOMAIN_API/fullchain.pem" -noout -dates | grep notAfter | cut -d= -f2 | xargs -I {} date -d {} +%s)
+        API_DAYS_LEFT=$(( (API_DAYS - $(date +%s)) / 86400 ))
         
-        # Panel SSL kontrolü
-        if [ -f "/etc/letsencrypt/live/$DOMAIN_APP/fullchain.pem" ]; then
-            APP_DAYS=$(openssl x509 -in "/etc/letsencrypt/live/$DOMAIN_APP/fullchain.pem" -noout -dates | grep notAfter | cut -d= -f2 | xargs -I {} date -d {} +%s)
-            APP_DAYS_LEFT=$(( (APP_DAYS - $(date +%s)) / 86400 ))
-            
-            if [ $APP_DAYS_LEFT -gt 30 ]; then
-                print_status "Panel SSL sertifikası geçerli ($APP_DAYS_LEFT gün kaldı) ✓"
-            else
-                print_warning "Panel SSL sertifikası yakında sona erecek ($APP_DAYS_LEFT gün kaldı) ⚠"
-            fi
+        if [ $API_DAYS_LEFT -gt 30 ]; then
+            print_status "API SSL sertifikası geçerli ($API_DAYS_LEFT gün kaldı) ✓"
         else
-            print_error "Panel SSL sertifikası bulunamadı ✗"
+            print_warning "API SSL sertifikası yakında sona erecek ($API_DAYS_LEFT gün kaldı) ⚠"
         fi
+    else
+        print_error "API SSL sertifikası bulunamadı ✗"
+    fi
+    
+    # Panel SSL kontrolü
+    if [ -f "/etc/letsencrypt/live/$DOMAIN_APP/fullchain.pem" ]; then
+        APP_DAYS=$(openssl x509 -in "/etc/letsencrypt/live/$DOMAIN_APP/fullchain.pem" -noout -dates | grep notAfter | cut -d= -f2 | xargs -I {} date -d {} +%s)
+        APP_DAYS_LEFT=$(( (APP_DAYS - $(date +%s)) / 86400 ))
+        
+        if [ $APP_DAYS_LEFT -gt 30 ]; then
+            print_status "Panel SSL sertifikası geçerli ($APP_DAYS_LEFT gün kaldı) ✓"
+        else
+            print_warning "Panel SSL sertifikası yakında sona erecek ($APP_DAYS_LEFT gün kaldı) ⚠"
+        fi
+    else
+        print_error "Panel SSL sertifikası bulunamadı ✗"
     fi
 fi
 
@@ -199,11 +208,18 @@ if [ -f "$ENV_FILE" ]; then
     DOMAIN_API=$(grep "^DOMAIN_API=" "$ENV_FILE" | cut -d'=' -f2)
     DOMAIN_APP=$(grep "^DOMAIN_APP=" "$ENV_FILE" | cut -d'=' -f2)
     
-    if [ -n "$DOMAIN_API" ] && [ -n "$DOMAIN_APP" ]; then
-        echo "   - Panel: https://$DOMAIN_APP"
-        echo "   - API: https://$DOMAIN_API"
-        echo "   - API Docs: https://$DOMAIN_API/docs"
+    # Eğer environment dosyasında yoksa varsayılan değerleri kullan
+    if [ -z "$DOMAIN_API" ]; then
+        DOMAIN_API="api.fulexo.com"
     fi
+    
+    if [ -z "$DOMAIN_APP" ]; then
+        DOMAIN_APP="panel.fulexo.com"
+    fi
+    
+    echo "   - Panel: https://$DOMAIN_APP"
+    echo "   - API: https://$DOMAIN_API"
+    echo "   - API Docs: https://$DOMAIN_API/docs"
 fi
 
 echo "   - Admin: fulexo@fulexo.com / Adem_123*"

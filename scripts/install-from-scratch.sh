@@ -37,34 +37,16 @@ ENV_DIR="/etc/fulexo"
 ENV_FILE="$ENV_DIR/fulexo.env"
 GIT_REPO="https://github.com/fulexo/panel.git"
 
-# Domain ayarları (kullanıcıdan alınacak)
-DOMAIN_API=""
-DOMAIN_APP=""
-ADMIN_EMAIL=""
+# Domain ayarları (otomatik)
+DOMAIN_API="api.fulexo.com"
+DOMAIN_APP="panel.fulexo.com"
+ADMIN_EMAIL="fulexo@fulexo.com"
 
-# Kullanıcıdan domain bilgilerini al
-echo "📋 Kurulum için gerekli bilgiler:"
+echo "📋 Kurulum bilgileri:"
+echo "  API Domain: $DOMAIN_API"
+echo "  Panel Domain: $DOMAIN_APP"
+echo "  Admin Email: $ADMIN_EMAIL"
 echo ""
-
-read -p "API Domain (örn: api.yourdomain.com): " DOMAIN_API
-read -p "Panel Domain (örn: panel.yourdomain.com): " DOMAIN_APP
-read -p "Admin Email (Let's Encrypt için): " ADMIN_EMAIL
-
-# Domain validation
-if [[ ! "$DOMAIN_API" =~ ^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$ ]]; then
-    print_error "Geçersiz API domain formatı!"
-    exit 1
-fi
-
-if [[ ! "$DOMAIN_APP" =~ ^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$ ]]; then
-    print_error "Geçersiz Panel domain formatı!"
-    exit 1
-fi
-
-if [[ ! "$ADMIN_EMAIL" =~ ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$ ]]; then
-    print_error "Geçersiz email formatı!"
-    exit 1
-fi
 
 echo ""
 print_info "Kurulum başlatılıyor..."
@@ -180,10 +162,10 @@ cat > $ENV_FILE << EOF
 # Generated on $(date)
 
 # Domain Configuration
-DOMAIN_API=$DOMAIN_API
-DOMAIN_APP=$DOMAIN_APP
+DOMAIN_API=api.fulexo.com
+DOMAIN_APP=panel.fulexo.com
 NODE_ENV=production
-PUBLIC_API_BASE=https://$DOMAIN_API
+PUBLIC_API_BASE=https://api.fulexo.com
 
 # Database Configuration
 POSTGRES_DB=fulexo
@@ -208,7 +190,7 @@ GF_SECURITY_ADMIN_PASSWORD=$GRAFANA_PASS
 
 # Additional Configuration
 SHARE_TOKEN_SECRET=$SHARE_SECRET
-NEXT_PUBLIC_APP_URL=https://$DOMAIN_APP
+NEXT_PUBLIC_APP_URL=https://panel.fulexo.com
 PORT=3000
 ENV_FILE=$ENV_FILE
 EOF
@@ -319,9 +301,9 @@ echo "5. Admin kullanıcısını oluşturun:"
 echo "   sudo -u $FULEXO_USER node $FULEXO_DIR/scripts/create-admin-user.js"
 echo ""
 echo "🌐 Erişim URL'leri:"
-echo "   - Panel: https://$DOMAIN_APP"
-echo "   - API: https://$DOMAIN_API"
-echo "   - API Docs: https://$DOMAIN_API/docs"
+echo "   - Panel: https://panel.fulexo.com"
+echo "   - API: https://api.fulexo.com"
+echo "   - API Docs: https://api.fulexo.com/docs"
 echo ""
 echo "👤 Varsayılan Admin:"
 echo "   - Email: fulexo@fulexo.com"

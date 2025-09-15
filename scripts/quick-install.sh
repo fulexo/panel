@@ -30,29 +30,16 @@ echo "=================================="
 echo "Bu script tüm kurulumu otomatik olarak yapar"
 echo ""
 
-# Domain bilgilerini al
-echo "📋 Kurulum için gerekli bilgiler:"
+# Domain bilgilerini otomatik ayarla
+DOMAIN_API="api.fulexo.com"
+DOMAIN_APP="panel.fulexo.com"
+ADMIN_EMAIL="fulexo@fulexo.com"
+
+echo "📋 Kurulum bilgileri:"
+echo "  API Domain: $DOMAIN_API"
+echo "  Panel Domain: $DOMAIN_APP"
+echo "  Admin Email: $ADMIN_EMAIL"
 echo ""
-
-read -p "API Domain (örn: api.yourdomain.com): " DOMAIN_API
-read -p "Panel Domain (örn: panel.yourdomain.com): " DOMAIN_APP
-read -p "Admin Email (Let's Encrypt için): " ADMIN_EMAIL
-
-# Domain validation
-if [[ ! "$DOMAIN_API" =~ ^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$ ]]; then
-    print_error "Geçersiz API domain formatı!"
-    exit 1
-fi
-
-if [[ ! "$DOMAIN_APP" =~ ^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$ ]]; then
-    print_error "Geçersiz Panel domain formatı!"
-    exit 1
-fi
-
-if [[ ! "$ADMIN_EMAIL" =~ ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$ ]]; then
-    print_error "Geçersiz email formatı!"
-    exit 1
-fi
 
 echo ""
 print_info "Kurulum başlatılıyor..."

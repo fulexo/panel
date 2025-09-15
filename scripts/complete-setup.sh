@@ -45,9 +45,13 @@ fi
 DOMAIN_API=$(grep "^DOMAIN_API=" "$ENV_FILE" | cut -d'=' -f2)
 DOMAIN_APP=$(grep "^DOMAIN_APP=" "$ENV_FILE" | cut -d'=' -f2)
 
-if [ -z "$DOMAIN_API" ] || [ -z "$DOMAIN_APP" ]; then
-    print_error "Domain bilgileri environment dosyasında bulunamadı"
-    exit 1
+# Eğer environment dosyasında yoksa varsayılan değerleri kullan
+if [ -z "$DOMAIN_API" ]; then
+    DOMAIN_API="api.fulexo.com"
+fi
+
+if [ -z "$DOMAIN_APP" ]; then
+    DOMAIN_APP="panel.fulexo.com"
 fi
 
 print_info "API Domain: $DOMAIN_API"
@@ -137,9 +141,9 @@ echo ""
 echo "✅ Fulexo Platform başarıyla kuruldu:"
 echo ""
 echo "🌐 Erişim URL'leri:"
-echo "   - Panel: https://$DOMAIN_APP"
-echo "   - API: https://$DOMAIN_API"
-echo "   - API Docs: https://$DOMAIN_API/docs"
+echo "   - Panel: https://panel.fulexo.com"
+echo "   - API: https://api.fulexo.com"
+echo "   - API Docs: https://api.fulexo.com/docs"
 echo ""
 echo "👤 Admin Giriş Bilgileri:"
 echo "   - Email: fulexo@fulexo.com"
@@ -159,7 +163,7 @@ echo "   - Logları görüntüle: docker logs -f compose-api-1"
 echo "   - Tüm loglar: docker compose -f $FULEXO_DIR/compose/docker-compose.yml logs"
 echo ""
 echo "📋 Sonraki Adımlar:"
-echo "1. https://$DOMAIN_APP adresine gidin"
+echo "1. https://panel.fulexo.com adresine gidin"
 echo "2. fulexo@fulexo.com / Adem_123* ile giriş yapın"
 echo "3. Settings → Email → SMTP ayarlarınızı yapın"
 echo "4. WooCommerce mağazalarınızı Admin panelinden ekleyin"

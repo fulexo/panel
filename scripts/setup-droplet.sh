@@ -184,6 +184,11 @@ EOF
     sed -i "s/api.yourdomain.com/api.fulexo.com/g" "$ENV_PATH"
     sed -i "s/panel.yourdomain.com/panel.fulexo.com/g" "$ENV_PATH"
     sed -i "s/https:\/\/panel.yourdomain.com/https:\/\/panel.fulexo.com/g" "$ENV_PATH"
+    
+    # Set default domains
+    sed -i "s/DOMAIN_API=.*/DOMAIN_API=api.fulexo.com/g" "$ENV_PATH"
+    sed -i "s/DOMAIN_APP=.*/DOMAIN_APP=panel.fulexo.com/g" "$ENV_PATH"
+    sed -i "s/NEXT_PUBLIC_APP_URL=.*/NEXT_PUBLIC_APP_URL=https:\/\/panel.fulexo.com/g" "$ENV_PATH"
 
     print_status "Generated secure passwords and updated env file"
     print_warning "IMPORTANT: Save these credentials securely!"

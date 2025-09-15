@@ -199,12 +199,15 @@ print_info "Çalışan container sayısı: $RUNNING_CONTAINERS"
 if [ -f "$ENV_FILE" ]; then
     DOMAIN_API=$(grep "^DOMAIN_API=" "$ENV_FILE" | cut -d'=' -f2)
     
-    if [ -n "$DOMAIN_API" ]; then
-        if curl -s -k "https://$DOMAIN_API/health" | grep -q "ok"; then
-            print_status "API servisi çalışıyor ✓"
-        else
-            print_warning "API servisi henüz hazır değil"
-        fi
+    # Eğer environment dosyasında yoksa varsayılan değeri kullan
+    if [ -z "$DOMAIN_API" ]; then
+        DOMAIN_API="api.fulexo.com"
+    fi
+    
+    if curl -s -k "https://$DOMAIN_API/health" | grep -q "ok"; then
+        print_status "API servisi çalışıyor ✓"
+    else
+        print_warning "API servisi henüz hazır değil"
     fi
 fi
 
@@ -212,12 +215,15 @@ fi
 if [ -f "$ENV_FILE" ]; then
     DOMAIN_APP=$(grep "^DOMAIN_APP=" "$ENV_FILE" | cut -d'=' -f2)
     
-    if [ -n "$DOMAIN_APP" ]; then
-        if curl -s -k "https://$DOMAIN_APP" | grep -q "html\|<!DOCTYPE"; then
-            print_status "Web servisi çalışıyor ✓"
-        else
-            print_warning "Web servisi henüz hazır değil"
-        fi
+    # Eğer environment dosyasında yoksa varsayılan değeri kullan
+    if [ -z "$DOMAIN_APP" ]; then
+        DOMAIN_APP="panel.fulexo.com"
+    fi
+    
+    if curl -s -k "https://$DOMAIN_APP" | grep -q "html\|<!DOCTYPE"; then
+        print_status "Web servisi çalışıyor ✓"
+    else
+        print_warning "Web servisi henüz hazır değil"
     fi
 fi
 

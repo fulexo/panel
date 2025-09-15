@@ -37,9 +37,13 @@ fi
 DOMAIN_API=$(grep "^DOMAIN_API=" "$ENV_FILE" | cut -d'=' -f2)
 DOMAIN_APP=$(grep "^DOMAIN_APP=" "$ENV_FILE" | cut -d'=' -f2)
 
-if [ -z "$DOMAIN_API" ] || [ -z "$DOMAIN_APP" ]; then
-    print_error "Domain bilgileri environment dosyasında bulunamadı"
-    exit 1
+# Eğer environment dosyasında yoksa varsayılan değerleri kullan
+if [ -z "$DOMAIN_API" ]; then
+    DOMAIN_API="api.fulexo.com"
+fi
+
+if [ -z "$DOMAIN_APP" ]; then
+    DOMAIN_APP="panel.fulexo.com"
 fi
 
 print_info "Platform bilgileri:"
@@ -133,9 +137,9 @@ echo "   - API: $(curl -s -k "https://$DOMAIN_API/health" | grep -q "ok" && echo
 echo "   - Web: $(curl -s -k "https://$DOMAIN_APP" | grep -q "html\|<!DOCTYPE" && echo "Çalışıyor" || echo "Çalışmıyor")"
 echo ""
 echo "🌐 Erişim URL'leri:"
-echo "   - Panel: https://$DOMAIN_APP"
-echo "   - API: https://$DOMAIN_API"
-echo "   - API Docs: https://$DOMAIN_API/docs"
+echo "   - Panel: https://panel.fulexo.com"
+echo "   - API: https://api.fulexo.com"
+echo "   - API Docs: https://api.fulexo.com/docs"
 echo ""
 echo "👤 Admin Giriş Bilgileri:"
 echo "   - Email: fulexo@fulexo.com"
@@ -153,7 +157,7 @@ echo "   - Backup: $FULEXO_DIR/scripts/backup-restore.sh backup"
 echo "   - Güncelleme: $FULEXO_DIR/scripts/update-platform.sh"
 echo ""
 echo "📋 Sonraki Adımlar:"
-echo "1. https://$DOMAIN_APP adresine gidin"
+echo "1. https://panel.fulexo.com adresine gidin"
 echo "2. fulexo@fulexo.com / Adem_123* ile giriş yapın"
 echo "3. Settings → Email → SMTP ayarlarınızı yapın"
 echo "4. WooCommerce mağazalarınızı Admin panelinden ekleyin"

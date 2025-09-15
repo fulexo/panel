@@ -31,9 +31,9 @@ if [[ $EUID -ne 0 ]]; then
 fi
 
 # Domains to secure
-DOMAIN_API=""
-DOMAIN_APP=""
-ADMIN_EMAIL=""
+DOMAIN_API="api.fulexo.com"
+DOMAIN_APP="panel.fulexo.com"
+ADMIN_EMAIL="fulexo@fulexo.com"
 
 # Environment dosyasından domain bilgilerini al
 ENV_FILE="/etc/fulexo/fulexo.env"
@@ -43,16 +43,17 @@ if [ -f "$ENV_FILE" ]; then
     ADMIN_EMAIL=$(grep "^ADMIN_EMAIL=" "$ENV_FILE" | cut -d'=' -f2)
 fi
 
-# Eğer environment dosyasından alınamadıysa kullanıcıdan al
-if [ -z "$DOMAIN_API" ] || [ -z "$DOMAIN_APP" ]; then
-    echo "📋 SSL kurulumu için gerekli bilgiler:"
-    echo ""
-    read -p "API Domain (örn: api.yourdomain.com): " DOMAIN_API
-    read -p "Panel Domain (örn: panel.yourdomain.com): " DOMAIN_APP
+# Eğer environment dosyasından alınamadıysa varsayılan değerleri kullan
+if [ -z "$DOMAIN_API" ]; then
+    DOMAIN_API="api.fulexo.com"
+fi
+
+if [ -z "$DOMAIN_APP" ]; then
+    DOMAIN_APP="panel.fulexo.com"
 fi
 
 if [ -z "$ADMIN_EMAIL" ]; then
-    read -p "Admin Email (Let's Encrypt için): " ADMIN_EMAIL
+    ADMIN_EMAIL="fulexo@fulexo.com"
 fi
 
 # Domain validation
