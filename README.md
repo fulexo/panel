@@ -21,78 +21,43 @@ Fulexo is a comprehensive self-hosted platform for managing multiple WooCommerce
 - 4GB RAM minimum, 8GB recommended
 - Ubuntu 22.04+ or similar Linux distribution
 
-## 🛠️ Quick Start
+## 🚀 Quick Installation (Production)
 
-### 1. Clone the Repository
+### 1. Sunucuya Bağlanın
 ```bash
-git clone https://github.com/yourusername/fulexo.git
-cd fulexo
+ssh root@your-server-ip
 ```
 
-### 2. Environment Setup
+### 2. Repository'yi Klonlayın
 ```bash
-# Copy the environment template file
-cp compose/env-template compose/.env
-
-# Edit the .env file with your settings
-nano compose/.env
-
-# Update the following required values:
-# - DOMAIN_API and DOMAIN_APP with your actual domains
-# - All password fields with secure passwords
-# - JWT_SECRET with a 64+ character random string
-# - ENCRYPTION_KEY with a 32 character random string
+git clone https://github.com/fulexo/panel.git /opt/fulexo
+cd /opt/fulexo
 ```
 
-### 3. Database Setup
+### 3. Hızlı Kurulum Script'ini Çalıştırın
 ```bash
-# Navigate to API directory
-cd apps/api
-
-# Install dependencies
-npm install
-
-# Generate Prisma client
-npm run prisma:generate
-
-# Run database migrations
-npm run prisma:migrate
-
-# Seed the database with initial data
-npm run prisma:seed
+chmod +x scripts/quick-install.sh
+./scripts/quick-install.sh
 ```
 
-### 4. Start Services
-```bash
-# Navigate to compose directory
-cd ../../compose
+**Artık hiçbir domain sormayacak!** Script otomatik olarak:
+- **API Domain**: `api.fulexo.com`
+- **Panel Domain**: `panel.fulexo.com`
+- **Admin Email**: `fulexo@fulexo.com`
 
-# Start all services
-docker compose up -d
-
-# Check service status
-docker compose ps
-```
-
-### 5. Access the Platform
-
-- **API**: http://localhost:3000
-- **API Docs**: http://localhost:3000/docs
-- **Web UI**: http://localhost:3001
-- **Grafana**: http://localhost:3002 (admin/GrafanaAdmin2025!)
-- **MinIO Console**: http://localhost:9001
-- **Uptime Kuma**: http://localhost:3003
+### 4. Kurulum Tamamlandı! 🎉
+- **Panel**: `https://panel.fulexo.com`
+- **API**: `https://api.fulexo.com`
+- **API Docs**: `https://api.fulexo.com/docs`
+- **Admin**: `fulexo@fulexo.com` / `Adem_123*`
 
 ## 🔑 Default Credentials
 
-After running the seed script, you can login with:
+After running the installation script, you can login with:
 
 | Role | Email | Password |
 |------|-------|----------|
-| Admin | admin@example.com | Admin123! |
-| Staff | staff@example.com | Staff123! |
-| Customer Admin | customer.admin@example.com | Customer123! |
-| Customer | customer@example.com | Customer123! |
+| Admin | fulexo@fulexo.com | Adem_123* |
 
 ## 🏗️ Architecture
 
@@ -203,8 +168,7 @@ After running the seed script, you can login with:
 │   ├── nginx/        # Reverse proxy config
 │   ├── prometheus/   # Metrics configuration
 │   └── ...
-├── docs/             # Documentation
-└── plan/             # Architecture plans
+└── scripts/          # Installation and management scripts
 ```
 
 ### API Development
@@ -228,7 +192,7 @@ npm run test         # Run tests
 
 The API documentation is automatically generated using Swagger/OpenAPI and is available at:
 - Development: http://localhost:3000/docs
-- Production: https://api.example.com/docs
+- Production: https://api.fulexo.com/docs
 
 ### Main Endpoints
 
@@ -259,7 +223,7 @@ The API documentation is automatically generated using Swagger/OpenAPI and is av
 sudo snap install --classic certbot
 
 # Generate certificates
-sudo certbot --nginx -d api.example.com -d app.example.com
+sudo certbot --nginx -d api.fulexo.com -d panel.fulexo.com
 ```
 
 ### Environment Variables
@@ -309,10 +273,7 @@ docker compose logs api | grep auth
 
 ## 📚 Additional Resources
 
-- [Architecture Documentation](docs/architecture.md)
 - [Security Guidelines](plan/Security-Guidelines.md)
-- [Performance Optimization](plan/Performance-Optimization.md)
-- [Disaster Recovery Plan](plan/Disaster-Recovery-Plan.md)
 - [API Blueprint](plan/Fulexo-Platform-Blueprint.md)
 
 ## 🤝 Contributing

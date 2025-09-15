@@ -117,4 +117,4 @@ echo "2. fulexo@fulexo.com / Adem_123* ile giriş yapın"
 echo "3. Settings → Email → SMTP ayarlarınızı yapın"
 echo "4. WooCommerce mağazalarınızı Admin panelinden ekleyin"
 echo ""
-echo "🎊 Kurulum başarıyla tamamlandı!"🎊 Kurulum başarıyla tamamlandı!
+echo "🎊 Kurulum başarıyla tamamlandı!"
