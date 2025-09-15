@@ -125,7 +125,7 @@ export class OrdersService {
     ]));
 
     const result = {
-      data: (role && !['FULEXO_ADMIN','FULEXO_STAFF'].includes(role)) ? orders.map(this.sanitizeOrderForCustomer) : orders,
+      data: (role && role !== 'ADMIN') ? orders.map(this.sanitizeOrderForCustomer) : orders,
       pagination: {
         page,
         limit,
@@ -171,7 +171,7 @@ export class OrdersService {
     // Cache for 5 minutes
     await this.cache.set(cacheKey, order, 300);
 
-    return (role && !['FULEXO_ADMIN','FULEXO_STAFF'].includes(role)) ? this.sanitizeOrderForCustomer(order) : order;
+    return (role && role !== 'ADMIN') ? this.sanitizeOrderForCustomer(order) : order;
   }
 
   async create(tenantId: string, dto: CreateOrderDto, userId: string) {

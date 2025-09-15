@@ -10,7 +10,7 @@ export default function CreateUserPage() {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
-    role: 'CUSTOMER_USER',
+    role: 'CUSTOMER',
     tenantId: ''
   });
   const [tenants, setTenants] = useState<any[]>([]);
@@ -60,7 +60,7 @@ export default function CreateUserPage() {
   };
 
   useEffect(() => {
-    if (user && ['FULEXO_ADMIN', 'FULEXO_STAFF'].includes(user.role)) {
+    if (user && user.role === 'ADMIN') {
       loadTenants();
     } else {
       router.push('/dashboard');
@@ -68,10 +68,8 @@ export default function CreateUserPage() {
   }, [user]);
 
   const roleOptions = [
-    { value: 'FULEXO_ADMIN', label: 'Fulexo Admin', disabled: user?.role !== 'FULEXO_ADMIN' },
-    { value: 'FULEXO_STAFF', label: 'Fulexo Staff', disabled: user?.role !== 'FULEXO_ADMIN' },
-    { value: 'CUSTOMER_ADMIN', label: 'Customer Admin', disabled: false },
-    { value: 'CUSTOMER_USER', label: 'Customer User', disabled: false }
+    { value: 'ADMIN', label: 'Admin', disabled: user?.role !== 'ADMIN' },
+    { value: 'CUSTOMER', label: 'Customer', disabled: false }
   ];
 
   return (

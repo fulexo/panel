@@ -12,8 +12,8 @@ export class UsersService {
     let whereClause: any = {};
     
     // Role-based filtering
-    if (currentUser.role === 'CUSTOMER_ADMIN') {
-      // Customer admins can only see users in their tenant
+    if (currentUser.role === 'CUSTOMER') {
+      // Customers can only see users in their tenant
       whereClause.tenantId = currentUser.tenantId;
     }
     
@@ -89,7 +89,7 @@ export class UsersService {
     }
 
     // Check permissions
-    if (currentUser.role === 'CUSTOMER_ADMIN' && user.tenantId !== currentUser.tenantId) {
+    if (currentUser.role === 'CUSTOMER' && user.tenantId !== currentUser.tenantId) {
       throw new ForbiddenException('Access denied');
     }
 
@@ -100,14 +100,14 @@ export class UsersService {
     const user = await this.get(currentUser, id);
 
     // Additional permission checks
-    if (currentUser.role !== 'FULEXO_ADMIN') {
+    if (currentUser.role !== 'ADMIN') {
       // Non-admin users cannot change roles to admin roles
-      if (data.role && ['FULEXO_ADMIN', 'FULEXO_STAFF'].includes(data.role)) {
+      if (data.role && data.role === 'ADMIN') {
         throw new ForbiddenException('Cannot assign admin roles');
       }
       
-      // Customer admins cannot change tenant
-      if (currentUser.role === 'CUSTOMER_ADMIN' && data.tenantId && data.tenantId !== currentUser.tenantId) {
+      // Customers cannot change tenant
+      if (currentUser.role === 'CUSTOMER' && data.tenantId && data.tenantId !== currentUser.tenantId) {
         throw new ForbiddenException('Cannot change tenant');
       }
     }
@@ -141,8 +141,8 @@ export class UsersService {
   }
 
   async remove(currentUser: any, id: string) {
-    if (currentUser.role !== 'FULEXO_ADMIN') {
-      throw new ForbiddenException('Only FULEXO_ADMIN can delete users');
+    if (currentUser.role !== 'ADMIN') {
+      throw new ForbiddenException('Only ADMIN can delete users');
     }
 
     const user = await this.prisma.user.findUnique({ where: { id } });
@@ -161,8 +161,8 @@ export class UsersService {
   }
 
   async resetPassword(currentUser: any, id: string, password?: string) {
-    if (currentUser.role !== 'FULEXO_ADMIN') {
-      throw new ForbiddenException('Only FULEXO_ADMIN can reset passwords');
+    if (currentUser.role !== 'ADMIN') {
+      throw new ForbiddenException('Only ADMIN can reset passwords');
     }
     if (!password || String(password).length < 8) {
       throw new ForbiddenException('Password must be at least 8 characters');

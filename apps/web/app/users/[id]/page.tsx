@@ -93,7 +93,7 @@ export default function UserDetailPage() {
   };
 
   useEffect(() => {
-    if (currentUser && ['FULEXO_ADMIN', 'FULEXO_STAFF', 'CUSTOMER_ADMIN'].includes(currentUser.role)) {
+    if (currentUser && currentUser.role === 'ADMIN') {
       Promise.all([loadUser(), loadTenants()]).finally(() => setLoading(false));
     } else {
       router.push('/dashboard');
@@ -101,10 +101,8 @@ export default function UserDetailPage() {
   }, [currentUser, params.id]);
 
   const roleOptions = [
-    { value: 'FULEXO_ADMIN', label: 'Fulexo Admin', disabled: currentUser?.role !== 'FULEXO_ADMIN' },
-    { value: 'FULEXO_STAFF', label: 'Fulexo Staff', disabled: currentUser?.role !== 'FULEXO_ADMIN' },
-    { value: 'CUSTOMER_ADMIN', label: 'Customer Admin', disabled: false },
-    { value: 'CUSTOMER_USER', label: 'Customer User', disabled: false }
+    { value: 'ADMIN', label: 'Admin', disabled: currentUser?.role !== 'ADMIN' },
+    { value: 'CUSTOMER', label: 'Customer', disabled: false }
   ];
 
   if (loading) return <div className="min-h-screen bg-gray-900 text-white p-8">Loading...</div>;
@@ -132,7 +130,7 @@ export default function UserDetailPage() {
                 >
                   Edit
                 </button>
-                {currentUser?.role === 'FULEXO_ADMIN' && (
+                {currentUser?.role === 'ADMIN' && (
                   <button
                     onClick={resetPassword}
                     className="px-4 py-2 bg-orange-600 hover:bg-orange-700 rounded"
@@ -231,9 +229,8 @@ export default function UserDetailPage() {
                   <div>
                     <span className="text-gray-400">Role:</span>
                     <span className={`ml-2 px-2 py-1 rounded text-xs ${
-                      user.role === 'FULEXO_ADMIN' ? 'bg-red-600' :
-                      user.role === 'FULEXO_STAFF' ? 'bg-orange-600' :
-                      user.role === 'CUSTOMER_ADMIN' ? 'bg-blue-600' :
+                      user.role === 'ADMIN' ? 'bg-red-600' :
+                      user.role === 'CUSTOMER' ? 'bg-blue-600' :
                       'bg-gray-600'
                     }`}>
                       {user.role}

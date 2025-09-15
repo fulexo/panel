@@ -50,7 +50,7 @@ export default function UsersPage() {
   };
 
   useEffect(() => {
-    if (user && ['FULEXO_ADMIN', 'FULEXO_STAFF', 'CUSTOMER_ADMIN'].includes(user.role)) {
+    if (user && user.role === 'ADMIN') {
       Promise.all([loadUsers(), loadTenants()]).finally(() => setLoading(false));
     } else {
       router.push('/dashboard');
@@ -107,9 +107,8 @@ export default function UsersPage() {
                     <td className="px-6 py-4">{u.email}</td>
                     <td className="px-6 py-4">
                       <span className={`px-2 py-1 rounded text-xs ${
-                        u.role === 'FULEXO_ADMIN' ? 'bg-red-600' :
-                        u.role === 'FULEXO_STAFF' ? 'bg-orange-600' :
-                        u.role === 'CUSTOMER_ADMIN' ? 'bg-blue-600' :
+                        u.role === 'ADMIN' ? 'bg-red-600' :
+                        u.role === 'CUSTOMER' ? 'bg-blue-600' :
                         'bg-gray-600'
                       }`}>
                         {u.role}
@@ -134,7 +133,7 @@ export default function UsersPage() {
                         >
                           Edit
                         </a>
-                        {user?.role === 'FULEXO_ADMIN' && (
+                        {user?.role === 'ADMIN' && (
                           <button
                             onClick={() => deleteUser(u.id)}
                             className="px-3 py-1 bg-red-600 hover:bg-red-700 rounded text-sm"

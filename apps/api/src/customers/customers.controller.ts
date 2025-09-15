@@ -26,22 +26,22 @@ export class CustomersController {
   }
 
   @Post()
-  @Roles('FULEXO_ADMIN', 'FULEXO_STAFF')
-  @ApiOperation({ summary: 'Create customer (admin/staff)' })
+  @Roles('ADMIN')
+  @ApiOperation({ summary: 'Create customer (admin only)' })
   async create(@CurrentUser() user: any, @Body() body: any) {
     return this.customers.create(user.tenantId, body);
   }
 
   @Put(':id')
-  @Roles('FULEXO_ADMIN', 'FULEXO_STAFF')
-  @ApiOperation({ summary: 'Update customer (admin/staff)' })
+  @Roles('ADMIN')
+  @ApiOperation({ summary: 'Update customer (admin only)' })
   async update(@CurrentUser() user: any, @Param('id') id: string, @Body() body: any) {
     return this.customers.update(user.tenantId, id, body);
   }
 
   @Delete(':id')
-  @Roles('FULEXO_ADMIN', 'FULEXO_STAFF')
-  @ApiOperation({ summary: 'Delete customer (admin/staff)' })
+  @Roles('ADMIN')
+  @ApiOperation({ summary: 'Delete customer (admin only)' })
   async remove(@CurrentUser() user: any, @Param('id') id: string) {
     return this.customers.remove(user.tenantId, id);
   }

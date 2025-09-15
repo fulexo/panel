@@ -27,21 +27,21 @@ export class SettingsController {
 
   @Get()
   @ApiOperation({ summary: 'Get all settings' })
-  @Roles('FULEXO_ADMIN', 'FULEXO_STAFF')
+  @Roles('ADMIN')
   async getSettings(@Req() req: any, @Query('category') category?: string) {
     return this.settingsService.getSettings(req.user.tenantId, category);
   }
 
   @Get('email')
   @ApiOperation({ summary: 'Get email settings' })
-  @Roles('FULEXO_ADMIN', 'FULEXO_STAFF')
+  @Roles('ADMIN')
   async getEmailSettings(@Req() req: any) {
     return this.settingsService.getSettingsByCategory(req.user.tenantId, 'email');
   }
 
   @Put('email')
   @ApiOperation({ summary: 'Update email settings' })
-  @Roles('FULEXO_ADMIN', 'FULEXO_STAFF')
+  @Roles('ADMIN')
   async updateEmailSettings(
     @Req() req: any,
     @Body() dto: EmailSettingsDto
@@ -82,14 +82,14 @@ export class SettingsController {
 
   @Get('general')
   @ApiOperation({ summary: 'Get general settings' })
-  @Roles('FULEXO_ADMIN', 'FULEXO_STAFF', 'CUSTOMER_ADMIN', 'CUSTOMER_USER')
+  @Roles('ADMIN', 'CUSTOMER')
   async getGeneralSettings(@Req() req: any) {
     return this.settingsService.getSettingsByCategory(req.user.tenantId, 'general');
   }
 
   @Put('general')
   @ApiOperation({ summary: 'Update general settings' })
-  @Roles('FULEXO_ADMIN', 'FULEXO_STAFF')
+  @Roles('ADMIN')
   async updateGeneralSettings(
     @Req() req: any,
     @Body() dto: GeneralSettingsDto

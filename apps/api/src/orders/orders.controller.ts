@@ -31,14 +31,14 @@ export class OrdersController {
   }
 
   @Post()
-  @Roles('FULEXO_ADMIN', 'FULEXO_STAFF')
+  @Roles('ADMIN')
   @ApiOperation({ summary: 'Create order (admin only)' })
   async create(@CurrentUser() user: any, @Body() dto: CreateOrderDto) {
     return this.ordersService.create(user.tenantId, dto, user.id);
   }
 
   @Put(':id')
-  @Roles('FULEXO_ADMIN', 'FULEXO_STAFF')
+  @Roles('ADMIN')
   @ApiOperation({ summary: 'Update order' })
   async update(
     @CurrentUser() user: any,
@@ -49,7 +49,7 @@ export class OrdersController {
   }
 
   @Delete(':id')
-  @Roles('FULEXO_ADMIN')
+  @Roles('ADMIN')
   @ApiOperation({ summary: 'Delete order (admin only)' })
   async remove(@CurrentUser() user: any, @Param('id') id: string) {
     return this.ordersService.remove(user.tenantId, id, user.id);
@@ -76,7 +76,7 @@ export class OrdersController {
   }
 
   @Post(':id/charges')
-  @Roles('FULEXO_ADMIN', 'FULEXO_STAFF')
+  @Roles('ADMIN')
   @ApiOperation({ summary: 'Add a service charge to an order' })
   async addCharge(
     @CurrentUser() user: any,
@@ -87,7 +87,7 @@ export class OrdersController {
   }
 
   @Delete(':id/charges/:chargeId')
-  @Roles('FULEXO_ADMIN', 'FULEXO_STAFF')
+  @Roles('ADMIN')
   @ApiOperation({ summary: 'Remove a service charge from an order' })
   async removeCharge(
     @CurrentUser() user: any,
@@ -98,7 +98,7 @@ export class OrdersController {
   }
 
   @Post(':id/share')
-  @Roles('FULEXO_ADMIN', 'FULEXO_STAFF')
+  @Roles('ADMIN')
   @ApiOperation({ summary: 'Create a share link token for order info (email-safe)' })
   async createShare(@CurrentUser() user: any, @Param('id') id: string) {
     return this.ordersService.createShareLink(user.tenantId, id, user.id);

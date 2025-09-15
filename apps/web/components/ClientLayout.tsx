@@ -30,21 +30,20 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
   ];
 
   const adminItems = [
-    { href: '/users', label: 'Users', icon: '👤', roles: ['FULEXO_ADMIN', 'FULEXO_STAFF', 'CUSTOMER_ADMIN'] },
+    { href: '/users', label: 'Users', icon: '👤', roles: ['ADMIN'] },
     { href: '/inbound', label: 'Inbound', icon: '📥' },
     { href: '/returns', label: 'Returns', icon: '↩️' },
     { href: '/billing', label: 'Billing', icon: '💳' },
-    { href: '/tenants', label: 'Tenants', icon: '🏢', roles: ['FULEXO_ADMIN', 'FULEXO_STAFF'] },
-    { href: '/stores', label: 'Stores', icon: '🏪', roles: ['FULEXO_ADMIN', 'FULEXO_STAFF'] },
-    { href: '/settings', label: 'Settings', icon: '⚙️', roles: ['FULEXO_ADMIN', 'FULEXO_STAFF'] },
+    { href: '/tenants', label: 'Tenants', icon: '🏢', roles: ['ADMIN'] },
+    { href: '/stores', label: 'Stores', icon: '🏪', roles: ['ADMIN'] },
+    { href: '/settings', label: 'Settings', icon: '⚙️', roles: ['ADMIN'] },
     { href: '/support', label: 'Support', icon: '🆘' },
   ];
 
   const getRoleColor = (role: string) => {
     switch (role) {
-      case 'FULEXO_ADMIN': return 'bg-red-600';
-      case 'FULEXO_STAFF': return 'bg-orange-600';
-      case 'CUSTOMER_ADMIN': return 'bg-blue-600';
+      case 'ADMIN': return 'bg-red-600';
+      case 'CUSTOMER': return 'bg-blue-600';
       default: return 'bg-gray-600';
     }
   };

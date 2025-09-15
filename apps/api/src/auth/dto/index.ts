@@ -26,9 +26,9 @@ export class RegisterDto {
   @IsUUID()
   tenantId: string;
 
-  @ApiProperty({ enum: ['FULEXO_ADMIN', 'FULEXO_STAFF', 'CUSTOMER_ADMIN', 'CUSTOMER_USER'] })
+  @ApiProperty({ enum: ['ADMIN', 'CUSTOMER'] })
   @IsOptional()
-  @IsEnum(['FULEXO_ADMIN', 'FULEXO_STAFF', 'CUSTOMER_ADMIN', 'CUSTOMER_USER'])
+  @IsEnum(['ADMIN', 'CUSTOMER'])
   role?: string;
 }
 

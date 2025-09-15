@@ -25,39 +25,11 @@ async function main() {
     create: {
       email: 'admin@example.com',
       passwordHash: adminPassword,
-      role: 'FULEXO_ADMIN',
+      role: 'ADMIN',
       tenantId: tenant.id,
     },
   });
   console.log('✅ Created admin user:', admin.email);
-
-  // Create staff user
-  const staffPassword = await bcrypt.hash('Staff123!', 10);
-  const staff = await prisma.user.upsert({
-    where: { email: 'staff@example.com' },
-    update: {},
-    create: {
-      email: 'staff@example.com',
-      passwordHash: staffPassword,
-      role: 'FULEXO_STAFF',
-      tenantId: tenant.id,
-    },
-  });
-  console.log('✅ Created staff user:', staff.email);
-
-  // Create customer admin user
-  const customerAdminPassword = await bcrypt.hash('Customer123!', 10);
-  const customerAdmin = await prisma.user.upsert({
-    where: { email: 'customer.admin@example.com' },
-    update: {},
-    create: {
-      email: 'customer.admin@example.com',
-      passwordHash: customerAdminPassword,
-      role: 'CUSTOMER_ADMIN',
-      tenantId: tenant.id,
-    },
-  });
-  console.log('✅ Created customer admin:', customerAdmin.email);
 
   // Create customer user
   const customerPassword = await bcrypt.hash('Customer123!', 10);
@@ -67,11 +39,12 @@ async function main() {
     create: {
       email: 'customer@example.com',
       passwordHash: customerPassword,
-      role: 'CUSTOMER_USER',
+      role: 'CUSTOMER',
       tenantId: tenant.id,
     },
   });
   console.log('✅ Created customer user:', customer.email);
+
 
   // Create default policy
   const policy = await prisma.policy.create({
