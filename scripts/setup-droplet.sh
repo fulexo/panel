@@ -51,7 +51,9 @@ apt-get install -y \
     htop \
     vim \
     wget \
-    build-essential
+    build-essential \
+    software-properties-common \
+    snapd
 
 # Install Docker
 print_status "Installing Docker..."

@@ -31,12 +31,50 @@ if [[ $EUID -ne 0 ]]; then
 fi
 
 # Domains to secure
-DOMAIN_API="api.fulexo.com"
-DOMAIN_PANEL="panel.fulexo.com"
+DOMAIN_API=""
+DOMAIN_APP=""
+ADMIN_EMAIL=""
+
+# Environment dosyasından domain bilgilerini al
+ENV_FILE="/etc/fulexo/fulexo.env"
+if [ -f "$ENV_FILE" ]; then
+    DOMAIN_API=$(grep "^DOMAIN_API=" "$ENV_FILE" | cut -d'=' -f2)
+    DOMAIN_APP=$(grep "^DOMAIN_APP=" "$ENV_FILE" | cut -d'=' -f2)
+    ADMIN_EMAIL=$(grep "^ADMIN_EMAIL=" "$ENV_FILE" | cut -d'=' -f2)
+fi
+
+# Eğer environment dosyasından alınamadıysa kullanıcıdan al
+if [ -z "$DOMAIN_API" ] || [ -z "$DOMAIN_APP" ]; then
+    echo "📋 SSL kurulumu için gerekli bilgiler:"
+    echo ""
+    read -p "API Domain (örn: api.yourdomain.com): " DOMAIN_API
+    read -p "Panel Domain (örn: panel.yourdomain.com): " DOMAIN_APP
+fi
+
+if [ -z "$ADMIN_EMAIL" ]; then
+    read -p "Admin Email (Let's Encrypt için): " ADMIN_EMAIL
+fi
+
+# Domain validation
+if [[ ! "$DOMAIN_API" =~ ^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$ ]]; then
+    print_error "Geçersiz API domain formatı!"
+    exit 1
+fi
+
+if [[ ! "$DOMAIN_APP" =~ ^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$ ]]; then
+    print_error "Geçersiz Panel domain formatı!"
+    exit 1
+fi
+
+if [[ ! "$ADMIN_EMAIL" =~ ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$ ]]; then
+    print_error "Geçersiz email formatı!"
+    exit 1
+fi
 
 print_status "Setting up SSL certificates for Fulexo domains..."
 echo "  - API Domain: $DOMAIN_API"
-echo "  - Panel Domain: $DOMAIN_PANEL"
+echo "  - Panel Domain: $DOMAIN_APP"
+echo "  - Admin Email: $ADMIN_EMAIL"
 
 # Install Certbot
 print_status "Installing/Updating Certbot..."
@@ -100,12 +138,11 @@ obtain_certificate() {
     return 1
 }
 
-# Use predefined email for Let's Encrypt
-LETSENCRYPT_EMAIL="fulexo@fulexo.com"
-print_status "Using email for Let's Encrypt: $LETSENCRYPT_EMAIL"
+# Use provided email for Let's Encrypt
+print_status "Using email for Let's Encrypt: $ADMIN_EMAIL"
 
 # Validate email format
-if ! [[ "$LETSENCRYPT_EMAIL" =~ ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$ ]]; then
+if ! [[ "$ADMIN_EMAIL" =~ ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$ ]]; then
     print_error "Invalid email format!"
     exit 1
 fi
@@ -113,12 +150,12 @@ fi
 # Obtain certificates
 FAILED_DOMAINS=""
 
-if ! obtain_certificate "$DOMAIN_API" "$LETSENCRYPT_EMAIL"; then
+if ! obtain_certificate "$DOMAIN_API" "$ADMIN_EMAIL"; then
     FAILED_DOMAINS="$FAILED_DOMAINS $DOMAIN_API"
 fi
 
-if ! obtain_certificate "$DOMAIN_PANEL" "$LETSENCRYPT_EMAIL"; then
-    FAILED_DOMAINS="$FAILED_DOMAINS $DOMAIN_PANEL"
+if ! obtain_certificate "$DOMAIN_APP" "$ADMIN_EMAIL"; then
+    FAILED_DOMAINS="$FAILED_DOMAINS $DOMAIN_APP"
 fi
 
 # Check if any certificates failed
@@ -190,12 +227,12 @@ ENV_FILE="/opt/fulexo/compose/.env"
 
 if [ -f "$ENV_FILE" ]; then
     # Update domain settings
-    sed -i "s/DOMAIN_API=.*/DOMAIN_API=api.fulexo.com/g" "$ENV_FILE"
-    sed -i "s/DOMAIN_APP=.*/DOMAIN_APP=panel.fulexo.com/g" "$ENV_FILE"
+    sed -i "s/DOMAIN_API=.*/DOMAIN_API=$DOMAIN_API/g" "$ENV_FILE"
+    sed -i "s/DOMAIN_APP=.*/DOMAIN_APP=$DOMAIN_APP/g" "$ENV_FILE"
     
     # Add if not exists
-    grep -q "DOMAIN_API=" "$ENV_FILE" || echo "DOMAIN_API=api.fulexo.com" >> "$ENV_FILE"
-    grep -q "DOMAIN_APP=" "$ENV_FILE" || echo "DOMAIN_APP=panel.fulexo.com" >> "$ENV_FILE"
+    grep -q "DOMAIN_API=" "$ENV_FILE" || echo "DOMAIN_API=$DOMAIN_API" >> "$ENV_FILE"
+    grep -q "DOMAIN_APP=" "$ENV_FILE" || echo "DOMAIN_APP=$DOMAIN_APP" >> "$ENV_FILE"
 fi
 
 # Restart services
@@ -214,7 +251,7 @@ sleep 10
 
 # Verify certificates
 print_status "Verifying SSL certificates..."
-if [ -f "/etc/letsencrypt/live/$DOMAIN_API/fullchain.pem" ] && [ -f "/etc/letsencrypt/live/$DOMAIN_PANEL/fullchain.pem" ]; then
+if [ -f "/etc/letsencrypt/live/$DOMAIN_API/fullchain.pem" ] && [ -f "/etc/letsencrypt/live/$DOMAIN_APP/fullchain.pem" ]; then
     print_status "SSL certificates successfully installed!"
     
     # Show certificate details
@@ -228,8 +265,8 @@ if [ -f "/etc/letsencrypt/live/$DOMAIN_API/fullchain.pem" ] && [ -f "/etc/letsen
     echo "SSL SETUP COMPLETED SUCCESSFULLY!"
     echo ""
     echo "Your Fulexo platform is now accessible at:"
-    echo "  - Panel: https://panel.fulexo.com"
-    echo "  - API: https://api.fulexo.com"
+    echo "  - Panel: https://$DOMAIN_APP"
+    echo "  - API: https://$DOMAIN_API"
     echo ""
     echo "Auto-renewal is configured and will run twice daily."
     echo ""
@@ -249,13 +286,13 @@ fi
 print_status "Testing HTTPS connectivity..."
 sleep 5
 
-if curl -s -o /dev/null -w "%{http_code}" https://api.fulexo.com/health | grep -q "200\|404"; then
+if curl -s -o /dev/null -w "%{http_code}" https://$DOMAIN_API/health | grep -q "200\|404"; then
     print_status "API HTTPS connection successful!"
 else
     print_warning "API HTTPS test failed - this might be normal if the service is still starting"
 fi
 
-if curl -s -o /dev/null -w "%{http_code}" https://panel.fulexo.com | grep -q "200\|404"; then
+if curl -s -o /dev/null -w "%{http_code}" https://$DOMAIN_APP | grep -q "200\|404"; then
     print_status "Panel HTTPS connection successful!"
 else
     print_warning "Panel HTTPS test failed - this might be normal if the service is still starting"
