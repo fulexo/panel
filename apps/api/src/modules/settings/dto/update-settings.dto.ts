@@ -34,20 +34,25 @@ export class EmailSettingsDto {
 }
 
 export class NotificationSettingsDto {
-  @ApiProperty({ description: 'Slack webhook URL' })
-  @IsUrl()
-  @IsOptional()
-  slack_webhook?: string;
-
-  @ApiProperty({ description: 'Discord webhook URL' })
-  @IsUrl()
-  @IsOptional()
-  discord_webhook?: string;
-
   @ApiProperty({ description: 'Enable email notifications' })
   @IsString()
   @IsOptional()
   email_notifications?: string;
+
+  @ApiProperty({ description: 'Enable order notifications' })
+  @IsString()
+  @IsOptional()
+  order_notifications?: string;
+
+  @ApiProperty({ description: 'Enable product notifications' })
+  @IsString()
+  @IsOptional()
+  product_notifications?: string;
+
+  @ApiProperty({ description: 'Enable system notifications' })
+  @IsString()
+  @IsOptional()
+  system_notifications?: string;
 }
 
 export class GeneralSettingsDto {
@@ -75,6 +80,80 @@ export class GeneralSettingsDto {
   @IsString()
   @IsOptional()
   currency?: string;
+}
+
+export class WooCommerceSettingsDto {
+  @ApiProperty({ description: 'Default WooCommerce API version' })
+  @IsString()
+  @IsOptional()
+  default_woo_version?: string;
+
+  @ApiProperty({ description: 'Sync interval in minutes' })
+  @IsString()
+  @IsOptional()
+  sync_interval?: string;
+
+  @ApiProperty({ description: 'Webhook timeout in seconds' })
+  @IsString()
+  @IsOptional()
+  webhook_timeout?: string;
+
+  @ApiProperty({ description: 'Number of retry attempts' })
+  @IsString()
+  @IsOptional()
+  retry_attempts?: string;
+
+  @ApiProperty({ description: 'Enable automatic synchronization' })
+  @IsString()
+  @IsOptional()
+  enable_auto_sync?: string;
+
+  @ApiProperty({ description: 'Auto create new products' })
+  @IsString()
+  @IsOptional()
+  auto_create_products?: string;
+
+  @ApiProperty({ description: 'Auto update existing products' })
+  @IsString()
+  @IsOptional()
+  auto_update_products?: string;
+
+  @ApiProperty({ description: 'Sync product categories' })
+  @IsString()
+  @IsOptional()
+  sync_categories?: string;
+
+  @ApiProperty({ description: 'Sync customer data' })
+  @IsString()
+  @IsOptional()
+  sync_customers?: string;
+}
+
+export class SecuritySettingsDto {
+  @ApiProperty({ description: 'Session timeout in minutes' })
+  @IsString()
+  @IsOptional()
+  session_timeout?: string;
+
+  @ApiProperty({ description: 'Maximum login attempts' })
+  @IsString()
+  @IsOptional()
+  max_login_attempts?: string;
+
+  @ApiProperty({ description: 'Minimum password length' })
+  @IsString()
+  @IsOptional()
+  password_min_length?: string;
+
+  @ApiProperty({ description: 'Require 2FA' })
+  @IsString()
+  @IsOptional()
+  require_2fa?: string;
+
+  @ApiProperty({ description: 'Auto logout on inactivity' })
+  @IsString()
+  @IsOptional()
+  auto_logout?: string;
 }
 
 export class TestConnectionDto {

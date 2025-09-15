@@ -40,9 +40,10 @@ export default function SettingsPage() {
   });
 
   const [notificationSettings, setNotificationSettings] = useState({
-    slack_webhook: '',
-    discord_webhook: '',
     email_notifications: 'true',
+    order_notifications: 'true',
+    product_notifications: 'true',
+    system_notifications: 'true',
   });
 
   const [securitySettings, setSecuritySettings] = useState({
@@ -53,12 +54,24 @@ export default function SettingsPage() {
     auto_logout: 'true',
   });
 
-  const [integrationSettings, setIntegrationSettings] = useState({
+  const [woocommerceSettings, setWooCommerceSettings] = useState({
     default_woo_version: 'v3',
     sync_interval: '15',
     webhook_timeout: '30',
     retry_attempts: '3',
     enable_auto_sync: 'true',
+    auto_create_products: 'true',
+    auto_update_products: 'true',
+    sync_categories: 'true',
+    sync_customers: 'true',
+  });
+
+  const [securitySettings, setSecuritySettings] = useState({
+    session_timeout: '30',
+    max_login_attempts: '5',
+    password_min_length: '8',
+    require_2fa: 'false',
+    auto_logout: 'true',
   });
 
   const tabs = [
@@ -66,7 +79,7 @@ export default function SettingsPage() {
     { id: 'email', name: 'Email', icon: '📧' },
     { id: 'notifications', name: 'Notifications', icon: '🔔' },
     { id: 'security', name: 'Security', icon: '🔒' },
-    { id: 'integrations', name: 'Integrations', icon: '🔗' },
+    { id: 'woocommerce', name: 'WooCommerce', icon: '🛒' },
   ];
 
   useEffect(() => {
@@ -84,22 +97,28 @@ export default function SettingsPage() {
       setError(null);
       const token = localStorage.getItem('access_token');
       
-      const [generalRes, emailRes, notificationRes] = await Promise.all([
+      const [generalRes, emailRes, notificationRes, woocommerceRes, securityRes] = await Promise.all([
         fetch('/api/settings/general', { headers: { Authorization: `Bearer ${token}` } }),
         fetch('/api/settings/email', { headers: { Authorization: `Bearer ${token}` } }),
         fetch('/api/settings/notification', { headers: { Authorization: `Bearer ${token}` } }),
+        fetch('/api/settings/woocommerce', { headers: { Authorization: `Bearer ${token}` } }),
+        fetch('/api/settings/security', { headers: { Authorization: `Bearer ${token}` } }),
       ]);
 
       const general = generalRes.ok ? await generalRes.json() : {};
       const email = emailRes.ok ? await emailRes.json() : {};
       const notification = notificationRes.ok ? await notificationRes.json() : {};
+      const woocommerce = woocommerceRes.ok ? await woocommerceRes.json() : {};
+      const security = securityRes.ok ? await securityRes.json() : {};
 
-      setSettings({ general, email, notification });
+      setSettings({ general, email, notification, woocommerce, security });
       
       // Set form states
       if (general) setGeneralSettings(prev => ({ ...prev, ...general }));
       if (email) setEmailSettings(prev => ({ ...prev, ...email }));
       if (notification) setNotificationSettings(prev => ({ ...prev, ...notification }));
+      if (woocommerce) setWooCommerceSettings(prev => ({ ...prev, ...woocommerce }));
+      if (security) setSecuritySettings(prev => ({ ...prev, ...security }));
       
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load settings');
@@ -170,6 +189,8 @@ export default function SettingsPage() {
   const handleGeneralSave = () => saveSettings('general', generalSettings);
   const handleEmailSave = () => saveSettings('email', emailSettings);
   const handleNotificationSave = () => saveSettings('notification', notificationSettings);
+  const handleWooCommerceSave = () => saveSettings('woocommerce', woocommerceSettings);
+  const handleSecuritySave = () => saveSettings('security', securitySettings);
 
   if (loading) {
     return (
@@ -412,41 +433,62 @@ export default function SettingsPage() {
               <div className="space-y-6 animate-fade-in">
                 <div>
                   <h3 className="text-lg font-semibold text-foreground mb-2">Notification Settings</h3>
-                  <p className="text-sm text-muted-foreground">Configure notification channels and preferences</p>
+                  <p className="text-sm text-muted-foreground">Configure notification preferences for different events</p>
                 </div>
 
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">Slack Webhook URL</label>
-                    <input
-                      value={notificationSettings.slack_webhook}
-                      onChange={(e) => setNotificationSettings(prev => ({ ...prev, slack_webhook: e.target.value }))}
-                      className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
-                      placeholder="https://hooks.slack.com/services/..."
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">Discord Webhook URL</label>
-                    <input
-                      value={notificationSettings.discord_webhook}
-                      onChange={(e) => setNotificationSettings(prev => ({ ...prev, discord_webhook: e.target.value }))}
-                      className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
-                      placeholder="https://discord.com/api/webhooks/..."
-                    />
-                  </div>
-                  <div>
-                    <label className="flex items-center gap-3">
-                      <input
-                        type="checkbox"
-                        checked={notificationSettings.email_notifications === 'true'}
-                        onChange={(e) => setNotificationSettings(prev => ({ 
-                          ...prev, 
-                          email_notifications: e.target.checked ? 'true' : 'false' 
-                        }))}
-                        className="w-4 h-4 text-primary bg-input border-border rounded focus:ring-primary"
-                      />
-                      <span className="text-sm font-medium text-foreground">Enable Email Notifications</span>
-                    </label>
+                <div className="space-y-6">
+                  <div className="bg-accent/20 p-4 rounded-lg">
+                    <h4 className="text-md font-medium text-foreground mb-3">Email Notifications</h4>
+                    <div className="space-y-3">
+                      <label className="flex items-center gap-3">
+                        <input
+                          type="checkbox"
+                          checked={notificationSettings.email_notifications === 'true'}
+                          onChange={(e) => setNotificationSettings(prev => ({ 
+                            ...prev, 
+                            email_notifications: e.target.checked ? 'true' : 'false' 
+                          }))}
+                          className="w-4 h-4 text-primary bg-input border-border rounded focus:ring-primary"
+                        />
+                        <span className="text-sm font-medium text-foreground">Enable Email Notifications</span>
+                      </label>
+                      <label className="flex items-center gap-3">
+                        <input
+                          type="checkbox"
+                          checked={notificationSettings.order_notifications === 'true'}
+                          onChange={(e) => setNotificationSettings(prev => ({ 
+                            ...prev, 
+                            order_notifications: e.target.checked ? 'true' : 'false' 
+                          }))}
+                          className="w-4 h-4 text-primary bg-input border-border rounded focus:ring-primary"
+                        />
+                        <span className="text-sm font-medium text-foreground">Order Updates</span>
+                      </label>
+                      <label className="flex items-center gap-3">
+                        <input
+                          type="checkbox"
+                          checked={notificationSettings.product_notifications === 'true'}
+                          onChange={(e) => setNotificationSettings(prev => ({ 
+                            ...prev, 
+                            product_notifications: e.target.checked ? 'true' : 'false' 
+                          }))}
+                          className="w-4 h-4 text-primary bg-input border-border rounded focus:ring-primary"
+                        />
+                        <span className="text-sm font-medium text-foreground">Product Changes</span>
+                      </label>
+                      <label className="flex items-center gap-3">
+                        <input
+                          type="checkbox"
+                          checked={notificationSettings.system_notifications === 'true'}
+                          onChange={(e) => setNotificationSettings(prev => ({ 
+                            ...prev, 
+                            system_notifications: e.target.checked ? 'true' : 'false' 
+                          }))}
+                          className="w-4 h-4 text-primary bg-input border-border rounded focus:ring-primary"
+                        />
+                        <span className="text-sm font-medium text-foreground">System Alerts</span>
+                      </label>
+                    </div>
                   </div>
                 </div>
 
@@ -470,71 +512,98 @@ export default function SettingsPage() {
                   <p className="text-sm text-muted-foreground">Configure security policies and authentication</p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">Session Timeout (minutes)</label>
-                    <input
-                      type="number"
-                      value={securitySettings.session_timeout}
-                      onChange={(e) => setSecuritySettings(prev => ({ ...prev, session_timeout: e.target.value }))}
-                      className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
-                      min="5"
-                      max="480"
-                    />
+                <div className="space-y-6">
+                  {/* Session & Authentication */}
+                  <div className="bg-accent/20 p-4 rounded-lg">
+                    <h4 className="text-md font-medium text-foreground mb-3">Session & Authentication</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-foreground mb-2">Session Timeout (minutes)</label>
+                        <input
+                          type="number"
+                          value={securitySettings.session_timeout}
+                          onChange={(e) => setSecuritySettings(prev => ({ ...prev, session_timeout: e.target.value }))}
+                          className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
+                          min="5"
+                          max="480"
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">How long before session expires (5-480 minutes)</p>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-foreground mb-2">Max Login Attempts</label>
+                        <input
+                          type="number"
+                          value={securitySettings.max_login_attempts}
+                          onChange={(e) => setSecuritySettings(prev => ({ ...prev, max_login_attempts: e.target.value }))}
+                          className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
+                          min="3"
+                          max="10"
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">Maximum failed login attempts before lockout</p>
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">Max Login Attempts</label>
-                    <input
-                      type="number"
-                      value={securitySettings.max_login_attempts}
-                      onChange={(e) => setSecuritySettings(prev => ({ ...prev, max_login_attempts: e.target.value }))}
-                      className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
-                      min="3"
-                      max="10"
-                    />
+
+                  {/* Password Policy */}
+                  <div className="bg-accent/20 p-4 rounded-lg">
+                    <h4 className="text-md font-medium text-foreground mb-3">Password Policy</h4>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-foreground mb-2">Password Min Length</label>
+                        <input
+                          type="number"
+                          value={securitySettings.password_min_length}
+                          onChange={(e) => setSecuritySettings(prev => ({ ...prev, password_min_length: e.target.value }))}
+                          className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
+                          min="6"
+                          max="32"
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">Minimum password length (6-32 characters)</p>
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">Password Min Length</label>
-                    <input
-                      type="number"
-                      value={securitySettings.password_min_length}
-                      onChange={(e) => setSecuritySettings(prev => ({ ...prev, password_min_length: e.target.value }))}
-                      className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
-                      min="6"
-                      max="32"
-                    />
-                  </div>
-                  <div className="space-y-3">
-                    <label className="flex items-center gap-3">
-                      <input
-                        type="checkbox"
-                        checked={securitySettings.require_2fa === 'true'}
-                        onChange={(e) => setSecuritySettings(prev => ({ 
-                          ...prev, 
-                          require_2fa: e.target.checked ? 'true' : 'false' 
-                        }))}
-                        className="w-4 h-4 text-primary bg-input border-border rounded focus:ring-primary"
-                      />
-                      <span className="text-sm font-medium text-foreground">Require 2FA</span>
-                    </label>
-                    <label className="flex items-center gap-3">
-                      <input
-                        type="checkbox"
-                        checked={securitySettings.auto_logout === 'true'}
-                        onChange={(e) => setSecuritySettings(prev => ({ 
-                          ...prev, 
-                          auto_logout: e.target.checked ? 'true' : 'false' 
-                        }))}
-                        className="w-4 h-4 text-primary bg-input border-border rounded focus:ring-primary"
-                      />
-                      <span className="text-sm font-medium text-foreground">Auto Logout on Inactivity</span>
-                    </label>
+
+                  {/* Security Features */}
+                  <div className="bg-accent/20 p-4 rounded-lg">
+                    <h4 className="text-md font-medium text-foreground mb-3">Security Features</h4>
+                    <div className="space-y-3">
+                      <label className="flex items-center gap-3">
+                        <input
+                          type="checkbox"
+                          checked={securitySettings.require_2fa === 'true'}
+                          onChange={(e) => setSecuritySettings(prev => ({ 
+                            ...prev, 
+                            require_2fa: e.target.checked ? 'true' : 'false' 
+                          }))}
+                          className="w-4 h-4 text-primary bg-input border-border rounded focus:ring-primary"
+                        />
+                        <div>
+                          <span className="text-sm font-medium text-foreground">Require 2FA</span>
+                          <p className="text-xs text-muted-foreground">Force all users to enable two-factor authentication</p>
+                        </div>
+                      </label>
+                      <label className="flex items-center gap-3">
+                        <input
+                          type="checkbox"
+                          checked={securitySettings.auto_logout === 'true'}
+                          onChange={(e) => setSecuritySettings(prev => ({ 
+                            ...prev, 
+                            auto_logout: e.target.checked ? 'true' : 'false' 
+                          }))}
+                          className="w-4 h-4 text-primary bg-input border-border rounded focus:ring-primary"
+                        />
+                        <div>
+                          <span className="text-sm font-medium text-foreground">Auto Logout on Inactivity</span>
+                          <p className="text-xs text-muted-foreground">Automatically log out users after period of inactivity</p>
+                        </div>
+                      </label>
+                    </div>
                   </div>
                 </div>
 
                 <div className="flex gap-3">
                   <button
-                    onClick={() => saveSettings('security', securitySettings)}
+                    onClick={handleSecuritySave}
                     disabled={saving}
                     className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed btn-animate"
                   >
@@ -544,83 +613,145 @@ export default function SettingsPage() {
               </div>
             )}
 
-            {/* Integration Settings */}
-            {activeTab === 'integrations' && (
+            {/* WooCommerce Settings */}
+            {activeTab === 'woocommerce' && (
               <div className="space-y-6 animate-fade-in">
                 <div>
-                  <h3 className="text-lg font-semibold text-foreground mb-2">Integration Settings</h3>
-                  <p className="text-sm text-muted-foreground">Configure third-party integrations and sync settings</p>
+                  <h3 className="text-lg font-semibold text-foreground mb-2">WooCommerce Integration</h3>
+                  <p className="text-sm text-muted-foreground">Configure WooCommerce synchronization and API settings</p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">Default WooCommerce API Version</label>
-                    <select
-                      value={integrationSettings.default_woo_version}
-                      onChange={(e) => setIntegrationSettings(prev => ({ ...prev, default_woo_version: e.target.value }))}
-                      className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
-                    >
-                      <option value="v3">v3 (Recommended)</option>
-                      <option value="v2">v2</option>
-                      <option value="v1">v1</option>
-                    </select>
+                <div className="space-y-6">
+                  {/* API Configuration */}
+                  <div className="bg-accent/20 p-4 rounded-lg">
+                    <h4 className="text-md font-medium text-foreground mb-3">API Configuration</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-foreground mb-2">Default WooCommerce API Version</label>
+                        <select
+                          value={woocommerceSettings.default_woo_version}
+                          onChange={(e) => setWooCommerceSettings(prev => ({ ...prev, default_woo_version: e.target.value }))}
+                          className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
+                        >
+                          <option value="v3">v3 (Recommended)</option>
+                          <option value="v2">v2</option>
+                          <option value="v1">v1</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-foreground mb-2">Webhook Timeout (seconds)</label>
+                        <input
+                          type="number"
+                          value={woocommerceSettings.webhook_timeout}
+                          onChange={(e) => setWooCommerceSettings(prev => ({ ...prev, webhook_timeout: e.target.value }))}
+                          className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
+                          min="5"
+                          max="300"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-foreground mb-2">Retry Attempts</label>
+                        <input
+                          type="number"
+                          value={woocommerceSettings.retry_attempts}
+                          onChange={(e) => setWooCommerceSettings(prev => ({ ...prev, retry_attempts: e.target.value }))}
+                          className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
+                          min="1"
+                          max="10"
+                        />
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">Sync Interval (minutes)</label>
-                    <input
-                      type="number"
-                      value={integrationSettings.sync_interval}
-                      onChange={(e) => setIntegrationSettings(prev => ({ ...prev, sync_interval: e.target.value }))}
-                      className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
-                      min="5"
-                      max="1440"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">Webhook Timeout (seconds)</label>
-                    <input
-                      type="number"
-                      value={integrationSettings.webhook_timeout}
-                      onChange={(e) => setIntegrationSettings(prev => ({ ...prev, webhook_timeout: e.target.value }))}
-                      className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
-                      min="5"
-                      max="300"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">Retry Attempts</label>
-                    <input
-                      type="number"
-                      value={integrationSettings.retry_attempts}
-                      onChange={(e) => setIntegrationSettings(prev => ({ ...prev, retry_attempts: e.target.value }))}
-                      className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
-                      min="1"
-                      max="10"
-                    />
-                  </div>
-                  <div className="md:col-span-2">
-                    <label className="flex items-center gap-3">
-                      <input
-                        type="checkbox"
-                        checked={integrationSettings.enable_auto_sync === 'true'}
-                        onChange={(e) => setIntegrationSettings(prev => ({ 
-                          ...prev, 
-                          enable_auto_sync: e.target.checked ? 'true' : 'false' 
-                        }))}
-                        className="w-4 h-4 text-primary bg-input border-border rounded focus:ring-primary"
-                      />
-                      <span className="text-sm font-medium text-foreground">Enable Automatic Synchronization</span>
-                    </label>
+
+                  {/* Sync Configuration */}
+                  <div className="bg-accent/20 p-4 rounded-lg">
+                    <h4 className="text-md font-medium text-foreground mb-3">Synchronization Settings</h4>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-foreground mb-2">Sync Interval (minutes)</label>
+                        <input
+                          type="number"
+                          value={woocommerceSettings.sync_interval}
+                          onChange={(e) => setWooCommerceSettings(prev => ({ ...prev, sync_interval: e.target.value }))}
+                          className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
+                          min="5"
+                          max="1440"
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">How often to sync data with WooCommerce (5-1440 minutes)</p>
+                      </div>
+                      <div className="space-y-3">
+                        <label className="flex items-center gap-3">
+                          <input
+                            type="checkbox"
+                            checked={woocommerceSettings.enable_auto_sync === 'true'}
+                            onChange={(e) => setWooCommerceSettings(prev => ({ 
+                              ...prev, 
+                              enable_auto_sync: e.target.checked ? 'true' : 'false' 
+                            }))}
+                            className="w-4 h-4 text-primary bg-input border-border rounded focus:ring-primary"
+                          />
+                          <span className="text-sm font-medium text-foreground">Enable Automatic Synchronization</span>
+                        </label>
+                        <label className="flex items-center gap-3">
+                          <input
+                            type="checkbox"
+                            checked={woocommerceSettings.auto_create_products === 'true'}
+                            onChange={(e) => setWooCommerceSettings(prev => ({ 
+                              ...prev, 
+                              auto_create_products: e.target.checked ? 'true' : 'false' 
+                            }))}
+                            className="w-4 h-4 text-primary bg-input border-border rounded focus:ring-primary"
+                          />
+                          <span className="text-sm font-medium text-foreground">Auto Create New Products</span>
+                        </label>
+                        <label className="flex items-center gap-3">
+                          <input
+                            type="checkbox"
+                            checked={woocommerceSettings.auto_update_products === 'true'}
+                            onChange={(e) => setWooCommerceSettings(prev => ({ 
+                              ...prev, 
+                              auto_update_products: e.target.checked ? 'true' : 'false' 
+                            }))}
+                            className="w-4 h-4 text-primary bg-input border-border rounded focus:ring-primary"
+                          />
+                          <span className="text-sm font-medium text-foreground">Auto Update Existing Products</span>
+                        </label>
+                        <label className="flex items-center gap-3">
+                          <input
+                            type="checkbox"
+                            checked={woocommerceSettings.sync_categories === 'true'}
+                            onChange={(e) => setWooCommerceSettings(prev => ({ 
+                              ...prev, 
+                              sync_categories: e.target.checked ? 'true' : 'false' 
+                            }))}
+                            className="w-4 h-4 text-primary bg-input border-border rounded focus:ring-primary"
+                          />
+                          <span className="text-sm font-medium text-foreground">Sync Product Categories</span>
+                        </label>
+                        <label className="flex items-center gap-3">
+                          <input
+                            type="checkbox"
+                            checked={woocommerceSettings.sync_customers === 'true'}
+                            onChange={(e) => setWooCommerceSettings(prev => ({ 
+                              ...prev, 
+                              sync_customers: e.target.checked ? 'true' : 'false' 
+                            }))}
+                            className="w-4 h-4 text-primary bg-input border-border rounded focus:ring-primary"
+                          />
+                          <span className="text-sm font-medium text-foreground">Sync Customer Data</span>
+                        </label>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
                 <div className="flex gap-3">
                   <button
-                    onClick={() => saveSettings('integrations', integrationSettings)}
+                    onClick={handleWooCommerceSave}
                     disabled={saving}
                     className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed btn-animate"
                   >
-                    {saving ? 'Saving...' : 'Save Integration Settings'}
+                    {saving ? 'Saving...' : 'Save WooCommerce Settings'}
                   </button>
                 </div>
               </div>
