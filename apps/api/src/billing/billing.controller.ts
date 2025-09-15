@@ -95,5 +95,81 @@ export class BillingController {
       res.json({ ok:false, message:'PDF generator not available', summary: { id: batch.id, total: batch.total, items: batch.items.length } });
     }
   }
+
+  // Invoice endpoints
+  @Get('invoices')
+  @Roles('FULEXO_ADMIN', 'FULEXO_STAFF')
+  @ApiOperation({ summary: 'List invoices' })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'search', required: false, type: String })
+  @ApiQuery({ name: 'status', required: false, type: String })
+  @ApiQuery({ name: 'dateFilter', required: false, type: String })
+  async listInvoices(@CurrentUser() user: any, @Query() query: any) {
+    return this.billing.listInvoices(user.tenantId, query);
+  }
+
+  @Post('invoices')
+  @Roles('FULEXO_ADMIN', 'FULEXO_STAFF')
+  @ApiOperation({ summary: 'Create invoice' })
+  async createInvoice(@CurrentUser() user: any, @Body() dto: any) {
+    return this.billing.createInvoice(user.tenantId, dto);
+  }
+
+  @Get('invoices/:id')
+  @Roles('FULEXO_ADMIN', 'FULEXO_STAFF')
+  @ApiOperation({ summary: 'Get invoice' })
+  async getInvoice(@CurrentUser() user: any, @Param('id') id: string) {
+    return this.billing.getInvoice(user.tenantId, id);
+  }
+
+  @Put('invoices/:id')
+  @Roles('FULEXO_ADMIN', 'FULEXO_STAFF')
+  @ApiOperation({ summary: 'Update invoice' })
+  async updateInvoice(@CurrentUser() user: any, @Param('id') id: string, @Body() dto: any) {
+    return this.billing.updateInvoice(user.tenantId, id, dto);
+  }
+
+  @Delete('invoices/:id')
+  @Roles('FULEXO_ADMIN', 'FULEXO_STAFF')
+  @ApiOperation({ summary: 'Delete invoice' })
+  async deleteInvoice(@CurrentUser() user: any, @Param('id') id: string) {
+    return this.billing.deleteInvoice(user.tenantId, id);
+  }
+
+  // Payment endpoints
+  @Get('payments')
+  @Roles('FULEXO_ADMIN', 'FULEXO_STAFF')
+  @ApiOperation({ summary: 'List payments' })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'search', required: false, type: String })
+  @ApiQuery({ name: 'status', required: false, type: String })
+  @ApiQuery({ name: 'method', required: false, type: String })
+  @ApiQuery({ name: 'dateFilter', required: false, type: String })
+  async listPayments(@CurrentUser() user: any, @Query() query: any) {
+    return this.billing.listPayments(user.tenantId, query);
+  }
+
+  @Get('payments/:id')
+  @Roles('FULEXO_ADMIN', 'FULEXO_STAFF')
+  @ApiOperation({ summary: 'Get payment' })
+  async getPayment(@CurrentUser() user: any, @Param('id') id: string) {
+    return this.billing.getPayment(user.tenantId, id);
+  }
+
+  @Put('payments/:id')
+  @Roles('FULEXO_ADMIN', 'FULEXO_STAFF')
+  @ApiOperation({ summary: 'Update payment' })
+  async updatePayment(@CurrentUser() user: any, @Param('id') id: string, @Body() dto: any) {
+    return this.billing.updatePayment(user.tenantId, id, dto);
+  }
+
+  @Post('payments/:id/refund')
+  @Roles('FULEXO_ADMIN', 'FULEXO_STAFF')
+  @ApiOperation({ summary: 'Refund payment' })
+  async refundPayment(@CurrentUser() user: any, @Param('id') id: string) {
+    return this.billing.refundPayment(user.tenantId, id);
+  }
 }
 

@@ -28,6 +28,8 @@ model Tenant {
   inboundShipments InboundShipment[]
   settings  Settings[]
   wooStores WooStore[]
+  invoices  Invoice[]
+  payments  Payment[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -241,23 +243,49 @@ model Product {
 
 model Invoice {
   id         String   @id @default(uuid())
+  tenantId   String
   orderId    String
   number     String?
   series     String?
   currency   String?
   total      Decimal? @db.Decimal(14,2)
   taxAmount  Decimal? @db.Decimal(14,2)
+  status     String   @default("draft") // draft, issued, paid, cancelled, overdue
   pdfUrl     String?
   issuedAt   DateTime?
-  dueAt      DateTime?
+  dueDate    DateTime?
   paidAt     DateTime?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
   order      Order    @relation(fields: [orderId], references: [id])
   billingItems BillingBatchItem[]
+  payments   Payment[]
   
+  @@index([tenantId])
   @@index([orderId])
   @@index([number])
+  @@index([status])
+}
+
+model Payment {
+  id            String   @id @default(uuid())
+  tenantId      String
+  invoiceId     String
+  amount        Decimal  @db.Decimal(14,2)
+  currency      String   @default("USD")
+  status        String   @default("pending") // pending, completed, failed, cancelled, refunded
+  method        String   @default("card") // card, bank_transfer, paypal, stripe, other
+  transactionId String?
+  processedAt   DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  invoice       Invoice  @relation(fields: [invoiceId], references: [id])
+  
+  @@index([tenantId])
+  @@index([invoiceId])
+  @@index([status])
+  @@index([method])
+  @@index([transactionId])
 }
 
 model Return {
