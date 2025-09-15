@@ -10,7 +10,6 @@ export default function TwoFAPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-
   useEffect(() => {
     const tmp = localStorage.getItem('temp_2fa_token') || '';
     if (tmp) setTempToken(tmp);
@@ -26,7 +25,7 @@ export default function TwoFAPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ tempToken, twoFactorToken: token })
       });
-      if(!r.ok){ throw new Error('2FA doğrulama başarısız'); }
+      if(!r.ok){ throw new Error('2FA verification failed'); }
       const data = await r.json();
       localStorage.setItem('access_token', data.access);
       localStorage.setItem('refresh_token', data.refresh);
@@ -34,31 +33,100 @@ export default function TwoFAPage() {
       document.cookie = `access_token=${data.access}; path=/; max-age=900`;
       router.push('/dashboard');
     } catch(e:any){
-      setError(e.message || '2FA doğrulama başarısız');
+      setError(e.message || '2FA verification failed');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-900 to-gray-900">
-      <div className="bg-white/10 backdrop-blur-lg p-8 rounded-2xl shadow-2xl w-full max-w-md">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-white mb-2">Two-Factor Authentication</h1>
-          <p className="text-gray-300">Enter the 2FA code from your authenticator app</p>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-900 via-purple-900 to-gray-900 p-4">
+      <div className="w-full max-w-md">
+        {/* Logo and Title */}
+        <div className="text-center mb-8 animate-fade-in">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-primary rounded-2xl mb-4">
+            <span className="text-2xl">🔐</span>
+          </div>
+          <h1 className="mobile-heading text-white mb-2">Two-Factor Authentication</h1>
+          <p className="text-muted-foreground">Enter the 2FA code from your authenticator app</p>
         </div>
-        <form onSubmit={submit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-200 mb-2">Temporary Token</label>
-            <input value={tempToken} onChange={e=>setTempToken(e.target.value)} className="w-full px-4 py-3 bg-white/10 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Paste temp token" />
+
+        {/* 2FA Form */}
+        <div className="bg-card/50 backdrop-blur-lg p-6 sm:p-8 rounded-2xl shadow-2xl border border-border animate-scale-in">
+          <form onSubmit={submit} className="space-y-6">
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-foreground">
+                Temporary Token
+              </label>
+              <input
+                value={tempToken}
+                onChange={e => setTempToken(e.target.value)}
+                className="w-full px-4 py-3 bg-input border border-border rounded-lg form-input text-foreground placeholder-muted-foreground"
+                placeholder="Paste temp token"
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-foreground">
+                2FA Code
+              </label>
+              <input
+                value={token}
+                onChange={e => setToken(e.target.value)}
+                className="w-full px-4 py-3 bg-input border border-border rounded-lg form-input text-foreground placeholder-muted-foreground text-center text-2xl tracking-widest"
+                placeholder="123456"
+                maxLength={6}
+                required
+              />
+            </div>
+
+            {error && (
+              <div className="bg-destructive/10 border border-destructive text-destructive px-4 py-3 rounded-lg animate-slide-down">
+                <div className="flex items-center gap-2">
+                  <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span className="text-sm font-medium">{error}</span>
+                </div>
+              </div>
+            )}
+
+            <button
+              disabled={loading}
+              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-3 px-4 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed btn-animate"
+            >
+              {loading ? (
+                <div className="flex items-center justify-center gap-2">
+                  <div className="spinner w-4 h-4"></div>
+                  <span>Verifying...</span>
+                </div>
+              ) : (
+                'Verify Code'
+              )}
+            </button>
+          </form>
+
+          {/* Help Text */}
+          <div className="mt-6 p-4 bg-accent/50 rounded-lg">
+            <h3 className="text-sm font-medium text-foreground mb-2">Need Help?</h3>
+            <div className="text-xs text-muted-foreground space-y-1">
+              <div>• Open your authenticator app (Google Authenticator, Authy, etc.)</div>
+              <div>• Enter the 6-digit code displayed</div>
+              <div>• The code refreshes every 30 seconds</div>
+            </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-200 mb-2">2FA Code</label>
-            <input value={token} onChange={e=>setToken(e.target.value)} className="w-full px-4 py-3 bg-white/10 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="123 456" />
-          </div>
-          {error && <div className="bg-red-500/20 border border-red-500 text-red-200 px-4 py-3 rounded-lg">{error}</div>}
-          <button disabled={loading} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition duration-200 disabled:opacity-50">{loading ? 'Verifying…' : 'Verify'}</button>
-        </form>
+        </div>
+
+        {/* Back to Login */}
+        <div className="text-center mt-6">
+          <button
+            onClick={() => router.push('/login')}
+            className="text-muted-foreground hover:text-foreground transition-colors text-sm"
+          >
+            ← Back to Login
+          </button>
+        </div>
       </div>
     </div>
   );
