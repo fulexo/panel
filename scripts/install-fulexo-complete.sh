@@ -31,8 +31,18 @@ echo "SSL Email: fulexo@fulexo.com"
 echo "Admin: fulexo@fulexo.com / Adem_123*"
 echo ""
 
-# 1. Proje klonlama
-print_status "1/8 - Projeyi klonluyor..."
+# 1. Güvenlik kurulumu
+print_status "1/9 - Güvenlik kurulumu yapılıyor..."
+chmod +x scripts/setup-security.sh
+./scripts/setup-security.sh
+
+# 2. Swap kurulumu
+print_status "2/9 - Swap alanı ekleniyor..."
+chmod +x scripts/setup-swap.sh
+./scripts/setup-swap.sh
+
+# 3. Proje klonlama
+print_status "3/9 - Projeyi klonluyor..."
 if [ ! -d "/opt/fulexo" ]; then
     git clone https://github.com/fulexo/panel.git /opt/fulexo
     print_status "Proje klonlandı"
@@ -44,39 +54,39 @@ fi
 
 cd /opt/fulexo
 
-# 2. Sistem kurulumu
-print_status "2/8 - Sistem kurulumu yapılıyor..."
+# 4. Sistem kurulumu
+print_status "4/9 - Sistem kurulumu yapılıyor..."
 chmod +x scripts/setup-droplet.sh
 ./scripts/setup-droplet.sh
 
-# 3. Domain yapılandırması (otomatik)
-print_status "3/8 - Domain'ler yapılandırıldı (api.fulexo.com, panel.fulexo.com)"
+# 5. Domain yapılandırması (otomatik)
+print_status "5/9 - Domain'ler yapılandırıldı (api.fulexo.com, panel.fulexo.com)"
 
-# 4. SSL kurulumu
-print_status "4/8 - SSL sertifikaları kuruluyor..."
+# 6. SSL kurulumu
+print_status "6/9 - SSL sertifikaları kuruluyor..."
 chmod +x scripts/setup-ssl-fulexo.sh
 ./scripts/setup-ssl-fulexo.sh
 
-# 5. Servisleri başlat
-print_status "5/8 - Docker servisleri başlatılıyor..."
+# 7. Servisleri başlat
+print_status "7/9 - Docker servisleri başlatılıyor..."
 systemctl start fulexo
-sleep 20  # Servislerin başlaması için bekle
+sleep 30  # Servislerin başlaması için bekle
 
-# 6. Veritabanı kurulumu
-print_status "6/8 - Veritabanı kuruluyor..."
+# 8. Veritabanı kurulumu
+print_status "8/9 - Veritabanı kuruluyor..."
 cd /opt/fulexo/apps/api
 sudo -u fulexo npm install
 sudo -u fulexo npm run prisma:migrate:deploy
 sudo -u fulexo npm run prisma:seed
 
-# 7. Admin kullanıcısını özelleştir
-print_status "7/8 - Admin kullanıcısı yapılandırılıyor..."
+# 9. Admin kullanıcısını özelleştir
+print_status "9/10 - Admin kullanıcısı yapılandırılıyor..."
 chmod +x /opt/fulexo/scripts/create-admin-user.js
 cd /opt/fulexo/apps/api
 sudo -u fulexo node /opt/fulexo/scripts/create-admin-user.js
 
-# 8. Son kontroller
-print_status "8/8 - Kurulum doğrulanıyor..."
+# 10. Son kontroller
+print_status "10/10 - Kurulum doğrulanıyor..."
 sleep 10
 
 # Health check
