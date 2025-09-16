@@ -1,284 +1,157 @@
 import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
-import { Module, Get, Controller, Res, ValidationPipe, HttpException, HttpStatus } from '@nestjs/common';
-import { Reflector } from '@nestjs/core';
-import { register } from 'prom-client';
+import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
-import { JwtService } from './jwt';
-import { JwtModule } from './jwt.module';
-import { AuthModule } from './auth/auth.module';
-import { OrdersModule } from './orders/orders.module';
-import { ShipmentsModule } from './shipments/shipments.module';
-import { ProductsModule } from './products/products.module';
-import { InvoicesModule } from './invoices/invoices.module';
-import { ReturnsModule } from './returns/returns.module';
-import { TenantsModule } from './tenants/tenants.module';
-import { SearchModule } from './search/search.module';
-import { RequestsModule } from './requests/requests.module';
-import { CalendarModule } from './calendar/calendar.module';
-import { BillingModule } from './billing/billing.module';
-import { InboundModule } from './inbound/inbound.module';
-import { PolicyModule } from './policy/policy.module';
-import { CustomersModule } from './customers/customers.module';
-import { PrismaModule } from './modules/prisma/prisma.module';
-import { JobsController } from './jobs/jobs.controller';
-import { WooModule } from './woocommerce/woo.module';
-import { SettingsModule } from './modules/settings/settings.module';
-import { LoggerModule } from './logger/logger.module';
-import { LoggerService } from './logger/logger.service';
+import { register } from 'prom-client';
 import { PrismaService } from './prisma.service';
-import { CacheModule } from './cache/cache.module';
-import { SecurityModule } from './security/security.module';
-import { AuditModule } from './audit/audit.module';
-import { RateLimitModule } from './rate-limit/rate-limit.module';
-import { JobsModule } from './jobs/jobs.module';
-import { SyncModule } from './sync/sync.module';
-import { UsersModule } from './users/users.module';
 import { validateEnvOnStartup } from './config/env.validation';
-
-import { Public } from './auth/decorators/public.decorator';
-import { RateLimitGuard } from './rate-limit.guard';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
-@Controller('health')
-class HealthController {
-  constructor(private prisma: PrismaService) {}
+import { AppModule } from './app.module';
 
-  @Public()
-  @Get()
-  async health(): Promise<{
-    status: string;
-    timestamp: string;
-    uptime: number;
-    checks: {
-      database: string;
-      redis: string;
-      minio: string;
-    };
-  }> {
-    const checks: {
-      database: string;
-      redis: string;
-      minio: string;
-    } = {
-      database: 'unknown',
-      redis: 'unknown',
-      minio: 'unknown',
-    };
-
-    try {
-      // Database check
-      await this.prisma.$queryRaw`SELECT 1`;
-      checks.database = 'ok';
-    } catch (error: unknown) {
-      console.error('Database health check failed:', error);
-      checks.database = 'error';
-    }
-
-    try {
-      // Redis check
-      const Redis = require('ioredis');
-      const redis = new Redis(process.env.REDIS_URL || 'redis://valkey:6379/0');
-      await redis.ping();
-      await redis.quit();
-      checks.redis = 'ok';
-    } catch (error: unknown) {
-      console.error('Redis health check failed:', error);
-      checks.redis = 'error';
-    }
-
-    try {
-      // MinIO check
-      const Minio = require('minio');
-      const minioClient = new Minio.Client({
-        endPoint: process.env.S3_ENDPOINT?.replace('http://', '').replace('https://', '') || 'minio',
-        port: 9000,
-        useSSL: false,
-        accessKey: process.env.S3_ACCESS_KEY || 'minioadmin',
-        secretKey: process.env.S3_SECRET_KEY || 'minioadmin',
-      });
-      await minioClient.bucketExists(process.env.S3_BUCKET || 'fulexo-cache');
-      checks.minio = 'ok';
-    } catch (error: unknown) {
-      console.error('MinIO health check failed:', error);
-      checks.minio = 'error';
-    }
-
-    const allHealthy = Object.values(checks).every(status => status === 'ok');
-
-    return {
-      status: allHealthy ? 'ok' : 'degraded',
-      timestamp: new Date().toISOString(),
-      uptime: process.uptime(),
-      checks,
-    };
-  }
-}
-
-@Controller()
-class MetricsController {
-  @Get('metrics')
-  async metrics(@Res() res: any): Promise<void> {
-    res.setHeader('Content-Type', register.contentType);
-    res.send(await register.metrics());
-  }
-}
-
-@Controller('auth/.well-known')
-class JwksController {
-  constructor(private readonly jwt: JwtService){}
-  @Get('jwks.json')
-  jwks(): any {
-    return this.jwt.getJwks();
-  }
-}
-
-@Module({
-  imports: [
-    LoggerModule,
-    JwtModule,
-    CacheModule,
-    SecurityModule,
-    AuditModule,
-    RateLimitModule,
-    JobsModule,
-    SyncModule,
-    UsersModule,
-    AuthModule,
-    OrdersModule,
-    ShipmentsModule,
-    ProductsModule,
-    InvoicesModule,
-    ReturnsModule,
-    TenantsModule,
-    RequestsModule,
-    SearchModule,
-    CalendarModule,
-    BillingModule,
-    InboundModule,
-    PolicyModule,
-    CustomersModule,
-    PrismaModule,
-    WooModule,
-    SettingsModule,
-  ],
-  controllers: [HealthController, MetricsController, JwksController],
-})
-class AppModule {}
-
-async function bootstrap(): Promise<void> {
-  // Validate environment variables first
+async function bootstrap() {
+  // Validate environment variables
   validateEnvOnStartup();
-  
+
   const app = await NestFactory.create(AppModule, {
-    logger: new LoggerService(),
+    logger: ['error', 'warn', 'log', 'debug', 'verbose'],
   });
 
-  // Set global prefix for all routes
-  app.setGlobalPrefix('api');
-
-  // Global validation pipe with enhanced options
-  app.useGlobalPipes(new ValidationPipe({
-    whitelist: true,
-    transform: true,
-    forbidNonWhitelisted: true,
-    transformOptions: {
-      enableImplicitConversion: true,
-    },
-    validationError: {
-      target: false,
-      value: false,
-    },
-    exceptionFactory: (errors) => {
-      const result = errors.map((error) => ({
-        property: error.property,
-        value: error.value,
-        constraints: error.constraints,
-        children: error.children?.map((child) => ({
-          property: child.property,
-          value: child.value,
-          constraints: child.constraints,
-        })),
-      }));
-      
-      return new HttpException(
-        {
-          message: 'Validation failed',
-          errors: result,
-        },
-        HttpStatus.BAD_REQUEST,
-      );
-    },
-  }));
+  // Global validation pipe
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+      disableErrorMessages: false,
+      validationError: {
+        target: false,
+        value: false,
+      },
+    }),
+  );
 
   // Global exception filter
   app.useGlobalFilters(new GlobalExceptionFilter());
 
-  // Global rate limiting
-  const reflector = app.get(Reflector);
-  app.useGlobalGuards(new RateLimitGuard(reflector));
-
   // CORS configuration
   app.enableCors({
-    origin: (origin, cb) => {
-      // In development, allow localhost origins
-      const isDevelopment = process.env.NODE_ENV !== 'production';
-      
-      const allowedOrigins = new Set([
-        process.env.DOMAIN_APP ? `https://${process.env.DOMAIN_APP}` : null,
-        process.env.DOMAIN_API ? `https://${process.env.DOMAIN_API}` : null,
-      ].filter(Boolean));
-      
-      // Add localhost origins in development
-      if (isDevelopment) {
-        allowedOrigins.add('http://localhost:3000');
-        allowedOrigins.add('http://localhost:3001');
-        allowedOrigins.add('http://127.0.0.1:3000');
-        allowedOrigins.add('http://127.0.0.1:3001');
+    origin: (origin, callback) => {
+      const allowedOrigins = [
+        process.env.DOMAIN_APP || 'http://localhost:3000',
+        'http://localhost:3000',
+        'http://localhost:3001',
+      ];
+
+      if (!origin) {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        return callback(null, true);
       }
-      
-      // Allow requests with no origin (e.g., mobile apps, Postman)
-      if (!origin) return cb(null, true);
-      
-      // Check if origin is allowed
-      if (allowedOrigins.has(origin)) {
-        return cb(null, true);
+
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
       }
-      
+
       // Log rejected origin for debugging
-      console.warn(`CORS rejected origin: ${origin}`);
-      cb(new Error('Not allowed by CORS'));
+      console.log(`Rejected origin: ${origin}`);
+      return callback(new Error('Not allowed by CORS'), false);
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-WC-Webhook-Topic', 'X-WC-Webhook-Signature'],
-    exposedHeaders: ['X-Total-Count', 'X-Page-Count'],
-    maxAge: 86400, // 24 hours
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'X-Requested-With',
+      'X-CSRF-Token',
+      'X-Tenant-ID',
+    ],
   });
 
-  // Initialize JWT service
-  const jwt = app.get(JwtService);
-  await jwt.init();
+  // Security headers
+  app.use((req, res, next) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'DENY');
+    res.setHeader('X-XSS-Protection', '1; mode=block');
+    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
+    next();
+  });
 
   // Swagger documentation
-  if (process.env.NODE_ENV !== 'production') {
-    const config = new DocumentBuilder()
-      .setTitle('Fulexo API')
-      .setDescription('Commerce Integration Platform API')
-      .setVersion('1.0')
-      .addBearerAuth()
-      .addServer('http://localhost:3000')
-      .build();
-    const document = SwaggerModule.createDocument(app, config);
-    SwaggerModule.setup('docs', app, document);
-  }
+  const config = new DocumentBuilder()
+    .setTitle('Fulexo API')
+    .setDescription('Fulexo E-commerce Management Platform API')
+    .setVersion('1.0')
+    .addBearerAuth()
+    .addTag('auth', 'Authentication endpoints')
+    .addTag('users', 'User management')
+    .addTag('tenants', 'Tenant management')
+    .addTag('orders', 'Order management')
+    .addTag('products', 'Product management')
+    .addTag('shipments', 'Shipment management')
+    .addTag('returns', 'Return management')
+    .addTag('invoices', 'Invoice management')
+    .addTag('billing', 'Billing management')
+    .addTag('customers', 'Customer management')
+    .addTag('search', 'Search functionality')
+    .addTag('requests', 'Request management')
+    .addTag('calendar', 'Calendar management')
+    .addTag('inbound', 'Inbound management')
+    .addTag('jobs', 'Background jobs')
+    .addTag('sync', 'Data synchronization')
+    .addTag('woo', 'WooCommerce integration')
+    .addTag('settings', 'Settings management')
+    .addTag('policy', 'Policy management')
+    .build();
+
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api/docs', app, document, {
+    swaggerOptions: {
+      persistAuthorization: true,
+    },
+  });
+
+  // Health check endpoint
+  app.getHttpAdapter().get('/health', (req, res) => {
+    res.json({
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+    });
+  });
+
+  // Metrics endpoint
+  app.getHttpAdapter().get('/metrics', (req, res) => {
+    res.set('Content-Type', register.contentType);
+    res.end(register.metrics());
+  });
+
+  // JWKS endpoint
+  app.getHttpAdapter().get('/auth/.well-known/jwks.json', (req, res) => {
+    res.json({ keys: [] });
+  });
+
+  // Graceful shutdown
+  process.on('SIGTERM', async () => {
+    console.log('SIGTERM received, shutting down gracefully');
+    await app.close();
+    process.exit(0);
+  });
+
+  process.on('SIGINT', async () => {
+    console.log('SIGINT received, shutting down gracefully');
+    await app.close();
+    process.exit(0);
+  });
 
   const port = process.env.PORT || 3000;
   await app.listen(port);
   console.log(`🚀 Application is running on: http://localhost:${port}`);
-  console.log(`📚 API Documentation: http://localhost:${port}/docs`);
+  console.log(`📚 API Documentation: http://localhost:${port}/api/docs`);
+  console.log(`🔍 Health Check: http://localhost:${port}/health`);
+  console.log(`📊 Metrics: http://localhost:${port}/metrics`);
 }
 
-bootstrap().catch(err => {
-  console.error('Failed to start application:', err);
+bootstrap().catch((error) => {
+  console.error('Failed to start application:', error);
   process.exit(1);
 });
