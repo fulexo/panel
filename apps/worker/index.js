@@ -663,7 +663,12 @@ process.on('unhandledRejection', (reason, promise) => {
 // Start worker
 async function start() {
   // Validate environment variables first
-  validateEnvironment();
+  try {
+    validateEnvironment();
+  } catch (error) {
+    logger.error('Environment validation failed:', error.message);
+    process.exit(1);
+  }
   
   logger.info('Worker starting...');
   await scheduleRecurringJobs();
@@ -725,264 +730,39 @@ process.on('multipleResolves', (type, promise, reason) => {
   logger.warn('Promise multiple resolves:', { type, promise, reason });
 });
 
-// Handle process errors
+// Handle uncaught exceptions and unhandled rejections
 process.on('uncaughtException', (error) => {
   logger.error('Uncaught Exception:', error);
   process.exit(1);
 });
 
-// Handle process errors
 process.on('unhandledRejection', (reason, promise) => {
   logger.error('Unhandled Rejection at:', promise, 'reason:', reason);
   process.exit(1);
 });
 
-// Handle process errors
-process.on('SIGUSR1', () => {
-  logger.info('SIGUSR1 received, reloading configuration');
-});
-
-// Handle process errors
-process.on('SIGUSR2', () => {
-  logger.info('SIGUSR2 received, reloading configuration');
-});
-
-// Handle process errors
-process.on('SIGPIPE', () => {
-  logger.warn('SIGPIPE received, ignoring');
-});
-
-// Handle process errors
-process.on('SIGALRM', () => {
-  logger.info('SIGALRM received, alarm triggered');
-});
-
-// Handle process errors
+// Handle graceful shutdown signals
 process.on('SIGTERM', () => {
   logger.info('SIGTERM received, shutting down gracefully');
   process.exit(0);
 });
 
-// Handle process errors
 process.on('SIGINT', () => {
   logger.info('SIGINT received, shutting down gracefully');
   process.exit(0);
 });
 
-// Handle process errors
+// Handle other important signals
 process.on('SIGHUP', () => {
   logger.info('SIGHUP received, reloading configuration');
 });
 
-// Handle process errors
 process.on('SIGQUIT', () => {
   logger.info('SIGQUIT received, shutting down gracefully');
   process.exit(0);
 });
 
-// Handle process errors
-process.on('SIGILL', () => {
-  logger.error('SIGILL received, illegal instruction');
-  process.exit(1);
-});
-
-// Handle process errors
-process.on('SIGTRAP', () => {
-  logger.error('SIGTRAP received, trace trap');
-  process.exit(1);
-});
-
-// Handle process errors
-process.on('SIGABRT', () => {
-  logger.error('SIGABRT received, abort signal');
-  process.exit(1);
-});
-
-// Handle process errors
-process.on('SIGFPE', () => {
-  logger.error('SIGFPE received, floating point exception');
-  process.exit(1);
-});
-
-// Handle process errors
-process.on('SIGSEGV', () => {
-  logger.error('SIGSEGV received, segmentation fault');
-  process.exit(1);
-});
-
-// Handle process errors
-process.on('SIGBUS', () => {
-  logger.error('SIGBUS received, bus error');
-  process.exit(1);
-});
-
-// Handle process errors
-process.on('SIGSYS', () => {
-  logger.error('SIGSYS received, bad system call');
-  process.exit(1);
-});
-
-// Handle process errors
-process.on('SIGPIPE', () => {
-  logger.warn('SIGPIPE received, broken pipe');
-});
-
-// Handle process errors
-process.on('SIGURG', () => {
-  logger.info('SIGURG received, urgent condition');
-});
-
-// Handle process errors
-process.on('SIGSTOP', () => {
-  logger.info('SIGSTOP received, stop process');
-});
-
-// Handle process errors
-process.on('SIGTSTP', () => {
-  logger.info('SIGTSTP received, terminal stop');
-});
-
-// Handle process errors
-process.on('SIGCONT', () => {
-  logger.info('SIGCONT received, continue process');
-});
-
-// Handle process errors
-process.on('SIGCHLD', () => {
-  logger.info('SIGCHLD received, child process status change');
-});
-
-// Handle process errors
-process.on('SIGTTIN', () => {
-  logger.info('SIGTTIN received, terminal input for background process');
-});
-
-// Handle process errors
-process.on('SIGTTOU', () => {
-  logger.info('SIGTTOU received, terminal output for background process');
-});
-
-// Handle process errors
-process.on('SIGIO', () => {
-  logger.info('SIGIO received, I/O possible');
-});
-
-// Handle process errors
-process.on('SIGXCPU', () => {
-  logger.error('SIGXCPU received, CPU time limit exceeded');
-  process.exit(1);
-});
-
-// Handle process errors
-process.on('SIGXFSZ', () => {
-  logger.error('SIGXFSZ received, file size limit exceeded');
-  process.exit(1);
-});
-
-// Handle process errors
-process.on('SIGVTALRM', () => {
-  logger.info('SIGVTALRM received, virtual timer expired');
-});
-
-// Handle process errors
-process.on('SIGPROF', () => {
-  logger.info('SIGPROF received, profiling timer expired');
-});
-
-// Handle process errors
-process.on('SIGWINCH', () => {
-  logger.info('SIGWINCH received, window size change');
-});
-
-// Handle process errors
-process.on('SIGINFO', () => {
-  logger.info('SIGINFO received, status request');
-});
-
-// Handle process errors
-process.on('SIGUSR1', () => {
-  logger.info('SIGUSR1 received, user-defined signal 1');
-});
-
-// Handle process errors
-process.on('SIGUSR2', () => {
-  logger.info('SIGUSR2 received, user-defined signal 2');
-});
-
-// Handle process errors
-process.on('SIGTERM', () => {
-  logger.info('SIGTERM received, termination request');
-  process.exit(0);
-});
-
-// Handle process errors
-process.on('SIGINT', () => {
-  logger.info('SIGINT received, interrupt signal');
-  process.exit(0);
-});
-
-// Handle process errors
-process.on('SIGQUIT', () => {
-  logger.info('SIGQUIT received, quit signal');
-  process.exit(0);
-});
-
-// Handle process errors
-process.on('SIGHUP', () => {
-  logger.info('SIGHUP received, hangup signal');
-});
-
-// Handle process errors
-process.on('SIGPIPE', () => {
-  logger.warn('SIGPIPE received, broken pipe');
-});
-
-// Handle process errors
-process.on('SIGALRM', () => {
-  logger.info('SIGALRM received, alarm signal');
-});
-
-// Handle process errors
-process.on('SIGPIPE', () => {
-  logger.warn('SIGPIPE received, broken pipe');
-});
-
-// Handle process errors
-process.on('SIGTERM', () => {
-  logger.info('SIGTERM received, termination request');
-  process.exit(0);
-});
-
-// Handle process errors
-process.on('SIGINT', () => {
-  logger.info('SIGINT received, interrupt signal');
-  process.exit(0);
-});
-
-// Handle process errors
-process.on('SIGALRM', () => {
-  logger.info('SIGALRM received, alarm signal');
-});
-
-// Handle process errors
-process.on('SIGPIPE', () => {
-  logger.warn('SIGPIPE received, broken pipe');
-});
-
-// Handle process errors
-process.on('SIGTERM', () => {
-  logger.info('SIGTERM received, termination request');
-  process.exit(0);
-});
-
-// Handle process errors
-process.on('SIGTERM', () => {
-  logger.info('SIGTERM received, termination request');
-  process.exit(0);
-});
-
-// Handle process errors
-process.on('SIGINT', () => {
-  logger.info('SIGINT received, interrupt signal');
-  process.exit(0);
+// Handle warnings
+process.on('warning', (warning) => {
+  logger.warn('Process warning:', warning);
 });
