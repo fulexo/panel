@@ -103,15 +103,26 @@ const jobProcessors = {
     const updatedAfter = since.toISOString();
     let page = 1;
     let imported = 0;
-    while(true){
+    const maxPages = 100; // Safety limit to prevent infinite loops
+    
+    while(page <= maxPages){
       const url = new URL(`/wp-json/wc/${store.apiVersion}/orders`, store.baseUrl);
       url.searchParams.set('per_page', '50');
       url.searchParams.set('page', String(page));
       url.searchParams.set('orderby', 'date_modified');
       url.searchParams.set('order', 'asc');
       url.searchParams.set('modified_after', updatedAfter);
-      const res = await fetch(url, { headers: { Authorization: 'Basic '+Buffer.from(store.consumerKey+':'+store.consumerSecret).toString('base64') } });
-      if(!res.ok){ throw new Error('Woo HTTP '+res.status); }
+      
+      const res = await fetch(url, { 
+        headers: { Authorization: 'Basic '+Buffer.from(store.consumerKey+':'+store.consumerSecret).toString('base64') },
+        timeout: 30000 // 30 second timeout
+      });
+      
+      if(!res.ok){ 
+        logger.error(`WooCommerce API error: ${res.status} ${res.statusText}`);
+        throw new Error('Woo HTTP '+res.status); 
+      }
+      
       const list = await res.json();
       if(!Array.isArray(list) || list.length===0) break;
       for(const o of list){
@@ -157,6 +168,11 @@ const jobProcessors = {
         }
       }
       page++;
+      
+      // Add delay between requests to avoid rate limiting
+      if (page <= maxPages) {
+        await new Promise(resolve => setTimeout(resolve, 100)); // 100ms delay
+      }
     }
     // update lastSync
     await prisma.wooStore.update({ where: { id: storeId }, data: { lastSync: { ...(store.lastSync||{}), ordersUpdatedAfter: new Date().toISOString() } } });
@@ -308,23 +324,29 @@ const jobProcessors = {
     // Clean expired cache entries
     const redis = new Redis(process.env.REDIS_URL || 'redis://valkey:6379/0');
     
-    // Get all cache keys
-    const keys = await redis.keys('cache:*');
-    let cleaned = 0;
-    
-    for (const key of keys) {
-      const ttl = await redis.ttl(key);
-      if (ttl === -1) {
-        // No expiry set, clean if older than 1 hour
-        await redis.expire(key, 3600);
-        cleaned++;
+    try {
+      // Get all cache keys
+      const keys = await redis.keys('cache:*');
+      let cleaned = 0;
+      
+      for (const key of keys) {
+        const ttl = await redis.ttl(key);
+        if (ttl === -1) {
+          // No expiry set, clean if older than 1 hour
+          await redis.expire(key, 3600);
+          cleaned++;
+        }
       }
+      
+      logger.info(`Cache cleanup completed: ${cleaned} keys processed`);
+      return { success: true, cleaned };
+    } catch (error) {
+      logger.error('Cache cleanup failed:', error);
+      throw error;
+    } finally {
+      // Always close Redis connection
+      await redis.quit();
     }
-    
-    await redis.quit();
-    // Cache cleanup completed
-    
-    return { success: true, cleaned };
   },
 
   'cleanup-sessions': async (job) => {

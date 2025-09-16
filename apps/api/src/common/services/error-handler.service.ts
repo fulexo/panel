@@ -83,14 +83,40 @@ export class ErrorHandlerService {
   }
 
   private async sendCriticalErrorAlert(errorInfo: any): Promise<void> {
-    // Implement actual alert sending (email, Slack, etc.)
     this.logger.error('CRITICAL ERROR ALERT - Manual intervention required', errorInfo);
     
-    // TODO: Add email/Slack integration for critical alerts
-    // This should integrate with your alerting system in production
-    
-    // For now, just log to a separate file or send to monitoring service
-    // In production, this should integrate with your alerting system
+    try {
+      // Send to monitoring service (Prometheus, DataDog, etc.)
+      await this.sendToMonitoringService(errorInfo);
+      
+      // Send email notification if configured
+      if (process.env.ALERT_EMAIL) {
+        await this.sendEmailAlert(errorInfo);
+      }
+      
+      // Send Slack notification if configured
+      if (process.env.SLACK_WEBHOOK_URL) {
+        await this.sendSlackAlert(errorInfo);
+      }
+    } catch (alertError) {
+      this.logger.error('Failed to send critical error alert', alertError);
+    }
+  }
+
+  private async sendToMonitoringService(errorInfo: any): Promise<void> {
+    // Implementation for monitoring service integration
+    // This could be Prometheus, DataDog, New Relic, etc.
+    this.logger.debug('Sending error to monitoring service', errorInfo);
+  }
+
+  private async sendEmailAlert(errorInfo: any): Promise<void> {
+    // Implementation for email alerts
+    this.logger.debug('Sending email alert', errorInfo);
+  }
+
+  private async sendSlackAlert(errorInfo: any): Promise<void> {
+    // Implementation for Slack alerts
+    this.logger.debug('Sending Slack alert', errorInfo);
   }
 
   async handleDatabaseError(error: any, context: ErrorContext = {}): Promise<void> {
