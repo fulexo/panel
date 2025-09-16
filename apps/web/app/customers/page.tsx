@@ -53,6 +53,7 @@ export default function CustomersPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCustomers, setTotalCustomers] = useState(0);
+  const [selectedCustomers, setSelectedCustomers] = useState<string[]>([]);
   
   // Create customer form
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -313,6 +314,108 @@ export default function CustomersPage() {
     return flags[country.toUpperCase()] || '🌍';
   };
 
+  const bulkAddTag = async (tag: string) => {
+    if (selectedCustomers.length === 0) return;
+    
+    try {
+      setSaving(true);
+      setError(null);
+      
+      const promises = selectedCustomers.map(customerId => {
+        const customer = customers.find(c => c.id === customerId);
+        if (!customer) return Promise.resolve();
+        
+        const currentTags = customer.tags || [];
+        const newTags = [...currentTags, tag].filter((t, i, arr) => arr.indexOf(t) === i); // Remove duplicates
+        
+        return api(`/customers/${customerId}`, {
+          method: 'PUT',
+          body: JSON.stringify({ tags: newTags })
+        });
+      });
+
+      await Promise.all(promises);
+      setSuccess(`${selectedCustomers.length} customers tagged with "${tag}" successfully`);
+      setSelectedCustomers([]);
+      await fetchCustomers();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const bulkRemoveTag = async (tag: string) => {
+    if (selectedCustomers.length === 0) return;
+    
+    try {
+      setSaving(true);
+      setError(null);
+      
+      const promises = selectedCustomers.map(customerId => {
+        const customer = customers.find(c => c.id === customerId);
+        if (!customer) return Promise.resolve();
+        
+        const currentTags = customer.tags || [];
+        const newTags = currentTags.filter(t => t !== tag);
+        
+        return api(`/customers/${customerId}`, {
+          method: 'PUT',
+          body: JSON.stringify({ tags: newTags })
+        });
+      });
+
+      await Promise.all(promises);
+      setSuccess(`Tag "${tag}" removed from ${selectedCustomers.length} customers successfully`);
+      setSelectedCustomers([]);
+      await fetchCustomers();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const bulkDelete = async () => {
+    if (selectedCustomers.length === 0) return;
+    
+    if (!confirm(`Are you sure you want to delete ${selectedCustomers.length} customers? This action cannot be undone.`)) return;
+    
+    try {
+      setSaving(true);
+      setError(null);
+      
+      const promises = selectedCustomers.map(customerId => 
+        api(`/customers/${customerId}`, { method: 'DELETE' })
+      );
+
+      await Promise.all(promises);
+      setSuccess(`${selectedCustomers.length} customers deleted successfully`);
+      setSelectedCustomers([]);
+      await fetchCustomers();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSelectCustomer = (customerId: string) => {
+    setSelectedCustomers(prev => 
+      prev.includes(customerId) 
+        ? prev.filter(id => id !== customerId)
+        : [...prev, customerId]
+    );
+  };
+
+  const handleSelectAll = () => {
+    setSelectedCustomers(
+      selectedCustomers.length === customers.length 
+        ? [] 
+        : customers.map(customer => customer.id)
+    );
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -421,6 +524,54 @@ export default function CustomersPage() {
             </div>
           </div>
         </div>
+
+        {/* Bulk Actions */}
+        {selectedCustomers.length > 0 && (
+          <div className="bg-accent/20 p-4 rounded-lg border border-accent animate-slide-down">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-foreground">
+                  {selectedCustomers.length} customer(s) selected
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    const tag = prompt('Enter tag to add:');
+                    if (tag) bulkAddTag(tag);
+                  }}
+                  disabled={saving}
+                  className="px-3 py-1 bg-blue-500/10 text-blue-500 rounded text-sm hover:bg-blue-500/20 transition-colors disabled:opacity-50"
+                >
+                  Add Tag
+                </button>
+                <button
+                  onClick={() => {
+                    const tag = prompt('Enter tag to remove:');
+                    if (tag) bulkRemoveTag(tag);
+                  }}
+                  disabled={saving}
+                  className="px-3 py-1 bg-yellow-500/10 text-yellow-500 rounded text-sm hover:bg-yellow-500/20 transition-colors disabled:opacity-50"
+                >
+                  Remove Tag
+                </button>
+                <button
+                  onClick={bulkDelete}
+                  disabled={saving}
+                  className="px-3 py-1 bg-destructive/10 text-destructive rounded text-sm hover:bg-destructive/20 transition-colors disabled:opacity-50"
+                >
+                  Delete All
+                </button>
+                <button
+                  onClick={() => setSelectedCustomers([])}
+                  className="px-3 py-1 bg-muted text-muted-foreground rounded text-sm hover:bg-muted/80 transition-colors"
+                >
+                  Clear
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Quick Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 animate-slide-up">
@@ -658,14 +809,39 @@ export default function CustomersPage() {
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {customers.map((customer, index) => (
-                <div
-                  key={customer.id}
-                  className="bg-card p-6 rounded-lg border border-border hover:border-primary/50 transition-all duration-200 card-hover animate-fade-in"
-                  style={{ animationDelay: `${index * 0.05}s` }}
-                >
-                  <div className="flex items-start justify-between mb-4">
+            <div className="space-y-3">
+              {/* Select All Header */}
+              <div className="bg-card p-4 rounded-lg border border-border">
+                <div className="flex items-center gap-4">
+                  <input
+                    type="checkbox"
+                    checked={selectedCustomers.length === customers.length && customers.length > 0}
+                    onChange={handleSelectAll}
+                    className="w-4 h-4 text-primary bg-background border-border rounded focus:ring-primary"
+                  />
+                  <span className="text-sm font-medium text-muted-foreground">
+                    Select all customers ({customers.length})
+                  </span>
+                </div>
+              </div>
+
+              {/* Customers Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {customers.map((customer, index) => (
+                  <div
+                    key={customer.id}
+                    className="bg-card p-6 rounded-lg border border-border hover:border-primary/50 transition-all duration-200 card-hover animate-fade-in"
+                    style={{ animationDelay: `${index * 0.05}s` }}
+                  >
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-start gap-3 flex-1">
+                        <input
+                          type="checkbox"
+                          checked={selectedCustomers.includes(customer.id)}
+                          onChange={() => handleSelectCustomer(customer.id)}
+                          className="w-4 h-4 text-primary bg-background border-border rounded focus:ring-primary mt-1"
+                        />
+                        <div className="flex-1">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2">
                         <h3 className="font-semibold text-foreground text-lg">

@@ -50,6 +50,7 @@ export default function ProductsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalProducts, setTotalProducts] = useState(0);
+  const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   
   // Create/Edit modal
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -262,6 +263,71 @@ export default function ProductsPage() {
     }
   };
 
+  const bulkToggleActive = async (active: boolean) => {
+    if (selectedProducts.length === 0) return;
+    
+    try {
+      setSaving(true);
+      setError(null);
+      
+      const promises = selectedProducts.map(productId => 
+        api(`/products/${productId}`, {
+          method: 'PUT',
+          body: JSON.stringify({ active })
+        })
+      );
+
+      await Promise.all(promises);
+      setSuccess(`${selectedProducts.length} products ${active ? 'activated' : 'deactivated'} successfully`);
+      setSelectedProducts([]);
+      await fetchProducts();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const bulkDelete = async () => {
+    if (selectedProducts.length === 0) return;
+    
+    if (!confirm(`Are you sure you want to delete ${selectedProducts.length} products? This action cannot be undone.`)) return;
+    
+    try {
+      setSaving(true);
+      setError(null);
+      
+      const promises = selectedProducts.map(productId => 
+        api(`/products/${productId}`, { method: 'DELETE' })
+      );
+
+      await Promise.all(promises);
+      setSuccess(`${selectedProducts.length} products deleted successfully`);
+      setSelectedProducts([]);
+      await fetchProducts();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSelectProduct = (productId: string) => {
+    setSelectedProducts(prev => 
+      prev.includes(productId) 
+        ? prev.filter(id => id !== productId)
+        : [...prev, productId]
+    );
+  };
+
+  const handleSelectAll = () => {
+    setSelectedProducts(
+      selectedProducts.length === products.length 
+        ? [] 
+        : products.map(product => product.id)
+    );
+  };
+
   const openEditModal = (product: Product) => {
     setEditingProduct(product);
     setCreateForm({
@@ -423,6 +489,48 @@ export default function ProductsPage() {
           </div>
         </div>
 
+        {/* Bulk Actions */}
+        {selectedProducts.length > 0 && (
+          <div className="bg-accent/20 p-4 rounded-lg border border-accent animate-slide-down">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-foreground">
+                  {selectedProducts.length} product(s) selected
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => bulkToggleActive(true)}
+                  disabled={saving}
+                  className="px-3 py-1 bg-green-500/10 text-green-500 rounded text-sm hover:bg-green-500/20 transition-colors disabled:opacity-50"
+                >
+                  Activate All
+                </button>
+                <button
+                  onClick={() => bulkToggleActive(false)}
+                  disabled={saving}
+                  className="px-3 py-1 bg-yellow-500/10 text-yellow-500 rounded text-sm hover:bg-yellow-500/20 transition-colors disabled:opacity-50"
+                >
+                  Deactivate All
+                </button>
+                <button
+                  onClick={bulkDelete}
+                  disabled={saving}
+                  className="px-3 py-1 bg-destructive/10 text-destructive rounded text-sm hover:bg-destructive/20 transition-colors disabled:opacity-50"
+                >
+                  Delete All
+                </button>
+                <button
+                  onClick={() => setSelectedProducts([])}
+                  className="px-3 py-1 bg-muted text-muted-foreground rounded text-sm hover:bg-muted/80 transition-colors"
+                >
+                  Clear
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Quick Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 animate-slide-up">
           <div className="bg-card p-4 rounded-lg border border-border">
@@ -504,13 +612,21 @@ export default function ProductsPage() {
                     style={{ animationDelay: `${index * 0.05}s` }}
                   >
                     <div className="flex items-start justify-between mb-4">
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-foreground text-lg mb-1 line-clamp-2">
-                          {product.name || 'Unnamed Product'}
-                        </h3>
-                        <p className="text-sm text-muted-foreground mb-2">
-                          SKU: {product.sku}
-                        </p>
+                      <div className="flex items-start gap-3 flex-1">
+                        <input
+                          type="checkbox"
+                          checked={selectedProducts.includes(product.id)}
+                          onChange={() => handleSelectProduct(product.id)}
+                          className="w-4 h-4 text-primary bg-background border-border rounded focus:ring-primary mt-1"
+                        />
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-foreground text-lg mb-1 line-clamp-2">
+                            {product.name || 'Unnamed Product'}
+                          </h3>
+                          <p className="text-sm text-muted-foreground mb-2">
+                            SKU: {product.sku}
+                          </p>
+                        </div>
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-xl">{getStatusIcon(product.active)}</span>

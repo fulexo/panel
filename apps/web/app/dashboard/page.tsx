@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '../../components/AuthProvider';
 
 interface DashboardStats {
   totalOrders: number;
@@ -10,49 +11,98 @@ interface DashboardStats {
     status: string;
     count: number;
   }>;
+  dailyStats?: Array<{
+    date: string;
+    orders: number;
+    revenue: number;
+  }>;
+}
+
+interface RecentActivity {
+  id: string;
+  type: 'order' | 'customer' | 'product' | 'shipment';
+  title: string;
+  description: string;
+  timestamp: string;
+  status?: string;
 }
 
 export default function DashboardPage() {
   const router = useRouter();
+  const { user } = useAuth();
   const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const token = () => localStorage.getItem('access_token');
+  const api = (path: string, init?: any) => 
+    fetch(`/api${path}`, {
+      headers: { Authorization: `Bearer ${token()}`, 'Content-Type': 'application/json' },
+      ...init
+    });
 
   useEffect(() => {
-    // Check authentication
-    const token = localStorage.getItem('access_token');
-    const userData = localStorage.getItem('user');
-    
-    if (!token || !userData) {
+    if (user) {
+      fetchDashboardData();
+    } else {
       router.push('/login');
-      return;
     }
+  }, [user]);
 
-    setUser(JSON.parse(userData));
-    fetchDashboardStats();
-  }, []);
-
-  const fetchDashboardStats = async () => {
+  const fetchDashboardData = async () => {
     try {
-      const token = localStorage.getItem('access_token');
-      const response = await fetch('/api/orders/stats/summary', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        if (response.status === 401) {
+      setLoading(true);
+      setError(null);
+      
+      // Fetch orders stats
+      const ordersResponse = await api('/orders/stats/summary');
+      if (!ordersResponse.ok) {
+        if (ordersResponse.status === 401) {
           router.push('/login');
           return;
         }
-        throw new Error('Failed to fetch stats');
+        throw new Error('Failed to fetch orders stats');
       }
+      const ordersData = await ordersResponse.json();
+      setStats(ordersData);
 
-      const data = await response.json();
-      setStats(data);
-    } catch (error) {
-      console.error('Error fetching stats:', error);
+      // Fetch recent activity (mock data for now)
+      setRecentActivity([
+        {
+          id: '1',
+          type: 'order',
+          title: 'New Order #12345',
+          description: 'Order placed by John Doe',
+          timestamp: new Date().toISOString(),
+          status: 'pending'
+        },
+        {
+          id: '2',
+          type: 'customer',
+          title: 'New Customer',
+          description: 'Jane Smith registered',
+          timestamp: new Date(Date.now() - 3600000).toISOString(),
+        },
+        {
+          id: '3',
+          type: 'product',
+          title: 'Product Updated',
+          description: 'iPhone 15 Pro stock updated',
+          timestamp: new Date(Date.now() - 7200000).toISOString(),
+        },
+        {
+          id: '4',
+          type: 'shipment',
+          title: 'Shipment Delivered',
+          description: 'Order #12340 delivered',
+          timestamp: new Date(Date.now() - 10800000).toISOString(),
+          status: 'delivered'
+        }
+      ]);
+
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load dashboard data');
       // Set fallback data
       setStats({
         totalOrders: 0,
@@ -64,16 +114,44 @@ export default function DashboardPage() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="spinner"></div>
-          <div className="text-lg text-foreground">Loading...</div>
-        </div>
-      </div>
-    );
-  }
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('tr-TR', {
+      style: 'currency',
+      currency: 'TRY',
+      minimumFractionDigits: 2,
+    }).format(amount);
+  };
+
+  const formatDate = (date: string) => {
+    return new Date(date).toLocaleDateString('tr-TR', {
+      day: 'numeric',
+      month: 'short',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const getActivityIcon = (type: string) => {
+    const icons = {
+      order: '📦',
+      customer: '👤',
+      product: '📱',
+      shipment: '🚚'
+    };
+    return icons[type as keyof typeof icons] || '📋';
+  };
+
+  const getStatusColor = (status: string) => {
+    const colors = {
+      pending: 'text-yellow-500',
+      processing: 'text-blue-500',
+      completed: 'text-green-500',
+      shipped: 'text-green-500',
+      delivered: 'text-green-500',
+      cancelled: 'text-red-500'
+    };
+    return colors[status as keyof typeof colors] || 'text-gray-500';
+  };
 
   // Get status counts from breakdown
   const getStatusCount = (status: string) => {
@@ -83,80 +161,137 @@ export default function DashboardPage() {
   const pendingOrders = getStatusCount('pending') + getStatusCount('processing');
   const completedOrders = getStatusCount('completed') + getStatusCount('shipped');
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="spinner"></div>
+          <div className="text-lg text-foreground">Loading dashboard...</div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <main className="mobile-container py-6 space-y-6">
-        {/* Welcome */}
-        <div className="animate-fade-in">
-          <h1 className="text-2xl font-bold text-foreground mb-1">
-            Welcome back, {user?.email?.split('@')[0]}!
-          </h1>
-          <p className="text-muted-foreground">
-            Here's your business overview
-          </p>
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 animate-fade-in">
+          <div>
+            <h1 className="mobile-heading text-foreground">
+              Welcome back, {user?.email?.split('@')[0]}! 👋
+            </h1>
+            <p className="text-muted-foreground mobile-text">
+              Here's your business overview for today
+            </p>
+          </div>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <span>📅</span>
+            <span>{new Date().toLocaleDateString('tr-TR', { 
+              weekday: 'long', 
+              year: 'numeric', 
+              month: 'long', 
+              day: 'numeric' 
+            })}</span>
+          </div>
         </div>
 
-        {/* Key Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 animate-slide-up">
-          <div className="bg-card p-6 rounded-lg border border-border">
+        {/* Error Message */}
+        {error && (
+          <div className="bg-destructive/10 border border-destructive text-destructive px-4 py-3 rounded-lg animate-slide-down">
+            <div className="flex items-center gap-2">
+              <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span className="text-sm font-medium">{error}</span>
+            </div>
+          </div>
+        )}
+
+        {/* Key Metrics */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 animate-slide-up">
+          <div className="bg-card p-6 rounded-lg border border-border card-hover">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground mb-1">Total Orders</p>
-                <p className="text-2xl font-bold text-foreground">{stats?.totalOrders || 0}</p>
+                <p className="text-3xl font-bold text-foreground">{stats?.totalOrders || 0}</p>
+                <p className="text-xs text-muted-foreground mt-1">All time</p>
               </div>
-              <div className="p-2 bg-blue-500/10 rounded-lg">
-                <span className="text-xl">📦</span>
+              <div className="p-3 bg-blue-500/10 rounded-lg">
+                <span className="text-2xl">📦</span>
               </div>
             </div>
           </div>
 
-          <div className="bg-card p-6 rounded-lg border border-border">
+          <div className="bg-card p-6 rounded-lg border border-border card-hover">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground mb-1">Total Revenue</p>
-                <p className="text-2xl font-bold text-foreground">₺{stats?.totalRevenue?.toLocaleString() || 0}</p>
+                <p className="text-3xl font-bold text-foreground">{formatCurrency(stats?.totalRevenue || 0)}</p>
+                <p className="text-xs text-muted-foreground mt-1">All time</p>
               </div>
-              <div className="p-2 bg-green-500/10 rounded-lg">
-                <span className="text-xl">💰</span>
+              <div className="p-3 bg-green-500/10 rounded-lg">
+                <span className="text-2xl">💰</span>
               </div>
             </div>
           </div>
 
-          <div className="bg-card p-6 rounded-lg border border-border">
+          <div className="bg-card p-6 rounded-lg border border-border card-hover">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground mb-1">Pending</p>
-                <p className="text-2xl font-bold text-foreground">{pendingOrders}</p>
+                <p className="text-sm text-muted-foreground mb-1">Pending Orders</p>
+                <p className="text-3xl font-bold text-foreground">{pendingOrders}</p>
+                <p className="text-xs text-muted-foreground mt-1">Needs attention</p>
               </div>
-              <div className="p-2 bg-yellow-500/10 rounded-lg">
-                <span className="text-xl">⏳</span>
+              <div className="p-3 bg-yellow-500/10 rounded-lg">
+                <span className="text-2xl">⏳</span>
               </div>
             </div>
           </div>
 
-          <div className="bg-card p-6 rounded-lg border border-border">
+          <div className="bg-card p-6 rounded-lg border border-border card-hover">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground mb-1">Completed</p>
-                <p className="text-2xl font-bold text-foreground">{completedOrders}</p>
+                <p className="text-3xl font-bold text-foreground">{completedOrders}</p>
+                <p className="text-xs text-muted-foreground mt-1">Successfully processed</p>
               </div>
-              <div className="p-2 bg-green-500/10 rounded-lg">
-                <span className="text-xl">✅</span>
+              <div className="p-3 bg-green-500/10 rounded-lg">
+                <span className="text-2xl">✅</span>
               </div>
             </div>
           </div>
         </div>
 
+        {/* Status Breakdown */}
+        {stats?.statusBreakdown && stats.statusBreakdown.length > 0 && (
+          <div className="bg-card p-6 rounded-lg border border-border animate-slide-up">
+            <h3 className="text-lg font-semibold text-foreground mb-4">Order Status Breakdown</h3>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+              {stats.statusBreakdown.map((status, index) => (
+                <div key={status.status} className="text-center">
+                  <div className="text-2xl font-bold text-foreground mb-1">
+                    {status.count}
+                  </div>
+                  <div className="text-sm text-muted-foreground capitalize">
+                    {status.status}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-slide-up">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 animate-slide-up">
           <a
             href="/orders"
-            className="bg-primary text-primary-foreground p-6 rounded-lg hover:bg-primary/90 transition-colors"
+            className="bg-primary text-primary-foreground p-6 rounded-lg hover:bg-primary/90 transition-colors btn-animate group"
           >
             <div className="flex items-center gap-3">
-              <span className="text-2xl">📋</span>
+              <span className="text-2xl group-hover:scale-110 transition-transform">📋</span>
               <div>
-                <h3 className="font-semibold text-lg">View Orders</h3>
+                <h3 className="font-semibold text-lg">Orders</h3>
                 <p className="text-primary-foreground/80 text-sm">Manage all orders</p>
               </div>
             </div>
@@ -164,16 +299,123 @@ export default function DashboardPage() {
 
           <a
             href="/products"
-            className="bg-secondary text-secondary-foreground p-6 rounded-lg hover:bg-secondary/90 transition-colors"
+            className="bg-accent text-accent-foreground p-6 rounded-lg hover:bg-accent/90 transition-colors btn-animate group"
           >
             <div className="flex items-center gap-3">
-              <span className="text-2xl">📱</span>
+              <span className="text-2xl group-hover:scale-110 transition-transform">📱</span>
               <div>
                 <h3 className="font-semibold text-lg">Products</h3>
-                <p className="text-secondary-foreground/80 text-sm">Manage inventory</p>
+                <p className="text-accent-foreground/80 text-sm">Manage inventory</p>
               </div>
             </div>
           </a>
+
+          <a
+            href="/customers"
+            className="bg-secondary text-secondary-foreground p-6 rounded-lg hover:bg-secondary/90 transition-colors btn-animate group"
+          >
+            <div className="flex items-center gap-3">
+              <span className="text-2xl group-hover:scale-110 transition-transform">👥</span>
+              <div>
+                <h3 className="font-semibold text-lg">Customers</h3>
+                <p className="text-secondary-foreground/80 text-sm">Customer management</p>
+              </div>
+            </div>
+          </a>
+
+          <a
+            href="/shipments"
+            className="bg-muted text-muted-foreground p-6 rounded-lg hover:bg-muted/90 transition-colors btn-animate group"
+          >
+            <div className="flex items-center gap-3">
+              <span className="text-2xl group-hover:scale-110 transition-transform">🚚</span>
+              <div>
+                <h3 className="font-semibold text-lg">Shipments</h3>
+                <p className="text-muted-foreground/80 text-sm">Track deliveries</p>
+              </div>
+            </div>
+          </a>
+        </div>
+
+        {/* Recent Activity */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-slide-up">
+          <div className="bg-card p-6 rounded-lg border border-border">
+            <h3 className="text-lg font-semibold text-foreground mb-4">Recent Activity</h3>
+            <div className="space-y-4">
+              {recentActivity.map((activity, index) => (
+                <div
+                  key={activity.id}
+                  className="flex items-start gap-3 p-3 rounded-lg hover:bg-accent/20 transition-colors"
+                  style={{ animationDelay: `${index * 0.1}s` }}
+                >
+                  <div className="text-xl">{getActivityIcon(activity.type)}</div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <h4 className="font-medium text-foreground text-sm">{activity.title}</h4>
+                      {activity.status && (
+                        <span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(activity.status)} bg-current/10`}>
+                          {activity.status}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-1">{activity.description}</p>
+                    <p className="text-xs text-muted-foreground">{formatDate(activity.timestamp)}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Quick Stats */}
+          <div className="bg-card p-6 rounded-lg border border-border">
+            <h3 className="text-lg font-semibold text-foreground mb-4">Quick Stats</h3>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-3 bg-accent/20 rounded-lg">
+                <div className="flex items-center gap-3">
+                  <span className="text-xl">📊</span>
+                  <div>
+                    <p className="text-sm font-medium text-foreground">Conversion Rate</p>
+                    <p className="text-xs text-muted-foreground">Orders to Revenue</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-lg font-bold text-foreground">
+                    {stats?.totalOrders > 0 ? ((stats.totalRevenue / stats.totalOrders) / 100).toFixed(1) : 0}%
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between p-3 bg-accent/20 rounded-lg">
+                <div className="flex items-center gap-3">
+                  <span className="text-xl">📈</span>
+                  <div>
+                    <p className="text-sm font-medium text-foreground">Avg Order Value</p>
+                    <p className="text-xs text-muted-foreground">Revenue per order</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-lg font-bold text-foreground">
+                    {formatCurrency(stats?.totalOrders > 0 ? (stats.totalRevenue / stats.totalOrders) : 0)}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between p-3 bg-accent/20 rounded-lg">
+                <div className="flex items-center gap-3">
+                  <span className="text-xl">⚡</span>
+                  <div>
+                    <p className="text-sm font-medium text-foreground">Processing Rate</p>
+                    <p className="text-xs text-muted-foreground">Completed orders</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-lg font-bold text-foreground">
+                    {stats?.totalOrders > 0 ? ((completedOrders / stats.totalOrders) * 100).toFixed(1) : 0}%
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </main>
     </div>

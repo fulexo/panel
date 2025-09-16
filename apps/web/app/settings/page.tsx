@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '../../components/AuthProvider';
 
 interface Settings {
   [key: string]: string | boolean | number;
@@ -13,6 +14,7 @@ interface SettingsResponse {
 
 export default function SettingsPage() {
   const router = useRouter();
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('general');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -83,13 +85,12 @@ export default function SettingsPage() {
   ];
 
   useEffect(() => {
-    const token = localStorage.getItem('access_token');
-    if (!token) {
+    if (user) {
+      loadSettings();
+    } else {
       router.push('/login');
-      return;
     }
-    loadSettings();
-  }, []);
+  }, [user]);
 
   const loadSettings = async () => {
     try {

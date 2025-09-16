@@ -46,6 +46,7 @@ export default function ShipmentsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalShipments, setTotalShipments] = useState(0);
+  const [selectedShipments, setSelectedShipments] = useState<string[]>([]);
   
   // Create shipment modal
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -186,6 +187,71 @@ export default function ShipmentsPage() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const bulkUpdateStatus = async (newStatus: string) => {
+    if (selectedShipments.length === 0) return;
+    
+    try {
+      setSaving(true);
+      setError(null);
+      
+      const promises = selectedShipments.map(shipmentId => 
+        api(`/shipments/${shipmentId}`, {
+          method: 'PUT',
+          body: JSON.stringify({ status: newStatus })
+        })
+      );
+
+      await Promise.all(promises);
+      setSuccess(`${selectedShipments.length} shipments updated successfully`);
+      setSelectedShipments([]);
+      await loadShipments();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const bulkDelete = async () => {
+    if (selectedShipments.length === 0) return;
+    
+    if (!confirm(`Are you sure you want to delete ${selectedShipments.length} shipments? This action cannot be undone.`)) return;
+    
+    try {
+      setSaving(true);
+      setError(null);
+      
+      const promises = selectedShipments.map(shipmentId => 
+        api(`/shipments/${shipmentId}`, { method: 'DELETE' })
+      );
+
+      await Promise.all(promises);
+      setSuccess(`${selectedShipments.length} shipments deleted successfully`);
+      setSelectedShipments([]);
+      await loadShipments();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSelectShipment = (shipmentId: string) => {
+    setSelectedShipments(prev => 
+      prev.includes(shipmentId) 
+        ? prev.filter(id => id !== shipmentId)
+        : [...prev, shipmentId]
+    );
+  };
+
+  const handleSelectAll = () => {
+    setSelectedShipments(
+      selectedShipments.length === shipments.length 
+        ? [] 
+        : shipments.map(shipment => shipment.id)
+    );
   };
 
   useEffect(() => {
@@ -349,6 +415,45 @@ export default function ShipmentsPage() {
           </div>
         </div>
 
+        {/* Bulk Actions */}
+        {selectedShipments.length > 0 && (
+          <div className="bg-accent/20 p-4 rounded-lg border border-accent animate-slide-down">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-foreground">
+                  {selectedShipments.length} shipment(s) selected
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <select
+                  onChange={(e) => bulkUpdateStatus(e.target.value)}
+                  className="px-3 py-1 bg-background border border-border rounded text-sm"
+                  disabled={saving}
+                >
+                  <option value="">Bulk Actions</option>
+                  <option value="pending">Mark as Pending</option>
+                  <option value="in_transit">Mark as In Transit</option>
+                  <option value="delivered">Mark as Delivered</option>
+                  <option value="failed">Mark as Failed</option>
+                </select>
+                <button
+                  onClick={bulkDelete}
+                  disabled={saving}
+                  className="px-3 py-1 bg-destructive/10 text-destructive rounded text-sm hover:bg-destructive/20 transition-colors disabled:opacity-50"
+                >
+                  Delete All
+                </button>
+                <button
+                  onClick={() => setSelectedShipments([])}
+                  className="px-3 py-1 bg-muted text-muted-foreground rounded text-sm hover:bg-muted/80 transition-colors"
+                >
+                  Clear
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Quick Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 animate-slide-up">
           <div className="bg-card p-4 rounded-lg border border-border">
@@ -420,14 +525,38 @@ export default function ShipmentsPage() {
               </p>
             </div>
           ) : (
-            <div className="grid gap-4">
-              {shipments.map((shipment, index) => (
-                <div
-                  key={shipment.id}
-                  className="bg-card p-6 rounded-lg border border-border hover:border-primary/50 transition-all duration-200 card-hover animate-fade-in"
-                  style={{ animationDelay: `${index * 0.05}s` }}
-                >
-                  <div className="flex items-center gap-4">
+            <div className="space-y-3">
+              {/* Select All Header */}
+              <div className="bg-card p-4 rounded-lg border border-border">
+                <div className="flex items-center gap-4">
+                  <input
+                    type="checkbox"
+                    checked={selectedShipments.length === shipments.length && shipments.length > 0}
+                    onChange={handleSelectAll}
+                    className="w-4 h-4 text-primary bg-background border-border rounded focus:ring-primary"
+                  />
+                  <span className="text-sm font-medium text-muted-foreground">
+                    Select all shipments ({shipments.length})
+                  </span>
+                </div>
+              </div>
+
+              {/* Shipments */}
+              <div className="grid gap-4">
+                {shipments.map((shipment, index) => (
+                  <div
+                    key={shipment.id}
+                    className="bg-card p-6 rounded-lg border border-border hover:border-primary/50 transition-all duration-200 card-hover animate-fade-in"
+                    style={{ animationDelay: `${index * 0.05}s` }}
+                  >
+                    <div className="flex items-center gap-4">
+                      {/* Checkbox */}
+                      <input
+                        type="checkbox"
+                        checked={selectedShipments.includes(shipment.id)}
+                        onChange={() => handleSelectShipment(shipment.id)}
+                        className="w-4 h-4 text-primary bg-background border-border rounded focus:ring-primary"
+                      />
                     {/* Shipment Icon */}
                     <div className="w-12 h-12 bg-accent rounded-lg flex items-center justify-center">
                       <span className="text-2xl">{getStatusIcon(shipment.status)}</span>

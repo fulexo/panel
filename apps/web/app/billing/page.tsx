@@ -42,6 +42,7 @@ export default function BillingPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalBatches, setTotalBatches] = useState(0);
+  const [selectedBatches, setSelectedBatches] = useState<string[]>([]);
   
   // Add invoices modal
   const [showAddModal, setShowAddModal] = useState(false);
@@ -223,6 +224,71 @@ export default function BillingPage() {
     }
   };
 
+  const bulkUpdateStatus = async (newStatus: string) => {
+    if (selectedBatches.length === 0) return;
+    
+    try {
+      setSaving(true);
+      setError(null);
+      
+      const promises = selectedBatches.map(batchId => 
+        api(`/billing/batches/${batchId}`, {
+          method: 'PUT',
+          body: JSON.stringify({ status: newStatus })
+        })
+      );
+
+      await Promise.all(promises);
+      setSuccess(`${selectedBatches.length} batches updated successfully`);
+      setSelectedBatches([]);
+      await loadBatches();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const bulkDelete = async () => {
+    if (selectedBatches.length === 0) return;
+    
+    if (!confirm(`Are you sure you want to delete ${selectedBatches.length} batches? This action cannot be undone.`)) return;
+    
+    try {
+      setSaving(true);
+      setError(null);
+      
+      const promises = selectedBatches.map(batchId => 
+        api(`/billing/batches/${batchId}`, { method: 'DELETE' })
+      );
+
+      await Promise.all(promises);
+      setSuccess(`${selectedBatches.length} batches deleted successfully`);
+      setSelectedBatches([]);
+      await loadBatches();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSelectBatch = (batchId: string) => {
+    setSelectedBatches(prev => 
+      prev.includes(batchId) 
+        ? prev.filter(id => id !== batchId)
+        : [...prev, batchId]
+    );
+  };
+
+  const handleSelectAll = () => {
+    setSelectedBatches(
+      selectedBatches.length === batches.length 
+        ? [] 
+        : batches.map(batch => batch.id)
+    );
+  };
+
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'created': return '📝';
@@ -359,6 +425,45 @@ export default function BillingPage() {
           </div>
         </div>
 
+        {/* Bulk Actions */}
+        {selectedBatches.length > 0 && (
+          <div className="bg-accent/20 p-4 rounded-lg border border-accent animate-slide-down">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-foreground">
+                  {selectedBatches.length} batch(es) selected
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <select
+                  onChange={(e) => bulkUpdateStatus(e.target.value)}
+                  className="px-3 py-1 bg-background border border-border rounded text-sm"
+                  disabled={saving}
+                >
+                  <option value="">Bulk Actions</option>
+                  <option value="created">Mark as Created</option>
+                  <option value="issued">Mark as Issued</option>
+                  <option value="paid">Mark as Paid</option>
+                  <option value="cancelled">Mark as Cancelled</option>
+                </select>
+                <button
+                  onClick={bulkDelete}
+                  disabled={saving}
+                  className="px-3 py-1 bg-destructive/10 text-destructive rounded text-sm hover:bg-destructive/20 transition-colors disabled:opacity-50"
+                >
+                  Delete All
+                </button>
+                <button
+                  onClick={() => setSelectedBatches([])}
+                  className="px-3 py-1 bg-muted text-muted-foreground rounded text-sm hover:bg-muted/80 transition-colors"
+                >
+                  Clear
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Batches List */}
         <div className="space-y-4 animate-slide-up">
           {batches.length === 0 ? (
@@ -373,14 +478,38 @@ export default function BillingPage() {
               </p>
             </div>
           ) : (
-            <div className="grid gap-4">
-              {batches.map((batch, index) => (
-                <div
-                  key={batch.id}
-                  className="bg-card p-6 rounded-lg border border-border hover:border-primary/50 transition-all duration-200 card-hover animate-fade-in"
-                  style={{ animationDelay: `${index * 0.05}s` }}
-                >
-                  <div className="flex items-center gap-4">
+            <div className="space-y-3">
+              {/* Select All Header */}
+              <div className="bg-card p-4 rounded-lg border border-border">
+                <div className="flex items-center gap-4">
+                  <input
+                    type="checkbox"
+                    checked={selectedBatches.length === batches.length && batches.length > 0}
+                    onChange={handleSelectAll}
+                    className="w-4 h-4 text-primary bg-background border-border rounded focus:ring-primary"
+                  />
+                  <span className="text-sm font-medium text-muted-foreground">
+                    Select all batches ({batches.length})
+                  </span>
+                </div>
+              </div>
+
+              {/* Batches */}
+              <div className="grid gap-4">
+                {batches.map((batch, index) => (
+                  <div
+                    key={batch.id}
+                    className="bg-card p-6 rounded-lg border border-border hover:border-primary/50 transition-all duration-200 card-hover animate-fade-in"
+                    style={{ animationDelay: `${index * 0.05}s` }}
+                  >
+                    <div className="flex items-center gap-4">
+                      {/* Checkbox */}
+                      <input
+                        type="checkbox"
+                        checked={selectedBatches.includes(batch.id)}
+                        onChange={() => handleSelectBatch(batch.id)}
+                        className="w-4 h-4 text-primary bg-background border-border rounded focus:ring-primary"
+                      />
                     {/* Batch Icon */}
                     <div className="w-12 h-12 bg-accent rounded-lg flex items-center justify-center">
                       <span className="text-2xl">{getStatusIcon(batch.status)}</span>
