@@ -1,0 +1,239 @@
+'use client';
+
+import { useAuth } from './AuthProvider';
+import { usePathname } from 'next/navigation';
+import { useState } from 'react';
+
+interface SidebarProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export default function Sidebar({ isOpen, onClose }: SidebarProps) {
+  const { user, logout } = useAuth();
+  const pathname = usePathname();
+  const [expandedSections, setExpandedSections] = useState<string[]>(['main']);
+
+  const navigationItems = [
+    { href: '/dashboard', label: 'Dashboard', icon: '📊' },
+    { href: '/orders', label: 'Orders', icon: '📦' },
+    { href: '/shipments', label: 'Shipments', icon: '🚚' },
+    { href: '/products', label: 'Products', icon: '📱' },
+    { href: '/customers', label: 'Customers', icon: '👥' },
+  ];
+
+  const adminItems = [
+    { href: '/users', label: 'Users', icon: '👤', roles: ['ADMIN'] },
+    { href: '/inbound', label: 'Inbound', icon: '📥' },
+    { href: '/returns', label: 'Returns', icon: '↩️' },
+    { href: '/billing', label: 'Billing', icon: '💳' },
+    { href: '/tenants', label: 'Tenants', icon: '🏢', roles: ['ADMIN'] },
+    { href: '/stores', label: 'Stores', icon: '🏪', roles: ['ADMIN'] },
+    { href: '/settings', label: 'Settings', icon: '⚙️', roles: ['ADMIN'] },
+    { href: '/support', label: 'Support', icon: '🆘' },
+  ];
+
+  const additionalItems = [
+    { href: '/calendar', label: 'Calendar', icon: '📅' },
+    { href: '/search', label: 'Search', icon: '🔍' },
+    { href: '/profile', label: 'Profile', icon: '👤' },
+  ];
+
+  const getRoleColor = (role: string) => {
+    switch (role) {
+      case 'ADMIN': return 'bg-red-600';
+      case 'CUSTOMER': return 'bg-blue-600';
+      default: return 'bg-gray-600';
+    }
+  };
+
+  const isActive = (href: string) => {
+    if (href === '/dashboard') return pathname === href;
+    return pathname.startsWith(href);
+  };
+
+  const toggleSection = (section: string) => {
+    setExpandedSections(prev => 
+      prev.includes(section) 
+        ? prev.filter(s => s !== section)
+        : [...prev, section]
+    );
+  };
+
+  const renderNavItems = (items: any[], section: string) => {
+    return items.map((item) => {
+      if (item.roles && !item.roles.includes(user?.role)) return null;
+      return (
+        <a
+          key={item.href}
+          href={item.href}
+          className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors group ${
+            isActive(item.href)
+              ? 'bg-primary text-primary-foreground'
+              : 'hover:bg-accent text-muted-foreground hover:text-foreground'
+          }`}
+          onClick={() => onClose()}
+        >
+          <span className="text-lg group-hover:scale-110 transition-transform">{item.icon}</span>
+          <span className="font-medium">{item.label}</span>
+        </a>
+      );
+    });
+  };
+
+  return (
+    <>
+      {/* Overlay for mobile */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          onClick={onClose}
+        />
+      )}
+
+      {/* Sidebar */}
+      <div className={`
+        fixed top-0 left-0 h-full w-80 bg-card border-r border-border z-50 transform transition-transform duration-300 ease-in-out
+        ${isOpen ? 'translate-x-0' : '-translate-x-full'}
+        lg:translate-x-0 lg:static lg:z-auto
+      `}>
+        <div className="flex flex-col h-full">
+          {/* Header */}
+          <div className="p-6 border-b border-border">
+            <div className="flex items-center justify-between">
+              <a href="/dashboard" className="font-bold text-2xl text-foreground">
+                Fulexo
+              </a>
+              <button
+                onClick={onClose}
+                className="lg:hidden p-2 rounded-md hover:bg-accent transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          {/* User Info */}
+          <div className="p-4 border-b border-border">
+            <div className="flex items-center gap-3 p-3 bg-accent rounded-lg">
+              <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
+                <span className="text-primary-foreground font-bold text-lg">
+                  {user?.email?.charAt(0).toUpperCase()}
+                </span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="font-medium text-foreground truncate">{user?.email}</div>
+                <div className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${getRoleColor(user?.role || '')} text-white mt-1`}>
+                  {user?.role?.replace('_', ' ')}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Search */}
+          <div className="p-4 border-b border-border">
+            <form action="/search">
+              <div className="relative">
+                <input 
+                  name="q" 
+                  placeholder="Search..." 
+                  className="w-full px-4 py-2 pl-10 bg-input border border-border rounded-lg form-input text-foreground placeholder-muted-foreground" 
+                />
+                <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+            </form>
+          </div>
+
+          {/* Navigation */}
+          <div className="flex-1 overflow-y-auto custom-scrollbar">
+            <div className="p-4 space-y-6">
+              {/* Main Navigation */}
+              <div>
+                <button
+                  onClick={() => toggleSection('main')}
+                  className="flex items-center justify-between w-full px-3 py-2 text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <span>Main</span>
+                  <svg 
+                    className={`w-4 h-4 transition-transform ${expandedSections.includes('main') ? 'rotate-180' : ''}`}
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                {expandedSections.includes('main') && (
+                  <div className="mt-2 space-y-1">
+                    {renderNavItems(navigationItems, 'main')}
+                  </div>
+                )}
+              </div>
+
+              {/* Admin Navigation */}
+              <div>
+                <button
+                  onClick={() => toggleSection('admin')}
+                  className="flex items-center justify-between w-full px-3 py-2 text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <span>Administration</span>
+                  <svg 
+                    className={`w-4 h-4 transition-transform ${expandedSections.includes('admin') ? 'rotate-180' : ''}`}
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                {expandedSections.includes('admin') && (
+                  <div className="mt-2 space-y-1">
+                    {renderNavItems(adminItems, 'admin')}
+                  </div>
+                )}
+              </div>
+
+              {/* Additional Navigation */}
+              <div>
+                <button
+                  onClick={() => toggleSection('additional')}
+                  className="flex items-center justify-between w-full px-3 py-2 text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <span>Tools</span>
+                  <svg 
+                    className={`w-4 h-4 transition-transform ${expandedSections.includes('additional') ? 'rotate-180' : ''}`}
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                {expandedSections.includes('additional') && (
+                  <div className="mt-2 space-y-1">
+                    {renderNavItems(additionalItems, 'additional')}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="p-4 border-t border-border">
+            <button 
+              onClick={logout} 
+              className="w-full flex items-center gap-3 px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors"
+            >
+              <span className="text-lg">🚪</span>
+              <span className="font-medium">Logout</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}

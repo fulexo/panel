@@ -71,4 +71,54 @@
   .mobile-heading {
     @apply text-xl sm:text-2xl lg:text-3xl font-bold;
   }
+
+  /* Sidebar responsive utilities */
+  .sidebar-transition {
+    @apply transition-all duration-300 ease-in-out;
+  }
+
+  /* Mobile menu animations */
+  .animate-slide-down {
+    @apply animate-in slide-in-from-top-2 duration-200;
+  }
+
+  .animate-slide-up {
+    @apply animate-out slide-out-to-top-2 duration-200;
+  }
+
+  /* Responsive table utilities */
+  .table-responsive {
+    @apply overflow-x-auto;
+  }
+
+  .table-mobile {
+    @apply min-w-full divide-y divide-border;
+  }
+
+  /* Mobile form utilities */
+  .form-mobile {
+    @apply space-y-4;
+  }
+
+  .form-group-mobile {
+    @apply space-y-2;
+  }
+
+  /* Mobile button utilities */
+  .btn-mobile {
+    @apply w-full sm:w-auto;
+  }
+
+  .btn-mobile-sm {
+    @apply w-full sm:w-auto text-sm px-3 py-2;
+  }
+
+  /* Mobile card utilities */
+  .card-mobile {
+    @apply p-4 sm:p-6;
+  }
+
+  .card-mobile-sm {
+    @apply p-3 sm:p-4;
+  }
 }
