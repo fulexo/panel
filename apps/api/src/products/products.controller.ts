@@ -28,4 +28,22 @@ export class ProductsController {
   async get(@CurrentUser() user: any, @Param('id') id: string) {
     return this.products.get(user.tenantId, id);
   }
+
+  @Post()
+  @ApiOperation({ summary: 'Create product' })
+  async create(@CurrentUser() user: any, @Body() dto: any) {
+    return this.products.create(user.tenantId, dto);
+  }
+
+  @Put(':id')
+  @ApiOperation({ summary: 'Update product' })
+  async update(@CurrentUser() user: any, @Param('id') id: string, @Body() dto: any) {
+    return this.products.update(user.tenantId, id, dto);
+  }
+
+  @Delete(':id')
+  @ApiOperation({ summary: 'Delete product' })
+  async delete(@CurrentUser() user: any, @Param('id') id: string) {
+    return this.products.delete(user.tenantId, id);
+  }
 }
