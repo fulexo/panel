@@ -25,6 +25,16 @@ interface RecentActivity {
   description: string;
   timestamp: string;
   status?: string;
+  storeName?: string;
+  wooId?: string;
+}
+
+interface WooStore {
+  id: string;
+  name: string;
+  baseUrl: string;
+  active: boolean;
+  lastSync?: any;
 }
 
 export default function DashboardPage() {
@@ -32,6 +42,7 @@ export default function DashboardPage() {
   const { user } = useAuth();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
+  const [stores, setStores] = useState<WooStore[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -55,6 +66,18 @@ export default function DashboardPage() {
       setLoading(true);
       setError(null);
       
+      // Fetch WooCommerce stores first
+      const storesResponse = await api('/woo/stores');
+      if (!storesResponse.ok) {
+        if (storesResponse.status === 401) {
+          router.push('/login');
+          return;
+        }
+        throw new Error('Failed to fetch WooCommerce stores');
+      }
+      const storesData = await storesResponse.json();
+      setStores(storesData || []);
+
       // Fetch orders stats
       const ordersResponse = await api('/orders/stats/summary');
       if (!ordersResponse.ok) {
@@ -80,7 +103,9 @@ export default function DashboardPage() {
             title: `Order #${order.externalOrderNo || order.id.slice(0, 8)}`,
             description: `Order placed by ${order.customerName || order.customerEmail || 'Unknown Customer'}`,
             timestamp: order.createdAt,
-            status: order.status
+            status: order.status,
+            storeName: order.storeName || 'Unknown Store',
+            wooId: order.externalOrderNo
           }));
 
           setRecentActivity(activities);
@@ -196,6 +221,38 @@ export default function DashboardPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <span className="text-sm font-medium">{error}</span>
+            </div>
+          </div>
+        )}
+
+        {/* WooCommerce Stores */}
+        {stores.length > 0 && (
+          <div className="bg-card p-6 rounded-lg border border-border animate-slide-up">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-foreground">WooCommerce Stores</h2>
+              <a href="/stores" className="text-sm text-primary hover:text-primary/80">
+                Manage Stores →
+              </a>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {stores.map((store) => (
+                <div key={store.id} className="bg-muted/50 p-4 rounded-lg border border-border">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-medium text-foreground">{store.name}</h3>
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      store.active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                    }`}>
+                      {store.active ? 'Active' : 'Inactive'}
+                    </span>
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-2">{store.baseUrl}</p>
+                  {store.lastSync && (
+                    <p className="text-xs text-muted-foreground">
+                      Last sync: {new Date(store.lastSync).toLocaleString()}
+                    </p>
+                  )}
+                </div>
+              ))}
             </div>
           </div>
         )}

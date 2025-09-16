@@ -7,6 +7,7 @@ import { useAuth } from "../../components/AuthProvider";
 interface Order {
   id: string;
   externalOrderNo?: string;
+  wooOrderId?: string;
   status: string;
   customerEmail?: string;
   customerName?: string;
@@ -14,6 +15,9 @@ interface Order {
   currency: string;
   createdAt: string;
   updatedAt: string;
+  storeId?: string;
+  storeName?: string;
+  syncStatus?: 'synced' | 'pending' | 'failed';
   customer?: {
     id: string;
     name?: string;
@@ -25,6 +29,7 @@ interface Order {
     productName: string;
     quantity: number;
     price: number;
+    wooProductId?: string;
   }>;
 }
 
@@ -482,6 +487,16 @@ export default function OrdersPage() {
                             <h3 className="font-semibold text-foreground text-sm">
                               #{order.externalOrderNo || order.id.slice(0, 8)}
                             </h3>
+                            {order.wooOrderId && (
+                              <p className="text-xs text-blue-600">
+                                WooCommerce: #{order.wooOrderId}
+                              </p>
+                            )}
+                            {order.storeName && (
+                              <p className="text-xs text-muted-foreground">
+                                Store: {order.storeName}
+                              </p>
+                            )}
                             {order.items && order.items.length > 0 && (
                               <p className="text-xs text-muted-foreground">
                                 {order.items.length} item(s)

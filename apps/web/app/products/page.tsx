@@ -19,6 +19,11 @@ interface Product {
   active: boolean;
   createdAt: string;
   updatedAt: string;
+  wooProductId?: string;
+  storeId?: string;
+  storeName?: string;
+  syncStatus?: 'synced' | 'pending' | 'failed';
+  wooCategories?: string[];
   category?: {
     id: string;
     name: string;

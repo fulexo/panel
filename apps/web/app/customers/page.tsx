@@ -21,6 +21,10 @@ interface Customer {
   tags?: string[];
   createdAt: string;
   updatedAt: string;
+  wooCustomerId?: string;
+  storeId?: string;
+  storeName?: string;
+  syncStatus?: 'synced' | 'pending' | 'failed';
   orderStats?: {
     totalOrders: number;
     totalSpent: number;
