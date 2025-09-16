@@ -64,7 +64,7 @@ export class JwtService {
         this.keyId = kid;
       }
     } catch (error) {
-      console.error('RSA key initialization failed, falling back to HMAC:', error);
+      // RSA key initialization failed, falling back to HMAC
       await this.initHMACKey();
     }
   }
@@ -258,7 +258,7 @@ export class JwtService {
       
       return !!blacklistedToken;
     } catch (error) {
-      console.error('Error checking token blacklist:', error);
+      // Error checking token blacklist
       return false; // If error, allow token (fail open)
     }
   }
@@ -282,7 +282,7 @@ export class JwtService {
         }
       });
     } catch (error) {
-      console.error('Error blacklisting token:', error);
+      // Error blacklisting token
     }
   }
 

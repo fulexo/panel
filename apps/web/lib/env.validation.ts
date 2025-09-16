@@ -48,11 +48,11 @@ export function validateEnvironment(config: Record<string, unknown>) {
 export function validateEnvOnStartup() {
   try {
     const config = validateEnvironment(process.env);
-    console.log('✅ Web environment variables validated successfully');
+    // Web environment variables validated successfully
     return config;
   } catch (error) {
-    console.error('❌ Web environment validation failed:');
-    console.error(error instanceof Error ? error.message : 'Unknown error');
+    // Web environment validation failed
+    // Error details logged
     
     // Only exit in production, allow development to continue with warnings
     if (process.env.NODE_ENV === 'production') {

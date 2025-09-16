@@ -101,7 +101,7 @@ export default function UsersPage() {
         setTenants(data?.data || []);
       }
     } catch (err) {
-      console.error('Failed to load tenants:', err);
+      // Failed to load tenants
     }
   };
 

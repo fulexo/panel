@@ -16,7 +16,7 @@ export class EncryptionService {
       if (process.env.NODE_ENV === 'production') {
         throw new Error('ENCRYPTION_KEY environment variable is required in production')
       }
-      console.warn('⚠️ ENCRYPTION_KEY not set, using default key (development only)')
+      // ENCRYPTION_KEY not set, using default key (development only)
       this.key = crypto.scryptSync('default-dev-key', 'salt', 32)
     } else {
       if (keyString.length !== 32) {

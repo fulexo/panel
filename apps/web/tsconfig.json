@@ -46,13 +46,6 @@
     "**/*.tsx"
   ],
   "exclude": [
-    "node_modules",
-    "app/billing/page.tsx",
-    "app/customers/page.tsx",
-    "app/shipments/page.tsx",
-    "app/orders/[id]/page.tsx",
-    "app/products/page.tsx",
-    "app/settings/page.tsx",
-    "app/support/page.tsx"
+    "node_modules"
   ]
 }

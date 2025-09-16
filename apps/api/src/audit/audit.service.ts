@@ -34,7 +34,7 @@ export class AuditService {
       });
     } catch (error) {
       // Log to console if database write fails
-      console.error('Failed to write audit log:', error, data);
+      // Failed to write audit log
     }
   }
 

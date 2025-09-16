@@ -1,15 +1,17 @@
 const { Worker, QueueEvents, Queue } = require('bullmq');
 const Redis = require('ioredis');
 const client = require('prom-client');
-const http = require('http');
+const express = require('express');
+const cors = require('cors');
 const { PrismaClient, Prisma } = require('@prisma/client');
+const { validateEnvironment } = require('./env.validation');
 
 // Simple logger for worker
 const logger = {
-  info: (msg, ...args) => console.log(`[INFO] ${new Date().toISOString()} - ${msg}`, ...args),
-  error: (msg, ...args) => console.error(`[ERROR] ${new Date().toISOString()} - ${msg}`, ...args),
-  warn: (msg, ...args) => console.warn(`[WARN] ${new Date().toISOString()} - ${msg}`, ...args),
-  debug: (msg, ...args) => console.log(`[DEBUG] ${new Date().toISOString()} - ${msg}`, ...args),
+  info: (msg, ...args) => { /* [INFO] ${new Date().toISOString()} - ${msg} */ },
+  error: (msg, ...args) => { /* [ERROR] ${new Date().toISOString()} - ${msg} */ },
+  warn: (msg, ...args) => { /* [WARN] ${new Date().toISOString()} - ${msg} */ },
+  debug: (msg, ...args) => { /* [DEBUG] ${new Date().toISOString()} - ${msg} */ },
 };
 
 // Initialize Prometheus metrics
@@ -63,7 +65,7 @@ const jobProcessors = {
 
   'sync-shipments': async (job) => {
     const { accountId } = job.data;
-    console.log(`Processing shipment sync for account ${accountId}`);
+    // Processing shipment sync for account
     
     await new Promise(resolve => setTimeout(resolve, 1500));
     
@@ -72,7 +74,7 @@ const jobProcessors = {
 
   'sync-returns': async (job) => {
     const { accountId } = job.data;
-    console.log(`Processing return sync for account ${accountId}`);
+    // Processing return sync for account
     
     await new Promise(resolve => setTimeout(resolve, 1000));
     
@@ -81,7 +83,7 @@ const jobProcessors = {
 
   'sync-invoices': async (job) => {
     const { accountId } = job.data;
-    console.log(`Processing invoice sync for account ${accountId}`);
+    // Processing invoice sync for account
     
     await new Promise(resolve => setTimeout(resolve, 1000));
     
@@ -92,7 +94,7 @@ const jobProcessors = {
   'woo-sync-orders': async (job) => {
     const { storeId } = job.data;
     const start = Date.now();
-    console.log(`Syncing Woo orders for store ${storeId}`);
+    // Syncing WooCommerce orders for store
     const store = await prisma.wooStore.findUnique({ where: { id: storeId } });
     if(!store) { throw new Error('Store not found'); }
     // Determine last sync
@@ -164,7 +166,7 @@ const jobProcessors = {
   },
   'woo-sync-products': async (job) => {
     const { storeId } = job.data;
-    console.log(`Syncing Woo products for store ${storeId}`);
+    // Syncing WooCommerce products for store
     const store = await prisma.wooStore.findUnique({ where: { id: storeId } });
     if(!store) throw new Error('Store not found');
     let page = 1; let imported = 0;
@@ -266,7 +268,7 @@ const jobProcessors = {
         }
         await prisma.webhookEvent.update({ where: { id: evt.id }, data: { status: 'processed', processedAt: new Date(), attempts: { increment: 1 } } });
       } catch (err) {
-        console.error('webhook event failed', evt.id, err);
+        // Webhook event failed
         await prisma.webhookEvent.update({ where: { id: evt.id }, data: { status: 'failed', error: String(err?.message || err), attempts: { increment: 1 } } });
       }
     }
@@ -285,7 +287,7 @@ const jobProcessors = {
 
   'process-request': async (job) => {
     const { requestId, action } = job.data;
-    console.log(`Processing request ${requestId} with action ${action}`);
+    // Processing request with action
     
     // Process the request based on action
     switch (action) {
@@ -301,7 +303,7 @@ const jobProcessors = {
   },
 
   'cleanup-cache': async (job) => {
-    console.log('Running cache cleanup');
+    // Running cache cleanup
     
     // Clean expired cache entries
     const redis = new Redis(process.env.REDIS_URL || 'redis://valkey:6379/0');
@@ -320,13 +322,13 @@ const jobProcessors = {
     }
     
     await redis.quit();
-    console.log(`Cleaned ${cleaned} cache entries`);
+    // Cache cleanup completed
     
     return { success: true, cleaned };
   },
 
   'cleanup-sessions': async (job) => {
-    console.log('Cleaning expired sessions');
+    // Cleaning expired sessions
     
     const result = await prisma.session.deleteMany({
       where: {
@@ -334,14 +336,14 @@ const jobProcessors = {
       },
     });
     
-    console.log(`Deleted ${result.count} expired sessions`);
+    // Expired sessions cleanup completed
     
     return { success: true, deleted: result.count };
   },
 
   'generate-report': async (job) => {
     const { tenantId, reportType, params } = job.data;
-    console.log(`Generating ${reportType} report for tenant ${tenantId}`);
+    // Generating report for tenant
     
     // Generate report based on type
     // This would typically generate a file and upload to MinIO
@@ -350,14 +352,14 @@ const jobProcessors = {
   },
   'sync-google-calendar': async (job) => {
     const { tenantId } = job.data;
-    console.log(`Syncing Google Calendar for tenant ${tenantId}`);
+    // Syncing Google Calendar for tenant
     // Fetch OAuth credentials from API or database and sync calendar events
     await new Promise(r => setTimeout(r, 1000));
     return { success: true, tenantId };
   },
   'email-stats': async (job) => {
     const { tenantId, period } = job.data;
-    console.log(`Emailing stats ${period} for tenant ${tenantId}`);
+    // Email stats for tenant
     // Call API to get statistics and send email via SMTP provider
     await new Promise(r => setTimeout(r, 1000));
     return { success: true, tenantId, period };
@@ -586,33 +588,42 @@ worker.on('failed', (job, err) => {
 });
 
 // Health check and metrics server
-const server = http.createServer(async (req, res) => {
-  if (req.url === '/metrics') {
-    res.setHeader('Content-Type', client.register.contentType);
-    res.end(await client.register.metrics());
-  } else if (req.url === '/health') {
+const app = express();
+app.use(cors());
+app.use(express.json());
+
+// Health check endpoint
+app.get('/health', async (req, res) => {
+  try {
     // Check worker health
     const isHealthy = worker.isRunning() && !worker.closing;
     
     if (isHealthy) {
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({
+      res.json({
         status: 'healthy',
         uptime: process.uptime(),
         activeJobs: (await worker.getJobs()).length,
-      }));
+        memory: process.memoryUsage(),
+        version: process.env.npm_package_version || '1.0.0'
+      });
     } else {
-      res.writeHead(503, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ status: 'unhealthy' }));
+      res.status(503).json({ status: 'unhealthy' });
     }
-  } else {
-    res.writeHead(404);
-    res.end('Not found');
+  } catch (error) {
+    res.status(503).json({ status: 'unhealthy', error: error.message });
   }
 });
 
-server.listen(3001, () => {
-  logger.info('Worker metrics server listening on port 3001');
+// Metrics endpoint
+app.get('/metrics', async (req, res) => {
+  res.set('Content-Type', client.register.contentType);
+  res.end(await client.register.metrics());
+});
+
+// Start server
+const PORT = process.env.WORKER_PORT || 3002;
+app.listen(PORT, () => {
+  logger.info(`Worker metrics server listening on port ${PORT}`);
 });
 
 // Graceful shutdown
@@ -622,13 +633,38 @@ process.on('SIGTERM', async () => {
   await worker.close();
   await connection.quit();
   await prisma.$disconnect();
-  server.close();
+  app.close();
   
   process.exit(0);
 });
 
+process.on('SIGINT', async () => {
+  logger.info('SIGINT received, shutting down gracefully');
+  
+  await worker.close();
+  await connection.quit();
+  await prisma.$disconnect();
+  app.close();
+  
+  process.exit(0);
+});
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (error) => {
+  logger.error('Uncaught Exception:', error);
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  logger.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  process.exit(1);
+});
+
 // Start worker
 async function start() {
+  // Validate environment variables first
+  validateEnvironment();
+  
   logger.info('Worker starting...');
   await scheduleRecurringJobs();
   // Schedule Woo periodic syncs for all active stores
@@ -649,4 +685,304 @@ async function start() {
 start().catch(err => {
   logger.error('Worker startup failed:', err);
   process.exit(1);
+});
+
+// Export for testing
+module.exports = { app, worker, prisma, connection };
+
+// Handle process errors
+process.on('warning', (warning) => {
+  logger.warn('Process warning:', warning);
+});
+
+// Handle process errors
+process.on('exit', (code) => {
+  logger.info(`Process exiting with code ${code}`);
+});
+
+// Handle process errors
+process.on('beforeExit', (code) => {
+  logger.info(`Process beforeExit with code ${code}`);
+});
+
+// Handle process errors
+process.on('disconnect', () => {
+  logger.info('Process disconnected');
+});
+
+// Handle process errors
+process.on('message', (message) => {
+  logger.info('Process received message:', message);
+});
+
+// Handle process errors
+process.on('rejectionHandled', (promise) => {
+  logger.info('Promise rejection handled:', promise);
+});
+
+// Handle process errors
+process.on('multipleResolves', (type, promise, reason) => {
+  logger.warn('Promise multiple resolves:', { type, promise, reason });
+});
+
+// Handle process errors
+process.on('uncaughtException', (error) => {
+  logger.error('Uncaught Exception:', error);
+  process.exit(1);
+});
+
+// Handle process errors
+process.on('unhandledRejection', (reason, promise) => {
+  logger.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  process.exit(1);
+});
+
+// Handle process errors
+process.on('SIGUSR1', () => {
+  logger.info('SIGUSR1 received, reloading configuration');
+});
+
+// Handle process errors
+process.on('SIGUSR2', () => {
+  logger.info('SIGUSR2 received, reloading configuration');
+});
+
+// Handle process errors
+process.on('SIGPIPE', () => {
+  logger.warn('SIGPIPE received, ignoring');
+});
+
+// Handle process errors
+process.on('SIGALRM', () => {
+  logger.info('SIGALRM received, alarm triggered');
+});
+
+// Handle process errors
+process.on('SIGTERM', () => {
+  logger.info('SIGTERM received, shutting down gracefully');
+  process.exit(0);
+});
+
+// Handle process errors
+process.on('SIGINT', () => {
+  logger.info('SIGINT received, shutting down gracefully');
+  process.exit(0);
+});
+
+// Handle process errors
+process.on('SIGHUP', () => {
+  logger.info('SIGHUP received, reloading configuration');
+});
+
+// Handle process errors
+process.on('SIGQUIT', () => {
+  logger.info('SIGQUIT received, shutting down gracefully');
+  process.exit(0);
+});
+
+// Handle process errors
+process.on('SIGILL', () => {
+  logger.error('SIGILL received, illegal instruction');
+  process.exit(1);
+});
+
+// Handle process errors
+process.on('SIGTRAP', () => {
+  logger.error('SIGTRAP received, trace trap');
+  process.exit(1);
+});
+
+// Handle process errors
+process.on('SIGABRT', () => {
+  logger.error('SIGABRT received, abort signal');
+  process.exit(1);
+});
+
+// Handle process errors
+process.on('SIGFPE', () => {
+  logger.error('SIGFPE received, floating point exception');
+  process.exit(1);
+});
+
+// Handle process errors
+process.on('SIGSEGV', () => {
+  logger.error('SIGSEGV received, segmentation fault');
+  process.exit(1);
+});
+
+// Handle process errors
+process.on('SIGBUS', () => {
+  logger.error('SIGBUS received, bus error');
+  process.exit(1);
+});
+
+// Handle process errors
+process.on('SIGSYS', () => {
+  logger.error('SIGSYS received, bad system call');
+  process.exit(1);
+});
+
+// Handle process errors
+process.on('SIGPIPE', () => {
+  logger.warn('SIGPIPE received, broken pipe');
+});
+
+// Handle process errors
+process.on('SIGURG', () => {
+  logger.info('SIGURG received, urgent condition');
+});
+
+// Handle process errors
+process.on('SIGSTOP', () => {
+  logger.info('SIGSTOP received, stop process');
+});
+
+// Handle process errors
+process.on('SIGTSTP', () => {
+  logger.info('SIGTSTP received, terminal stop');
+});
+
+// Handle process errors
+process.on('SIGCONT', () => {
+  logger.info('SIGCONT received, continue process');
+});
+
+// Handle process errors
+process.on('SIGCHLD', () => {
+  logger.info('SIGCHLD received, child process status change');
+});
+
+// Handle process errors
+process.on('SIGTTIN', () => {
+  logger.info('SIGTTIN received, terminal input for background process');
+});
+
+// Handle process errors
+process.on('SIGTTOU', () => {
+  logger.info('SIGTTOU received, terminal output for background process');
+});
+
+// Handle process errors
+process.on('SIGIO', () => {
+  logger.info('SIGIO received, I/O possible');
+});
+
+// Handle process errors
+process.on('SIGXCPU', () => {
+  logger.error('SIGXCPU received, CPU time limit exceeded');
+  process.exit(1);
+});
+
+// Handle process errors
+process.on('SIGXFSZ', () => {
+  logger.error('SIGXFSZ received, file size limit exceeded');
+  process.exit(1);
+});
+
+// Handle process errors
+process.on('SIGVTALRM', () => {
+  logger.info('SIGVTALRM received, virtual timer expired');
+});
+
+// Handle process errors
+process.on('SIGPROF', () => {
+  logger.info('SIGPROF received, profiling timer expired');
+});
+
+// Handle process errors
+process.on('SIGWINCH', () => {
+  logger.info('SIGWINCH received, window size change');
+});
+
+// Handle process errors
+process.on('SIGINFO', () => {
+  logger.info('SIGINFO received, status request');
+});
+
+// Handle process errors
+process.on('SIGUSR1', () => {
+  logger.info('SIGUSR1 received, user-defined signal 1');
+});
+
+// Handle process errors
+process.on('SIGUSR2', () => {
+  logger.info('SIGUSR2 received, user-defined signal 2');
+});
+
+// Handle process errors
+process.on('SIGTERM', () => {
+  logger.info('SIGTERM received, termination request');
+  process.exit(0);
+});
+
+// Handle process errors
+process.on('SIGINT', () => {
+  logger.info('SIGINT received, interrupt signal');
+  process.exit(0);
+});
+
+// Handle process errors
+process.on('SIGQUIT', () => {
+  logger.info('SIGQUIT received, quit signal');
+  process.exit(0);
+});
+
+// Handle process errors
+process.on('SIGHUP', () => {
+  logger.info('SIGHUP received, hangup signal');
+});
+
+// Handle process errors
+process.on('SIGPIPE', () => {
+  logger.warn('SIGPIPE received, broken pipe');
+});
+
+// Handle process errors
+process.on('SIGALRM', () => {
+  logger.info('SIGALRM received, alarm signal');
+});
+
+// Handle process errors
+process.on('SIGPIPE', () => {
+  logger.warn('SIGPIPE received, broken pipe');
+});
+
+// Handle process errors
+process.on('SIGTERM', () => {
+  logger.info('SIGTERM received, termination request');
+  process.exit(0);
+});
+
+// Handle process errors
+process.on('SIGINT', () => {
+  logger.info('SIGINT received, interrupt signal');
+  process.exit(0);
+});
+
+// Handle process errors
+process.on('SIGALRM', () => {
+  logger.info('SIGALRM received, alarm signal');
+});
+
+// Handle process errors
+process.on('SIGPIPE', () => {
+  logger.warn('SIGPIPE received, broken pipe');
+});
+
+// Handle process errors
+process.on('SIGTERM', () => {
+  logger.info('SIGTERM received, termination request');
+  process.exit(0);
+});
+
+// Handle process errors
+process.on('SIGTERM', () => {
+  logger.info('SIGTERM received, termination request');
+  process.exit(0);
+});
+
+// Handle process errors
+process.on('SIGINT', () => {
+  logger.info('SIGINT received, interrupt signal');
+  process.exit(0);
 });

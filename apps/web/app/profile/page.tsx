@@ -231,7 +231,7 @@ export default function ProfilePage() {
     try {
       await api('/auth/logout', { method: 'POST' });
     } catch (err) {
-      console.error('Logout error:', err);
+      // Logout error occurred
     } finally {
       logout();
       router.push('/login');

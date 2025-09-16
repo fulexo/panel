@@ -29,7 +29,7 @@ USER fulexo
 RUN rm -rf /tmp/* /var/cache/apk/*
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=5s --retries=3 CMD wget -qO- http://localhost:3001/health || exit 1
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 CMD wget -qO- http://localhost:3002/health || exit 1
 
-EXPOSE 3001
+EXPOSE 3002
 CMD ["node","index.js"]

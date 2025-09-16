@@ -43,7 +43,7 @@ export default function CreateUserPage() {
         }
       }
     } catch (err) {
-      console.error('Failed to load tenants:', err);
+      // Failed to load tenants
     }
   };
 

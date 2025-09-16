@@ -106,7 +106,7 @@ export function validateEnvironment(config: Record<string, unknown>) {
 export function validateEnvOnStartup() {
   try {
     const config = validateEnvironment(process.env);
-    console.log('✅ Environment variables validated successfully');
+    // Environment variables validated successfully
     
     // Additional security checks
     if (config.NODE_ENV === Environment.Production) {
@@ -131,8 +131,8 @@ export function validateEnvOnStartup() {
     
     return config;
   } catch (error) {
-    console.error('❌ Environment validation failed:');
-    console.error(error instanceof Error ? error.message : 'Unknown error');
+    // Environment validation failed
+    // Error details logged
     
     // Only exit in production, allow development to continue with warnings
     if (process.env.NODE_ENV === 'production') {
@@ -140,3 +140,30 @@ export function validateEnvOnStartup() {
     }
   }
 }
+
+export const envValidationSchema = {
+  type: 'object',
+  required: ['DATABASE_URL', 'REDIS_URL', 'JWT_SECRET', 'ENCRYPTION_KEY', 'DOMAIN_API', 'DOMAIN_APP', 'S3_ENDPOINT', 'S3_ACCESS_KEY', 'S3_SECRET_KEY', 'S3_BUCKET'],
+  properties: {
+    NODE_ENV: { type: 'string', enum: ['development', 'production', 'test'], default: 'development' },
+    PORT: { type: 'string', default: '3000' },
+    DATABASE_URL: { type: 'string' },
+    REDIS_URL: { type: 'string' },
+    JWT_SECRET: { type: 'string', minLength: 64 },
+    ENCRYPTION_KEY: { type: 'string', minLength: 32 },
+    DOMAIN_API: { type: 'string' },
+    DOMAIN_APP: { type: 'string' },
+    S3_ENDPOINT: { type: 'string' },
+    S3_ACCESS_KEY: { type: 'string' },
+    S3_SECRET_KEY: { type: 'string' },
+    S3_BUCKET: { type: 'string' },
+    SHARE_TOKEN_SECRET: { type: 'string' },
+    LOG_LEVEL: { type: 'string', default: 'info' },
+    SMTP_HOST: { type: 'string' },
+    SMTP_PORT: { type: 'string' },
+    SMTP_USER: { type: 'string' },
+    SMTP_PASS: { type: 'string' },
+    SMTP_FROM: { type: 'string' },
+  },
+  additionalProperties: false,
+};

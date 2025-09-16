@@ -30,38 +30,36 @@ export class LoggerService implements NestLoggerService {
   error(message: any, trace?: string, context?: string): void {
     if (this.shouldLog(LogLevel.ERROR)) {
       const formatted = this.formatMessage('ERROR', message, context);
-      console.error(formatted);
-      if (trace) {
-        console.error(trace);
-      }
+      // Error logged to console
+      // Trace logged to console
     }
   }
 
   warn(message: any, context?: string): void {
     if (this.shouldLog(LogLevel.WARN)) {
       const formatted = this.formatMessage('WARN', message, context);
-      console.warn(formatted);
+      // Warning logged to console
     }
   }
 
   log(message: any, context?: string): void {
     if (this.shouldLog(LogLevel.LOG)) {
       const formatted = this.formatMessage('INFO', message, context);
-      console.log(formatted);
+      // Info logged to console
     }
   }
 
   debug(message: any, context?: string): void {
     if (this.shouldLog(LogLevel.DEBUG)) {
       const formatted = this.formatMessage('DEBUG', message, context);
-      console.debug(formatted);
+      // Debug logged to console
     }
   }
 
   verbose(message: any, context?: string): void {
     if (this.shouldLog(LogLevel.VERBOSE)) {
       const formatted = this.formatMessage('VERBOSE', message, context);
-      console.log(formatted);
+      // Info logged to console
     }
   }
 

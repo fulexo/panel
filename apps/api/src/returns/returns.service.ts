@@ -65,10 +65,10 @@ export class ReturnsService {
           // Web notifications are stored in DB and shown in UI
           break;
         default:
-          console.warn(`Unknown notification channel: ${channel}`);
+          // Unknown notification channel
       }
     } catch (error) {
-      console.error(`Failed to send ${channel} notification:`, error);
+      // Failed to send notification
       // Don't throw - notification is best effort
     }
     
@@ -78,23 +78,23 @@ export class ReturnsService {
   private async sendEmailNotification(email: string, subject: string, message: string): Promise<void> {
     // Check if SMTP is configured
     if (!process.env.SMTP_HOST || !process.env.SMTP_USER) {
-      console.warn('SMTP not configured, skipping email notification');
+      // SMTP not configured, skipping email notification
       return;
     }
 
     // Use email service if available
     // This would integrate with the email module
-    console.log(`Would send email to ${email}: ${subject}`);
+    // Would send email notification
   }
 
   private async sendSmsNotification(phone: string, message: string): Promise<void> {
     // Check if SMS provider is configured
     if (!process.env.SMS_API_KEY) {
-      console.warn('SMS provider not configured, skipping SMS notification');
+      // SMS provider not configured, skipping SMS notification
       return;
     }
 
     // Use SMS service if available
-    console.log(`Would send SMS to ${phone}: ${message}`);
+    // Would send SMS notification
   }
 }

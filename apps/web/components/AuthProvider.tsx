@@ -38,7 +38,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         localStorage.removeItem('user');
       }
     } catch (error) {
-      console.error('Auth check failed:', error);
+      // Auth check failed
     } finally {
       setLoading(false);
     }
