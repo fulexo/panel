@@ -31,7 +31,13 @@ const connection = new Redis(process.env.REDIS_URL || 'redis://valkey:6379/0', {
   maxRetriesPerRequest: null,
 });
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient({
+  datasources: {
+    db: {
+      url: process.env.DATABASE_URL
+    }
+  }
+});
 
 // Job processors
 const jobProcessors = {

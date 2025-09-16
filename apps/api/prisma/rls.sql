@@ -69,4 +69,66 @@ CREATE POLICY session_select ON "Session" FOR SELECT USING ("userId" = NULLIF(cu
 CREATE POLICY session_ins ON "Session" FOR INSERT WITH CHECK ("userId" = NULLIF(current_setting('app.user_id', true), '')::uuid);
 CREATE POLICY session_del ON "Session" FOR DELETE USING ("userId" = NULLIF(current_setting('app.user_id', true), '')::uuid);
 
+-- Additional tenant-specific tables
+ALTER TABLE "WooStore" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY woo_select ON "WooStore" FOR SELECT USING ("tenantId" = app.tenant_id());
+CREATE POLICY woo_ins ON "WooStore" FOR INSERT WITH CHECK ("tenantId" = app.tenant_id());
+CREATE POLICY woo_upd ON "WooStore" FOR UPDATE USING ("tenantId" = app.tenant_id()) WITH CHECK ("tenantId" = app.tenant_id());
+CREATE POLICY woo_del ON "WooStore" FOR DELETE USING ("tenantId" = app.tenant_id());
+
+ALTER TABLE "Settings" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY settings_select ON "Settings" FOR SELECT USING ("tenantId" = app.tenant_id());
+CREATE POLICY settings_ins ON "Settings" FOR INSERT WITH CHECK ("tenantId" = app.tenant_id());
+CREATE POLICY settings_upd ON "Settings" FOR UPDATE USING ("tenantId" = app.tenant_id()) WITH CHECK ("tenantId" = app.tenant_id());
+CREATE POLICY settings_del ON "Settings" FOR DELETE USING ("tenantId" = app.tenant_id());
+
+ALTER TABLE "BillingBatch" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY billing_select ON "BillingBatch" FOR SELECT USING ("tenantId" = app.tenant_id());
+CREATE POLICY billing_ins ON "BillingBatch" FOR INSERT WITH CHECK ("tenantId" = app.tenant_id());
+CREATE POLICY billing_upd ON "BillingBatch" FOR UPDATE USING ("tenantId" = app.tenant_id()) WITH CHECK ("tenantId" = app.tenant_id());
+CREATE POLICY billing_del ON "BillingBatch" FOR DELETE USING ("tenantId" = app.tenant_id());
+
+ALTER TABLE "InboundShipment" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY inbound_select ON "InboundShipment" FOR SELECT USING ("tenantId" = app.tenant_id());
+CREATE POLICY inbound_ins ON "InboundShipment" FOR INSERT WITH CHECK ("tenantId" = app.tenant_id());
+CREATE POLICY inbound_upd ON "InboundShipment" FOR UPDATE USING ("tenantId" = app.tenant_id()) WITH CHECK ("tenantId" = app.tenant_id());
+CREATE POLICY inbound_del ON "InboundShipment" FOR DELETE USING ("tenantId" = app.tenant_id());
+
+ALTER TABLE "CalendarEvent" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY calendar_select ON "CalendarEvent" FOR SELECT USING ("tenantId" = app.tenant_id());
+CREATE POLICY calendar_ins ON "CalendarEvent" FOR INSERT WITH CHECK ("tenantId" = app.tenant_id());
+CREATE POLICY calendar_upd ON "CalendarEvent" FOR UPDATE USING ("tenantId" = app.tenant_id()) WITH CHECK ("tenantId" = app.tenant_id());
+CREATE POLICY calendar_del ON "CalendarEvent" FOR DELETE USING ("tenantId" = app.tenant_id());
+
+ALTER TABLE "Holiday" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY holiday_select ON "Holiday" FOR SELECT USING ("tenantId" = app.tenant_id());
+CREATE POLICY holiday_ins ON "Holiday" FOR INSERT WITH CHECK ("tenantId" = app.tenant_id());
+CREATE POLICY holiday_upd ON "Holiday" FOR UPDATE USING ("tenantId" = app.tenant_id()) WITH CHECK ("tenantId" = app.tenant_id());
+CREATE POLICY holiday_del ON "Holiday" FOR DELETE USING ("tenantId" = app.tenant_id());
+
+ALTER TABLE "BusinessHours" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY business_select ON "BusinessHours" FOR SELECT USING ("tenantId" = app.tenant_id());
+CREATE POLICY business_ins ON "BusinessHours" FOR INSERT WITH CHECK ("tenantId" = app.tenant_id());
+CREATE POLICY business_upd ON "BusinessHours" FOR UPDATE USING ("tenantId" = app.tenant_id()) WITH CHECK ("tenantId" = app.tenant_id());
+CREATE POLICY business_del ON "BusinessHours" FOR DELETE USING ("tenantId" = app.tenant_id());
+
+ALTER TABLE "OAuthCredential" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY oauth_select ON "OAuthCredential" FOR SELECT USING ("tenantId" = app.tenant_id());
+CREATE POLICY oauth_ins ON "OAuthCredential" FOR INSERT WITH CHECK ("tenantId" = app.tenant_id());
+CREATE POLICY oauth_upd ON "OAuthCredential" FOR UPDATE USING ("tenantId" = app.tenant_id()) WITH CHECK ("tenantId" = app.tenant_id());
+CREATE POLICY oauth_del ON "OAuthCredential" FOR DELETE USING ("tenantId" = app.tenant_id());
+
+ALTER TABLE "WebhookEvent" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY webhook_select ON "WebhookEvent" FOR SELECT USING ("tenantId" = app.tenant_id());
+CREATE POLICY webhook_ins ON "WebhookEvent" FOR INSERT WITH CHECK ("tenantId" = app.tenant_id());
+CREATE POLICY webhook_upd ON "WebhookEvent" FOR UPDATE USING ("tenantId" = app.tenant_id()) WITH CHECK ("tenantId" = app.tenant_id());
+CREATE POLICY webhook_del ON "WebhookEvent" FOR DELETE USING ("tenantId" = app.tenant_id());
+
+-- OrderNoSeq table
+ALTER TABLE "_OrderNoSeq" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY order_no_seq_select ON "_OrderNoSeq" FOR SELECT USING ("tenantId" = app.tenant_id());
+CREATE POLICY order_no_seq_ins ON "_OrderNoSeq" FOR INSERT WITH CHECK ("tenantId" = app.tenant_id());
+CREATE POLICY order_no_seq_upd ON "_OrderNoSeq" FOR UPDATE USING ("tenantId" = app.tenant_id()) WITH CHECK ("tenantId" = app.tenant_id());
+CREATE POLICY order_no_seq_del ON "_OrderNoSeq" FOR DELETE USING ("tenantId" = app.tenant_id());
+
 -- Note: Application must set `SET LOCAL app.tenant_id = '<tenant-uuid>'` within each transaction.

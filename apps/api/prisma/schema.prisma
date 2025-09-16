@@ -636,3 +636,12 @@ model Settings {
   @@unique([tenantId, category, key])
   @@index([tenantId, category])
 }
+
+// Order number sequence per tenant
+model OrderNoSeq {
+  tenantId String @id
+  value    Int    @default(1)
+  updatedAt DateTime @updatedAt
+
+  @@map("_OrderNoSeq")
+}

@@ -49,7 +49,7 @@ export default function DashboardPage() {
 
   const token = () => localStorage.getItem('access_token');
   const api = (path: string, init?: any) => 
-    fetch(`/api${path}`, {
+    fetch(`${process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:3000'}${path}`, {
       headers: { Authorization: `Bearer ${token()}`, 'Content-Type': 'application/json' },
       ...init
     });
@@ -74,7 +74,8 @@ export default function DashboardPage() {
           router.push('/login');
           return;
         }
-        throw new Error('Failed to fetch WooCommerce stores');
+        const errorText = await storesResponse.text();
+        throw new Error(`Failed to fetch WooCommerce stores: ${errorText}`);
       }
       const storesData = await storesResponse.json();
       setStores(storesData || []);

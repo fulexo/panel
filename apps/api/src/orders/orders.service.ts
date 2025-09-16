@@ -209,15 +209,16 @@ export class OrdersService {
 
     // Determine next order number for tenant
     // Atomic per-tenant order number allocation using a dedicated table with upsert
-    await this.runTenant(tenantId, async (db) => db.$executeRawUnsafe(
-      `INSERT INTO "_OrderNoSeq" ("tenantId","value")
-       VALUES ('${tenantId}', 1)
-       ON CONFLICT ("tenantId") DO UPDATE SET "value" = "_OrderNoSeq"."value" + 1`
-    ));
+    await this.runTenant(tenantId, async (db) => db.$executeRaw`
+      INSERT INTO "_OrderNoSeq" ("tenantId","value")
+      VALUES (${tenantId}::uuid, 1)
+      ON CONFLICT ("tenantId") DO UPDATE SET "value" = "_OrderNoSeq"."value" + 1
+    `);
+    
     // Fetch current value after upsert
-    const current = await this.runTenant(tenantId, async (db) => db.$queryRawUnsafe(
-      `SELECT "value" FROM "_OrderNoSeq" WHERE "tenantId"='${tenantId}'`
-    ));
+    const current = await this.runTenant(tenantId, async (db) => db.$queryRaw`
+      SELECT "value" FROM "_OrderNoSeq" WHERE "tenantId" = ${tenantId}::uuid
+    `);
     const nextOrderNo = Number((current as any[])?.[0]?.value || 1);
 
     // Create order

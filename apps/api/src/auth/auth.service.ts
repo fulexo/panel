@@ -133,8 +133,8 @@ export class AuthService {
       throw new BadRequestException('Invalid tenant');
     }
 
-    // Hash password
-    const passwordHash = await bcrypt.hash(dto.password, 10);
+    // Hash password with consistent cost factor
+    const passwordHash = await bcrypt.hash(dto.password, 12);
 
     // Create user
     const user = await this.prisma.user.create({

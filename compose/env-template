@@ -69,6 +69,12 @@ SHARE_TOKEN_SECRET=your_share_token_secret_32_chars
 # App URL for email links
 NEXT_PUBLIC_APP_URL=https://panel.yourdomain.com
 
+# Frontend API base URL
+NEXT_PUBLIC_API_BASE=https://api.yourdomain.com
+
+# Share base URL for public order links
+SHARE_BASE_URL=https://panel.yourdomain.com
+
 # =============================================================================
 # ADDITIONAL CONFIGURATION
 # =============================================================================

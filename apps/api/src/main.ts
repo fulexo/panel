@@ -28,15 +28,62 @@ import { LoggerService } from './logger/logger.service';
 import { validateEnvOnStartup } from './config/env.validation';
 
 import { Public } from './auth/decorators/public.decorator';
+import { RateLimitGuard } from './rate-limit.guard';
 @Controller('health')
 class HealthController {
+  constructor(private prisma: PrismaService) {}
+
   @Public()
   @Get()
-  health(){
+  async health(){
+    const checks = {
+      database: 'unknown',
+      redis: 'unknown',
+      minio: 'unknown',
+    };
+
+    try {
+      // Database check
+      await this.prisma.$queryRaw`SELECT 1`;
+      checks.database = 'ok';
+    } catch (error) {
+      checks.database = 'error';
+    }
+
+    try {
+      // Redis check
+      const Redis = require('ioredis');
+      const redis = new Redis(process.env.REDIS_URL || 'redis://valkey:6379/0');
+      await redis.ping();
+      await redis.quit();
+      checks.redis = 'ok';
+    } catch (error) {
+      checks.redis = 'error';
+    }
+
+    try {
+      // MinIO check
+      const Minio = require('minio');
+      const minioClient = new Minio.Client({
+        endPoint: process.env.S3_ENDPOINT?.replace('http://', '').replace('https://', '') || 'minio',
+        port: 9000,
+        useSSL: false,
+        accessKey: process.env.S3_ACCESS_KEY || 'minioadmin',
+        secretKey: process.env.S3_SECRET_KEY || 'minioadmin',
+      });
+      await minioClient.bucketExists(process.env.S3_BUCKET || 'fulexo-cache');
+      checks.minio = 'ok';
+    } catch (error) {
+      checks.minio = 'error';
+    }
+
+    const allHealthy = Object.values(checks).every(status => status === 'ok');
+
     return {
-      status: 'ok',
+      status: allHealthy ? 'ok' : 'degraded',
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
+      checks,
     };
   }
 }
@@ -100,6 +147,9 @@ async function bootstrap(){
     forbidNonWhitelisted: true,
   }));
 
+  // Global rate limiting
+  app.useGlobalGuards(new RateLimitGuard());
+
   // CORS configuration
   app.enableCors({
     origin: (origin, cb) => {
@@ -107,9 +157,9 @@ async function bootstrap(){
       const isDevelopment = process.env.NODE_ENV !== 'production';
       
       const allowedOrigins = new Set([
-        `https://${process.env.DOMAIN_APP}`,
-        `https://${process.env.DOMAIN_API}`,
-      ]);
+        process.env.DOMAIN_APP ? `https://${process.env.DOMAIN_APP}` : null,
+        process.env.DOMAIN_API ? `https://${process.env.DOMAIN_API}` : null,
+      ].filter(Boolean));
       
       // Add localhost origins in development
       if (isDevelopment) {
@@ -133,7 +183,7 @@ async function bootstrap(){
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-WC-Webhook-Topic', 'X-WC-Webhook-Signature'],
     exposedHeaders: ['X-Total-Count', 'X-Page-Count'],
     maxAge: 86400, // 24 hours
   });
