@@ -38,14 +38,28 @@ import { validateEnvOnStartup } from './config/env.validation';
 
 import { Public } from './auth/decorators/public.decorator';
 import { RateLimitGuard } from './rate-limit.guard';
+import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 @Controller('health')
 class HealthController {
   constructor(private prisma: PrismaService) {}
 
   @Public()
   @Get()
-  async health(){
-    const checks = {
+  async health(): Promise<{
+    status: string;
+    timestamp: string;
+    uptime: number;
+    checks: {
+      database: string;
+      redis: string;
+      minio: string;
+    };
+  }> {
+    const checks: {
+      database: string;
+      redis: string;
+      minio: string;
+    } = {
       database: 'unknown',
       redis: 'unknown',
       minio: 'unknown',
@@ -55,7 +69,8 @@ class HealthController {
       // Database check
       await this.prisma.$queryRaw`SELECT 1`;
       checks.database = 'ok';
-    } catch (error) {
+    } catch (error: unknown) {
+      console.error('Database health check failed:', error);
       checks.database = 'error';
     }
 
@@ -66,7 +81,8 @@ class HealthController {
       await redis.ping();
       await redis.quit();
       checks.redis = 'ok';
-    } catch (error) {
+    } catch (error: unknown) {
+      console.error('Redis health check failed:', error);
       checks.redis = 'error';
     }
 
@@ -82,7 +98,8 @@ class HealthController {
       });
       await minioClient.bucketExists(process.env.S3_BUCKET || 'fulexo-cache');
       checks.minio = 'ok';
-    } catch (error) {
+    } catch (error: unknown) {
+      console.error('MinIO health check failed:', error);
       checks.minio = 'error';
     }
 
@@ -100,7 +117,7 @@ class HealthController {
 @Controller()
 class MetricsController {
   @Get('metrics')
-  async metrics(@Res() res: any){
+  async metrics(@Res() res: any): Promise<void> {
     res.setHeader('Content-Type', register.contentType);
     res.send(await register.metrics());
   }
@@ -110,7 +127,7 @@ class MetricsController {
 class JwksController {
   constructor(private readonly jwt: JwtService){}
   @Get('jwks.json')
-  jwks(){
+  jwks(): any {
     return this.jwt.getJwks();
   }
 }
@@ -148,7 +165,7 @@ class JwksController {
 })
 class AppModule {}
 
-async function bootstrap(){
+async function bootstrap(): Promise<void> {
   // Validate environment variables first
   validateEnvOnStartup();
   
@@ -159,12 +176,42 @@ async function bootstrap(){
   // Set global prefix for all routes
   app.setGlobalPrefix('api');
 
-  // Global validation pipe
+  // Global validation pipe with enhanced options
   app.useGlobalPipes(new ValidationPipe({
     whitelist: true,
     transform: true,
     forbidNonWhitelisted: true,
+    transformOptions: {
+      enableImplicitConversion: true,
+    },
+    validationError: {
+      target: false,
+      value: false,
+    },
+    exceptionFactory: (errors) => {
+      const result = errors.map((error) => ({
+        property: error.property,
+        value: error.value,
+        constraints: error.constraints,
+        children: error.children?.map((child) => ({
+          property: child.property,
+          value: child.value,
+          constraints: child.constraints,
+        })),
+      }));
+      
+      return new HttpException(
+        {
+          message: 'Validation failed',
+          errors: result,
+        },
+        HttpStatus.BAD_REQUEST,
+      );
+    },
   }));
+
+  // Global exception filter
+  app.useGlobalFilters(new GlobalExceptionFilter());
 
   // Global rate limiting
   const reflector = app.get(Reflector);

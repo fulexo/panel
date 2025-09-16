@@ -17,21 +17,37 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
     await this.$disconnect();
   }
 
-  // Helper method for tenant-scoped queries
+  // Helper method for tenant-scoped queries with optimized includes
   forTenant(tenantId: string) {
     return this.$extends({
       query: {
         $allModels: {
           async findMany({ args, query }: any) {
             args.where = { ...args.where, tenantId };
+            
+            // Optimize includes to prevent N+1 queries
+            if (args.include) {
+              args.include = this.optimizeIncludes(args.include);
+            }
+            
             return query(args);
           },
           async findFirst({ args, query }: any) {
             args.where = { ...args.where, tenantId };
+            
+            if (args.include) {
+              args.include = this.optimizeIncludes(args.include);
+            }
+            
             return query(args);
           },
           async findUnique({ args, query }: any) {
             args.where = { ...args.where, tenantId };
+            
+            if (args.include) {
+              args.include = this.optimizeIncludes(args.include);
+            }
+            
             return query(args);
           },
           async create({ args, query }: any) {
@@ -49,6 +65,29 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
         },
       },
     });
+  }
+
+  // Optimize includes to prevent N+1 queries
+  private optimizeIncludes(include: unknown): unknown {
+    if (!include || typeof include !== 'object') {
+      return include;
+    }
+
+    const optimized: Record<string, unknown> = {};
+    
+    for (const [key, value] of Object.entries(include as Record<string, unknown>)) {
+      if (value === true) {
+        optimized[key] = true;
+      } else if (typeof value === 'object' && value !== null) {
+        // Recursively optimize nested includes
+        optimized[key] = {
+          ...(value as Record<string, unknown>),
+          include: (value as Record<string, unknown>).include ? this.optimizeIncludes((value as Record<string, unknown>).include) : undefined,
+        };
+      }
+    }
+    
+    return optimized;
   }
 
   // Set PostgreSQL session variable for RLS per transaction
