@@ -1,15 +1,27 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, OnModuleDestroy } from '@nestjs/common';
 import Redis from 'ioredis';
 import { LoggerService } from '../logger/logger.service';
 
 @Injectable()
-export class CacheService {
+export class CacheService implements OnModuleDestroy {
   private redis: Redis;
   private defaultTTL = 300; // 5 minutes
 
   constructor(private logger: LoggerService) {
-    this.redis = new Redis(process.env.REDIS_URL || 'redis://valkey:6379/0');
+    this.redis = new Redis(process.env.REDIS_URL || 'redis://valkey:6379/0', {
+      maxRetriesPerRequest: 3,
+      lazyConnect: true,
+    });
     this.logger.log('Cache service initialized', 'CacheService');
+  }
+
+  async onModuleDestroy() {
+    try {
+      await this.redis.quit();
+      this.logger.log('Redis connection closed', 'CacheService');
+    } catch (error) {
+      this.logger.error(`Error closing Redis connection: ${error.message}`, error.stack, 'CacheService');
+    }
   }
 
   async get<T>(key: string): Promise<T | null> {

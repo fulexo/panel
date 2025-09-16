@@ -1,6 +1,6 @@
 import Redis from 'ioredis';
 
-export type RateLimitResult = { allowed: boolean; remaining?: number; retryAfterMs?: number };
+export type RateLimitResult = { allowed: boolean; remaining: number | undefined; retryAfterMs: number | undefined };
 
 export class RedisRateLimiter {
 	private luaScript = `

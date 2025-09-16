@@ -91,8 +91,16 @@ for i in {1..12}; do
     fi
 done
 
-# 3. SSL kurulumu
-print_status "3/5 - SSL sertifikaları kuruluyor..."
+# 3. Veritabanı migration'ı
+print_status "3/5 - Veritabanı migration'ı yapılıyor..."
+if [ -f "/opt/fulexo/scripts/migrate-database.sh" ]; then
+    /opt/fulexo/scripts/migrate-database.sh
+else
+    print_warning "Migration script'i bulunamadı, manuel migration gerekebilir"
+fi
+
+# 4. SSL kurulumu
+print_status "4/5 - SSL sertifikaları kuruluyor..."
 if [ -f "/opt/fulexo/scripts/setup-ssl-fulexo.sh" ]; then
     # Domain bilgilerini environment'a export et
     export DOMAIN_API="$DOMAIN_API"
@@ -105,8 +113,8 @@ else
     exit 1
 fi
 
-# 4. Tam kurulum
-print_status "4/5 - Tam kurulum yapılıyor..."
+# 5. Tam kurulum
+print_status "5/6 - Tam kurulum yapılıyor..."
 if [ -f "/opt/fulexo/scripts/complete-setup.sh" ]; then
     /opt/fulexo/scripts/complete-setup.sh
 else
@@ -114,8 +122,8 @@ else
     exit 1
 fi
 
-# 5. Final test
-print_status "5/5 - Final test yapılıyor..."
+# 6. Final test
+print_status "6/6 - Final test yapılıyor..."
 
 # API test
 print_info "API servisi test ediliyor..."

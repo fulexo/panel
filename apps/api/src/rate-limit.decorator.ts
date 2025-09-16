@@ -1,9 +1,8 @@
 import { SetMetadata } from '@nestjs/common';
 
 export type RateLimitOptions = {
-  name: string;
-  limit: number;
-  windowMs: number;
+  points: number;
+  duration: number;
   scope?: 'ip' | 'user';
 };
 

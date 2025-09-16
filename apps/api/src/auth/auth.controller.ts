@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, Req, Res, HttpCode, HttpStatus, UseGuards, BadRequestException, UnauthorizedException } from '@nestjs/common';
+import { Controller, Post, Body, Get, Req, Res, HttpCode, HttpStatus, UseGuards, BadRequestException, UnauthorizedException, Put } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { SessionService } from './session.service';
@@ -21,7 +21,7 @@ export class AuthController {
   @Post('login')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'User login' })
-  @RateLimit({ name: 'login', limit: 5, windowMs: 60_000, scope: 'ip' })
+  @RateLimit({ points: 5, duration: 60_000, scope: 'ip' })
   async login(@Body() dto: LoginDto, @Req() req: any) {
     const result = await this.authService.login(dto, {
       ipAddress: req.ip,

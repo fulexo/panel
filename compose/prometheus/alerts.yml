@@ -1,11 +1,76 @@
 groups:
-  - name: fulexo-alerts
+  - name: fulexo_api
     rules:
       - alert: ApiHighErrorRate
         expr: sum(rate(http_requests_total{status=~"5.."}[5m])) / sum(rate(http_requests_total[5m])) > 0.01
         for: 5m
         labels: { severity: critical }
         annotations: { summary: "API 5xx > 1%", description: "High error rate detected" }
+      
+      - alert: ApiDown
+        expr: up{job="api"} == 0
+        for: 1m
+        labels: { severity: critical }
+        annotations: { summary: "API service is down", description: "API service has been down for more than 1 minute" }
+      
+      - alert: HighResponseTime
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 1
+        for: 5m
+        labels: { severity: warning }
+        annotations: { summary: "High API response time", description: "95th percentile response time is {{ $value }} seconds" }
+
+  - name: fulexo_worker
+    rules:
+      - alert: WorkerDown
+        expr: up{job="worker"} == 0
+        for: 1m
+        labels: { severity: critical }
+        annotations: { summary: "Worker service is down", description: "Worker service has been down for more than 1 minute" }
+      
+      - alert: HighJobFailureRate
+        expr: rate(worker_jobs_processed_total{status="failure"}[5m]) > 0.1
+        for: 5m
+        labels: { severity: warning }
+        annotations: { summary: "High job failure rate", description: "Job failure rate is {{ $value }} failures per second" }
+
+  - name: fulexo_database
+    rules:
+      - alert: DatabaseDown
+        expr: up{job="postgres"} == 0
+        for: 1m
+        labels: { severity: critical }
+        annotations: { summary: "Database is down", description: "PostgreSQL database has been down for more than 1 minute" }
+      
+      - alert: HighDatabaseConnections
+        expr: pg_stat_database_numbackends > 80
+        for: 5m
+        labels: { severity: warning }
+        annotations: { summary: "High database connections", description: "Database has {{ $value }} active connections" }
+
+  - name: fulexo_redis
+    rules:
+      - alert: RedisDown
+        expr: up{job="redis"} == 0
+        for: 1m
+        labels: { severity: critical }
+        annotations: { summary: "Redis is down", description: "Redis cache has been down for more than 1 minute" }
+      
+      - alert: HighRedisMemoryUsage
+        expr: redis_memory_used_bytes / redis_memory_max_bytes > 0.9
+        for: 5m
+        labels: { severity: warning }
+        annotations: { summary: "High Redis memory usage", description: "Redis memory usage is {{ $value }}% of maximum" }
+
+  - name: fulexo_storage
+    rules:
+      - alert: MinIODown
+        expr: up{job="minio"} == 0
+        for: 1m
+        labels: { severity: critical }
+        annotations: { summary: "MinIO is down", description: "MinIO object storage has been down for more than 1 minute" }
+
+  - name: fulexo_sync
+    rules:
       - alert: SyncLagHigh
         expr: sync_lag_seconds > 1800
         for: 10m

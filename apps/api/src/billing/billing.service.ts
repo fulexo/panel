@@ -34,12 +34,12 @@ export class BillingService {
   async addInvoices(tenantId: string, batchId: string, invoiceIds: string[]) {
     const batch = await this.runTenant(tenantId, async (db) => db.billingBatch.findFirst({ where: { id: batchId, tenantId } }));
     if (!batch) throw new NotFoundException('Batch not found');
-    let total = new Prisma.Decimal(batch.total || 0);
+    let total = new (Prisma as any).Decimal(batch.total || 0);
     for (const invoiceId of invoiceIds) {
       const inv = await this.runTenant(tenantId, async (db) => db.invoice.findFirst({ where: { id: invoiceId, order: { tenantId } } }));
       if (!inv) continue;
-      await this.runTenant(tenantId, async (db) => db.billingBatchItem.create({ data: { batchId, invoiceId, amount: inv.total || new Prisma.Decimal(0) } }));
-      total = total.add(inv.total || new Prisma.Decimal(0));
+      await this.runTenant(tenantId, async (db) => db.billingBatchItem.create({ data: { batchId, invoiceId, amount: inv.total || new (Prisma as any).Decimal(0) } }));
+      total = total.add(inv.total || new (Prisma as any).Decimal(0));
     }
     await this.runTenant(tenantId, async (db) => db.billingBatch.update({ where: { id: batchId }, data: { total } }));
     return this.getBatch(tenantId, batchId);
@@ -53,7 +53,7 @@ export class BillingService {
     await this.runTenant(tenantId, async (db) => db.billingBatchItem.delete({ where: { id: itemId } }));
     // Recalculate total
     const sum = await this.runTenant(tenantId, async (db) => db.billingBatchItem.aggregate({ where: { batchId }, _sum: { amount: true } }));
-    await this.runTenant(tenantId, async (db) => db.billingBatch.update({ where: { id: batchId }, data: { total: sum._sum.amount || new Prisma.Decimal(0) } }));
+    await this.runTenant(tenantId, async (db) => db.billingBatch.update({ where: { id: batchId }, data: { total: sum._sum.amount || new (Prisma as any).Decimal(0) } }));
     return this.getBatch(tenantId, batchId);
   }
 
@@ -144,7 +144,7 @@ export class BillingService {
         tenantId,
         orderId: dto.orderId,
         number: dto.number,
-        total: new Prisma.Decimal(dto.total),
+        total: new (Prisma as any).Decimal(dto.total),
         currency: dto.currency || 'USD',
         status: 'draft',
         dueDate: dto.dueDate ? new Date(dto.dueDate) : null,
@@ -174,7 +174,7 @@ export class BillingService {
       data: {
         ...(dto.status && { status: dto.status }),
         ...(dto.number && { number: dto.number }),
-        ...(dto.total && { total: new Prisma.Decimal(dto.total) }),
+        ...(dto.total && { total: new (Prisma as any).Decimal(dto.total) }),
         ...(dto.currency && { currency: dto.currency }),
         ...(dto.dueDate && { dueDate: new Date(dto.dueDate) }),
         ...(dto.status === 'issued' && { issuedAt: new Date() }),

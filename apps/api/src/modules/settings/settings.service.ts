@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { EncryptionService } from '../encryption/encryption.service';
-import { Settings } from '@prisma/client';
+// import { Settings } from '@prisma/client';
 
 export interface SettingCategory {
   email: {
@@ -33,7 +33,7 @@ export class SettingsService {
     private encryption: EncryptionService,
   ) {}
 
-  async getSettings(tenantId: string, category?: string): Promise<Settings[]> {
+  async getSettings(tenantId: string, category?: string): Promise<any[]> {
     const where: any = { tenantId };
     if (category) where.category = category;
 
@@ -88,7 +88,7 @@ export class SettingsService {
     isSecret: boolean = false,
     updatedBy?: string,
     metadata?: any
-  ): Promise<Settings> {
+  ): Promise<any> {
     const encryptedValue = isSecret && value 
       ? this.encryption.encrypt(value)
       : value;

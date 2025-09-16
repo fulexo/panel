@@ -99,7 +99,7 @@ export class ShipmentsService {
         carrier: dto.carrier,
         trackingNo: dto.trackingNo,
         status: dto.status || 'pending',
-        weight: dto.weight ? new Prisma.Decimal(dto.weight) : null,
+        weight: dto.weight ? new (Prisma as any).Decimal(dto.weight) : null,
         dimensions: dto.dimensions,
         ...(dto.status === 'shipped' && { shippedAt: new Date() }),
         ...(dto.status === 'delivered' && { deliveredAt: new Date() }),
@@ -119,7 +119,7 @@ export class ShipmentsService {
         ...(dto.carrier !== undefined && { carrier: dto.carrier }),
         ...(dto.trackingNo !== undefined && { trackingNo: dto.trackingNo }),
         ...(dto.status !== undefined && { status: dto.status }),
-        ...(dto.weight !== undefined && { weight: dto.weight ? new Prisma.Decimal(dto.weight) : null }),
+        ...(dto.weight !== undefined && { weight: dto.weight ? new (Prisma as any).Decimal(dto.weight) : null }),
         ...(dto.dimensions !== undefined && { dimensions: dto.dimensions }),
         ...(dto.status === 'shipped' && !shipment.shippedAt && { shippedAt: new Date() }),
         ...(dto.status === 'delivered' && !shipment.deliveredAt && { deliveredAt: new Date() }),
@@ -153,7 +153,7 @@ export class ShipmentsService {
       if (updates.status !== undefined) updateData.status = updates.status;
       if (updates.carrier !== undefined) updateData.carrier = updates.carrier;
       if (updates.trackingNo !== undefined) updateData.trackingNo = updates.trackingNo;
-      if (updates.weight !== undefined) updateData.weight = updates.weight ? new Prisma.Decimal(updates.weight) : null;
+      if (updates.weight !== undefined) updateData.weight = updates.weight ? new (Prisma as any).Decimal(updates.weight) : null;
       if (updates.dimensions !== undefined) updateData.dimensions = updates.dimensions;
       
       // Handle status-based timestamps

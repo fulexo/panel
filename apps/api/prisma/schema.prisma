@@ -38,6 +38,7 @@ model User {
   id            String   @id @default(uuid())
   tenantId      String
   email         String   @unique
+  name          String?
   passwordHash  String
   role          String
   twofaSecret   String?
@@ -45,6 +46,8 @@ model User {
   lastLoginAt   DateTime?
   failedAttempts Int     @default(0)
   lockedUntil   DateTime?
+  isActive      Boolean  @default(true)
+  notificationPreferences Json?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   tenant        Tenant   @relation(fields: [tenantId], references: [id])
@@ -266,6 +269,7 @@ model Invoice {
   paidAt     DateTime?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+  tenant     Tenant   @relation(fields: [tenantId], references: [id])
   order      Order    @relation(fields: [orderId], references: [id])
   billingItems BillingBatchItem[]
   payments   Payment[]
@@ -288,6 +292,7 @@ model Payment {
   processedAt   DateTime?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+  tenant        Tenant   @relation(fields: [tenantId], references: [id])
   invoice       Invoice  @relation(fields: [invoiceId], references: [id])
   
   @@index([tenantId])
@@ -635,4 +640,13 @@ model Settings {
 
   @@unique([tenantId, category, key])
   @@index([tenantId, category])
+}
+
+// Order number sequence per tenant
+model OrderNoSeq {
+  tenantId String @id
+  value    Int    @default(1)
+  updatedAt DateTime @updatedAt
+
+  @@map("_OrderNoSeq")
 }
