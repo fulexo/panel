@@ -121,4 +121,109 @@
   .card-mobile-sm {
     @apply p-3 sm:p-4;
   }
+
+  /* Desktop layout improvements */
+  .desktop-container {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  .desktop-grid {
+    @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6;
+  }
+
+  .desktop-card {
+    @apply bg-card border border-border rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200;
+  }
+
+  .desktop-form {
+    @apply space-y-6;
+  }
+
+  .desktop-form-group {
+    @apply space-y-2;
+  }
+
+  .desktop-form-row {
+    @apply grid grid-cols-1 md:grid-cols-2 gap-6;
+  }
+
+  .desktop-form-row-3 {
+    @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6;
+  }
+
+  /* Improved form styling */
+  .form-field {
+    @apply space-y-2;
+  }
+
+  .form-label {
+    @apply block text-sm font-medium text-foreground;
+  }
+
+  .form-input {
+    @apply w-full px-4 py-3 bg-input border border-border rounded-lg text-foreground placeholder-muted-foreground transition-all duration-200 focus:ring-2 focus:ring-primary focus:border-transparent;
+  }
+
+  .form-select {
+    @apply w-full px-4 py-3 bg-input border border-border rounded-lg text-foreground transition-all duration-200 focus:ring-2 focus:ring-primary focus:border-transparent;
+  }
+
+  .form-textarea {
+    @apply w-full px-4 py-3 bg-input border border-border rounded-lg text-foreground placeholder-muted-foreground resize-none transition-all duration-200 focus:ring-2 focus:ring-primary focus:border-transparent;
+  }
+
+  .form-checkbox {
+    @apply w-4 h-4 text-primary bg-input border-border rounded focus:ring-primary;
+  }
+
+  .form-radio {
+    @apply w-4 h-4 text-primary bg-input border-border focus:ring-primary;
+  }
+
+  /* Button improvements */
+  .btn-primary {
+    @apply px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-secondary {
+    @apply px-6 py-3 bg-accent text-accent-foreground rounded-lg hover:bg-accent/80 transition-colors;
+  }
+
+  .btn-outline {
+    @apply px-6 py-3 border border-border text-foreground rounded-lg hover:bg-accent transition-colors;
+  }
+
+  /* Layout improvements */
+  .page-header {
+    @apply flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6;
+  }
+
+  .page-title {
+    @apply text-2xl font-bold text-foreground;
+  }
+
+  .page-subtitle {
+    @apply text-muted-foreground;
+  }
+
+  /* Table improvements */
+  .table-container {
+    @apply bg-card border border-border rounded-lg overflow-hidden;
+  }
+
+  .table-header {
+    @apply bg-muted px-6 py-3 border-b border-border;
+  }
+
+  .table-body {
+    @apply divide-y divide-border;
+  }
+
+  .table-row {
+    @apply hover:bg-muted/50 transition-colors;
+  }
+
+  .table-cell {
+    @apply px-6 py-4 text-sm text-foreground;
+  }
 }

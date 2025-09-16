@@ -4,12 +4,14 @@ import { useAuth } from './AuthProvider';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 import Sidebar from './Sidebar';
+import { ToastContainer, useToast } from './ui/toast';
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
   const { user, logout, loading } = useAuth();
   const pathname = usePathname();
   const isLoginPage = pathname === '/login';
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const { toasts, removeToast } = useToast();
 
   if (loading) {
     return (
@@ -99,10 +101,13 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
       {/* Main Content */}
       <main className={`
         transition-all duration-300 ease-in-out
-        ${user && !isLoginPage ? 'lg:ml-80' : ''}
+        ${user && !isLoginPage ? (sidebarOpen ? 'lg:ml-80' : 'lg:ml-0') : ''}
       `}>
         {children}
       </main>
+
+      {/* Toast Notifications */}
+      <ToastContainer toasts={toasts} onRemove={removeToast} />
     </div>
   );
 }

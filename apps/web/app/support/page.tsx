@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../components/AuthProvider";
+import { useToast } from "../../components/ui/toast";
 
 interface SupportTicket {
   id: string;
@@ -35,11 +36,10 @@ interface SupportMessage {
 export default function SupportPage() {
   const router = useRouter();
   const { user } = useAuth();
+  const { success: showSuccess, error: showError } = useToast();
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
   
   // Filters
   const [search, setSearch] = useState('');
@@ -65,6 +65,7 @@ export default function SupportPage() {
   const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(null);
   const [newMessage, setNewMessage] = useState('');
   const [messageFile, setMessageFile] = useState<File | null>(null);
+  const [showChat, setShowChat] = useState(false);
 
   const token = () => localStorage.getItem('access_token');
   const api = (path: string, init?: any) => 
@@ -76,7 +77,6 @@ export default function SupportPage() {
   const loadTickets = async () => {
     try {
       setLoading(true);
-      setError(null);
       
       const params = new URLSearchParams({
         page: currentPage.toString(),
@@ -101,7 +101,7 @@ export default function SupportPage() {
       setTotalPages(data.pagination?.totalPages || 1);
       setTotalTickets(data.pagination?.total || 0);
     } catch (err: any) {
-      setError(err.message);
+      showError('Error', err.message);
     } finally {
       setLoading(false);
     }
@@ -112,7 +112,6 @@ export default function SupportPage() {
     
     try {
       setSaving(true);
-      setError(null);
       
       const response = await api('/support/tickets', {
         method: 'POST',
@@ -124,12 +123,12 @@ export default function SupportPage() {
         throw new Error(errorData.message || 'Failed to create ticket');
       }
 
-      setSuccess('Ticket created successfully');
+      showSuccess('Success', 'Ticket created successfully');
       setNewTicket({ subject: '', description: '', priority: 'medium', category: 'general' });
       setShowNewTicket(false);
       await loadTickets();
     } catch (err: any) {
-      setError(err.message);
+      showError('Error', err.message);
     } finally {
       setSaving(false);
     }
@@ -140,7 +139,6 @@ export default function SupportPage() {
     
     try {
       setSaving(true);
-      setError(null);
       
       const formData = new FormData();
       formData.append('message', newMessage);
@@ -156,6 +154,7 @@ export default function SupportPage() {
         throw new Error(errorData.message || 'Failed to send message');
       }
 
+      showSuccess('Success', 'Message sent successfully');
       setNewMessage('');
       setMessageFile(null);
       await loadTickets();
@@ -173,7 +172,7 @@ export default function SupportPage() {
         }] });
       }
     } catch (err: any) {
-      setError(err.message);
+      showError('Error', err.message);
     } finally {
       setSaving(false);
     }
@@ -182,7 +181,6 @@ export default function SupportPage() {
   const updateTicketStatus = async (ticketId: string, status: string) => {
     try {
       setSaving(true);
-      setError(null);
       
       const response = await api(`/support/tickets/${ticketId}`, {
         method: 'PUT',
@@ -194,10 +192,10 @@ export default function SupportPage() {
         throw new Error(errorData.message || 'Failed to update ticket');
       }
 
-      setSuccess('Ticket status updated successfully');
+      showSuccess('Success', 'Ticket status updated successfully');
       await loadTickets();
     } catch (err: any) {
-      setError(err.message);
+      showError('Error', err.message);
     } finally {
       setSaving(false);
     }
@@ -250,17 +248,17 @@ export default function SupportPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <main className="mobile-container py-6 space-y-6">
+      <main className={`mobile-container py-6 space-y-6 transition-all duration-300 ${showChat ? 'lg:mr-96' : ''}`}>
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="page-header">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Support Center</h1>
-            <p className="text-muted-foreground">Manage support tickets and customer inquiries</p>
+            <h1 className="page-title">Support Center</h1>
+            <p className="page-subtitle">Manage support tickets and customer inquiries</p>
           </div>
           <div className="flex items-center gap-2">
             <button
               onClick={() => setShowNewTicket(true)}
-              className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 btn-mobile"
+              className="btn-primary btn-mobile"
             >
               New Ticket
             </button>
@@ -270,35 +268,24 @@ export default function SupportPage() {
           </div>
         </div>
 
-        {/* Error/Success Messages */}
-        {error && (
-          <div className="bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded-lg">
-            {error}
-          </div>
-        )}
-        {success && (
-          <div className="bg-green-500/10 border border-green-500/20 text-green-600 px-4 py-3 rounded-lg">
-            {success}
-          </div>
-        )}
 
         {/* Filters */}
-        <div className="bg-card border border-border rounded-lg p-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div>
+        <div className="desktop-card p-4">
+          <div className="desktop-form-row-3">
+            <div className="form-field">
               <input
                 type="text"
                 placeholder="Search tickets..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground placeholder-muted-foreground"
+                className="form-input"
               />
             </div>
-            <div>
+            <div className="form-field">
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
+                className="form-select"
               >
                 <option value="all">All Status</option>
                 <option value="open">Open</option>
@@ -307,11 +294,11 @@ export default function SupportPage() {
                 <option value="closed">Closed</option>
               </select>
             </div>
-            <div>
+            <div className="form-field">
               <select
                 value={priorityFilter}
                 onChange={(e) => setPriorityFilter(e.target.value)}
-                className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
+                className="form-select"
               >
                 <option value="all">All Priority</option>
                 <option value="low">Low</option>
@@ -320,11 +307,11 @@ export default function SupportPage() {
                 <option value="urgent">Urgent</option>
               </select>
             </div>
-            <div>
+            <div className="form-field">
               <select
                 value={categoryFilter}
                 onChange={(e) => setCategoryFilter(e.target.value)}
-                className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
+                className="form-select"
               >
                 <option value="all">All Categories</option>
                 <option value="technical">Technical</option>
@@ -338,7 +325,7 @@ export default function SupportPage() {
         </div>
 
         {/* Tickets List */}
-        <div className="bg-card border border-border rounded-lg overflow-hidden">
+        <div className="table-container">
           <div className="table-responsive">
             <table className="table-mobile">
               <thead className="bg-muted">
@@ -409,10 +396,13 @@ export default function SupportPage() {
                     <td className="px-4 py-4">
                       <div className="flex items-center gap-2">
                         <button
-                          onClick={() => setSelectedTicket(ticket)}
+                          onClick={() => {
+                            setSelectedTicket(ticket);
+                            setShowChat(true);
+                          }}
                           className="text-blue-600 hover:text-blue-800 text-sm"
                         >
-                          View
+                          Chat
                         </button>
                         {user?.role === 'ADMIN' && (
                           <button
@@ -462,12 +452,12 @@ export default function SupportPage() {
         {/* New Ticket Modal */}
         {showNewTicket && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <div className="bg-card border border-border rounded-lg p-6 w-full max-w-2xl mx-4">
+            <div className="desktop-card p-6 w-full max-w-2xl mx-4">
               <h3 className="text-lg font-semibold text-foreground mb-4">Create New Ticket</h3>
               
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">
+              <div className="desktop-form">
+                <div className="form-field">
+                  <label className="form-label">
                     Subject
                   </label>
                   <input
@@ -475,19 +465,19 @@ export default function SupportPage() {
                     value={newTicket.subject}
                     onChange={(e) => setNewTicket({ ...newTicket, subject: e.target.value })}
                     placeholder="Brief description of your issue..."
-                    className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground placeholder-muted-foreground"
+                    className="form-input"
                   />
                 </div>
                 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">
+                <div className="desktop-form-row">
+                  <div className="form-field">
+                    <label className="form-label">
                       Category
                     </label>
                     <select
                       value={newTicket.category}
                       onChange={(e) => setNewTicket({ ...newTicket, category: e.target.value as any })}
-                      className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
+                      className="form-select"
                     >
                       <option value="general">General</option>
                       <option value="technical">Technical</option>
@@ -497,14 +487,14 @@ export default function SupportPage() {
                     </select>
                   </div>
                   
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">
+                  <div className="form-field">
+                    <label className="form-label">
                       Priority
                     </label>
                     <select
                       value={newTicket.priority}
                       onChange={(e) => setNewTicket({ ...newTicket, priority: e.target.value as any })}
-                      className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
+                      className="form-select"
                     >
                       <option value="low">Low</option>
                       <option value="medium">Medium</option>
@@ -514,15 +504,15 @@ export default function SupportPage() {
                   </div>
                 </div>
                 
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">
+                <div className="form-field">
+                  <label className="form-label">
                     Description
                   </label>
                   <textarea
                     value={newTicket.description}
                     onChange={(e) => setNewTicket({ ...newTicket, description: e.target.value })}
                     placeholder="Please provide detailed information about your issue..."
-                    className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground placeholder-muted-foreground"
+                    className="form-textarea"
                     rows={5}
                   />
                 </div>
@@ -532,7 +522,7 @@ export default function SupportPage() {
                 <button
                   onClick={createTicket}
                   disabled={!newTicket.subject.trim() || !newTicket.description.trim() || saving}
-                  className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 btn-mobile"
+                  className="btn-primary btn-mobile"
                 >
                   {saving ? 'Creating...' : 'Create Ticket'}
                 </button>
@@ -541,7 +531,7 @@ export default function SupportPage() {
                     setShowNewTicket(false);
                     setNewTicket({ subject: '', description: '', priority: 'medium', category: 'general' });
                   }}
-                  className="px-4 py-2 bg-muted text-muted-foreground rounded-lg hover:bg-muted/80 btn-mobile"
+                  className="btn-secondary btn-mobile"
                 >
                   Cancel
                 </button>
@@ -550,117 +540,115 @@ export default function SupportPage() {
           </div>
         )}
 
-        {/* Ticket Detail Modal */}
-        {selectedTicket && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <div className="bg-card border border-border rounded-lg p-6 w-full max-w-4xl mx-4 max-h-[90vh] overflow-y-auto">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-foreground">
-                  Ticket #{selectedTicket.id.slice(0, 8)}
-                </h3>
-                <button
-                  onClick={() => setSelectedTicket(null)}
-                  className="text-muted-foreground hover:text-foreground"
-                >
-                  ✕
-                </button>
-              </div>
-              
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div>
-                    <label className="text-sm font-medium text-muted-foreground">Status</label>
-                    <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(selectedTicket.status)}`}>
-                      {selectedTicket.status.charAt(0).toUpperCase() + selectedTicket.status.slice(1).replace('_', ' ')}
+        {/* Chat Sidebar */}
+        {showChat && selectedTicket && (
+          <div className="fixed inset-0 bg-black/50 z-50 lg:bg-transparent lg:relative lg:z-auto">
+            <div className="fixed right-0 top-0 h-full w-full max-w-md bg-card border-l border-border z-50 lg:relative lg:z-auto">
+              <div className="flex flex-col h-full">
+                {/* Chat Header */}
+                <div className="p-4 border-b border-border bg-muted">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-lg font-semibold text-foreground">
+                        Ticket #{selectedTicket.id.slice(0, 8)}
+                      </h3>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(selectedTicket.status)}`}>
+                          {selectedTicket.status.charAt(0).toUpperCase() + selectedTicket.status.slice(1).replace('_', ' ')}
+                        </span>
+                        <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${getPriorityColor(selectedTicket.priority)}`}>
+                          <span>{getPriorityIcon(selectedTicket.priority)}</span>
+                          {selectedTicket.priority.charAt(0).toUpperCase() + selectedTicket.priority.slice(1)}
+                        </span>
+                      </div>
                     </div>
+                    <button
+                      onClick={() => {
+                        setShowChat(false);
+                        setSelectedTicket(null);
+                      }}
+                      className="p-2 rounded-md hover:bg-accent transition-colors"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
                   </div>
-                  <div>
-                    <label className="text-sm font-medium text-muted-foreground">Priority</label>
-                    <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${getPriorityColor(selectedTicket.priority)}`}>
-                      <span>{getPriorityIcon(selectedTicket.priority)}</span>
-                      {selectedTicket.priority.charAt(0).toUpperCase() + selectedTicket.priority.slice(1)}
+                </div>
+
+                {/* Ticket Info */}
+                <div className="p-4 border-b border-border">
+                  <div className="space-y-2">
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">Subject</label>
+                      <div className="text-sm text-foreground font-medium">
+                        {selectedTicket.subject}
+                      </div>
                     </div>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-muted-foreground">Category</label>
-                    <div className="text-sm text-foreground capitalize">
-                      {selectedTicket.category}
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">Description</label>
+                      <div className="text-sm text-foreground bg-muted p-2 rounded">
+                        {selectedTicket.description}
+                      </div>
                     </div>
                   </div>
                 </div>
-                
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Subject</label>
-                  <div className="text-sm text-foreground font-medium">
-                    {selectedTicket.subject}
-                  </div>
-                </div>
-                
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Description</label>
-                  <div className="text-sm text-foreground bg-muted p-3 rounded-lg">
-                    {selectedTicket.description}
-                  </div>
-                </div>
-                
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Messages</label>
-                  <div className="space-y-3 max-h-60 overflow-y-auto">
-                    {selectedTicket.messages.map((message) => (
-                      <div key={message.id} className={`p-3 rounded-lg ${message.senderRole === 'ADMIN' ? 'bg-blue-50 border-l-4 border-blue-500' : 'bg-muted'}`}>
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="text-sm font-medium text-foreground">
-                            {message.senderName}
-                            {message.senderRole === 'ADMIN' && (
-                              <span className="ml-2 px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
-                                Admin
-                              </span>
-                            )}
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            {new Date(message.createdAt).toLocaleString()}
-                          </div>
+
+                {/* Messages */}
+                <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                  {selectedTicket.messages.map((message) => (
+                    <div key={message.id} className={`flex ${message.senderRole === 'ADMIN' ? 'justify-end' : 'justify-start'}`}>
+                      <div className={`max-w-xs p-3 rounded-lg ${
+                        message.senderRole === 'ADMIN' 
+                          ? 'bg-primary text-primary-foreground' 
+                          : 'bg-muted text-foreground'
+                      }`}>
+                        <div className="text-xs opacity-70 mb-1">
+                          {message.senderName}
+                          {message.senderRole === 'ADMIN' && ' (Admin)'}
                         </div>
-                        <div className="text-sm text-foreground">
+                        <div className="text-sm">
                           {message.message}
                         </div>
                         {message.attachments.length > 0 && (
                           <div className="mt-2">
-                            <div className="text-xs text-muted-foreground">Attachments:</div>
                             {message.attachments.map((attachment, index) => (
-                              <div key={index} className="text-xs text-blue-600 hover:text-blue-800 cursor-pointer">
+                              <div key={index} className="text-xs opacity-70">
                                 📎 {attachment}
                               </div>
                             ))}
                           </div>
                         )}
+                        <div className="text-xs opacity-70 mt-1">
+                          {new Date(message.createdAt).toLocaleTimeString()}
+                        </div>
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  ))}
                 </div>
-                
-                <div>
-                  <label className="text-sm font-medium text-foreground">Reply</label>
+
+                {/* Message Input */}
+                <div className="p-4 border-t border-border">
                   <div className="space-y-2">
                     <textarea
                       value={newMessage}
                       onChange={(e) => setNewMessage(e.target.value)}
                       placeholder="Type your message..."
-                      className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground placeholder-muted-foreground"
+                      className="form-textarea"
                       rows={3}
                     />
                     <div className="flex items-center gap-2">
                       <input
                         type="file"
                         onChange={(e) => setMessageFile(e.target.files?.[0] || null)}
-                        className="text-sm text-foreground"
+                        className="text-sm text-foreground flex-1"
                       />
                       <button
                         onClick={() => sendMessage(selectedTicket.id)}
                         disabled={!newMessage.trim() || saving}
-                        className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 btn-mobile-sm"
+                        className="btn-primary"
                       >
-                        {saving ? 'Sending...' : 'Send Message'}
+                        {saving ? 'Sending...' : 'Send'}
                       </button>
                     </div>
                   </div>

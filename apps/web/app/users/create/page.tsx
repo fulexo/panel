@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../../components/AuthProvider";
+import { useToast } from "../../../components/ui/toast";
 
 interface Tenant {
   id: string;
@@ -13,6 +14,7 @@ interface Tenant {
 export default function CreateUserPage() {
   const router = useRouter();
   const { user } = useAuth();
+  const { success: showSuccess, error: showError } = useToast();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -22,8 +24,6 @@ export default function CreateUserPage() {
   });
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
 
   const token = () => localStorage.getItem('access_token');
   const api = (path: string, init?: any) => 
@@ -49,23 +49,23 @@ export default function CreateUserPage() {
 
   const validateForm = () => {
     if (!formData.email) {
-      setError('Email is required');
+      showError('Validation Error', 'Email is required');
       return false;
     }
     if (!formData.password) {
-      setError('Password is required');
+      showError('Validation Error', 'Password is required');
       return false;
     }
     if (formData.password.length < 8) {
-      setError('Password must be at least 8 characters long');
+      showError('Validation Error', 'Password must be at least 8 characters long');
       return false;
     }
     if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
+      showError('Validation Error', 'Passwords do not match');
       return false;
     }
     if (!formData.tenantId) {
-      setError('Please select a tenant');
+      showError('Validation Error', 'Please select a tenant');
       return false;
     }
     return true;
@@ -73,8 +73,6 @@ export default function CreateUserPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    setSuccess('');
 
     if (!validateForm()) return;
 
@@ -96,12 +94,12 @@ export default function CreateUserPage() {
         throw new Error(errorData.message || 'Failed to create user');
       }
 
-      setSuccess('User created successfully! Redirecting...');
+      showSuccess('Success', 'User created successfully! Redirecting...');
       setTimeout(() => {
         router.push('/users');
       }, 1500);
     } catch (err: any) {
-      setError(err.message);
+      showError('Error', err.message);
     } finally {
       setLoading(false);
     }
@@ -120,7 +118,7 @@ export default function CreateUserPage() {
     { value: 'CUSTOMER', label: 'Customer', description: 'Limited access to own data', disabled: false }
   ];
 
-  if (loading && !error) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
@@ -152,28 +150,6 @@ export default function CreateUserPage() {
           </div>
         </div>
 
-        {/* Messages */}
-        {error && (
-          <div className="bg-destructive/10 border border-destructive text-destructive px-4 py-3 rounded-lg animate-slide-down">
-            <div className="flex items-center gap-2">
-              <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <span className="text-sm font-medium">{error}</span>
-            </div>
-          </div>
-        )}
-
-        {success && (
-          <div className="bg-green-500/10 border border-green-500 text-green-500 px-4 py-3 rounded-lg animate-slide-down">
-            <div className="flex items-center gap-2">
-              <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-              </svg>
-              <span className="text-sm font-medium">{success}</span>
-            </div>
-          </div>
-        )}
 
         {/* Form */}
         <div className="max-w-2xl mx-auto">

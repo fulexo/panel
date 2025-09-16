@@ -32,22 +32,22 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-900 via-purple-900 to-gray-900 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-white p-4">
       <div className="w-full max-w-md">
         {/* Logo and Title */}
         <div className="text-center mb-8 animate-fade-in">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-primary rounded-2xl mb-4">
             <span className="text-2xl">🚀</span>
           </div>
-          <h1 className="mobile-heading text-white mb-2">Fulexo Platform</h1>
-          <p className="text-muted-foreground">Multi-tenant e-commerce management</p>
+          <h1 className="mobile-heading text-gray-900 mb-2">Fulexo Platform</h1>
+          <p className="text-gray-600">Multi-tenant e-commerce management</p>
         </div>
 
         {/* Login Form */}
-        <div className="bg-card/50 backdrop-blur-lg p-6 sm:p-8 rounded-2xl shadow-2xl border border-border animate-scale-in">
+        <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-2xl border border-gray-200 animate-scale-in">
           <form onSubmit={handleLogin} className="space-y-6">
             <div className="space-y-2">
-              <label htmlFor="email" className="block text-sm font-medium text-foreground">
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
                 Email Address
               </label>
               <input
@@ -55,7 +55,7 @@ export default function LoginPage() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 bg-input border border-border rounded-lg text-foreground placeholder-muted-foreground form-input"
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 form-input"
                 placeholder="fulexo@fulexo.com"
                 required
                 autoComplete="email"
@@ -63,7 +63,7 @@ export default function LoginPage() {
             </div>
 
             <div className="space-y-2">
-              <label htmlFor="password" className="block text-sm font-medium text-foreground">
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
                 Password
               </label>
               <div className="relative">
@@ -72,7 +72,7 @@ export default function LoginPage() {
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4 py-3 pr-12 bg-input border border-border rounded-lg text-foreground placeholder-muted-foreground form-input"
+                  className="w-full px-4 py-3 pr-12 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 form-input"
                   placeholder="••••••••"
                   required
                   autoComplete="current-password"
@@ -80,7 +80,7 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors"
                 >
                   {showPassword ? (
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -97,7 +97,7 @@ export default function LoginPage() {
             </div>
 
             {error && (
-              <div className="bg-destructive/10 border border-destructive text-destructive px-4 py-3 rounded-lg animate-slide-down">
+              <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg animate-slide-down">
                 <div className="flex items-center gap-2">
                   <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -124,9 +124,9 @@ export default function LoginPage() {
           </form>
 
           {/* Demo Credentials */}
-          <div className="mt-6 p-4 bg-accent/50 rounded-lg">
-            <h3 className="text-sm font-medium text-foreground mb-2">Demo Credentials</h3>
-            <div className="text-xs text-muted-foreground space-y-1">
+          <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+            <h3 className="text-sm font-medium text-gray-900 mb-2">Demo Credentials</h3>
+            <div className="text-xs text-gray-600 space-y-1">
               <div><strong>Email:</strong> fulexo@fulexo.com</div>
               <div><strong>Password:</strong> Adem_123*</div>
             </div>
@@ -134,7 +134,7 @@ export default function LoginPage() {
         </div>
 
         {/* Footer */}
-        <div className="text-center mt-8 text-muted-foreground text-sm">
+        <div className="text-center mt-8 text-gray-500 text-sm">
           <p>© 2025 Fulexo Platform. All rights reserved.</p>
         </div>
       </div>

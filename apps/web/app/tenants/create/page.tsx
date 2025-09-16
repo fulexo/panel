@@ -3,10 +3,12 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../../components/AuthProvider";
+import { useToast } from "../../../components/ui/toast";
 
 export default function CreateTenantPage() {
   const router = useRouter();
   const { user } = useAuth();
+  const { success: showSuccess, error: showError } = useToast();
   const [formData, setFormData] = useState({
     name: '',
     slug: '',
@@ -21,8 +23,6 @@ export default function CreateTenantPage() {
     }
   });
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
 
   const token = () => localStorage.getItem('access_token');
   const api = (path: string, init?: any) => 
@@ -42,19 +42,19 @@ export default function CreateTenantPage() {
 
   const validateForm = () => {
     if (!formData.name.trim()) {
-      setError('Tenant name is required');
+      showError('Validation Error', 'Tenant name is required');
       return false;
     }
     if (!formData.slug.trim()) {
-      setError('Tenant slug is required');
+      showError('Validation Error', 'Tenant slug is required');
       return false;
     }
     if (!/^[a-z0-9-]+$/.test(formData.slug)) {
-      setError('Slug can only contain lowercase letters, numbers, and hyphens');
+      showError('Validation Error', 'Slug can only contain lowercase letters, numbers, and hyphens');
       return false;
     }
     if (formData.domain && !/^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9]\.[a-zA-Z]{2,}$/.test(formData.domain)) {
-      setError('Please enter a valid domain');
+      showError('Validation Error', 'Please enter a valid domain');
       return false;
     }
     return true;
@@ -62,8 +62,6 @@ export default function CreateTenantPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    setSuccess('');
 
     if (!validateForm()) return;
 
@@ -80,12 +78,12 @@ export default function CreateTenantPage() {
         throw new Error(errorData.message || 'Failed to create tenant');
       }
 
-      setSuccess('Tenant created successfully! Redirecting...');
+      showSuccess('Success', 'Tenant created successfully! Redirecting...');
       setTimeout(() => {
         router.push('/tenants');
       }, 1500);
     } catch (err: any) {
-      setError(err.message);
+      showError('Error', err.message);
     } finally {
       setLoading(false);
     }
@@ -105,7 +103,7 @@ export default function CreateTenantPage() {
     }
   }, [user]);
 
-  if (loading && !error) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
@@ -137,28 +135,6 @@ export default function CreateTenantPage() {
           </div>
         </div>
 
-        {/* Messages */}
-        {error && (
-          <div className="bg-destructive/10 border border-destructive text-destructive px-4 py-3 rounded-lg animate-slide-down">
-            <div className="flex items-center gap-2">
-              <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <span className="text-sm font-medium">{error}</span>
-            </div>
-          </div>
-        )}
-
-        {success && (
-          <div className="bg-green-500/10 border border-green-500 text-green-500 px-4 py-3 rounded-lg animate-slide-down">
-            <div className="flex items-center gap-2">
-              <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-              </svg>
-              <span className="text-sm font-medium">{success}</span>
-            </div>
-          </div>
-        )}
 
         {/* Form */}
         <div className="max-w-4xl mx-auto">
