@@ -52,10 +52,12 @@ export default function ProductsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
+  const [storeFilter, setStoreFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalProducts, setTotalProducts] = useState(0);
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
+  const [stores, setStores] = useState<any[]>([]);
   
   // Create/Edit modal
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -81,10 +83,13 @@ export default function ProductsPage() {
   useEffect(() => {
     if (user) {
       fetchProducts();
+      if (user.role === 'ADMIN') {
+        fetchStores();
+      }
     } else {
       router.push('/login');
     }
-  }, [user, currentPage, searchTerm, statusFilter, categoryFilter]);
+  }, [user, currentPage, searchTerm, statusFilter, categoryFilter, storeFilter]);
 
   const fetchProducts = async () => {
     try {
@@ -102,6 +107,7 @@ export default function ProductsPage() {
         ...(searchTerm && { search: searchTerm }),
         ...(statusFilter !== 'all' && { status: statusFilter }),
         ...(categoryFilter !== 'all' && { category: categoryFilter }),
+        ...(storeFilter !== 'all' && { storeId: storeFilter }),
       });
 
       const r = await api(`/products?${params}`);
@@ -121,6 +127,18 @@ export default function ProductsPage() {
       setError(err instanceof Error ? err.message : 'Failed to load products');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchStores = async () => {
+    try {
+      const r = await api('/woo/stores');
+      if (r.ok) {
+        const data = await r.json();
+        setStores(data || []);
+      }
+    } catch (err) {
+      // Ignore store fetch errors
     }
   };
 
@@ -457,7 +475,7 @@ export default function ProductsPage() {
 
         {/* Search and Filters */}
         <div className="bg-card p-4 rounded-lg border border-border animate-slide-up">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
             {/* Search */}
             <div className="lg:col-span-2">
               <div className="relative">
@@ -503,6 +521,24 @@ export default function ProductsPage() {
                 <option value="other">Other</option>
               </select>
             </div>
+
+            {/* Store Filter (Admin Only) */}
+            {user?.role === 'ADMIN' && (
+              <div>
+                <select
+                  value={storeFilter}
+                  onChange={(e) => setStoreFilter(e.target.value)}
+                  className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
+                >
+                  <option value="all">All Stores</option>
+                  {stores.map((store) => (
+                    <option key={store.id} value={store.id}>
+                      {store.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
         </div>
 

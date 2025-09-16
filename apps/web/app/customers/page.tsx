@@ -55,6 +55,7 @@ export default function CustomersPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [tagFilter, setTagFilter] = useState('all');
+  const [storeFilter, setStoreFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCustomers, setTotalCustomers] = useState(0);
@@ -113,7 +114,7 @@ export default function CustomersPage() {
     } else {
       router.push('/login');
     }
-  }, [user, currentPage, searchTerm, statusFilter, tagFilter]);
+  }, [user, currentPage, searchTerm, statusFilter, tagFilter, storeFilter]);
 
   const fetchCustomers = async () => {
     try {
@@ -131,6 +132,7 @@ export default function CustomersPage() {
         ...(searchTerm && { search: searchTerm }),
         ...(statusFilter !== 'all' && { status: statusFilter }),
         ...(tagFilter !== 'all' && { tag: tagFilter }),
+        ...(storeFilter !== 'all' && { storeId: storeFilter }),
       });
 
       const r = await api(`/customers?${params}`);
@@ -524,7 +526,7 @@ export default function CustomersPage() {
 
         {/* Search and Filters */}
         <div className="bg-card p-4 rounded-lg border border-border animate-slide-up">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
             {/* Search */}
             <div className="lg:col-span-2">
               <div className="relative">
@@ -570,6 +572,24 @@ export default function CustomersPage() {
                 <option value="new">New</option>
               </select>
             </div>
+
+            {/* Store Filter (Admin Only) */}
+            {user?.role === 'ADMIN' && (
+              <div>
+                <select
+                  value={storeFilter}
+                  onChange={(e) => setStoreFilter(e.target.value)}
+                  className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
+                >
+                  <option value="all">All Stores</option>
+                  {stores.map((store) => (
+                    <option key={store.id} value={store.id}>
+                      {store.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
         </div>
 

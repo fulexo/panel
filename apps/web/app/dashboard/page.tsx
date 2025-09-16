@@ -43,6 +43,7 @@ export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
   const [stores, setStores] = useState<WooStore[]>([]);
+  const [selectedStore, setSelectedStore] = useState<string>('all');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -59,7 +60,7 @@ export default function DashboardPage() {
     } else {
       router.push('/login');
     }
-  }, [user]);
+  }, [user, selectedStore]);
 
   const fetchDashboardData = async () => {
     try {
@@ -79,7 +80,8 @@ export default function DashboardPage() {
       setStores(storesData || []);
 
       // Fetch orders stats
-      const ordersResponse = await api('/orders/stats/summary');
+      const ordersParams = selectedStore !== 'all' ? `?storeId=${selectedStore}` : '';
+      const ordersResponse = await api(`/orders/stats/summary${ordersParams}`);
       if (!ordersResponse.ok) {
         if (ordersResponse.status === 401) {
           router.push('/login');
@@ -92,7 +94,8 @@ export default function DashboardPage() {
 
       // Fetch recent activity from API
       try {
-        const activityResponse = await api('/orders?limit=5&sort=createdAt:desc');
+        const activityParams = selectedStore !== 'all' ? `?limit=5&sort=createdAt:desc&storeId=${selectedStore}` : '?limit=5&sort=createdAt:desc';
+        const activityResponse = await api(`/orders${activityParams}`);
         if (activityResponse.ok) {
           const activityData = await activityResponse.json();
           const recentOrders = activityData?.data || [];
@@ -202,14 +205,34 @@ export default function DashboardPage() {
               Here's your business overview for today
             </p>
           </div>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <span>📅</span>
-            <span>{new Date().toLocaleDateString('tr-TR', { 
-              weekday: 'long', 
-              year: 'numeric', 
-              month: 'long', 
-              day: 'numeric' 
-            })}</span>
+          <div className="flex items-center gap-4">
+            {/* Store Filter (Admin Only) */}
+            {user?.role === 'ADMIN' && stores.length > 0 && (
+              <div className="flex items-center gap-2">
+                <label className="text-sm font-medium text-foreground">Store:</label>
+                <select
+                  value={selectedStore}
+                  onChange={(e) => setSelectedStore(e.target.value)}
+                  className="px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground text-sm"
+                >
+                  <option value="all">All Stores</option>
+                  {stores.map((store) => (
+                    <option key={store.id} value={store.id}>
+                      {store.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <span>📅</span>
+              <span>{new Date().toLocaleDateString('tr-TR', { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+              })}</span>
+            </div>
           </div>
         </div>
 

@@ -44,10 +44,14 @@ export default function OrdersPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [dateFilter, setDateFilter] = useState('all');
+  const [storeFilter, setStoreFilter] = useState('all');
+  const [customerFilter, setCustomerFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalOrders, setTotalOrders] = useState(0);
   const [selectedOrders, setSelectedOrders] = useState<string[]>([]);
+  const [stores, setStores] = useState<any[]>([]);
+  const [customers, setCustomers] = useState<any[]>([]);
 
   const token = () => localStorage.getItem('access_token');
   const api = (path: string, init?: any) => 
@@ -59,10 +63,14 @@ export default function OrdersPage() {
   useEffect(() => {
     if (user) {
       fetchOrders();
+      if (user.role === 'ADMIN') {
+        fetchStores();
+        fetchCustomers();
+      }
     } else {
       router.push('/login');
     }
-  }, [user, currentPage, statusFilter, dateFilter]);
+  }, [user, currentPage, statusFilter, dateFilter, storeFilter, customerFilter]);
 
   const fetchOrders = async () => {
     try {
@@ -75,6 +83,8 @@ export default function OrdersPage() {
         ...(statusFilter !== 'all' && { status: statusFilter }),
         ...(dateFilter !== 'all' && { dateFilter }),
         ...(searchTerm && { search: searchTerm }),
+        ...(storeFilter !== 'all' && { storeId: storeFilter }),
+        ...(customerFilter !== 'all' && { customerId: customerFilter }),
       });
 
       const response = await api(`/orders?${params}`);
@@ -94,6 +104,30 @@ export default function OrdersPage() {
       setError(err instanceof Error ? err.message : 'Failed to load orders');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchStores = async () => {
+    try {
+      const response = await api('/woo/stores');
+      if (response.ok) {
+        const data = await response.json();
+        setStores(data || []);
+      }
+    } catch (err) {
+      // Ignore store fetch errors
+    }
+  };
+
+  const fetchCustomers = async () => {
+    try {
+      const response = await api('/customers?limit=100');
+      if (response.ok) {
+        const data = await response.json();
+        setCustomers(data.data || []);
+      }
+    } catch (err) {
+      // Ignore customer fetch errors
     }
   };
 
@@ -347,7 +381,7 @@ export default function OrdersPage() {
 
         {/* Filters */}
         <div className="bg-card p-4 rounded-lg border border-border animate-slide-up">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
             {/* Search */}
             <div className="lg:col-span-2">
               <div className="relative">
@@ -393,6 +427,42 @@ export default function OrdersPage() {
                 <option value="month">This Month</option>
               </select>
             </div>
+
+            {/* Store Filter (Admin Only) */}
+            {user?.role === 'ADMIN' && (
+              <div>
+                <select
+                  value={storeFilter}
+                  onChange={(e) => setStoreFilter(e.target.value)}
+                  className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
+                >
+                  <option value="all">All Stores</option>
+                  {stores.map((store) => (
+                    <option key={store.id} value={store.id}>
+                      {store.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {/* Customer Filter (Admin Only) */}
+            {user?.role === 'ADMIN' && (
+              <div>
+                <select
+                  value={customerFilter}
+                  onChange={(e) => setCustomerFilter(e.target.value)}
+                  className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
+                >
+                  <option value="all">All Customers</option>
+                  {customers.map((customer) => (
+                    <option key={customer.id} value={customer.id}>
+                      {customer.name || customer.email}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
         </div>
 
