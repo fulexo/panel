@@ -55,7 +55,7 @@ export default function ProfilePage() {
 
   const token = () => localStorage.getItem('access_token');
   const api = (path: string, init?: any) => 
-    fetch(`/api${path}`, {
+    fetch(`${process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:3000'}/api${path}`, {
       headers: { Authorization: `Bearer ${token()}`, 'Content-Type': 'application/json' },
       ...init
     });

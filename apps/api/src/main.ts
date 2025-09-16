@@ -156,6 +156,9 @@ async function bootstrap(){
     logger: new LoggerService(),
   });
 
+  // Set global prefix for all routes
+  app.setGlobalPrefix('api');
+
   // Global validation pipe
   app.useGlobalPipes(new ValidationPipe({
     whitelist: true,
