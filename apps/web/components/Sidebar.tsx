@@ -19,17 +19,20 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     { href: '/orders', label: 'Orders', icon: '📦' },
     { href: '/shipments', label: 'Shipments', icon: '🚚' },
     { href: '/products', label: 'Products', icon: '📱' },
-    { href: '/customers', label: 'Customers', icon: '👥' },
   ];
 
   const adminItems = [
     { href: '/users', label: 'Users', icon: '👤', roles: ['ADMIN'] },
+    { href: '/customers', label: 'Customers', icon: '👥', roles: ['ADMIN'] },
     { href: '/inbound', label: 'Inbound', icon: '📥' },
-    { href: '/returns', label: 'Returns', icon: '↩️' },
     { href: '/billing', label: 'Billing', icon: '💳' },
     { href: '/tenants', label: 'Tenants', icon: '🏢', roles: ['ADMIN'] },
     { href: '/stores', label: 'Stores', icon: '🏪', roles: ['ADMIN'] },
     { href: '/settings', label: 'Settings', icon: '⚙️', roles: ['ADMIN'] },
+  ];
+
+  const userItems = [
+    { href: '/returns', label: 'Returns', icon: '↩️' },
     { href: '/support', label: 'Support', icon: '🆘' },
   ];
 
@@ -193,6 +196,29 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                 {expandedSections.includes('admin') && (
                   <div className="mt-2 space-y-1">
                     {renderNavItems(adminItems, 'admin')}
+                  </div>
+                )}
+              </div>
+
+              {/* User Navigation */}
+              <div>
+                <button
+                  onClick={() => toggleSection('user')}
+                  className="flex items-center justify-between w-full px-3 py-2 text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <span>User Tools</span>
+                  <svg 
+                    className={`w-4 h-4 transition-transform ${expandedSections.includes('user') ? 'rotate-180' : ''}`}
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                {expandedSections.includes('user') && (
+                  <div className="mt-2 space-y-1">
+                    {renderNavItems(userItems, 'user')}
                   </div>
                 )}
               </div>
