@@ -1,3 +1,124 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+  
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+@layer components {
+  /* Custom scrollbar */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-track {
+    @apply bg-gray-800;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-gray-600 rounded-full;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    @apply bg-gray-500;
+  }
+  
+  /* Loading spinner */
+  .spinner {
+    @apply animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500;
+  }
+  
+  /* Card hover effects */
+  .card-hover {
+    @apply transition-all duration-200 hover:shadow-lg hover:scale-[1.02];
+  }
+  
+  /* Button animations */
+  .btn-animate {
+    @apply transition-all duration-200 active:scale-95;
+  }
+  
+  /* Form focus states */
+  .form-input {
+    @apply transition-all duration-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent;
+  }
+  
+  /* Mobile-first responsive utilities */
+  .mobile-container {
+    @apply px-4 sm:px-6 lg:px-8;
+  }
+  
+  .mobile-grid {
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4;
+  }
+  
+  .mobile-text {
+    @apply text-sm sm:text-base;
+  }
+  
+  .mobile-heading {
+    @apply text-xl sm:text-2xl lg:text-3xl font-bold;
+  }
+
+  /* Sidebar responsive utilities */
+  .sidebar-transition {
+    @apply transition-all duration-300 ease-in-out;
+  }
+
+  /* Mobile menu animations */
+  .animate-slide-down {
+    @apply animate-in slide-in-from-top-2 duration-200;
+  }
+
+  .animate-slide-up {
+    @apply animate-out slide-out-to-top-2 duration-200;
+  }
+
+  /* Responsive table utilities */
+  .table-responsive {
+    @apply overflow-x-auto;
+  }
+
+  .table-mobile {
+    @apply min-w-full divide-y divide-border;
+  }
+
+  /* Mobile form utilities */
+  .form-mobile {
+    @apply space-y-4;
+  }
+
+  .form-group-mobile {
+    @apply space-y-2;
+  }
+
+  /* Mobile button utilities */
+  .btn-mobile {
+    @apply w-full sm:w-auto;
+  }
+
+  .btn-mobile-sm {
+    @apply w-full sm:w-auto text-sm px-3 py-2;
+  }
+
+  /* Mobile card utilities */
+  .card-mobile {
+    @apply p-4 sm:p-6;
+  }
+
+  .card-mobile-sm {
+    @apply p-3 sm:p-4;
+  }
+}

@@ -11,8 +11,8 @@ export class TenantsController {
   constructor(private readonly tenants: TenantsService) {}
 
   @Get()
-  @Roles('FULEXO_ADMIN', 'FULEXO_STAFF')
-  @ApiOperation({ summary: 'List tenants (admin/staff)' })
+  @Roles('ADMIN')
+  @ApiOperation({ summary: 'List tenants (admin only)' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   async list(@Query('page') page = 1, @Query('limit') limit = 50) {
@@ -20,21 +20,21 @@ export class TenantsController {
   }
 
   @Get(':id')
-  @Roles('FULEXO_ADMIN', 'FULEXO_STAFF')
-  @ApiOperation({ summary: 'Get tenant by ID (admin/staff)' })
+  @Roles('ADMIN')
+  @ApiOperation({ summary: 'Get tenant by ID (admin only)' })
   async get(@Param('id') id: string) {
     return this.tenants.get(id);
   }
 
   @Post(':id/impersonate')
-  @Roles('FULEXO_ADMIN', 'FULEXO_STAFF')
-  @ApiOperation({ summary: 'Impersonate tenant (admin/staff)' })
+  @Roles('ADMIN')
+  @ApiOperation({ summary: 'Impersonate tenant (admin only)' })
   async impersonate(@CurrentUser() user: any, @Param('id') id: string) {
     return this.tenants.impersonate(user.sub || user.id, id);
   }
 
   @Post('impersonate/stop')
-  @Roles('FULEXO_ADMIN', 'FULEXO_STAFF')
+  @Roles('ADMIN')
   @ApiOperation({ summary: 'Stop impersonation, revert to original tenant' })
   async stopImpersonation(@CurrentUser() user: any) {
     return this.tenants.stopImpersonation(user);

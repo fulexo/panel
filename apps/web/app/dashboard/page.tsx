@@ -2,260 +2,492 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '../../components/AuthProvider';
 
 interface DashboardStats {
   totalOrders: number;
   totalRevenue: number;
-  pendingOrders: number;
-  shippedOrders: number;
-  returnRate: number;
-  syncStatus: {
-    lastSync: string;
+  statusBreakdown: Array<{
     status: string;
-  };
+    count: number;
+  }>;
+  dailyStats?: Array<{
+    date: string;
+    orders: number;
+    revenue: number;
+  }>;
+}
+
+interface RecentActivity {
+  id: string;
+  type: 'order' | 'customer' | 'product' | 'shipment';
+  title: string;
+  description: string;
+  timestamp: string;
+  status?: string;
+  storeName?: string;
+  wooId?: string;
+}
+
+interface WooStore {
+  id: string;
+  name: string;
+  baseUrl: string;
+  active: boolean;
+  lastSync?: any;
 }
 
 export default function DashboardPage() {
   const router = useRouter();
+  const { user } = useAuth();
   const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
+  const [stores, setStores] = useState<WooStore[]>([]);
+  const [selectedStore, setSelectedStore] = useState<string>('all');
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const token = () => localStorage.getItem('access_token');
+  const api = (path: string, init?: any) => 
+    fetch(`/api${path}`, {
+      headers: { Authorization: `Bearer ${token()}`, 'Content-Type': 'application/json' },
+      ...init
+    });
 
   useEffect(() => {
-    // Check authentication
-    const token = localStorage.getItem('access_token');
-    const userData = localStorage.getItem('user');
-    
-    if (!token || !userData) {
+    if (user) {
+      fetchDashboardData();
+    } else {
       router.push('/login');
-      return;
     }
+  }, [user, selectedStore]);
 
-    setUser(JSON.parse(userData));
-    fetchDashboardStats();
-  }, []);
-
-  const [dateFrom, setDateFrom] = useState<string>('');
-  const [dateTo, setDateTo] = useState<string>('');
-
-  const fetchDashboardStats = async () => {
+  const fetchDashboardData = async () => {
     try {
-      const token = localStorage.getItem('access_token');
-      const url = new URL(`/api/orders/stats/summary`, window.location.origin);
-      if(dateFrom) url.searchParams.set('dateFrom', dateFrom);
-      if(dateTo) url.searchParams.set('dateTo', dateTo);
-      const response = await fetch(url.toString(), {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        if (response.status === 401) {
+      setLoading(true);
+      setError(null);
+      
+      // Fetch WooCommerce stores first
+      const storesResponse = await api('/woo/stores');
+      if (!storesResponse.ok) {
+        if (storesResponse.status === 401) {
           router.push('/login');
           return;
         }
-        throw new Error('Failed to fetch stats');
+        throw new Error('Failed to fetch WooCommerce stores');
+      }
+      const storesData = await storesResponse.json();
+      setStores(storesData || []);
+
+      // Fetch orders stats
+      const ordersParams = selectedStore !== 'all' ? `?storeId=${selectedStore}` : '';
+      const ordersResponse = await api(`/orders/stats/summary${ordersParams}`);
+      if (!ordersResponse.ok) {
+        if (ordersResponse.status === 401) {
+          router.push('/login');
+          return;
+        }
+        throw new Error('Failed to fetch orders stats');
+      }
+      const ordersData = await ordersResponse.json();
+      setStats(ordersData);
+
+      // Fetch recent activity from API
+      try {
+        const activityParams = selectedStore !== 'all' ? `?limit=5&storeId=${selectedStore}` : '?limit=5';
+        const activityResponse = await api(`/orders${activityParams}`);
+        if (activityResponse.ok) {
+          const activityData = await activityResponse.json();
+          const recentOrders = activityData?.data || [];
+          
+          const activities: RecentActivity[] = recentOrders.map((order: any, index: number) => ({
+            id: order.id,
+            type: 'order' as const,
+            title: `Order #${order.externalOrderNo || order.id.slice(0, 8)}`,
+            description: `Order placed by ${order.customerName || order.customerEmail || 'Unknown Customer'}`,
+            timestamp: order.createdAt,
+            status: order.status,
+            storeName: order.storeName || 'Unknown Store',
+            wooId: order.externalOrderNo
+          }));
+
+          setRecentActivity(activities);
+        } else {
+          // Fallback to empty array if API fails
+          setRecentActivity([]);
+        }
+      } catch (err) {
+        // Fallback to empty array if API fails
+        setRecentActivity([]);
       }
 
-      const data = await response.json();
-      
-      // Mock additional stats for demo
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load dashboard data');
+      // Set fallback data
       setStats({
-        totalOrders: data.totalOrders || 0,
-        totalRevenue: data.totalRevenue || 0,
-        pendingOrders: 15,
-        shippedOrders: 45,
-        returnRate: 2.3,
-        syncStatus: {
-          lastSync: new Date().toISOString(),
-          status: 'active',
-        },
+        totalOrders: 0,
+        totalRevenue: 0,
+        statusBreakdown: [],
       });
-    } catch (error) {
-      console.error('Error fetching stats:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
-    localStorage.removeItem('user');
-    router.push('/login');
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('tr-TR', {
+      style: 'currency',
+      currency: 'TRY',
+      minimumFractionDigits: 2,
+    }).format(amount);
   };
+
+  const formatDate = (date: string) => {
+    return new Date(date).toLocaleDateString('tr-TR', {
+      day: 'numeric',
+      month: 'short',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const getActivityIcon = (type: string) => {
+    const icons = {
+      order: '📦',
+      customer: '👤',
+      product: '📱',
+      shipment: '🚚'
+    };
+    return icons[type as keyof typeof icons] || '📋';
+  };
+
+  const getStatusColor = (status: string) => {
+    const colors = {
+      pending: 'text-yellow-500',
+      processing: 'text-blue-500',
+      completed: 'text-green-500',
+      shipped: 'text-green-500',
+      delivered: 'text-green-500',
+      cancelled: 'text-red-500'
+    };
+    return colors[status as keyof typeof colors] || 'text-gray-500';
+  };
+
+  // Get status counts from breakdown
+  const getStatusCount = (status: string) => {
+    return stats?.statusBreakdown?.find(s => s.status === status)?.count || 0;
+  };
+
+  const pendingOrders = getStatusCount('pending') + getStatusCount('processing');
+  const completedOrders = getStatusCount('completed') + getStatusCount('shipped');
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="text-white">Loading...</div>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="spinner"></div>
+          <div className="text-lg text-foreground">Loading dashboard...</div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-900">
-      {/* Header */}
-      <header className="bg-gray-800 border-b border-gray-700">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div className="flex items-center">
-              <h1 className="text-2xl font-bold text-white">Fulexo Platform</h1>
-            </div>
-            <div className="flex items-center space-x-4">
-              <span className="text-gray-300">
-                {user?.email} ({user?.role})
-              </span>
-              <button
-                onClick={handleLogout}
-                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition"
-              >
-                Logout
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
-
-
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex gap-2 mb-4">
-          <input type="date" value={dateFrom} onChange={e=>setDateFrom(e.target.value)} className="px-3 py-2 bg-gray-800 border border-gray-700 rounded" />
-          <input type="date" value={dateTo} onChange={e=>setDateTo(e.target.value)} className="px-3 py-2 bg-gray-800 border border-gray-700 rounded" />
-          <button onClick={fetchDashboardStats} className="px-3 py-2 bg-blue-600 rounded">Apply</button>
-        </div>
-        {/* Welcome Message */}
-        <div className="mb-8">
-          <h2 className="text-3xl font-bold text-white mb-2">
-            Welcome back, {user?.email?.split('@')[0]}!
-          </h2>
-          <p className="text-gray-400">
-            Here's what's happening with your business today.
-          </p>
-        </div>
-
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-400 text-sm">Total Orders</p>
-                <p className="text-3xl font-bold text-white mt-2">
-                  {stats?.totalOrders || 0}
-                </p>
-              </div>
-              <div className="text-blue-500">
-                <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                </svg>
-              </div>
-            </div>
-            <p className="text-green-500 text-sm mt-4">
-              ↑ 12% from last month
+    <div className="min-h-screen bg-background">
+      <main className="mobile-container py-6 space-y-6">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 animate-fade-in">
+          <div>
+            <h1 className="mobile-heading text-foreground">
+              Welcome back, {user?.email?.split('@')[0]}! 👋
+            </h1>
+            <p className="text-muted-foreground mobile-text">
+              Here's your business overview for today
             </p>
           </div>
-
-          <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-400 text-sm">Total Revenue</p>
-                <p className="text-3xl font-bold text-white mt-2">
-                  ₺{stats?.totalRevenue?.toLocaleString() || 0}
-                </p>
+          <div className="flex items-center gap-4">
+            {/* Store Filter (Admin Only) */}
+            {user?.role === 'ADMIN' && stores.length > 0 && (
+              <div className="flex items-center gap-2">
+                <label className="text-sm font-medium text-foreground">Store:</label>
+                <select
+                  value={selectedStore}
+                  onChange={(e) => setSelectedStore(e.target.value)}
+                  className="px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground text-sm"
+                >
+                  <option value="all">All Stores</option>
+                  {stores.map((store) => (
+                    <option key={store.id} value={store.id}>
+                      {store.name}
+                    </option>
+                  ))}
+                </select>
               </div>
-              <div className="text-green-500">
-                <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-            </div>
-            <p className="text-green-500 text-sm mt-4">
-              ↑ 8% from last month
-            </p>
-          </div>
-
-          <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-400 text-sm">Pending Orders</p>
-                <p className="text-3xl font-bold text-white mt-2">
-                  {stats?.pendingOrders || 0}
-                </p>
-              </div>
-              <div className="text-yellow-500">
-                <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-            </div>
-            <p className="text-gray-400 text-sm mt-4">
-              Requires attention
-            </p>
-          </div>
-
-          <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-400 text-sm">Return Rate</p>
-                <p className="text-3xl font-bold text-white mt-2">
-                  {stats?.returnRate || 0}%
-                </p>
-              </div>
-              <div className="text-red-500">
-                <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 15v-1a4 4 0 00-4-4H8m0 0l3 3m-3-3l3-3m9 14V5a2 2 0 00-2-2H6a2 2 0 00-2 2v16l4-2 4 2 4-2 4 2z" />
-                </svg>
-              </div>
-            </div>
-            <p className="text-green-500 text-sm mt-4">
-              ↓ 0.5% from last month
-            </p>
-          </div>
-        </div>
-
-        {/* Sync Status */}
-        <div className="bg-gray-800 rounded-lg p-6 border border-gray-700 mb-8">
-          <h3 className="text-xl font-bold text-white mb-4">Sync Status</h3>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-400">Synchronization</p>
-              <p className="text-sm text-gray-500 mt-1">
-                Last sync: {stats?.syncStatus?.lastSync ? new Date(stats.syncStatus.lastSync).toLocaleString() : 'Never'}
-              </p>
-            </div>
-            <div className="flex items-center">
-              <div className={`w-3 h-3 rounded-full mr-2 ${stats?.syncStatus?.status === 'active' ? 'bg-green-500' : 'bg-yellow-500'} animate-pulse`}></div>
-              <span className={`text-sm ${stats?.syncStatus?.status === 'active' ? 'text-green-500' : 'text-yellow-500'}`}>
-                {stats?.syncStatus?.status === 'active' ? 'Active' : 'Syncing...'}
-              </span>
+            )}
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <span>📅</span>
+              <span>{new Date().toLocaleDateString('tr-TR', { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+              })}</span>
             </div>
           </div>
         </div>
+
+        {/* Error Message */}
+        {error && (
+          <div className="bg-destructive/10 border border-destructive text-destructive px-4 py-3 rounded-lg animate-slide-down">
+            <div className="flex items-center gap-2">
+              <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span className="text-sm font-medium">{error}</span>
+            </div>
+          </div>
+        )}
+
+        {/* WooCommerce Stores */}
+        {stores.length > 0 && (
+          <div className="bg-card p-6 rounded-lg border border-border animate-slide-up">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-foreground">WooCommerce Stores</h2>
+              <a href="/stores" className="text-sm text-primary hover:text-primary/80">
+                Manage Stores →
+              </a>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {stores.map((store) => (
+                <div key={store.id} className="bg-muted/50 p-4 rounded-lg border border-border">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-medium text-foreground">{store.name}</h3>
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      store.active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                    }`}>
+                      {store.active ? 'Active' : 'Inactive'}
+                    </span>
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-2">{store.baseUrl}</p>
+                  {store.lastSync && (
+                    <p className="text-xs text-muted-foreground">
+                      Last sync: {new Date(store.lastSync).toLocaleString()}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Key Metrics */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 animate-slide-up">
+          <div className="bg-card p-6 rounded-lg border border-border card-hover">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">Total Orders</p>
+                <p className="text-3xl font-bold text-foreground">{stats?.totalOrders || 0}</p>
+                <p className="text-xs text-muted-foreground mt-1">All time</p>
+              </div>
+              <div className="p-3 bg-blue-500/10 rounded-lg">
+                <span className="text-2xl">📦</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-card p-6 rounded-lg border border-border card-hover">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">Total Revenue</p>
+                <p className="text-3xl font-bold text-foreground">{formatCurrency(stats?.totalRevenue || 0)}</p>
+                <p className="text-xs text-muted-foreground mt-1">All time</p>
+              </div>
+              <div className="p-3 bg-green-500/10 rounded-lg">
+                <span className="text-2xl">💰</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-card p-6 rounded-lg border border-border card-hover">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">Pending Orders</p>
+                <p className="text-3xl font-bold text-foreground">{pendingOrders}</p>
+                <p className="text-xs text-muted-foreground mt-1">Needs attention</p>
+              </div>
+              <div className="p-3 bg-yellow-500/10 rounded-lg">
+                <span className="text-2xl">⏳</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-card p-6 rounded-lg border border-border card-hover">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">Completed</p>
+                <p className="text-3xl font-bold text-foreground">{completedOrders}</p>
+                <p className="text-xs text-muted-foreground mt-1">Successfully processed</p>
+              </div>
+              <div className="p-3 bg-green-500/10 rounded-lg">
+                <span className="text-2xl">✅</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Status Breakdown */}
+        {stats?.statusBreakdown && stats.statusBreakdown.length > 0 && (
+          <div className="bg-card p-6 rounded-lg border border-border animate-slide-up">
+            <h3 className="text-lg font-semibold text-foreground mb-4">Order Status Breakdown</h3>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+              {stats.statusBreakdown.map((status, index) => (
+                <div key={status.status} className="text-center">
+                  <div className="text-2xl font-bold text-foreground mb-1">
+                    {status.count}
+                  </div>
+                  <div className="text-sm text-muted-foreground capitalize">
+                    {status.status}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <button className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg p-6 transition">
-            <svg className="w-8 h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-            </svg>
-            <p className="font-semibold">Create New Order</p>
-          </button>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 animate-slide-up">
+          <a
+            href="/orders"
+            className="bg-primary text-primary-foreground p-6 rounded-lg hover:bg-primary/90 transition-colors btn-animate group"
+          >
+            <div className="flex items-center gap-3">
+              <span className="text-2xl group-hover:scale-110 transition-transform">📋</span>
+              <div>
+                <h3 className="font-semibold text-lg">Orders</h3>
+                <p className="text-primary-foreground/80 text-sm">Manage all orders</p>
+              </div>
+            </div>
+          </a>
 
-          <button className="bg-purple-600 hover:bg-purple-700 text-white rounded-lg p-6 transition">
-            <svg className="w-8 h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-            </svg>
-            <p className="font-semibold">Sync Stores</p>
-          </button>
+          <a
+            href="/products"
+            className="bg-accent text-accent-foreground p-6 rounded-lg hover:bg-accent/90 transition-colors btn-animate group"
+          >
+            <div className="flex items-center gap-3">
+              <span className="text-2xl group-hover:scale-110 transition-transform">📱</span>
+              <div>
+                <h3 className="font-semibold text-lg">Products</h3>
+                <p className="text-accent-foreground/80 text-sm">Manage inventory</p>
+              </div>
+            </div>
+          </a>
 
-          <button className="bg-green-600 hover:bg-green-700 text-white rounded-lg p-6 transition">
-            <svg className="w-8 h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17v1a1 1 0 001 1h4a1 1 0 001-1v-1m-5 0h5m-5 0l1-7h3l1 7M12 4h.01M8 4h.01M16 4h.01M5 8h14a1 1 0 011 1v10a1 1 0 01-1 1H5a1 1 0 01-1-1V9a1 1 0 011-1z" />
-            </svg>
-            <p className="font-semibold">Generate Report</p>
-          </button>
+          <a
+            href="/customers"
+            className="bg-secondary text-secondary-foreground p-6 rounded-lg hover:bg-secondary/90 transition-colors btn-animate group"
+          >
+            <div className="flex items-center gap-3">
+              <span className="text-2xl group-hover:scale-110 transition-transform">👥</span>
+              <div>
+                <h3 className="font-semibold text-lg">Customers</h3>
+                <p className="text-secondary-foreground/80 text-sm">Customer management</p>
+              </div>
+            </div>
+          </a>
+
+          <a
+            href="/shipments"
+            className="bg-muted text-muted-foreground p-6 rounded-lg hover:bg-muted/90 transition-colors btn-animate group"
+          >
+            <div className="flex items-center gap-3">
+              <span className="text-2xl group-hover:scale-110 transition-transform">🚚</span>
+              <div>
+                <h3 className="font-semibold text-lg">Shipments</h3>
+                <p className="text-muted-foreground/80 text-sm">Track deliveries</p>
+              </div>
+            </div>
+          </a>
+        </div>
+
+        {/* Recent Activity */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-slide-up">
+          <div className="bg-card p-6 rounded-lg border border-border">
+            <h3 className="text-lg font-semibold text-foreground mb-4">Recent Activity</h3>
+            <div className="space-y-4">
+              {recentActivity.map((activity, index) => (
+                <div
+                  key={activity.id}
+                  className="flex items-start gap-3 p-3 rounded-lg hover:bg-accent/20 transition-colors"
+                  style={{ animationDelay: `${index * 0.1}s` }}
+                >
+                  <div className="text-xl">{getActivityIcon(activity.type)}</div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <h4 className="font-medium text-foreground text-sm">{activity.title}</h4>
+                      {activity.status && (
+                        <span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(activity.status)} bg-current/10`}>
+                          {activity.status}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-1">{activity.description}</p>
+                    <p className="text-xs text-muted-foreground">{formatDate(activity.timestamp)}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Quick Stats */}
+          <div className="bg-card p-6 rounded-lg border border-border">
+            <h3 className="text-lg font-semibold text-foreground mb-4">Quick Stats</h3>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-3 bg-accent/20 rounded-lg">
+                <div className="flex items-center gap-3">
+                  <span className="text-xl">📊</span>
+                  <div>
+                    <p className="text-sm font-medium text-foreground">Conversion Rate</p>
+                    <p className="text-xs text-muted-foreground">Orders to Revenue</p>
+                  </div>
+                </div>
+                     <div className="text-right">
+                       <p className="text-lg font-bold text-foreground">
+                         {stats?.totalOrders > 0 ? ((stats.totalRevenue / stats.totalOrders) * 100).toFixed(1) : 0}%
+                       </p>
+                     </div>
+              </div>
+
+              <div className="flex items-center justify-between p-3 bg-accent/20 rounded-lg">
+                <div className="flex items-center gap-3">
+                  <span className="text-xl">📈</span>
+                  <div>
+                    <p className="text-sm font-medium text-foreground">Avg Order Value</p>
+                    <p className="text-xs text-muted-foreground">Revenue per order</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-lg font-bold text-foreground">
+                    {formatCurrency(stats?.totalOrders > 0 ? (stats.totalRevenue / stats.totalOrders) : 0)}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between p-3 bg-accent/20 rounded-lg">
+                <div className="flex items-center gap-3">
+                  <span className="text-xl">⚡</span>
+                  <div>
+                    <p className="text-sm font-medium text-foreground">Processing Rate</p>
+                    <p className="text-xs text-muted-foreground">Completed orders</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-lg font-bold text-foreground">
+                    {stats?.totalOrders > 0 ? ((completedOrders / stats.totalOrders) * 100).toFixed(1) : 0}%
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </main>
     </div>

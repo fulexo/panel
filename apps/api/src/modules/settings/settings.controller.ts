@@ -16,6 +16,8 @@ import {
   EmailSettingsDto,
   NotificationSettingsDto,
   GeneralSettingsDto,
+  WooCommerceSettingsDto,
+  SecuritySettingsDto,
   TestConnectionDto,
 } from './dto/update-settings.dto';
 
@@ -27,21 +29,21 @@ export class SettingsController {
 
   @Get()
   @ApiOperation({ summary: 'Get all settings' })
-  @Roles('FULEXO_ADMIN', 'FULEXO_STAFF')
+  @Roles('ADMIN')
   async getSettings(@Req() req: any, @Query('category') category?: string) {
     return this.settingsService.getSettings(req.user.tenantId, category);
   }
 
   @Get('email')
   @ApiOperation({ summary: 'Get email settings' })
-  @Roles('FULEXO_ADMIN', 'FULEXO_STAFF')
+  @Roles('ADMIN')
   async getEmailSettings(@Req() req: any) {
     return this.settingsService.getSettingsByCategory(req.user.tenantId, 'email');
   }
 
   @Put('email')
   @ApiOperation({ summary: 'Update email settings' })
-  @Roles('FULEXO_ADMIN', 'FULEXO_STAFF')
+  @Roles('ADMIN')
   async updateEmailSettings(
     @Req() req: any,
     @Body() dto: EmailSettingsDto
@@ -59,14 +61,14 @@ export class SettingsController {
 
   @Get('notification')
   @ApiOperation({ summary: 'Get notification settings' })
-  @Roles('FULEXO_ADMIN', 'FULEXO_STAFF')
+  @Roles('ADMIN')
   async getNotificationSettings(@Req() req: any) {
     return this.settingsService.getSettingsByCategory(req.user.tenantId, 'notification');
   }
 
   @Put('notification')
   @ApiOperation({ summary: 'Update notification settings' })
-  @Roles('FULEXO_ADMIN', 'FULEXO_STAFF')
+  @Roles('ADMIN')
   async updateNotificationSettings(
     @Req() req: any,
     @Body() dto: NotificationSettingsDto
@@ -82,14 +84,14 @@ export class SettingsController {
 
   @Get('general')
   @ApiOperation({ summary: 'Get general settings' })
-  @Roles('FULEXO_ADMIN', 'FULEXO_STAFF', 'CUSTOMER_ADMIN', 'CUSTOMER_USER')
+  @Roles('ADMIN', 'CUSTOMER')
   async getGeneralSettings(@Req() req: any) {
     return this.settingsService.getSettingsByCategory(req.user.tenantId, 'general');
   }
 
   @Put('general')
   @ApiOperation({ summary: 'Update general settings' })
-  @Roles('FULEXO_ADMIN', 'FULEXO_STAFF')
+  @Roles('ADMIN')
   async updateGeneralSettings(
     @Req() req: any,
     @Body() dto: GeneralSettingsDto
@@ -103,9 +105,55 @@ export class SettingsController {
     return { message: 'General settings updated successfully' };
   }
 
+  @Get('woocommerce')
+  @ApiOperation({ summary: 'Get WooCommerce settings' })
+  @Roles('ADMIN')
+  async getWooCommerceSettings(@Req() req: any) {
+    return this.settingsService.getSettingsByCategory(req.user.tenantId, 'woocommerce');
+  }
+
+  @Put('woocommerce')
+  @ApiOperation({ summary: 'Update WooCommerce settings' })
+  @Roles('ADMIN')
+  async updateWooCommerceSettings(
+    @Req() req: any,
+    @Body() dto: WooCommerceSettingsDto
+  ) {
+    await this.settingsService.updateSettings(
+      req.user.tenantId,
+      'woocommerce',
+      dto,
+      req.user.id
+    );
+    return { message: 'WooCommerce settings updated successfully' };
+  }
+
+  @Get('security')
+  @ApiOperation({ summary: 'Get security settings' })
+  @Roles('ADMIN')
+  async getSecuritySettings(@Req() req: any) {
+    return this.settingsService.getSettingsByCategory(req.user.tenantId, 'security');
+  }
+
+  @Put('security')
+  @ApiOperation({ summary: 'Update security settings' })
+  @Roles('ADMIN')
+  async updateSecuritySettings(
+    @Req() req: any,
+    @Body() dto: SecuritySettingsDto
+  ) {
+    await this.settingsService.updateSettings(
+      req.user.tenantId,
+      'security',
+      dto,
+      req.user.id
+    );
+    return { message: 'Security settings updated successfully' };
+  }
+
   @Post('test-connection')
   @ApiOperation({ summary: 'Test service connection' })
-  @Roles('FULEXO_ADMIN', 'FULEXO_STAFF')
+  @Roles('ADMIN')
   async testConnection(@Req() req: any, @Body() dto: TestConnectionDto) {
     let result: boolean;
     
@@ -126,7 +174,7 @@ export class SettingsController {
 
   @Get(':category/:key')
   @ApiOperation({ summary: 'Get specific setting' })
-  @Roles('FULEXO_ADMIN', 'FULEXO_STAFF')
+  @Roles('ADMIN')
   async getSetting(
     @Req() req: any,
     @Param('category') category: string,
@@ -142,7 +190,7 @@ export class SettingsController {
 
   @Delete(':category/:key')
   @ApiOperation({ summary: 'Delete specific setting' })
-  @Roles('FULEXO_ADMIN', 'FULEXO_STAFF')
+  @Roles('ADMIN')
   async deleteSetting(
     @Req() req: any,
     @Param('category') category: string,

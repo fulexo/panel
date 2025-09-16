@@ -62,6 +62,14 @@ export class OrdersService {
       }
     }
 
+    if (query.storeId) {
+      where.storeId = query.storeId;
+    }
+
+    if (query.customerId) {
+      where.customerId = query.customerId;
+    }
+
     // Execute query with optimized selects to avoid N+1
     const [orders, total] = await this.runTenant(tenantId, async (db) => Promise.all([
       db.order.findMany({
@@ -125,7 +133,7 @@ export class OrdersService {
     ]));
 
     const result = {
-      data: (role && !['FULEXO_ADMIN','FULEXO_STAFF'].includes(role)) ? orders.map(this.sanitizeOrderForCustomer) : orders,
+      data: (role && role !== 'ADMIN') ? orders.map(this.sanitizeOrderForCustomer) : orders,
       pagination: {
         page,
         limit,
@@ -171,7 +179,7 @@ export class OrdersService {
     // Cache for 5 minutes
     await this.cache.set(cacheKey, order, 300);
 
-    return (role && !['FULEXO_ADMIN','FULEXO_STAFF'].includes(role)) ? this.sanitizeOrderForCustomer(order) : order;
+    return (role && role !== 'ADMIN') ? this.sanitizeOrderForCustomer(order) : order;
   }
 
   async create(tenantId: string, dto: CreateOrderDto, userId: string) {
@@ -384,7 +392,7 @@ export class OrdersService {
     return timeline;
   }
 
-  async getOrderStats(tenantId: string, query: { dateFrom?: string; dateTo?: string }) {
+  async getOrderStats(tenantId: string, query: { dateFrom?: string; dateTo?: string; storeId?: string }) {
     const where: Prisma.OrderWhereInput = {
       tenantId,
     };
@@ -397,6 +405,10 @@ export class OrdersService {
       if (query.dateTo) {
         where.confirmedAt.lte = new Date(query.dateTo);
       }
+    }
+
+    if (query.storeId) {
+      where.storeId = query.storeId;
     }
 
     const [
@@ -505,5 +517,103 @@ export class OrdersService {
     await this.audit.log({ action: 'order.charge.removed', userId, tenantId, entityType: 'order', entityId: orderId, changes: { chargeId } });
     await this.cache.invalidateOrderCache(tenantId, orderId);
     return { message: 'Charge removed' };
+  }
+
+  async bulkUpdate(tenantId: string, orderIds: string[], updates: Partial<UpdateOrderDto>, userId: string) {
+    if (!orderIds || orderIds.length === 0) {
+      throw new BadRequestException('No order IDs provided');
+    }
+
+    if (orderIds.length > 100) {
+      throw new BadRequestException('Cannot update more than 100 orders at once');
+    }
+
+    const results = await this.runTenant(tenantId, async (db) => {
+      const updateData: any = {};
+      
+      if (updates.status !== undefined) updateData.status = updates.status;
+      if (updates.notes !== undefined) updateData.notes = updates.notes;
+      if (updates.tags !== undefined) updateData.tags = updates.tags;
+      if (updates.billingAddress !== undefined) updateData.billingAddress = updates.billingAddress;
+      
+      updateData.updatedAt = new Date();
+
+      const result = await db.order.updateMany({
+        where: {
+          id: { in: orderIds },
+          tenantId,
+        },
+        data: updateData,
+      });
+
+      return result;
+    });
+
+    await this.audit.log({ 
+      action: 'order.bulk.updated', 
+      userId, 
+      tenantId, 
+      entityType: 'order', 
+      entityId: orderIds.join(','), 
+      changes: updates 
+    });
+
+    // Invalidate cache for all affected orders
+    await Promise.all(orderIds.map(orderId => this.cache.invalidateOrderCache(tenantId, orderId)));
+
+    return {
+      message: `Successfully updated ${results.count} orders`,
+      updatedCount: results.count,
+      orderIds,
+    };
+  }
+
+  async bulkDelete(tenantId: string, orderIds: string[], userId: string) {
+    if (!orderIds || orderIds.length === 0) {
+      throw new BadRequestException('No order IDs provided');
+    }
+
+    if (orderIds.length > 100) {
+      throw new BadRequestException('Cannot delete more than 100 orders at once');
+    }
+
+    const results = await this.runTenant(tenantId, async (db) => {
+      // First, delete related records
+      await db.orderServiceCharge.deleteMany({
+        where: { orderId: { in: orderIds } },
+      });
+
+      await db.orderItem.deleteMany({
+        where: { orderId: { in: orderIds } },
+      });
+
+      // Then delete the orders
+      const result = await db.order.deleteMany({
+        where: {
+          id: { in: orderIds },
+          tenantId,
+        },
+      });
+
+      return result;
+    });
+
+    await this.audit.log({ 
+      action: 'order.bulk.deleted', 
+      userId, 
+      tenantId, 
+      entityType: 'order', 
+      entityId: orderIds.join(','), 
+      changes: { deletedCount: results.count } 
+    });
+
+    // Invalidate cache for all affected orders
+    await Promise.all(orderIds.map(orderId => this.cache.invalidateOrderCache(tenantId, orderId)));
+
+    return {
+      message: `Successfully deleted ${results.count} orders`,
+      deletedCount: results.count,
+      orderIds,
+    };
   }
 }

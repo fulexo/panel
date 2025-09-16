@@ -10,7 +10,7 @@ export class JobsController {
   @Post()
   @HttpCode(202)
   @ApiOperation({ summary: 'Enqueue a background job' })
-  @Roles('FULEXO_ADMIN','FULEXO_STAFF')
+  @Roles('ADMIN')
   async enqueue(@CurrentUser() user: any, @Body() body: { name: string; data?: any; }){
     const { Queue } = await import('bullmq');
     const Redis = (await import('ioredis')).default;

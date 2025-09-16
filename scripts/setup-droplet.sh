@@ -51,17 +51,39 @@ apt-get install -y \
     htop \
     vim \
     wget \
-    build-essential
+    build-essential \
+    software-properties-common \
+    snapd
 
 # Install Docker
 print_status "Installing Docker..."
 if ! command -v docker &> /dev/null; then
+    # Remove old Docker packages
+    apt-get remove -y docker docker-engine docker.io containerd runc 2>/dev/null || true
+    
+    # Install prerequisites
+    apt-get install -y ca-certificates curl gnupg lsb-release
+    
+    # Add Docker's official GPG key
     curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+    
+    # Add Docker repository
     echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+    
+    # Update package index
     apt-get update
+    
+    # Install Docker Engine
     apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
+    
+    # Start and enable Docker
     systemctl enable docker
     systemctl start docker
+    
+    # Add current user to docker group
+    usermod -aG docker $SUDO_USER 2>/dev/null || true
+    
+    print_status "Docker installed successfully"
 else
     print_warning "Docker already installed, skipping..."
 fi
@@ -77,22 +99,61 @@ fi
 
 # Configure firewall
 print_status "Configuring firewall..."
+ufw --force reset
 ufw default deny incoming
 ufw default allow outgoing
+
+# Allow SSH (change port if needed)
 ufw allow ssh
+
+# Allow HTTP/HTTPS
 ufw allow 80/tcp
 ufw allow 443/tcp
-ufw allow 9000:9001/tcp  # MinIO ports (restrict in production)
-ufw allow 3001/tcp       # Uptime Kuma (restrict in production)  
-ufw allow 3002/tcp       # Grafana (restrict in production)
-ufw allow 9093/tcp       # Alertmanager (restrict in production)
-ufw allow 16686/tcp      # Jaeger (restrict in production)
+
+# Allow monitoring ports (restrict these in production)
+ufw allow 9000:9001/tcp  # MinIO ports
+ufw allow 3001/tcp       # Uptime Kuma
+ufw allow 3002/tcp       # Grafana
+ufw allow 9093/tcp       # Alertmanager
+ufw allow 16686/tcp      # Jaeger
+
+# Enable firewall
 ufw --force enable
+
+print_status "Firewall configured and enabled"
 
 # Configure fail2ban
 print_status "Configuring fail2ban..."
+
+# Create fail2ban configuration
+cat > /etc/fail2ban/jail.local << 'EOF'
+[DEFAULT]
+bantime = 3600
+findtime = 600
+maxretry = 3
+backend = systemd
+
+[sshd]
+enabled = true
+port = ssh
+logpath = /var/log/auth.log
+maxretry = 3
+bantime = 3600
+findtime = 600
+
+[nginx-http-auth]
+enabled = true
+port = http,https
+logpath = /var/log/nginx/error.log
+maxretry = 3
+bantime = 3600
+findtime = 600
+EOF
+
 systemctl enable fail2ban
 systemctl start fail2ban
+
+print_status "Fail2ban configured and started"
 
 # Create application user
 print_status "Creating application user..."
@@ -182,6 +243,11 @@ EOF
     sed -i "s/api.yourdomain.com/api.fulexo.com/g" "$ENV_PATH"
     sed -i "s/panel.yourdomain.com/panel.fulexo.com/g" "$ENV_PATH"
     sed -i "s/https:\/\/panel.yourdomain.com/https:\/\/panel.fulexo.com/g" "$ENV_PATH"
+    
+    # Set default domains
+    sed -i "s/DOMAIN_API=.*/DOMAIN_API=api.fulexo.com/g" "$ENV_PATH"
+    sed -i "s/DOMAIN_APP=.*/DOMAIN_APP=panel.fulexo.com/g" "$ENV_PATH"
+    sed -i "s/NEXT_PUBLIC_APP_URL=.*/NEXT_PUBLIC_APP_URL=https:\/\/panel.fulexo.com/g" "$ENV_PATH"
 
     print_status "Generated secure passwords and updated env file"
     print_warning "IMPORTANT: Save these credentials securely!"
@@ -283,6 +349,10 @@ chown -R fulexo:fulexo /opt/fulexo/scripts
 # Setup cron for backups
 print_status "Setting up automated backups..."
 echo "0 2 * * * fulexo /opt/fulexo/scripts/backup.sh" | crontab -u fulexo -
+
+# Setup cron for cleanup
+print_status "Setting up automated cleanup..."
+echo "0 3 * * 0 root /opt/fulexo/scripts/cleanup-build.sh" | crontab -u root -
 
 # Setup monitoring alerts
 print_status "Setting up basic monitoring..."

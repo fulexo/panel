@@ -11,7 +11,7 @@ export class UsersController {
   constructor(private readonly users: UsersService) {}
 
   @Get()
-  @Roles('FULEXO_ADMIN', 'FULEXO_STAFF', 'CUSTOMER_ADMIN')
+  @Roles('ADMIN')
   @ApiOperation({ summary: 'List users' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
@@ -21,28 +21,28 @@ export class UsersController {
   }
 
   @Get(':id')
-  @Roles('FULEXO_ADMIN', 'FULEXO_STAFF', 'CUSTOMER_ADMIN')
+  @Roles('ADMIN')
   @ApiOperation({ summary: 'Get user' })
   async get(@CurrentUser() user: any, @Param('id') id: string) {
     return this.users.get(user, id);
   }
 
   @Put(':id')
-  @Roles('FULEXO_ADMIN', 'FULEXO_STAFF', 'CUSTOMER_ADMIN')
+  @Roles('ADMIN')
   @ApiOperation({ summary: 'Update user' })
   async update(@CurrentUser() user: any, @Param('id') id: string, @Body() body: any) {
     return this.users.update(user, id, body);
   }
 
   @Delete(':id')
-  @Roles('FULEXO_ADMIN')
+  @Roles('ADMIN')
   @ApiOperation({ summary: 'Delete user (admin only)' })
   async remove(@CurrentUser() user: any, @Param('id') id: string) {
     return this.users.remove(user, id);
   }
 
   @Post(':id/reset-password')
-  @Roles('FULEXO_ADMIN')
+  @Roles('ADMIN')
   @ApiOperation({ summary: 'Reset user password (admin only)' })
   async resetPassword(
     @CurrentUser() user: any,

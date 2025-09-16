@@ -15,8 +15,19 @@ export class CustomersController {
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'search', required: false, type: String })
-  async list(@CurrentUser() user: any, @Query('page') page = 1, @Query('limit') limit = 50, @Query('search') search?: string) {
-    return this.customers.list(user.tenantId, Number(page), Number(limit), search);
+  @ApiQuery({ name: 'status', required: false, type: String })
+  @ApiQuery({ name: 'tag', required: false, type: String })
+  @ApiQuery({ name: 'storeId', required: false, type: String })
+  async list(
+    @CurrentUser() user: any, 
+    @Query('page') page = 1, 
+    @Query('limit') limit = 50, 
+    @Query('search') search?: string,
+    @Query('status') status?: string,
+    @Query('tag') tag?: string,
+    @Query('storeId') storeId?: string,
+  ) {
+    return this.customers.list(user.tenantId, Number(page), Number(limit), search, status, tag, storeId);
   }
 
   @Get(':id')
@@ -26,24 +37,44 @@ export class CustomersController {
   }
 
   @Post()
-  @Roles('FULEXO_ADMIN', 'FULEXO_STAFF')
-  @ApiOperation({ summary: 'Create customer (admin/staff)' })
+  @Roles('ADMIN')
+  @ApiOperation({ summary: 'Create customer (admin only)' })
   async create(@CurrentUser() user: any, @Body() body: any) {
     return this.customers.create(user.tenantId, body);
   }
 
   @Put(':id')
-  @Roles('FULEXO_ADMIN', 'FULEXO_STAFF')
-  @ApiOperation({ summary: 'Update customer (admin/staff)' })
+  @Roles('ADMIN')
+  @ApiOperation({ summary: 'Update customer (admin only)' })
   async update(@CurrentUser() user: any, @Param('id') id: string, @Body() body: any) {
     return this.customers.update(user.tenantId, id, body);
   }
 
   @Delete(':id')
-  @Roles('FULEXO_ADMIN', 'FULEXO_STAFF')
-  @ApiOperation({ summary: 'Delete customer (admin/staff)' })
+  @Roles('ADMIN')
+  @ApiOperation({ summary: 'Delete customer (admin only)' })
   async remove(@CurrentUser() user: any, @Param('id') id: string) {
     return this.customers.remove(user.tenantId, id);
+  }
+
+  @Put('bulk')
+  @Roles('ADMIN')
+  @ApiOperation({ summary: 'Bulk update customers' })
+  async bulkUpdate(
+    @CurrentUser() user: any,
+    @Body() body: { customerIds: string[]; updates: any },
+  ) {
+    return this.customers.bulkUpdate(user.tenantId, body.customerIds, body.updates, user.id);
+  }
+
+  @Delete('bulk')
+  @Roles('ADMIN')
+  @ApiOperation({ summary: 'Bulk delete customers' })
+  async bulkDelete(
+    @CurrentUser() user: any,
+    @Body() body: { customerIds: string[] },
+  ) {
+    return this.customers.bulkDelete(user.tenantId, body.customerIds, user.id);
   }
 }
 

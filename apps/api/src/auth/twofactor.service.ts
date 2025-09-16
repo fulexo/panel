@@ -148,4 +148,29 @@ export class TwoFactorService {
     // For now, we'll return them to the user
     return codes;
   }
+
+  async generateSecret(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+
+    // Generate secret
+    const secret = speakeasy.generateSecret({
+      name: `Fulexo (${user.email})`,
+      issuer: 'Fulexo Platform',
+    });
+
+    // Generate QR code
+    const qrCodeUrl = await QRCode.toDataURL(secret.otpauth_url!);
+
+    return {
+      secret: secret.base32,
+      qrCode: qrCodeUrl,
+      manualEntry: secret.otpauth_url,
+    };
+  }
 }

@@ -33,13 +33,13 @@ async function createAdminUser() {
       where: { email: 'fulexo@fulexo.com' },
       update: {
         passwordHash: passwordHash,
-        role: 'FULEXO_ADMIN',
+        role: 'ADMIN',
         tenantId: tenant.id,
       },
       create: {
         email: 'fulexo@fulexo.com',
         passwordHash: passwordHash,
-        role: 'FULEXO_ADMIN',
+        role: 'ADMIN',
         tenantId: tenant.id,
       },
     });
@@ -47,7 +47,7 @@ async function createAdminUser() {
     console.log('✅ Admin kullanıcısı hazırlandı:');
     console.log('   Email: fulexo@fulexo.com');
     console.log('   Şifre: Adem_123*');
-    console.log('   Rol: FULEXO_ADMIN');
+    console.log('   Rol: ADMIN');
 
     // Eski admin kullanıcısını sil (varsa)
     await prisma.user.deleteMany({

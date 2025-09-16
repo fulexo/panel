@@ -28,6 +28,8 @@ model Tenant {
   inboundShipments InboundShipment[]
   settings  Settings[]
   wooStores WooStore[]
+  invoices  Invoice[]
+  payments  Payment[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -121,6 +123,7 @@ model RemoteEntityMap {
 model Customer {
   id             String   @id @default(uuid())
   tenantId       String
+  storeId        String?
   email          String?
   emailNormalized String?
   phoneE164      String?
@@ -138,16 +141,19 @@ model Customer {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
   tenant         Tenant   @relation(fields: [tenantId], references: [id])
+  store          WooStore? @relation(fields: [storeId], references: [id])
   orders         Order[]
 
   @@unique([tenantId, emailNormalized])
   @@index([tenantId, phoneE164])
+  @@index([tenantId, storeId])
 }
 
 model Order {
   id             String   @id @default(uuid())
   tenantId       String
   customerId     String?
+  storeId        String?
   
   orderNo        Int?
   
@@ -169,6 +175,7 @@ model Order {
   updatedAt      DateTime @updatedAt
   tenant         Tenant   @relation(fields: [tenantId], references: [id])
   customer       Customer? @relation(fields: [customerId], references: [id])
+  store          WooStore? @relation(fields: [storeId], references: [id])
   
   items          OrderItem[]
   shipments      Shipment[]
@@ -181,6 +188,7 @@ model Order {
   @@index([tenantId, status, confirmedAt])
   @@index([tenantId, customerEmail])
   @@index([tenantId, externalOrderNo])
+  @@index([tenantId, storeId])
 }
 
 model OrderItem {
@@ -219,6 +227,7 @@ model Shipment {
 model Product {
   id          String   @id @default(uuid())
   tenantId    String
+  storeId     String?
   sku         String
   name        String?
   description String?
@@ -232,32 +241,60 @@ model Product {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  store       WooStore? @relation(fields: [storeId], references: [id])
   inboundItems InboundItem[]
   stockMovements StockMovement[]
 
   @@unique([tenantId, sku])
   @@index([tenantId, active])
+  @@index([tenantId, storeId])
 }
 
 model Invoice {
   id         String   @id @default(uuid())
+  tenantId   String
   orderId    String
   number     String?
   series     String?
   currency   String?
   total      Decimal? @db.Decimal(14,2)
   taxAmount  Decimal? @db.Decimal(14,2)
+  status     String   @default("draft") // draft, issued, paid, cancelled, overdue
   pdfUrl     String?
   issuedAt   DateTime?
-  dueAt      DateTime?
+  dueDate    DateTime?
   paidAt     DateTime?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
   order      Order    @relation(fields: [orderId], references: [id])
   billingItems BillingBatchItem[]
+  payments   Payment[]
   
+  @@index([tenantId])
   @@index([orderId])
   @@index([number])
+  @@index([status])
+}
+
+model Payment {
+  id            String   @id @default(uuid())
+  tenantId      String
+  invoiceId     String
+  amount        Decimal  @db.Decimal(14,2)
+  currency      String   @default("USD")
+  status        String   @default("pending") // pending, completed, failed, cancelled, refunded
+  method        String   @default("card") // card, bank_transfer, paypal, stripe, other
+  transactionId String?
+  processedAt   DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  invoice       Invoice  @relation(fields: [invoiceId], references: [id])
+  
+  @@index([tenantId])
+  @@index([invoiceId])
+  @@index([status])
+  @@index([method])
+  @@index([transactionId])
 }
 
 model Return {
@@ -387,6 +424,9 @@ model WooStore {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
   tenant         Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  orders         Order[]
+  products       Product[]
+  customers      Customer[]
 
   @@index([tenantId, active])
 }

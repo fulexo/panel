@@ -2,86 +2,733 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "../../components/AuthProvider";
 
-export default function BillingPage(){
+interface BillingBatch {
+  id: string;
+  status: 'created' | 'issued' | 'paid' | 'cancelled';
+  total: number;
+  periodFrom?: string;
+  periodTo?: string;
+  createdAt: string;
+  updatedAt: string;
+  items?: Array<{
+    id: string;
+    amount: number;
+    invoice: {
+      id: string;
+      number?: string;
+      orderId: string;
+      currency?: string;
+      issuedAt?: string;
+    };
+  }>;
+}
+
+export default function BillingPage() {
   const router = useRouter();
-  const [batches, setBatches] = useState<any[]>([]);
+  const { user } = useAuth();
+  const [batches, setBatches] = useState<BillingBatch[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selected, setSelected] = useState<string>('');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  
+  // Filters
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalBatches, setTotalBatches] = useState(0);
+  const [selectedBatches, setSelectedBatches] = useState<string[]>([]);
+  
+  // Add invoices modal
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [selectedBatch, setSelectedBatch] = useState<string>('');
   const [invoiceIds, setInvoiceIds] = useState('');
+  
+  // Create batch modal
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [periodFrom, setPeriodFrom] = useState('');
+  const [periodTo, setPeriodTo] = useState('');
 
   const token = () => localStorage.getItem('access_token');
-  const api = (path: string, init?: any) => fetch(`/api${path}`, { headers: { Authorization: `Bearer ${token()}`, 'Content-Type': 'application/json' }, ...init });
+  const api = (path: string, init?: any) => 
+    fetch(`/api${path}`, {
+      headers: { Authorization: `Bearer ${token()}`, 'Content-Type': 'application/json' },
+      ...init
+    });
 
-  const load = async () => {
-    const t = token(); if(!t){ router.push('/login'); return; }
-    const r = await api('/billing/batches');
-    if(!r.ok){ if(r.status===401) router.push('/login'); return; }
-    const data = await r.json();
-    setBatches(data?.data || []);
+  const loadBatches = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const t = token();
+      if (!t) { 
+        router.push('/login'); 
+        return; 
+      }
+      
+      const params = new URLSearchParams({
+        page: currentPage.toString(),
+        limit: '20',
+        ...(search && { search }),
+        ...(statusFilter !== 'all' && { status: statusFilter }),
+      });
+
+      const r = await api(`/billing/batches?${params}`);
+      if (!r.ok) {
+        if (r.status === 401) {
+          router.push('/login');
+          return;
+        }
+        throw new Error('Failed to fetch batches');
+      }
+      
+      const data = await r.json();
+      setBatches(data?.data || []);
+      setTotalPages(data?.pagination?.totalPages || 1);
+      setTotalBatches(data?.pagination?.total || 0);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load batches');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const create = async () => {
-    await api('/billing/batches', { method: 'POST', body: JSON.stringify({}) });
-    await load();
+  const createBatch = async () => {
+    try {
+      setSaving(true);
+      setError(null);
+      
+      const r = await api('/billing/batches', {
+        method: 'POST',
+        body: JSON.stringify({
+          periodFrom: periodFrom || undefined,
+          periodTo: periodTo || undefined,
+        })
+      });
+
+      if (!r.ok) {
+        const errorData = await r.json();
+        throw new Error(errorData.message || 'Failed to create batch');
+      }
+
+      setSuccess('Batch created successfully');
+      setShowCreateModal(false);
+      setPeriodFrom('');
+      setPeriodTo('');
+      await loadBatches();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const addInvoices = async () => {
-    if(!selected) return;
-    const ids = invoiceIds.split(',').map(s=>s.trim()).filter(Boolean);
-    if(ids.length===0) return;
-    await api(`/billing/batches/${selected}/add-invoices`, { method: 'POST', body: JSON.stringify({ invoiceIds: ids }) });
-    setInvoiceIds('');
-    await load();
+    if (!selectedBatch) return;
+    
+    const ids = invoiceIds.split(',').map(s => s.trim()).filter(Boolean);
+    if (ids.length === 0) return;
+
+    try {
+      setSaving(true);
+      setError(null);
+      
+      const r = await api(`/billing/batches/${selectedBatch}/add-invoices`, {
+        method: 'POST',
+        body: JSON.stringify({ invoiceIds: ids })
+      });
+
+      if (!r.ok) {
+        const errorData = await r.json();
+        throw new Error(errorData.message || 'Failed to add invoices');
+      }
+
+      setSuccess(`${ids.length} invoices added successfully`);
+      setShowAddModal(false);
+      setSelectedBatch('');
+      setInvoiceIds('');
+      await loadBatches();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const issue = async (id: string) => {
-    await api(`/billing/batches/${id}/issue`, { method: 'POST' });
-    await load();
+  const issueBatch = async (batchId: string) => {
+    if (!confirm('Bu batch\'i yayınlamak istediğinizden emin misiniz?')) return;
+    
+    try {
+      setSaving(true);
+      setError(null);
+      
+      const r = await api(`/billing/batches/${batchId}/issue`, { method: 'POST' });
+      
+      if (!r.ok) {
+        const errorData = await r.json();
+        throw new Error(errorData.message || 'Failed to issue batch');
+      }
+
+      setSuccess('Batch issued successfully');
+      await loadBatches();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
   };
 
-  useEffect(() => { load().finally(()=>setLoading(false)); }, []);
+  const deleteBatch = async (batchId: string) => {
+    if (!confirm('Bu batch\'i silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.')) return;
+    
+    try {
+      setSaving(true);
+      setError(null);
+      
+      const r = await api(`/billing/batches/${batchId}`, { method: 'DELETE' });
+      
+      if (!r.ok) {
+        const errorData = await r.json();
+        throw new Error(errorData.message || 'Failed to delete batch');
+      }
 
-  if(loading) return <div className="min-h-screen bg-gray-900 text-white p-8">Loading...</div>;
+      setSuccess('Batch deleted successfully');
+      await loadBatches();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
 
-  return (
-    <div className="min-h-screen bg-gray-900 text-white p-8">
-      <div className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-bold">Billing</h1>
-        <button onClick={create} className="px-3 py-2 bg-blue-600 rounded">New Batch</button>
-      </div>
+  useEffect(() => {
+    if (user) {
+      loadBatches();
+    } else {
+      router.push('/login');
+    }
+  }, [user, currentPage, search, statusFilter]);
 
-      <div className="bg-gray-800 border border-gray-700 rounded p-4 mb-6">
-        <h2 className="font-semibold mb-2">Add Invoices to Batch</h2>
-        <div className="flex flex-col md:flex-row gap-2">
-          <select value={selected} onChange={e=>setSelected(e.target.value)} className="px-3 py-2 bg-gray-900 border border-gray-700 rounded">
-            <option value="">Select Batch</option>
-            {batches.map((b:any)=> (<option key={b.id} value={b.id}>{b.id.slice(0,8)} • {b.status} • {b.total||0}</option>))}
-          </select>
-          <input value={invoiceIds} onChange={e=>setInvoiceIds(e.target.value)} placeholder="Invoice IDs comma-separated" className="flex-1 px-3 py-2 bg-gray-900 border border-gray-700 rounded" />
-          <button onClick={addInvoices} className="px-3 py-2 bg-blue-600 rounded">Add</button>
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'created': return 'bg-blue-500/10 text-blue-500 border-blue-500/20';
+      case 'issued': return 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20';
+      case 'paid': return 'bg-green-500/10 text-green-500 border-green-500/20';
+      case 'cancelled': return 'bg-red-500/10 text-red-500 border-red-500/20';
+      default: return 'bg-gray-500/10 text-gray-500 border-gray-500/20';
+    }
+  };
+
+  const bulkUpdateStatus = async (newStatus: string) => {
+    if (selectedBatches.length === 0) return;
+    
+    try {
+      setSaving(true);
+      setError(null);
+      
+      const response = await api('/billing/batches/bulk', {
+        method: 'PUT',
+        body: JSON.stringify({ 
+          batchIds: selectedBatches, 
+          updates: { status: newStatus } 
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to update batches');
+      }
+
+      const result = await response.json();
+      setSuccess(result.message);
+      setSelectedBatches([]);
+      await loadBatches();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const bulkDelete = async () => {
+    if (selectedBatches.length === 0) return;
+    
+    if (!confirm(`Are you sure you want to delete ${selectedBatches.length} batches? This action cannot be undone.`)) return;
+    
+    try {
+      setSaving(true);
+      setError(null);
+      
+      const response = await api('/billing/batches/bulk', {
+        method: 'DELETE',
+        body: JSON.stringify({ batchIds: selectedBatches })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to delete batches');
+      }
+
+      const result = await response.json();
+      setSuccess(result.message);
+      setSelectedBatches([]);
+      await loadBatches();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSelectBatch = (batchId: string) => {
+    setSelectedBatches(prev => 
+      prev.includes(batchId) 
+        ? prev.filter(id => id !== batchId)
+        : [...prev, batchId]
+    );
+  };
+
+  const handleSelectAll = () => {
+    setSelectedBatches(
+      selectedBatches.length === batches.length 
+        ? [] 
+        : batches.map(batch => batch.id)
+    );
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'created': return '📝';
+      case 'issued': return '📤';
+      case 'paid': return '✅';
+      case 'cancelled': return '❌';
+      default: return '❓';
+    }
+  };
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD'
+    }).format(amount);
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="spinner"></div>
+          <div className="text-lg text-foreground">Loading billing data...</div>
         </div>
       </div>
+    );
+  }
 
-      <div className="grid gap-3">
-        {batches.map((b:any)=> (
-          <div key={b.id} className="bg-gray-800 p-4 rounded border border-gray-700">
-            <div className="text-sm text-gray-400">{new Date(b.createdAt).toLocaleString()}</div>
-            <div className="flex justify-between items-center">
-              <div>
-                <div className="font-semibold">{b.id}</div>
-                <div className="text-sm">Status: {b.status} • Total: {b.total || 0}</div>
+  return (
+    <div className="min-h-screen bg-background">
+      <main className="mobile-container py-6 space-y-6">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 animate-fade-in">
+          <div>
+            <h1 className="mobile-heading text-foreground">Billing Management</h1>
+            <p className="text-muted-foreground mobile-text">
+              Manage billing batches, invoices, and payments
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-muted-foreground">
+              {totalBatches} batches total
+            </span>
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors btn-animate"
+            >
+              + New Batch
+            </button>
+          </div>
+        </div>
+
+        {/* Messages */}
+        {error && (
+          <div className="bg-destructive/10 border border-destructive text-destructive px-4 py-3 rounded-lg animate-slide-down">
+            <div className="flex items-center gap-2">
+              <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span className="text-sm font-medium">{error}</span>
+            </div>
+          </div>
+        )}
+
+        {success && (
+          <div className="bg-green-500/10 border border-green-500 text-green-500 px-4 py-3 rounded-lg animate-slide-down">
+            <div className="flex items-center gap-2">
+              <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+              </svg>
+              <span className="text-sm font-medium">{success}</span>
+            </div>
+          </div>
+        )}
+
+        {/* Filters */}
+        <div className="bg-card p-4 rounded-lg border border-border animate-slide-up">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {/* Search */}
+            <div className="lg:col-span-2">
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Search batches by ID or status..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="w-full px-4 py-2 pl-10 bg-input border border-border rounded-lg form-input text-foreground placeholder-muted-foreground"
+                />
+                <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
               </div>
-              <div className="flex gap-2">
-                <a className="px-2 py-1 bg-gray-700 rounded text-sm" href={`/api/billing/batches/${b.id}/export.csv`} target="_blank">CSV</a>
-                <a className="px-2 py-1 bg-gray-700 rounded text-sm" href={`/api/billing/batches/${b.id}/export.pdf`} target="_blank">PDF</a>
-                {b.status !== 'issued' && <button onClick={()=>issue(b.id)} className="px-2 py-1 bg-green-600 rounded text-sm">Issue</button>}
+            </div>
+
+            {/* Status Filter */}
+            <div>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
+              >
+                <option value="all">All Status</option>
+                <option value="created">Created</option>
+                <option value="issued">Issued</option>
+                <option value="paid">Paid</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {/* Quick Actions */}
+        <div className="bg-card p-4 rounded-lg border border-border animate-slide-up">
+          <h3 className="text-lg font-semibold text-foreground mb-4">Quick Actions</h3>
+          <div className="flex flex-wrap gap-3">
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="px-4 py-2 bg-accent text-accent-foreground rounded-lg hover:bg-accent/80 transition-colors btn-animate"
+            >
+              Add Invoices to Batch
+            </button>
+            <a
+              href="/billing/invoices"
+              className="px-4 py-2 bg-accent text-accent-foreground rounded-lg hover:bg-accent/80 transition-colors btn-animate"
+            >
+              Manage Invoices
+            </a>
+            <a
+              href="/billing/payments"
+              className="px-4 py-2 bg-accent text-accent-foreground rounded-lg hover:bg-accent/80 transition-colors btn-animate"
+            >
+              View Payments
+            </a>
+          </div>
+        </div>
+
+        {/* Bulk Actions */}
+        {selectedBatches.length > 0 && (
+          <div className="bg-accent/20 p-4 rounded-lg border border-accent animate-slide-down">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-foreground">
+                  {selectedBatches.length} batch(es) selected
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <select
+                  onChange={(e) => bulkUpdateStatus(e.target.value)}
+                  className="px-3 py-1 bg-background border border-border rounded text-sm"
+                  disabled={saving}
+                >
+                  <option value="">Bulk Actions</option>
+                  <option value="created">Mark as Created</option>
+                  <option value="issued">Mark as Issued</option>
+                  <option value="paid">Mark as Paid</option>
+                  <option value="cancelled">Mark as Cancelled</option>
+                </select>
+                <button
+                  onClick={bulkDelete}
+                  disabled={saving}
+                  className="px-3 py-1 bg-destructive/10 text-destructive rounded text-sm hover:bg-destructive/20 transition-colors disabled:opacity-50"
+                >
+                  Delete All
+                </button>
+                <button
+                  onClick={() => setSelectedBatches([])}
+                  className="px-3 py-1 bg-muted text-muted-foreground rounded text-sm hover:bg-muted/80 transition-colors"
+                >
+                  Clear
+                </button>
               </div>
             </div>
           </div>
-        ))}
-        {batches.length===0 && <div className="text-gray-500">No batches</div>}
-      </div>
+        )}
+
+        {/* Batches List */}
+        <div className="space-y-4 animate-slide-up">
+          {batches.length === 0 ? (
+            <div className="bg-card p-8 rounded-lg border border-border text-center">
+              <div className="text-6xl mb-4">💰</div>
+              <h3 className="text-lg font-semibold text-foreground mb-2">No billing batches found</h3>
+              <p className="text-muted-foreground">
+                {search || statusFilter !== 'all'
+                  ? 'Try adjusting your search or filter criteria'
+                  : 'Get started by creating your first billing batch'
+                }
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {/* Select All Header */}
+              <div className="bg-card p-4 rounded-lg border border-border">
+                <div className="flex items-center gap-4">
+                  <input
+                    type="checkbox"
+                    checked={selectedBatches.length === batches.length && batches.length > 0}
+                    onChange={handleSelectAll}
+                    className="w-4 h-4 text-primary bg-background border-border rounded focus:ring-primary"
+                  />
+                  <span className="text-sm font-medium text-muted-foreground">
+                    Select all batches ({batches.length})
+                  </span>
+                </div>
+              </div>
+
+              {/* Batches */}
+              <div className="grid gap-4">
+                {batches.map((batch, index) => (
+                  <div
+                    key={batch.id}
+                    className="bg-card p-6 rounded-lg border border-border hover:border-primary/50 transition-all duration-200 card-hover animate-fade-in"
+                    style={{ animationDelay: `${index * 0.05}s` }}
+                  >
+                    <div className="flex items-center gap-4">
+                      {/* Checkbox */}
+                      <input
+                        type="checkbox"
+                        checked={selectedBatches.includes(batch.id)}
+                        onChange={() => handleSelectBatch(batch.id)}
+                        className="w-4 h-4 text-primary bg-background border-border rounded focus:ring-primary"
+                      />
+                    {/* Batch Icon */}
+                    <div className="w-12 h-12 bg-accent rounded-lg flex items-center justify-center">
+                      <span className="text-2xl">{getStatusIcon(batch.status)}</span>
+                    </div>
+
+                    {/* Batch Info */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-3 mb-2">
+                        <h3 className="font-semibold text-foreground truncate">
+                          Batch {batch.id.slice(0, 8)}...
+                        </h3>
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(batch.status)}`}>
+                          {batch.status.toUpperCase()}
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+                        <span>Total: {formatCurrency(batch.total)}</span>
+                        <span>Items: {batch.items?.length || 0}</span>
+                        <span>
+                          Created: {new Date(batch.createdAt).toLocaleDateString()}
+                        </span>
+                        {batch.periodFrom && (
+                          <span>
+                            Period: {new Date(batch.periodFrom).toLocaleDateString()} - {batch.periodTo ? new Date(batch.periodTo).toLocaleDateString() : 'Ongoing'}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex items-center gap-2">
+                      <a
+                        href={`/billing/batches/${batch.id}`}
+                        className="px-3 py-2 bg-accent text-accent-foreground rounded-lg hover:bg-accent/80 transition-colors btn-animate"
+                      >
+                        View
+                      </a>
+                      <a
+                        href={`/api/billing/batches/${batch.id}/export.csv`}
+                        target="_blank"
+                        className="px-3 py-2 bg-blue-500/10 text-blue-500 rounded-lg hover:bg-blue-500/20 transition-colors btn-animate"
+                      >
+                        CSV
+                      </a>
+                      <a
+                        href={`/api/billing/batches/${batch.id}/export.pdf`}
+                        target="_blank"
+                        className="px-3 py-2 bg-purple-500/10 text-purple-500 rounded-lg hover:bg-purple-500/20 transition-colors btn-animate"
+                      >
+                        PDF
+                      </a>
+                      {batch.status === 'created' && (
+                        <button
+                          onClick={() => issueBatch(batch.id)}
+                          disabled={saving}
+                          className="px-3 py-2 bg-green-500/10 text-green-500 rounded-lg hover:bg-green-500/20 transition-colors disabled:opacity-50 btn-animate"
+                        >
+                          Issue
+                        </button>
+                      )}
+                      <button
+                        onClick={() => deleteBatch(batch.id)}
+                        disabled={saving}
+                        className="px-3 py-2 bg-destructive/10 text-destructive rounded-lg hover:bg-destructive/20 transition-colors disabled:opacity-50 btn-animate"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex justify-center items-center gap-2 animate-slide-up">
+            <button
+              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+              className="px-3 py-2 bg-card border border-border rounded-lg hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Previous
+            </button>
+            <span className="px-4 py-2 text-foreground">
+              Page {currentPage} of {totalPages}
+            </span>
+            <button
+              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+              disabled={currentPage === totalPages}
+              className="px-3 py-2 bg-card border border-border rounded-lg hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Next
+            </button>
+          </div>
+        )}
+
+        {/* Create Batch Modal */}
+        {showCreateModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+            <div className="bg-card rounded-lg border border-border p-6 w-full max-w-md animate-scale-in">
+              <h3 className="text-lg font-semibold text-foreground mb-4">Create New Batch</h3>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-2">
+                    Period From (Optional)
+                  </label>
+                  <input
+                    type="date"
+                    value={periodFrom}
+                    onChange={(e) => setPeriodFrom(e.target.value)}
+                    className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-2">
+                    Period To (Optional)
+                  </label>
+                  <input
+                    type="date"
+                    value={periodTo}
+                    onChange={(e) => setPeriodTo(e.target.value)}
+                    className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-3 mt-6">
+                <button
+                  onClick={createBatch}
+                  disabled={saving}
+                  className="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 btn-animate"
+                >
+                  {saving ? 'Creating...' : 'Create Batch'}
+                </button>
+                <button
+                  onClick={() => setShowCreateModal(false)}
+                  className="flex-1 px-4 py-2 bg-accent text-accent-foreground rounded-lg hover:bg-accent/80 transition-colors btn-animate"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Add Invoices Modal */}
+        {showAddModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+            <div className="bg-card rounded-lg border border-border p-6 w-full max-w-md animate-scale-in">
+              <h3 className="text-lg font-semibold text-foreground mb-4">Add Invoices to Batch</h3>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-2">
+                    Select Batch
+                  </label>
+                  <select
+                    value={selectedBatch}
+                    onChange={(e) => setSelectedBatch(e.target.value)}
+                    className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
+                  >
+                    <option value="">Select a batch</option>
+                    {batches.filter(b => b.status === 'created').map(batch => (
+                      <option key={batch.id} value={batch.id}>
+                        {batch.id.slice(0, 8)}... • {formatCurrency(batch.total)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-2">
+                    Invoice IDs (comma-separated)
+                  </label>
+                  <textarea
+                    value={invoiceIds}
+                    onChange={(e) => setInvoiceIds(e.target.value)}
+                    placeholder="invoice1, invoice2, invoice3"
+                    className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground placeholder-muted-foreground"
+                    rows={3}
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-3 mt-6">
+                <button
+                  onClick={addInvoices}
+                  disabled={saving || !selectedBatch || !invoiceIds.trim()}
+                  className="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 btn-animate"
+                >
+                  {saving ? 'Adding...' : 'Add Invoices'}
+                </button>
+                <button
+                  onClick={() => setShowAddModal(false)}
+                  className="flex-1 px-4 py-2 bg-accent text-accent-foreground rounded-lg hover:bg-accent/80 transition-colors btn-animate"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </main>
     </div>
   );
 }
