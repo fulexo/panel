@@ -5,6 +5,7 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { CreateOrderDto, UpdateOrderDto, OrderQueryDto, CreateChargeDto } from './dto';
 import { Public } from '../auth/decorators/public.decorator';
+import { RateLimit } from '../rate-limit.decorator';
 
 @ApiTags('orders')
 @ApiBearerAuth()
@@ -129,6 +130,7 @@ export class OrdersController {
 
   @Get('public/:token')
   @Public()
+  @RateLimit({ points: 10, duration: 60 }) // 10 requests per minute
   @ApiOperation({ summary: 'Get public order info by share token' })
   async publicInfo(@Param('token') token: string) {
     return this.ordersService.getPublicInfo(token);
