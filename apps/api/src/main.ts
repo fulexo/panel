@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
-import { Module, Get, Controller, Res, ValidationPipe } from '@nestjs/common';
+import { Module, Get, Controller, Res, ValidationPipe, HttpException, HttpStatus } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { register } from 'prom-client';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';

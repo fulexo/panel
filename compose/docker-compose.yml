@@ -83,6 +83,7 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       REDIS_URL: ${REDIS_URL}
       NODE_ENV: ${NODE_ENV}
+    ports: ["3002:3002"]
     depends_on: [postgres, valkey]
     restart: unless-stopped
 

@@ -3,6 +3,7 @@ const Redis = require('ioredis');
 const client = require('prom-client');
 const http = require('http');
 const { PrismaClient, Prisma } = require('@prisma/client');
+const { validateEnvironment } = require('./env.validation');
 
 // Simple logger for worker
 const logger = {
@@ -611,8 +612,8 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
-server.listen(3001, () => {
-  logger.info('Worker metrics server listening on port 3001');
+server.listen(3002, () => {
+  logger.info('Worker metrics server listening on port 3002');
 });
 
 // Graceful shutdown
@@ -629,6 +630,9 @@ process.on('SIGTERM', async () => {
 
 // Start worker
 async function start() {
+  // Validate environment variables first
+  validateEnvironment();
+  
   logger.info('Worker starting...');
   await scheduleRecurringJobs();
   // Schedule Woo periodic syncs for all active stores
