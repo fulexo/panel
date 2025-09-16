@@ -29,19 +29,103 @@ export class CustomersService {
   }
 
   async get(tenantId: string, id: string) {
-    const customer = await this.runTenant(tenantId, async (db) => db.customer.findFirst({ where: { id, tenantId } }));
+    const customer = await this.runTenant(tenantId, async (db) => {
+      const customerData = await db.customer.findFirst({ 
+        where: { id, tenantId },
+        include: {
+          orders: {
+            select: {
+              id: true,
+              externalOrderNo: true,
+              total: true,
+              currency: true,
+              status: true,
+              createdAt: true,
+            },
+            orderBy: { createdAt: 'desc' },
+            take: 10
+          }
+        }
+      });
+      
+      if (!customerData) return null;
+      
+      // Calculate order statistics
+      const orderStats = await this.runTenant(tenantId, async (db) => {
+        const orders = await db.order.findMany({
+          where: { customerId: id, tenantId },
+          select: { total: true, createdAt: true }
+        });
+        
+        const totalOrders = orders.length;
+        const totalSpent = orders.reduce((sum, order) => sum + Number(order.total || 0), 0);
+        const averageOrderValue = totalOrders > 0 ? totalSpent / totalOrders : 0;
+        const lastOrderDate = orders.length > 0 
+          ? orders.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0].createdAt
+          : null;
+        
+        return {
+          totalOrders,
+          totalSpent,
+          averageOrderValue,
+          lastOrderDate
+        };
+      });
+      
+      return {
+        ...customerData,
+        orderStats
+      };
+    });
+    
     if (!customer) throw new NotFoundException('Customer not found');
     return customer;
   }
 
   async create(tenantId: string, body: any) {
-    return this.runTenant(tenantId, async (db) => db.customer.create({ data: { tenantId, email: body.email || null, emailNormalized: body.email ? String(body.email).toLowerCase() : null, name: body.name || null, phoneE164: body.phoneE164 || null, company: body.company || null } as any }));
+    return this.runTenant(tenantId, async (db) => db.customer.create({ 
+      data: { 
+        tenantId, 
+        email: body.email || null, 
+        emailNormalized: body.email ? String(body.email).toLowerCase() : null, 
+        name: body.name || null, 
+        phoneE164: body.phoneE164 || null, 
+        company: body.company || null,
+        vatId: body.vatId || null,
+        addressLine1: body.addressLine1 || null,
+        addressLine2: body.addressLine2 || null,
+        city: body.city || null,
+        state: body.state || null,
+        postalCode: body.postalCode || null,
+        country: body.country || null,
+        notes: body.notes || null,
+        tags: body.tags || [],
+      } as any 
+    }));
   }
 
   async update(tenantId: string, id: string, body: any) {
     const existing = await this.runTenant(tenantId, async (db) => db.customer.findFirst({ where: { id, tenantId } }));
     if (!existing) throw new NotFoundException('Customer not found');
-    return this.runTenant(tenantId, async (db) => db.customer.update({ where: { id }, data: { email: body.email ?? existing.email, emailNormalized: body.email ? String(body.email).toLowerCase() : existing.emailNormalized, name: body.name ?? existing.name, phoneE164: body.phoneE164 ?? existing.phoneE164, company: body.company ?? existing.company } }));
+    return this.runTenant(tenantId, async (db) => db.customer.update({ 
+      where: { id }, 
+      data: { 
+        email: body.email ?? existing.email, 
+        emailNormalized: body.email ? String(body.email).toLowerCase() : existing.emailNormalized, 
+        name: body.name ?? existing.name, 
+        phoneE164: body.phoneE164 ?? existing.phoneE164, 
+        company: body.company ?? existing.company,
+        vatId: body.vatId ?? existing.vatId,
+        addressLine1: body.addressLine1 ?? existing.addressLine1,
+        addressLine2: body.addressLine2 ?? existing.addressLine2,
+        city: body.city ?? existing.city,
+        state: body.state ?? existing.state,
+        postalCode: body.postalCode ?? existing.postalCode,
+        country: body.country ?? existing.country,
+        notes: body.notes ?? existing.notes,
+        tags: body.tags ?? existing.tags,
+      } 
+    }));
   }
 
   async remove(tenantId: string, id: string) {

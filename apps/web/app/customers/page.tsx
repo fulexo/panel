@@ -2,15 +2,31 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "../../components/AuthProvider";
 
 interface Customer {
   id: string;
-  name: string;
-  email: string;
-  phoneE164: string;
-  company: string;
+  name?: string;
+  email?: string;
+  phoneE164?: string;
+  company?: string;
+  vatId?: string;
+  addressLine1?: string;
+  addressLine2?: string;
+  city?: string;
+  state?: string;
+  postalCode?: string;
+  country?: string;
+  notes?: string;
+  tags?: string[];
   createdAt: string;
   updatedAt: string;
+  orderStats?: {
+    totalOrders: number;
+    totalSpent: number;
+    averageOrderValue: number;
+    lastOrderDate?: string;
+  };
 }
 
 interface CustomersResponse {
@@ -25,66 +41,88 @@ interface CustomersResponse {
 
 export default function CustomersPage() {
   const router = useRouter();
+  const { user } = useAuth();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [tagFilter, setTagFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCustomers, setTotalCustomers] = useState(0);
   
   // Create customer form
   const [showCreateForm, setShowCreateForm] = useState(false);
-  const [createLoading, setCreateLoading] = useState(false);
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
-  const [company, setCompany] = useState('');
+  const [createForm, setCreateForm] = useState({
+    name: '',
+    email: '',
+    phoneE164: '',
+    company: '',
+    vatId: '',
+    addressLine1: '',
+    addressLine2: '',
+    city: '',
+    state: '',
+    postalCode: '',
+    country: '',
+    notes: '',
+    tags: '',
+  });
   
   // Edit customer
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
-  const [editName, setEditName] = useState('');
-  const [editEmail, setEditEmail] = useState('');
-  const [editPhone, setEditPhone] = useState('');
-  const [editCompany, setEditCompany] = useState('');
+
+  const token = () => localStorage.getItem('access_token');
+  const api = (path: string, init?: any) => 
+    fetch(`/api${path}`, {
+      headers: { Authorization: `Bearer ${token()}`, 'Content-Type': 'application/json' },
+      ...init
+    });
 
   useEffect(() => {
-    const token = localStorage.getItem('access_token');
-    if (!token) {
+    if (user) {
+      fetchCustomers();
+    } else {
       router.push('/login');
-      return;
     }
-    fetchCustomers();
-  }, [currentPage, searchTerm]);
+  }, [user, currentPage, searchTerm, statusFilter, tagFilter]);
 
   const fetchCustomers = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('access_token');
-      const url = new URL('/api/customers', window.location.origin);
-      url.searchParams.set('page', currentPage.toString());
-      url.searchParams.set('limit', '20');
-      if (searchTerm) {
-        url.searchParams.set('search', searchTerm);
+      setError(null);
+      const t = token();
+      if (!t) { 
+        router.push('/login'); 
+        return; 
       }
-
-      const response = await fetch(url.toString(), {
-        headers: { Authorization: `Bearer ${token}` }
+      
+      const params = new URLSearchParams({
+        page: currentPage.toString(),
+        limit: '20',
+        ...(searchTerm && { search: searchTerm }),
+        ...(statusFilter !== 'all' && { status: statusFilter }),
+        ...(tagFilter !== 'all' && { tag: tagFilter }),
       });
 
-      if (!response.ok) {
-        if (response.status === 401) {
+      const r = await api(`/customers?${params}`);
+      if (!r.ok) {
+        if (r.status === 401) {
           router.push('/login');
           return;
         }
         throw new Error('Failed to fetch customers');
       }
-
-      const data: CustomersResponse = await response.json();
+      
+      const data: CustomersResponse = await r.json();
       setCustomers(data.data || []);
       setTotalPages(data.pagination?.totalPages || 1);
       setTotalCustomers(data.pagination?.total || 0);
-    } catch (error) {
-      console.error('Error fetching customers:', error);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load customers');
     } finally {
       setLoading(false);
     }
@@ -97,92 +135,182 @@ export default function CustomersPage() {
   };
 
   const createCustomer = async () => {
-    if (!name.trim() && !email.trim()) return;
+    if (!createForm.name.trim() && !createForm.email.trim()) return;
     
     try {
-      setCreateLoading(true);
-      const token = localStorage.getItem('access_token');
-      const response = await fetch('/api/customers', {
+      setSaving(true);
+      setError(null);
+      
+      const r = await api('/customers', {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
         body: JSON.stringify({
-          name: name || undefined,
-          email: email || undefined,
-          phoneE164: phone || undefined,
-          company: company || undefined
+          name: createForm.name || undefined,
+          email: createForm.email || undefined,
+          phoneE164: createForm.phoneE164 || undefined,
+          company: createForm.company || undefined,
+          vatId: createForm.vatId || undefined,
+          addressLine1: createForm.addressLine1 || undefined,
+          addressLine2: createForm.addressLine2 || undefined,
+          city: createForm.city || undefined,
+          state: createForm.state || undefined,
+          postalCode: createForm.postalCode || undefined,
+          country: createForm.country || undefined,
+          notes: createForm.notes || undefined,
+          tags: createForm.tags ? createForm.tags.split(',').map(t => t.trim()).filter(t => t) : [],
         })
       });
 
-      if (response.ok) {
-        setName('');
-        setEmail('');
-        setPhone('');
-        setCompany('');
-        setShowCreateForm(false);
-        await fetchCustomers();
+      if (!r.ok) {
+        const errorData = await r.json();
+        throw new Error(errorData.message || 'Failed to create customer');
       }
-    } catch (error) {
-      console.error('Error creating customer:', error);
+
+      setSuccess('Customer created successfully');
+      setShowCreateForm(false);
+      setCreateForm({
+        name: '',
+        email: '',
+        phoneE164: '',
+        company: '',
+        vatId: '',
+        addressLine1: '',
+        addressLine2: '',
+        city: '',
+        state: '',
+        postalCode: '',
+        country: '',
+        notes: '',
+        tags: '',
+      });
+      await fetchCustomers();
+    } catch (err: any) {
+      setError(err.message);
     } finally {
-      setCreateLoading(false);
+      setSaving(false);
     }
   };
 
   const startEdit = (customer: Customer) => {
     setEditingCustomer(customer);
-    setEditName(customer.name || '');
-    setEditEmail(customer.email || '');
-    setEditPhone(customer.phoneE164 || '');
-    setEditCompany(customer.company || '');
+    setCreateForm({
+      name: customer.name || '',
+      email: customer.email || '',
+      phoneE164: customer.phoneE164 || '',
+      company: customer.company || '',
+      vatId: customer.vatId || '',
+      addressLine1: customer.addressLine1 || '',
+      addressLine2: customer.addressLine2 || '',
+      city: customer.city || '',
+      state: customer.state || '',
+      postalCode: customer.postalCode || '',
+      country: customer.country || '',
+      notes: customer.notes || '',
+      tags: customer.tags?.join(', ') || '',
+    });
   };
 
   const updateCustomer = async () => {
     if (!editingCustomer) return;
     
     try {
-      const token = localStorage.getItem('access_token');
-      const response = await fetch(`/api/customers/${editingCustomer.id}`, {
+      setSaving(true);
+      setError(null);
+      
+      const r = await api(`/customers/${editingCustomer.id}`, {
         method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
         body: JSON.stringify({
-          name: editName || undefined,
-          email: editEmail || undefined,
-          phoneE164: editPhone || undefined,
-          company: editCompany || undefined
+          name: createForm.name || undefined,
+          email: createForm.email || undefined,
+          phoneE164: createForm.phoneE164 || undefined,
+          company: createForm.company || undefined,
+          vatId: createForm.vatId || undefined,
+          addressLine1: createForm.addressLine1 || undefined,
+          addressLine2: createForm.addressLine2 || undefined,
+          city: createForm.city || undefined,
+          state: createForm.state || undefined,
+          postalCode: createForm.postalCode || undefined,
+          country: createForm.country || undefined,
+          notes: createForm.notes || undefined,
+          tags: createForm.tags ? createForm.tags.split(',').map(t => t.trim()).filter(t => t) : [],
         })
       });
 
-      if (response.ok) {
-        setEditingCustomer(null);
-        await fetchCustomers();
+      if (!r.ok) {
+        const errorData = await r.json();
+        throw new Error(errorData.message || 'Failed to update customer');
       }
-    } catch (error) {
-      console.error('Error updating customer:', error);
+
+      setSuccess('Customer updated successfully');
+      setEditingCustomer(null);
+      setCreateForm({
+        name: '',
+        email: '',
+        phoneE164: '',
+        company: '',
+        vatId: '',
+        addressLine1: '',
+        addressLine2: '',
+        city: '',
+        state: '',
+        postalCode: '',
+        country: '',
+        notes: '',
+        tags: '',
+      });
+      await fetchCustomers();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
     }
   };
 
   const deleteCustomer = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this customer?')) return;
+    if (!confirm('Bu müşteriyi silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.')) return;
     
     try {
-      const token = localStorage.getItem('access_token');
-      const response = await fetch(`/api/customers/${id}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-
-      if (response.ok) {
-        await fetchCustomers();
+      setSaving(true);
+      setError(null);
+      
+      const r = await api(`/customers/${id}`, { method: 'DELETE' });
+      
+      if (!r.ok) {
+        const errorData = await r.json();
+        throw new Error(errorData.message || 'Failed to delete customer');
       }
-    } catch (error) {
-      console.error('Error deleting customer:', error);
+
+      setSuccess('Customer deleted successfully');
+      await fetchCustomers();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
     }
+  };
+
+  const formatCurrency = (amount: number, currency: string = '₺') => {
+    return `${amount.toFixed(2)} ${currency}`;
+  };
+
+  const formatDate = (date: string) => {
+    return new Date(date).toLocaleDateString('tr-TR');
+  };
+
+  const getCountryFlag = (country?: string) => {
+    if (!country) return '🌍';
+    const flags: { [key: string]: string } = {
+      'TR': '🇹🇷',
+      'US': '🇺🇸',
+      'GB': '🇬🇧',
+      'DE': '🇩🇪',
+      'FR': '🇫🇷',
+      'IT': '🇮🇹',
+      'ES': '🇪🇸',
+      'NL': '🇳🇱',
+      'CA': '🇨🇦',
+      'AU': '🇦🇺',
+    };
+    return flags[country.toUpperCase()] || '🌍';
   };
 
   if (loading) {
@@ -202,23 +330,52 @@ export default function CustomersPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 animate-fade-in">
           <div>
-            <h1 className="mobile-heading text-foreground">Customers</h1>
+            <h1 className="mobile-heading text-foreground">Customer Management</h1>
             <p className="text-muted-foreground mobile-text">
               Manage your customer database ({totalCustomers} customers)
             </p>
           </div>
-          <button 
-            onClick={() => setShowCreateForm(!showCreateForm)}
-            className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors btn-animate"
-          >
-            + Add Customer
-          </button>
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-muted-foreground">
+              {totalCustomers} customers total
+            </span>
+            <button 
+              onClick={() => setShowCreateForm(!showCreateForm)}
+              className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors btn-animate"
+            >
+              + Add Customer
+            </button>
+          </div>
         </div>
 
-        {/* Search */}
+        {/* Messages */}
+        {error && (
+          <div className="bg-destructive/10 border border-destructive text-destructive px-4 py-3 rounded-lg animate-slide-down">
+            <div className="flex items-center gap-2">
+              <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span className="text-sm font-medium">{error}</span>
+            </div>
+          </div>
+        )}
+
+        {success && (
+          <div className="bg-green-500/10 border border-green-500 text-green-500 px-4 py-3 rounded-lg animate-slide-down">
+            <div className="flex items-center gap-2">
+              <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+              </svg>
+              <span className="text-sm font-medium">{success}</span>
+            </div>
+          </div>
+        )}
+
+        {/* Search and Filters */}
         <div className="bg-card p-4 rounded-lg border border-border animate-slide-up">
-          <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-4">
-            <div className="flex-1">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Search */}
+            <div className="lg:col-span-2">
               <div className="relative">
                 <input
                   type="text"
@@ -232,69 +389,254 @@ export default function CustomersPage() {
                 </svg>
               </div>
             </div>
-            <button
-              type="submit"
-              className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors btn-animate"
-            >
-              Search
-            </button>
-          </form>
+
+            {/* Status Filter */}
+            <div>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
+              >
+                <option value="all">All Customers</option>
+                <option value="with_orders">With Orders</option>
+                <option value="no_orders">No Orders</option>
+                <option value="vip">VIP Customers</option>
+              </select>
+            </div>
+
+            {/* Tag Filter */}
+            <div>
+              <select
+                value={tagFilter}
+                onChange={(e) => setTagFilter(e.target.value)}
+                className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
+              >
+                <option value="all">All Tags</option>
+                <option value="vip">VIP</option>
+                <option value="premium">Premium</option>
+                <option value="wholesale">Wholesale</option>
+                <option value="retail">Retail</option>
+                <option value="new">New</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {/* Quick Stats */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 animate-slide-up">
+          <div className="bg-card p-4 rounded-lg border border-border">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-blue-500/10 rounded-lg">
+                <span className="text-xl">👥</span>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Total Customers</p>
+                <p className="text-xl font-bold text-foreground">{totalCustomers}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-card p-4 rounded-lg border border-border">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-green-500/10 rounded-lg">
+                <span className="text-xl">💰</span>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Total Revenue</p>
+                <p className="text-xl font-bold text-foreground">
+                  {customers.reduce((sum, c) => sum + (c.orderStats?.totalSpent || 0), 0).toFixed(2)} ₺
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-card p-4 rounded-lg border border-border">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-yellow-500/10 rounded-lg">
+                <span className="text-xl">📦</span>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Total Orders</p>
+                <p className="text-xl font-bold text-foreground">
+                  {customers.reduce((sum, c) => sum + (c.orderStats?.totalOrders || 0), 0)}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-card p-4 rounded-lg border border-border">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-purple-500/10 rounded-lg">
+                <span className="text-xl">⭐</span>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">VIP Customers</p>
+                <p className="text-xl font-bold text-foreground">
+                  {customers.filter(c => c.tags?.includes('vip')).length}
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Create Customer Form */}
         {showCreateForm && (
           <div className="bg-card p-6 rounded-lg border border-border animate-slide-down">
             <h2 className="text-lg font-semibold text-foreground mb-4">Add New Customer</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            
+            <div className="space-y-6">
+              {/* Contact Information */}
               <div>
-                <label className="block text-sm font-medium text-foreground mb-2">Name</label>
-                <input
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Customer name"
-                  className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
-                />
+                <h4 className="font-semibold text-foreground mb-3">Contact Information</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-2">Name</label>
+                    <input
+                      value={createForm.name}
+                      onChange={(e) => setCreateForm(prev => ({ ...prev, name: e.target.value }))}
+                      placeholder="Customer name"
+                      className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-2">Email</label>
+                    <input
+                      type="email"
+                      value={createForm.email}
+                      onChange={(e) => setCreateForm(prev => ({ ...prev, email: e.target.value }))}
+                      placeholder="customer@example.com"
+                      className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-2">Phone</label>
+                    <input
+                      value={createForm.phoneE164}
+                      onChange={(e) => setCreateForm(prev => ({ ...prev, phoneE164: e.target.value }))}
+                      placeholder="+90 555 123 4567"
+                      className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-2">Company</label>
+                    <input
+                      value={createForm.company}
+                      onChange={(e) => setCreateForm(prev => ({ ...prev, company: e.target.value }))}
+                      placeholder="Company name"
+                      className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-2">VAT ID</label>
+                    <input
+                      value={createForm.vatId}
+                      onChange={(e) => setCreateForm(prev => ({ ...prev, vatId: e.target.value }))}
+                      placeholder="VAT ID"
+                      className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
+                    />
+                  </div>
+                </div>
               </div>
+
+              {/* Address Information */}
               <div>
-                <label className="block text-sm font-medium text-foreground mb-2">Email</label>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="customer@example.com"
-                  className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
-                />
+                <h4 className="font-semibold text-foreground mb-3">Address Information</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-foreground mb-2">Address Line 1</label>
+                    <input
+                      value={createForm.addressLine1}
+                      onChange={(e) => setCreateForm(prev => ({ ...prev, addressLine1: e.target.value }))}
+                      placeholder="Street address"
+                      className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-foreground mb-2">Address Line 2</label>
+                    <input
+                      value={createForm.addressLine2}
+                      onChange={(e) => setCreateForm(prev => ({ ...prev, addressLine2: e.target.value }))}
+                      placeholder="Apartment, suite, etc."
+                      className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-2">City</label>
+                    <input
+                      value={createForm.city}
+                      onChange={(e) => setCreateForm(prev => ({ ...prev, city: e.target.value }))}
+                      placeholder="City"
+                      className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-2">State</label>
+                    <input
+                      value={createForm.state}
+                      onChange={(e) => setCreateForm(prev => ({ ...prev, state: e.target.value }))}
+                      placeholder="State"
+                      className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-2">Postal Code</label>
+                    <input
+                      value={createForm.postalCode}
+                      onChange={(e) => setCreateForm(prev => ({ ...prev, postalCode: e.target.value }))}
+                      placeholder="Postal code"
+                      className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-2">Country</label>
+                    <input
+                      value={createForm.country}
+                      onChange={(e) => setCreateForm(prev => ({ ...prev, country: e.target.value }))}
+                      placeholder="Country"
+                      className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
+                    />
+                  </div>
+                </div>
               </div>
+
+              {/* Notes and Tags */}
               <div>
-                <label className="block text-sm font-medium text-foreground mb-2">Phone</label>
-                <input
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="+90 555 123 4567"
-                  className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-2">Company</label>
-                <input
-                  value={company}
-                  onChange={(e) => setCompany(e.target.value)}
-                  placeholder="Company name"
-                  className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
-                />
+                <h4 className="font-semibold text-foreground mb-3">Notes and Tags</h4>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-2">Notes</label>
+                    <textarea
+                      value={createForm.notes}
+                      onChange={(e) => setCreateForm(prev => ({ ...prev, notes: e.target.value }))}
+                      className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
+                      rows={3}
+                      placeholder="Customer notes..."
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-2">Tags (comma separated)</label>
+                    <input
+                      value={createForm.tags}
+                      onChange={(e) => setCreateForm(prev => ({ ...prev, tags: e.target.value }))}
+                      className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
+                      placeholder="vip, premium, wholesale"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
-            <div className="flex gap-3 mt-4">
+
+            <div className="flex gap-3 mt-6">
               <button
                 onClick={createCustomer}
-                disabled={createLoading || (!name.trim() && !email.trim())}
+                disabled={saving || (!createForm.name.trim() && !createForm.email.trim())}
                 className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed btn-animate"
               >
-                {createLoading ? 'Creating...' : 'Create Customer'}
+                {saving ? 'Creating...' : 'Create Customer'}
               </button>
               <button
                 onClick={() => setShowCreateForm(false)}
-                className="px-4 py-2 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/90 transition-colors btn-animate"
+                className="px-4 py-2 bg-accent text-accent-foreground rounded-lg hover:bg-accent/80 transition-colors btn-animate"
               >
                 Cancel
               </button>
@@ -325,15 +667,28 @@ export default function CustomersPage() {
                 >
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex-1">
-                      <h3 className="font-semibold text-foreground text-lg mb-1">
-                        {customer.name || 'Unnamed Customer'}
-                      </h3>
-                      <p className="text-sm text-muted-foreground mb-2">
+                      <div className="flex items-center gap-2 mb-2">
+                        <h3 className="font-semibold text-foreground text-lg">
+                          {customer.name || 'Unnamed Customer'}
+                        </h3>
+                        {customer.tags?.includes('vip') && (
+                          <span className="px-2 py-1 bg-yellow-500/10 text-yellow-500 rounded-full text-xs font-medium">
+                            VIP
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-sm text-muted-foreground mb-1">
                         {customer.email || 'No email'}
                       </p>
                       {customer.company && (
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-sm text-muted-foreground mb-2">
                           {customer.company}
+                        </p>
+                      )}
+                      {customer.city && customer.country && (
+                        <p className="text-sm text-muted-foreground flex items-center gap-1">
+                          <span>{getCountryFlag(customer.country)}</span>
+                          <span>{customer.city}, {customer.country}</span>
                         </p>
                       )}
                     </div>
@@ -341,6 +696,45 @@ export default function CustomersPage() {
                       <span className="text-xl">👤</span>
                     </div>
                   </div>
+
+                  {/* Order Stats */}
+                  {customer.orderStats && customer.orderStats.totalOrders > 0 && (
+                    <div className="bg-accent/20 p-3 rounded-lg mb-4">
+                      <div className="grid grid-cols-2 gap-2 text-sm">
+                        <div>
+                          <span className="text-muted-foreground">Orders:</span>
+                          <span className="text-foreground font-semibold ml-1">
+                            {customer.orderStats.totalOrders}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Spent:</span>
+                          <span className="text-foreground font-semibold ml-1">
+                            {formatCurrency(customer.orderStats.totalSpent)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Tags */}
+                  {customer.tags && customer.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mb-4">
+                      {customer.tags.slice(0, 3).map((tag, tagIndex) => (
+                        <span
+                          key={tagIndex}
+                          className="px-2 py-1 bg-primary/10 text-primary rounded-full text-xs font-medium"
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                      {customer.tags.length > 3 && (
+                        <span className="px-2 py-1 bg-muted text-muted-foreground rounded-full text-xs">
+                          +{customer.tags.length - 3}
+                        </span>
+                      )}
+                    </div>
+                  )}
 
                   <div className="space-y-2 mb-4">
                     {customer.phoneE164 && (
@@ -351,14 +745,26 @@ export default function CustomersPage() {
                     )}
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <span>📅</span>
-                      <span>Joined {new Date(customer.createdAt).toLocaleDateString()}</span>
+                      <span>Joined {formatDate(customer.createdAt)}</span>
                     </div>
+                    {customer.orderStats?.lastOrderDate && (
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <span>🛒</span>
+                        <span>Last order {formatDate(customer.orderStats.lastOrderDate)}</span>
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex gap-2">
                     <button
-                      onClick={() => startEdit(customer)}
+                      onClick={() => router.push(`/customers/${customer.id}`)}
                       className="flex-1 px-3 py-2 bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition-colors text-sm font-medium"
+                    >
+                      View Details
+                    </button>
+                    <button
+                      onClick={() => startEdit(customer)}
+                      className="px-3 py-2 bg-accent/10 text-accent rounded-lg hover:bg-accent/20 transition-colors text-sm font-medium"
                     >
                       Edit
                     </button>
@@ -401,53 +807,199 @@ export default function CustomersPage() {
         {/* Edit Customer Modal */}
         {editingCustomer && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-            <div className="bg-card p-6 rounded-lg border border-border w-full max-w-md animate-scale-in">
+            <div className="bg-card rounded-lg border border-border p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto animate-scale-in">
               <h2 className="text-lg font-semibold text-foreground mb-4">Edit Customer</h2>
-              <div className="space-y-4">
+              
+              <div className="space-y-6">
+                {/* Contact Information */}
                 <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">Name</label>
-                  <input
-                    value={editName}
-                    onChange={(e) => setEditName(e.target.value)}
-                    className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
-                  />
+                  <h4 className="font-semibold text-foreground mb-3">Contact Information</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-foreground mb-2">
+                        Name
+                      </label>
+                      <input
+                        type="text"
+                        value={createForm.name}
+                        onChange={(e) => setCreateForm(prev => ({ ...prev, name: e.target.value }))}
+                        className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
+                        placeholder="Customer name"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-foreground mb-2">
+                        Email
+                      </label>
+                      <input
+                        type="email"
+                        value={createForm.email}
+                        onChange={(e) => setCreateForm(prev => ({ ...prev, email: e.target.value }))}
+                        className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
+                        placeholder="customer@example.com"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-foreground mb-2">
+                        Phone
+                      </label>
+                      <input
+                        type="tel"
+                        value={createForm.phoneE164}
+                        onChange={(e) => setCreateForm(prev => ({ ...prev, phoneE164: e.target.value }))}
+                        className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
+                        placeholder="+90 555 123 4567"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-foreground mb-2">
+                        Company
+                      </label>
+                      <input
+                        type="text"
+                        value={createForm.company}
+                        onChange={(e) => setCreateForm(prev => ({ ...prev, company: e.target.value }))}
+                        className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
+                        placeholder="Company name"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-foreground mb-2">
+                        VAT ID
+                      </label>
+                      <input
+                        type="text"
+                        value={createForm.vatId}
+                        onChange={(e) => setCreateForm(prev => ({ ...prev, vatId: e.target.value }))}
+                        className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
+                        placeholder="VAT ID"
+                      />
+                    </div>
+                  </div>
                 </div>
+
+                {/* Address Information */}
                 <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">Email</label>
-                  <input
-                    type="email"
-                    value={editEmail}
-                    onChange={(e) => setEditEmail(e.target.value)}
-                    className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
-                  />
+                  <h4 className="font-semibold text-foreground mb-3">Address Information</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-foreground mb-2">
+                        Address Line 1
+                      </label>
+                      <input
+                        type="text"
+                        value={createForm.addressLine1}
+                        onChange={(e) => setCreateForm(prev => ({ ...prev, addressLine1: e.target.value }))}
+                        className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
+                        placeholder="Street address"
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-foreground mb-2">
+                        Address Line 2
+                      </label>
+                      <input
+                        type="text"
+                        value={createForm.addressLine2}
+                        onChange={(e) => setCreateForm(prev => ({ ...prev, addressLine2: e.target.value }))}
+                        className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
+                        placeholder="Apartment, suite, etc."
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-foreground mb-2">
+                        City
+                      </label>
+                      <input
+                        type="text"
+                        value={createForm.city}
+                        onChange={(e) => setCreateForm(prev => ({ ...prev, city: e.target.value }))}
+                        className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
+                        placeholder="City"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-foreground mb-2">
+                        State
+                      </label>
+                      <input
+                        type="text"
+                        value={createForm.state}
+                        onChange={(e) => setCreateForm(prev => ({ ...prev, state: e.target.value }))}
+                        className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
+                        placeholder="State"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-foreground mb-2">
+                        Postal Code
+                      </label>
+                      <input
+                        type="text"
+                        value={createForm.postalCode}
+                        onChange={(e) => setCreateForm(prev => ({ ...prev, postalCode: e.target.value }))}
+                        className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
+                        placeholder="Postal code"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-foreground mb-2">
+                        Country
+                      </label>
+                      <input
+                        type="text"
+                        value={createForm.country}
+                        onChange={(e) => setCreateForm(prev => ({ ...prev, country: e.target.value }))}
+                        className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
+                        placeholder="Country"
+                      />
+                    </div>
+                  </div>
                 </div>
+
+                {/* Notes and Tags */}
                 <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">Phone</label>
-                  <input
-                    value={editPhone}
-                    onChange={(e) => setEditPhone(e.target.value)}
-                    className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">Company</label>
-                  <input
-                    value={editCompany}
-                    onChange={(e) => setEditCompany(e.target.value)}
-                    className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
-                  />
+                  <h4 className="font-semibold text-foreground mb-3">Notes and Tags</h4>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-foreground mb-2">
+                        Notes
+                      </label>
+                      <textarea
+                        value={createForm.notes}
+                        onChange={(e) => setCreateForm(prev => ({ ...prev, notes: e.target.value }))}
+                        className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
+                        rows={4}
+                        placeholder="Customer notes..."
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-foreground mb-2">
+                        Tags (comma separated)
+                      </label>
+                      <input
+                        type="text"
+                        value={createForm.tags}
+                        onChange={(e) => setCreateForm(prev => ({ ...prev, tags: e.target.value }))}
+                        className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
+                        placeholder="vip, premium, wholesale"
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
+
               <div className="flex gap-3 mt-6">
                 <button
                   onClick={updateCustomer}
-                  className="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors btn-animate"
+                  disabled={saving}
+                  className="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 btn-animate"
                 >
-                  Update
+                  {saving ? 'Updating...' : 'Update Customer'}
                 </button>
                 <button
                   onClick={() => setEditingCustomer(null)}
-                  className="px-4 py-2 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/90 transition-colors btn-animate"
+                  className="flex-1 px-4 py-2 bg-accent text-accent-foreground rounded-lg hover:bg-accent/80 transition-colors btn-animate"
                 >
                   Cancel
                 </button>
