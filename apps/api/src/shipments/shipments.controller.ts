@@ -18,6 +18,7 @@ export class ShipmentsController {
   @ApiQuery({ name: 'status', required: false, type: String })
   @ApiQuery({ name: 'carrier', required: false, type: String })
   @ApiQuery({ name: 'dateFilter', required: false, type: String })
+  @ApiQuery({ name: 'storeId', required: false, type: String })
   async list(@CurrentUser() user: any, @Query() query: any) {
     return this.shipments.list(user.tenantId, Number(query.page) || 1, Number(query.limit) || 50, query);
   }

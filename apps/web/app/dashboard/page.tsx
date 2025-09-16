@@ -94,7 +94,7 @@ export default function DashboardPage() {
 
       // Fetch recent activity from API
       try {
-        const activityParams = selectedStore !== 'all' ? `?limit=5&sort=createdAt:desc&storeId=${selectedStore}` : '?limit=5&sort=createdAt:desc';
+        const activityParams = selectedStore !== 'all' ? `?limit=5&storeId=${selectedStore}` : '?limit=5';
         const activityResponse = await api(`/orders${activityParams}`);
         if (activityResponse.ok) {
           const activityData = await activityResponse.json();

@@ -123,6 +123,7 @@ model RemoteEntityMap {
 model Customer {
   id             String   @id @default(uuid())
   tenantId       String
+  storeId        String?
   email          String?
   emailNormalized String?
   phoneE164      String?
@@ -140,16 +141,19 @@ model Customer {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
   tenant         Tenant   @relation(fields: [tenantId], references: [id])
+  store          WooStore? @relation(fields: [storeId], references: [id])
   orders         Order[]
 
   @@unique([tenantId, emailNormalized])
   @@index([tenantId, phoneE164])
+  @@index([tenantId, storeId])
 }
 
 model Order {
   id             String   @id @default(uuid())
   tenantId       String
   customerId     String?
+  storeId        String?
   
   orderNo        Int?
   
@@ -171,6 +175,7 @@ model Order {
   updatedAt      DateTime @updatedAt
   tenant         Tenant   @relation(fields: [tenantId], references: [id])
   customer       Customer? @relation(fields: [customerId], references: [id])
+  store          WooStore? @relation(fields: [storeId], references: [id])
   
   items          OrderItem[]
   shipments      Shipment[]
@@ -183,6 +188,7 @@ model Order {
   @@index([tenantId, status, confirmedAt])
   @@index([tenantId, customerEmail])
   @@index([tenantId, externalOrderNo])
+  @@index([tenantId, storeId])
 }
 
 model OrderItem {
@@ -221,6 +227,7 @@ model Shipment {
 model Product {
   id          String   @id @default(uuid())
   tenantId    String
+  storeId     String?
   sku         String
   name        String?
   description String?
@@ -234,11 +241,13 @@ model Product {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  store       WooStore? @relation(fields: [storeId], references: [id])
   inboundItems InboundItem[]
   stockMovements StockMovement[]
 
   @@unique([tenantId, sku])
   @@index([tenantId, active])
+  @@index([tenantId, storeId])
 }
 
 model Invoice {
@@ -415,6 +424,9 @@ model WooStore {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
   tenant         Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  orders         Order[]
+  products       Product[]
+  customers      Customer[]
 
   @@index([tenantId, active])
 }

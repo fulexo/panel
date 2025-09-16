@@ -10,18 +10,38 @@ export class ProductsService {
     return this.prisma.withTenant(tenantId, fn as any);
   }
 
-  async list(tenantId: string, page = 1, limit = 50, search?: string) {
+  async list(tenantId: string, page = 1, limit = 50, search?: string, status?: string, category?: string, storeId?: string) {
     const take = Math.min(limit, 200);
     const skip = (page - 1) * take;
     const where: any = { tenantId };
+    
     if (search) {
       where.OR = [
         { sku: { contains: search, mode: 'insensitive' } },
         { name: { contains: search, mode: 'insensitive' } },
       ];
     }
+    
+    if (status) {
+      where.active = status === 'active';
+    }
+    
+    if (category) {
+      where.category = { slug: category };
+    }
+    
+    if (storeId) {
+      where.storeId = storeId;
+    }
+    
     const [data, total] = await this.runTenant(tenantId, async (db) => Promise.all([
-      db.product.findMany({ where, orderBy: { createdAt: 'desc' }, take, skip }),
+      db.product.findMany({ 
+        where, 
+        orderBy: { createdAt: 'desc' }, 
+        take, 
+        skip,
+        include: { category: true }
+      }),
       db.product.count({ where }),
     ]));
     return { data, pagination: { page, limit: take, total, totalPages: Math.ceil(total / take) } };

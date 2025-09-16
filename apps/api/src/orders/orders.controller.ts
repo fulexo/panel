@@ -85,7 +85,10 @@ export class OrdersController {
 
   @Get('stats/summary')
   @ApiOperation({ summary: 'Get orders summary statistics' })
-  async getStats(@CurrentUser() user: any, @Query() query: { dateFrom?: string; dateTo?: string }) {
+  @ApiQuery({ name: 'dateFrom', required: false, type: String })
+  @ApiQuery({ name: 'dateTo', required: false, type: String })
+  @ApiQuery({ name: 'storeId', required: false, type: String })
+  async getStats(@CurrentUser() user: any, @Query() query: { dateFrom?: string; dateTo?: string; storeId?: string }) {
     return this.ordersService.getOrderStats(user.tenantId, query);
   }
 

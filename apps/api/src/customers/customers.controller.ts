@@ -15,8 +15,19 @@ export class CustomersController {
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'search', required: false, type: String })
-  async list(@CurrentUser() user: any, @Query('page') page = 1, @Query('limit') limit = 50, @Query('search') search?: string) {
-    return this.customers.list(user.tenantId, Number(page), Number(limit), search);
+  @ApiQuery({ name: 'status', required: false, type: String })
+  @ApiQuery({ name: 'tag', required: false, type: String })
+  @ApiQuery({ name: 'storeId', required: false, type: String })
+  async list(
+    @CurrentUser() user: any, 
+    @Query('page') page = 1, 
+    @Query('limit') limit = 50, 
+    @Query('search') search?: string,
+    @Query('status') status?: string,
+    @Query('tag') tag?: string,
+    @Query('storeId') storeId?: string,
+  ) {
+    return this.customers.list(user.tenantId, Number(page), Number(limit), search, status, tag, storeId);
   }
 
   @Get(':id')

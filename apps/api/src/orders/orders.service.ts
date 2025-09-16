@@ -62,6 +62,14 @@ export class OrdersService {
       }
     }
 
+    if (query.storeId) {
+      where.storeId = query.storeId;
+    }
+
+    if (query.customerId) {
+      where.customerId = query.customerId;
+    }
+
     // Execute query with optimized selects to avoid N+1
     const [orders, total] = await this.runTenant(tenantId, async (db) => Promise.all([
       db.order.findMany({
@@ -384,7 +392,7 @@ export class OrdersService {
     return timeline;
   }
 
-  async getOrderStats(tenantId: string, query: { dateFrom?: string; dateTo?: string }) {
+  async getOrderStats(tenantId: string, query: { dateFrom?: string; dateTo?: string; storeId?: string }) {
     const where: Prisma.OrderWhereInput = {
       tenantId,
     };
@@ -397,6 +405,10 @@ export class OrdersService {
       if (query.dateTo) {
         where.confirmedAt.lte = new Date(query.dateTo);
       }
+    }
+
+    if (query.storeId) {
+      where.storeId = query.storeId;
     }
 
     const [

@@ -15,13 +15,19 @@ export class ProductsController {
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'search', required: false, type: String })
+  @ApiQuery({ name: 'status', required: false, type: String })
+  @ApiQuery({ name: 'category', required: false, type: String })
+  @ApiQuery({ name: 'storeId', required: false, type: String })
   async list(
     @CurrentUser() user: any,
     @Query('page') page = 1,
     @Query('limit') limit = 50,
     @Query('search') search?: string,
+    @Query('status') status?: string,
+    @Query('category') category?: string,
+    @Query('storeId') storeId?: string,
   ) {
-    return this.products.list(user.tenantId, Number(page), Number(limit), search);
+    return this.products.list(user.tenantId, Number(page), Number(limit), search, status, category, storeId);
   }
 
   @Get(':id')

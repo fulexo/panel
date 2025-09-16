@@ -60,6 +60,10 @@ export class ShipmentsService {
       where.createdAt = { gte: dateFrom };
     }
 
+    if (query.storeId) {
+      where.order = { ...where.order, storeId: query.storeId };
+    }
+
     const [data, total] = await this.runTenant(tenantId, async (db) => Promise.all([
       db.shipment.findMany({
         where,

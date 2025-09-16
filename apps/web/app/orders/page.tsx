@@ -9,6 +9,7 @@ interface Order {
   externalOrderNo?: string;
   wooOrderId?: string;
   status: string;
+  customerId?: string;
   customerEmail?: string;
   customerName?: string;
   total: number;
@@ -81,7 +82,7 @@ export default function OrdersPage() {
         page: currentPage.toString(),
         limit: '20',
         ...(statusFilter !== 'all' && { status: statusFilter }),
-        ...(dateFilter !== 'all' && { dateFilter }),
+        ...(dateFilter !== 'all' && { dateRange: dateFilter }),
         ...(searchTerm && { search: searchTerm }),
         ...(storeFilter !== 'all' && { storeId: storeFilter }),
         ...(customerFilter !== 'all' && { customerId: customerFilter }),

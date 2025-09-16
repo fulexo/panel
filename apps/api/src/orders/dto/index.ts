@@ -170,6 +170,11 @@ export class OrderQueryDto {
   @IsOptional()
   @IsString()
   customerId?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  storeId?: string;
 }
 
 export class CreateChargeDto {

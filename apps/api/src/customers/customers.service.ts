@@ -9,10 +9,11 @@ export class CustomersService {
     return this.prisma.withTenant(tenantId, fn as any);
   }
 
-  async list(tenantId: string, page = 1, limit = 50, search?: string) {
+  async list(tenantId: string, page = 1, limit = 50, search?: string, status?: string, tag?: string, storeId?: string) {
     const take = Math.min(limit, 200);
     const skip = (page - 1) * take;
     const where: any = { tenantId };
+    
     if (search) {
       where.OR = [
         { email: { contains: search, mode: 'insensitive' } },
@@ -21,11 +22,65 @@ export class CustomersService {
         { phoneE164: { contains: search } },
       ];
     }
+    
+    if (status) {
+      if (status === 'with_orders') {
+        where.orders = { some: {} };
+      } else if (status === 'no_orders') {
+        where.orders = { none: {} };
+      } else if (status === 'vip') {
+        where.tags = { has: 'vip' };
+      }
+    }
+    
+    if (tag) {
+      where.tags = { has: tag };
+    }
+    
+    if (storeId) {
+      where.storeId = storeId;
+    }
+    
     const [data, total] = await this.runTenant(tenantId, async (db) => Promise.all([
-      db.customer.findMany({ where, orderBy: { createdAt: 'desc' }, take, skip }),
+      db.customer.findMany({ 
+        where, 
+        orderBy: { createdAt: 'desc' }, 
+        take, 
+        skip,
+        include: {
+          orders: {
+            select: {
+              id: true,
+              total: true,
+              status: true,
+              createdAt: true,
+            }
+          }
+        }
+      }),
       db.customer.count({ where }),
     ]));
-    return { data, pagination: { page, limit: take, total, totalPages: Math.ceil(total / take) } };
+    
+    // Calculate order stats for each customer
+    const customersWithStats = data.map(customer => {
+      const orders = customer.orders || [];
+      const totalOrders = orders.length;
+      const totalSpent = orders.reduce((sum, order) => sum + (order.total || 0), 0);
+      const averageOrderValue = totalOrders > 0 ? totalSpent / totalOrders : 0;
+      const lastOrderDate = orders.length > 0 ? orders[0].createdAt : null;
+      
+      return {
+        ...customer,
+        orderStats: {
+          totalOrders,
+          totalSpent,
+          averageOrderValue,
+          lastOrderDate
+        }
+      };
+    });
+    
+    return { data: customersWithStats, pagination: { page, limit: take, total, totalPages: Math.ceil(total / take) } };
   }
 
   async get(tenantId: string, id: string) {
