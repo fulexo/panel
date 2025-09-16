@@ -27,5 +27,5 @@ COPY --from=build /app/node_modules ./node_modules
 # Clean up build artifacts
 RUN rm -rf /tmp/* /var/cache/apk/*
 
-EXPOSE 3000
-CMD ["npx","next","start","-p","3000"]
+EXPOSE 3001
+CMD ["npx","next","start","-p","3001"]

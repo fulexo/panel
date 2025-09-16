@@ -10,7 +10,6 @@ export class CacheService implements OnModuleDestroy {
   constructor(private logger: LoggerService) {
     this.redis = new Redis(process.env.REDIS_URL || 'redis://valkey:6379/0', {
       maxRetriesPerRequest: 3,
-      retryDelayOnFailover: 100,
       lazyConnect: true,
     });
     this.logger.log('Cache service initialized', 'CacheService');

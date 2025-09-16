@@ -38,7 +38,7 @@ export class JwtService {
       if (existingKey && existingKey.privatePem) {
         // Mevcut key'i kullan
         this.privateKey = await jose.importPKCS8(existingKey.privatePem, 'RS256');
-        this.publicKey = await jose.importJWK(existingKey.publicJwk as jose.JWK, 'RS256');
+        this.publicKey = await jose.importJWK(existingKey.publicJwk as jose.JWK, 'RS256') as CryptoKey;
         this.keyId = existingKey.kid;
       } else {
         // Yeni key pair oluştur
@@ -73,7 +73,7 @@ export class JwtService {
     const secret = process.env.JWT_SECRET || 'dev-secret-key-change-in-production';
     const secretBuffer = new TextEncoder().encode(secret);
     
-    this.privateKey = await jose.importRaw(secretBuffer, 'HS256');
+    this.privateKey = secretBuffer as any;
     this.publicKey = this.privateKey;
     this.keyId = 'hmac-key';
   }
@@ -106,7 +106,7 @@ export class JwtService {
       jti: `refresh_${jti}`
     };
 
-    const accessToken = await new jose.SignJWT(accessPayload)
+    const accessToken = await new jose.SignJWT(accessPayload as any)
       .setProtectedHeader({ 
         alg: process.env.NODE_ENV === 'production' ? 'RS256' : 'HS256',
         ...(this.keyId && { kid: this.keyId })
@@ -115,7 +115,7 @@ export class JwtService {
       .setExpirationTime('15m')
       .sign(this.privateKey);
 
-    const refreshToken = await new jose.SignJWT(refreshPayload)
+    const refreshToken = await new jose.SignJWT(refreshPayload as any)
       .setProtectedHeader({ 
         alg: process.env.NODE_ENV === 'production' ? 'RS256' : 'HS256',
         ...(this.keyId && { kid: this.keyId })
@@ -140,7 +140,7 @@ export class JwtService {
         algorithms: [process.env.NODE_ENV === 'production' ? 'RS256' : 'HS256']
       });
 
-      return payload as JWTPayload;
+      return payload as any;
     } catch (error) {
       throw new Error('Invalid or expired access token');
     }
@@ -161,7 +161,7 @@ export class JwtService {
         throw new Error('Invalid refresh token');
       }
 
-      return payload as JWTPayload;
+      return payload as any;
     } catch (error) {
       throw new Error('Invalid or expired refresh token');
     }

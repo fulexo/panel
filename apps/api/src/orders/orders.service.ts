@@ -36,7 +36,7 @@ export class OrdersService {
     }
 
     // Build where clause
-    const where: Prisma.OrderWhereInput = {
+    const where: any = {
       tenantId,
     };
 
@@ -394,7 +394,7 @@ export class OrdersService {
   }
 
   async getOrderStats(tenantId: string, query: { dateFrom?: string; dateTo?: string; storeId?: string }) {
-    const where: Prisma.OrderWhereInput = {
+    const where: any = {
       tenantId,
     };
 
@@ -499,7 +499,7 @@ export class OrdersService {
       data: {
         orderId,
         type: dto.type,
-        amount: new Prisma.Decimal(dto.amount),
+        amount: new (Prisma as any).Decimal(dto.amount),
         currency: dto.currency || order.currency || 'TRY',
         notes: dto.notes,
       },

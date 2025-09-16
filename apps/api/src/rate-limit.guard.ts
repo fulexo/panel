@@ -27,10 +27,10 @@ export class RateLimitGuard implements CanActivate {
     const res = httpRef.getResponse();
     const user = req.user;
     const id = opts.scope === 'user' && user?.sub ? user.sub : req.ip;
-    const key = `rl:${opts.name}:${id}`;
+    const key = `rl:${opts.scope || 'ip'}:${id}`;
 
     try {
-      const rl = await this.limiter.check(key, opts.limit, opts.windowMs);
+      const rl = await this.limiter.check(key, opts.points, opts.duration);
       if (!rl.allowed) {
         if (rl.retryAfterMs) {
           try { res.setHeader('Retry-After', Math.ceil(Number(rl.retryAfterMs) / 1000)); } catch {}

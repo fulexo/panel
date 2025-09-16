@@ -1,6 +1,7 @@
 import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import { Module, Get, Controller, Res, ValidationPipe } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
 import { register } from 'prom-client';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { JwtService } from './jwt';
@@ -25,6 +26,14 @@ import { WooModule } from './woocommerce/woo.module';
 import { SettingsModule } from './modules/settings/settings.module';
 import { LoggerModule } from './logger/logger.module';
 import { LoggerService } from './logger/logger.service';
+import { PrismaService } from './prisma.service';
+import { CacheModule } from './cache/cache.module';
+import { SecurityModule } from './security/security.module';
+import { AuditModule } from './audit/audit.module';
+import { RateLimitModule } from './rate-limit/rate-limit.module';
+import { JobsModule } from './jobs/jobs.module';
+import { SyncModule } from './sync/sync.module';
+import { UsersModule } from './users/users.module';
 import { validateEnvOnStartup } from './config/env.validation';
 
 import { Public } from './auth/decorators/public.decorator';
@@ -110,6 +119,13 @@ class JwksController {
   imports: [
     LoggerModule,
     JwtModule,
+    CacheModule,
+    SecurityModule,
+    AuditModule,
+    RateLimitModule,
+    JobsModule,
+    SyncModule,
+    UsersModule,
     AuthModule,
     OrdersModule,
     ShipmentsModule,
@@ -128,7 +144,7 @@ class JwksController {
     WooModule,
     SettingsModule,
   ],
-  controllers: [HealthController, MetricsController, JwksController, JobsController],
+  controllers: [HealthController, MetricsController, JwksController],
 })
 class AppModule {}
 
@@ -148,7 +164,8 @@ async function bootstrap(){
   }));
 
   // Global rate limiting
-  app.useGlobalGuards(new RateLimitGuard());
+  const reflector = app.get(Reflector);
+  app.useGlobalGuards(new RateLimitGuard(reflector));
 
   // CORS configuration
   app.enableCors({

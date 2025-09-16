@@ -266,6 +266,7 @@ model Invoice {
   paidAt     DateTime?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+  tenant     Tenant   @relation(fields: [tenantId], references: [id])
   order      Order    @relation(fields: [orderId], references: [id])
   billingItems BillingBatchItem[]
   payments   Payment[]
@@ -288,6 +289,7 @@ model Payment {
   processedAt   DateTime?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+  tenant        Tenant   @relation(fields: [tenantId], references: [id])
   invoice       Invoice  @relation(fields: [invoiceId], references: [id])
   
   @@index([tenantId])

@@ -106,4 +106,39 @@ export class SessionService {
       }
     });
   }
+
+  async revokeSession(userId: string, token: string) {
+    const hashedToken = this.hashToken(token);
+    await this.prisma.session.deleteMany({
+      where: {
+        userId,
+        token: hashedToken,
+      },
+    });
+  }
+
+  async revokeSessionById(userId: string, sessionId: string) {
+    await this.prisma.session.deleteMany({
+      where: {
+        userId,
+        id: sessionId,
+      },
+    });
+  }
+
+  async revokeAllSessions(userId: string, currentToken: string) {
+    const hashedCurrentToken = this.hashToken(currentToken);
+    await this.prisma.session.deleteMany({
+      where: {
+        userId,
+        token: {
+          not: hashedCurrentToken,
+        },
+      },
+    });
+  }
+
+  private hashToken(token: string): string {
+    return crypto.createHash('sha256').update(token).digest('hex');
+  }
 }

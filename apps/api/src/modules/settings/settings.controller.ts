@@ -109,7 +109,7 @@ export class SettingsController {
   @ApiOperation({ summary: 'Get WooCommerce settings' })
   @Roles('ADMIN')
   async getWooCommerceSettings(@Req() req: any) {
-    return this.settingsService.getSettingsByCategory(req.user.tenantId, 'woocommerce');
+    return this.settingsService.getSettingsByCategory(req.user.tenantId, 'woocommerce' as any);
   }
 
   @Put('woocommerce')
@@ -132,7 +132,7 @@ export class SettingsController {
   @ApiOperation({ summary: 'Get security settings' })
   @Roles('ADMIN')
   async getSecuritySettings(@Req() req: any) {
-    return this.settingsService.getSettingsByCategory(req.user.tenantId, 'security');
+    return this.settingsService.getSettingsByCategory(req.user.tenantId, 'security' as any);
   }
 
   @Put('security')
