@@ -55,6 +55,16 @@ model User {
   auditLogs     AuditLog[]
   requests      Request[]
   requestComments RequestComment[]
+
+  @@index([tenantId])
+  @@index([tenantId, role])
+  @@index([tenantId, isActive])
+  @@index([tenantId, lastLoginAt])
+  @@index([tenantId, createdAt])
+  @@index([role])
+  @@index([isActive])
+  @@index([lastLoginAt])
+  @@index([createdAt])
 }
 
 model Session {
@@ -70,6 +80,10 @@ model Session {
   
   @@index([token])
   @@index([userId])
+  @@index([expiresAt])
+  @@index([createdAt])
+  @@index([ipAddress])
+  @@index([userId, expiresAt])
 }
 
 
@@ -150,6 +164,12 @@ model Customer {
   @@unique([tenantId, emailNormalized])
   @@index([tenantId, phoneE164])
   @@index([tenantId, storeId])
+  @@index([tenantId, createdAt])
+  @@index([tenantId, name])
+  @@index([tenantId, company])
+  @@index([tenantId, country])
+  @@index([tenantId, city])
+  @@index([createdAt])
 }
 
 model Order {
@@ -192,6 +212,13 @@ model Order {
   @@index([tenantId, customerEmail])
   @@index([tenantId, externalOrderNo])
   @@index([tenantId, storeId])
+  @@index([tenantId, createdAt])
+  @@index([tenantId, customerEmail, createdAt])
+  @@index([tenantId, status, createdAt])
+  @@index([tenantId, total])
+  @@index([tenantId, paymentMethod])
+  @@index([createdAt])
+  @@index([confirmedAt])
 }
 
 model OrderItem {
@@ -251,6 +278,13 @@ model Product {
   @@unique([tenantId, sku])
   @@index([tenantId, active])
   @@index([tenantId, storeId])
+  @@index([tenantId, createdAt])
+  @@index([tenantId, name])
+  @@index([tenantId, price])
+  @@index([tenantId, stock])
+  @@index([tenantId, tags])
+  @@index([createdAt])
+  @@index([updatedAt])
 }
 
 model Invoice {
@@ -278,6 +312,14 @@ model Invoice {
   @@index([orderId])
   @@index([number])
   @@index([status])
+  @@index([tenantId, status])
+  @@index([tenantId, createdAt])
+  @@index([tenantId, issuedAt])
+  @@index([tenantId, dueDate])
+  @@index([tenantId, paidAt])
+  @@index([createdAt])
+  @@index([issuedAt])
+  @@index([dueDate])
 }
 
 model Payment {

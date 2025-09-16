@@ -18,6 +18,72 @@ print_error() { echo -e "${RED}[✗]${NC} $1"; }
 print_warning() { echo -e "${YELLOW}[!]${NC} $1"; }
 print_info() { echo -e "${BLUE}[i]${NC} $1"; }
 
+# Backup verification function
+verify_backup() {
+    local backup_file="$1"
+    
+    if [ ! -f "$backup_file" ]; then
+        return 1
+    fi
+    
+    # Check if backup file is valid gzip
+    if ! gzip -t "$backup_file" 2>/dev/null; then
+        return 1
+    fi
+    
+    # Check if backup contains data
+    local size=$(stat -c%s "$backup_file")
+    if [ $size -lt 1000 ]; then
+        return 1
+    fi
+    
+    return 0
+}
+
+# Create backup metadata
+create_backup_metadata() {
+    local date="$1"
+    local metadata_file="$BACKUP_DIR/metadata_${date}.json"
+    
+    cat > "$metadata_file" << EOF
+{
+  "backup_date": "$date",
+  "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+  "version": "1.0.0",
+  "components": {
+    "database": true,
+    "postgres_data": true,
+    "minio_data": true,
+    "environment": true,
+    "nginx_config": true
+  },
+  "size_bytes": $(du -sb "$BACKUP_DIR" | cut -f1),
+  "hostname": "$(hostname)",
+  "platform": "fulexo"
+}
+EOF
+    
+    print_status "Backup metadata oluşturuldu ✓"
+}
+
+# Send backup notification
+send_backup_notification() {
+    local date="$1"
+    local status="$2"
+    
+    # Log to system log
+    logger -t fulexo-backup "Backup $status: $date"
+    
+    # Send email notification if configured
+    if command -v mail >/dev/null 2>&1; then
+        local admin_email=$(grep "^ADMIN_EMAIL=" "$ENV_FILE" 2>/dev/null | cut -d'=' -f2 || echo "admin@fulexo.com")
+        local subject="Fulexo Backup $status - $date"
+        local body="Backup $status for date $date on $(hostname)"
+        
+        echo "$body" | mail -s "$subject" "$admin_email" 2>/dev/null || true
+    fi
+}
+
 # Check if running as root
 if [[ $EUID -ne 0 ]]; then
    print_error "Bu script root olarak çalıştırılmalıdır"
@@ -109,10 +175,25 @@ backup() {
     print_info "Backup boyutu: $BACKUP_SIZE"
     print_info "Backup dizini: $BACKUP_DIR"
     
+    # Backup verification
+    print_info "Backup doğrulanıyor..."
+    if verify_backup "$BACKUP_DIR/db_${DATE}.sql.gz"; then
+        print_status "Backup doğrulandı ✓"
+    else
+        print_error "Backup doğrulama başarısız ✗"
+        return 1
+    fi
+    
+    # Backup metadata oluştur
+    create_backup_metadata "$DATE"
+    
     # Eski yedekleri temizle (7 günden eski)
     print_info "Eski yedekler temizleniyor..."
     find "$BACKUP_DIR" -type f -mtime +7 -delete
     print_status "Eski yedekler temizlendi ✓"
+    
+    # Backup notification gönder
+    send_backup_notification "$DATE" "success"
 }
 
 # Restore function

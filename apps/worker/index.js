@@ -356,9 +356,11 @@ const jobProcessors = {
   },
 };
 
-// Create worker
+// Create worker with enhanced error handling and retry logic
 const worker = new Worker('fx-jobs', async (job) => {
   const startTime = Date.now();
+  const maxRetries = 3;
+  const retryDelay = 5000; // 5 seconds
   
   try {
     // Get processor for job type
@@ -368,68 +370,191 @@ const worker = new Worker('fx-jobs', async (job) => {
       throw new Error(`Unknown job type: ${job.name}`);
     }
     
-    // Process job
-    const result = await processor(job);
+    // Process job with retry logic
+    let lastError;
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        console.log(`Processing job ${job.name} (attempt ${attempt}/${maxRetries})`);
+        
+        // Process job
+        const result = await processor(job);
+        
+        // Record success metrics
+        const duration = (Date.now() - startTime) / 1000;
+        jobDurationHistogram.observe({ job_type: job.name }, duration);
+        jobProcessedCounter.inc({ job_type: job.name, status: 'success' });
+        
+        console.log(`Job ${job.name} completed successfully in ${duration.toFixed(2)}s`);
+        return result;
+        
+      } catch (error) {
+        lastError = error;
+        console.error(`Job ${job.name} failed on attempt ${attempt}:`, error.message);
+        
+        // Check if this is a retryable error
+        if (isRetryableError(error) && attempt < maxRetries) {
+          console.log(`Retrying job ${job.name} in ${retryDelay}ms...`);
+          await new Promise(resolve => setTimeout(resolve, retryDelay * attempt));
+          continue;
+        } else {
+          // Non-retryable error or max retries reached
+          break;
+        }
+      }
+    }
     
-    // Record metrics
-    const duration = (Date.now() - startTime) / 1000;
-    jobDurationHistogram.observe({ job_type: job.name }, duration);
-    jobProcessedCounter.inc({ job_type: job.name, status: 'success' });
+    // All retries failed
+    console.error(`Job ${job.name} failed after ${maxRetries} attempts:`, lastError);
     
-    return result;
+    // Record failure metrics
+    jobProcessedCounter.inc({ job_type: job.name, status: 'failure' });
+    
+    // Store error details for debugging
+    await storeJobError(job, lastError, maxRetries);
+    
+    throw lastError;
+    
   } catch (error) {
-    console.error(`Job ${job.name} failed:`, error);
+    console.error(`Job ${job.name} failed with unhandled error:`, error);
     
     // Record failure metric
     jobProcessedCounter.inc({ job_type: job.name, status: 'failure' });
+    
+    // Store error details
+    await storeJobError(job, error, 0);
     
     throw error;
   }
 }, {
   connection,
-  concurrency: 5,
+  concurrency: 20, // Further increased concurrency
   limiter: {
-    max: 10,
+    max: 50, // Further increased rate limit
     duration: 1000,
+  },
+  removeOnComplete: 20, // Keep last 20 completed jobs
+  removeOnFail: 10, // Keep last 10 failed jobs
+  stalledInterval: 30 * 1000, // Check for stalled jobs every 30 seconds
+  maxStalledCount: 1, // Max number of times a job can be stalled
+});
+
+// Helper function to determine if an error is retryable
+function isRetryableError(error) {
+  if (!error) return false;
+  
+  const retryableErrors = [
+    'ECONNRESET',
+    'ECONNREFUSED',
+    'ETIMEDOUT',
+    'ENOTFOUND',
+    'Database connection failed',
+    'Redis connection failed',
+    'Network error',
+    'Temporary failure',
+    'Service unavailable',
+    'Rate limit exceeded'
+  ];
+  
+  const errorMessage = error.message || error.toString();
+  return retryableErrors.some(retryableError => 
+    errorMessage.toLowerCase().includes(retryableError.toLowerCase())
+  );
+}
+
+// Helper function to store job error details
+async function storeJobError(job, error, retryCount) {
+  try {
+    const errorData = {
+      jobId: job.id,
+      jobName: job.name,
+      jobData: job.data,
+      error: {
+        name: error.name,
+        message: error.message,
+        stack: error.stack,
+      },
+      retryCount,
+      timestamp: new Date().toISOString(),
+    };
+    
+    // Store in database for analysis
+    await prisma.auditLog.create({
+      data: {
+        action: 'JOB_FAILED',
+        entityType: 'JOB',
+        changes: errorData,
+        metadata: {
+          jobType: job.name,
+          retryCount,
+          errorType: error.name,
+        },
+      },
+    });
+    
+    console.log(`Stored error details for job ${job.id}`);
+  } catch (dbError) {
+    console.error('Failed to store job error details:', dbError);
+  }
+}
+
+// Create queue for scheduling with dead letter queue
+const schedulerQueue = new Queue('fx-jobs', { 
+  connection,
+  defaultJobOptions: {
+    removeOnComplete: 10,
+    removeOnFail: 5,
+    attempts: 3,
+    backoff: {
+      type: 'exponential',
+      delay: 2000,
+    },
   },
 });
 
-// Create queue for scheduling
-const schedulerQueue = new Queue('fx-jobs', { connection });
+// Create dead letter queue for failed jobs
+const deadLetterQueue = new Queue('fx-jobs-dlq', { connection });
 
-// Schedule recurring jobs
+// Schedule recurring jobs with priorities
 async function scheduleRecurringJobs() {
-  // Clean cache every hour
-  await schedulerQueue.add('cleanup-cache', {}, {
-    repeat: { pattern: '0 * * * *' },
-    removeOnComplete: true,
-  });
-
-  // Clean sessions every 6 hours
-  await schedulerQueue.add('cleanup-sessions', {}, {
-    repeat: { pattern: '0 */6 * * *' },
-    removeOnComplete: true,
-  });
-
-  // Google calendar sync every 30 minutes
-  await schedulerQueue.add('sync-google-calendar', { tenantId: 'ALL' }, {
-    repeat: { every: 30 * 60 * 1000 },
-    removeOnComplete: true,
-  });
-
-  // Weekly stats email every Monday 08:00
-  await schedulerQueue.add('email-stats', { tenantId: 'ALL', period: 'weekly' }, {
-    repeat: { pattern: '0 8 * * 1' },
-    removeOnComplete: true,
-  });
-
-  // Process webhook events every minute
+  // High priority jobs
   await schedulerQueue.add('process-webhook-events', {}, {
     repeat: { pattern: '*/1 * * * *' },
     removeOnComplete: true,
+    priority: 10, // High priority
+    delay: 0,
   });
 
-  console.log('Recurring jobs scheduled');
+  // Medium priority jobs
+  await schedulerQueue.add('sync-google-calendar', { tenantId: 'ALL' }, {
+    repeat: { every: 30 * 60 * 1000 },
+    removeOnComplete: true,
+    priority: 5, // Medium priority
+    delay: 5000, // 5 second delay
+  });
+
+  // Low priority jobs
+  await schedulerQueue.add('cleanup-cache', {}, {
+    repeat: { pattern: '0 * * * *' },
+    removeOnComplete: true,
+    priority: 1, // Low priority
+    delay: 10000, // 10 second delay
+  });
+
+  await schedulerQueue.add('cleanup-sessions', {}, {
+    repeat: { pattern: '0 */6 * * *' },
+    removeOnComplete: true,
+    priority: 1, // Low priority
+    delay: 15000, // 15 second delay
+  });
+
+  await schedulerQueue.add('email-stats', { tenantId: 'ALL', period: 'weekly' }, {
+    repeat: { pattern: '0 8 * * 1' },
+    removeOnComplete: true,
+    priority: 1, // Low priority
+    delay: 20000, // 20 second delay
+  });
+
+  console.log('Recurring jobs scheduled with priorities');
 }
 
 // Queue events listener

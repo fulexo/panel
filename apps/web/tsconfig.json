@@ -8,7 +8,7 @@
     "jsx": "preserve",
     "module": "esnext",
     "moduleResolution": "bundler",
-    "strict": false,
+    "strict": true,
     "baseUrl": ".",
     "allowJs": true,
     "skipLibCheck": true,
@@ -17,6 +17,15 @@
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
+    "noImplicitAny": true,
+    "noImplicitReturns": true,
+    "noImplicitThis": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "exactOptionalPropertyTypes": true,
+    "noImplicitOverride": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "noUncheckedIndexedAccess": true,
     "plugins": [
       {
         "name": "next"

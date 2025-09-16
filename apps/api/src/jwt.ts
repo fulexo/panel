@@ -71,6 +71,27 @@ export class JwtService {
 
   private async initHMACKey() {
     const secret = process.env.JWT_SECRET || 'dev-secret-key-change-in-production';
+    
+    // Validate secret strength
+    if (secret.length < 32) {
+      throw new Error('JWT_SECRET must be at least 32 characters long');
+    }
+    
+    // Check for weak secrets
+    const weakPatterns = [
+      'dev-secret',
+      'change-in-production',
+      'your-secret',
+      'secret-key',
+      'jwt-secret',
+      '1234567890',
+      'abcdefghijklmnopqrstuvwxyz',
+    ];
+    
+    if (weakPatterns.some(pattern => secret.toLowerCase().includes(pattern))) {
+      throw new Error('JWT_SECRET contains weak patterns. Please use a stronger secret.');
+    }
+    
     const secretBuffer = new TextEncoder().encode(secret);
     
     this.privateKey = secretBuffer as any;
@@ -137,12 +158,32 @@ export class JwtService {
 
     try {
       const { payload } = await jose.jwtVerify(token, this.publicKey, {
-        algorithms: [process.env.NODE_ENV === 'production' ? 'RS256' : 'HS256']
+        algorithms: [process.env.NODE_ENV === 'production' ? 'RS256' : 'HS256'],
+        clockTolerance: 30, // 30 seconds tolerance
+        maxTokenAge: '15m', // Maximum token age
       });
+
+      // Additional validation
+      if (!payload.sub || !payload.email || !payload.role || !payload.tenantId) {
+        throw new Error('Invalid token payload');
+      }
+
+      // Check if token is blacklisted (if implemented)
+      if (payload.jti && await this.isTokenBlacklisted(payload.jti as string)) {
+        throw new Error('Token has been revoked');
+      }
 
       return payload as any;
     } catch (error) {
-      throw new Error('Invalid or expired access token');
+      if (error instanceof jose.errors.JWTExpired) {
+        throw new Error('Token has expired');
+      } else if (error instanceof jose.errors.JWTInvalid) {
+        throw new Error('Invalid token format');
+      } else if (error instanceof jose.errors.JWTClaimValidationFailed) {
+        throw new Error('Token claim validation failed');
+      } else {
+        throw new Error('Invalid or expired access token');
+      }
     }
   }
 
@@ -199,5 +240,56 @@ export class JwtService {
 
     // Yeni key oluştur
     await this.initRSAKeys();
+  }
+
+  // Check if token is blacklisted
+  private async isTokenBlacklisted(jti: string): Promise<boolean> {
+    try {
+      // Check in database for blacklisted tokens
+      const blacklistedToken = await this.prisma.auditLog.findFirst({
+        where: {
+          action: 'TOKEN_BLACKLISTED',
+          changes: {
+            path: ['jti'],
+            equals: jti
+          }
+        }
+      });
+      
+      return !!blacklistedToken;
+    } catch (error) {
+      console.error('Error checking token blacklist:', error);
+      return false; // If error, allow token (fail open)
+    }
+  }
+
+  // Blacklist a token
+  async blacklistToken(jti: string, reason: string = 'User logout') {
+    try {
+      await this.prisma.auditLog.create({
+        data: {
+          action: 'TOKEN_BLACKLISTED',
+          entityType: 'JWT_TOKEN',
+          changes: {
+            jti,
+            reason,
+            blacklistedAt: new Date().toISOString()
+          },
+          metadata: {
+            reason,
+            blacklistedAt: new Date().toISOString()
+          }
+        }
+      });
+    } catch (error) {
+      console.error('Error blacklisting token:', error);
+    }
+  }
+
+  // Generate secure random JTI
+  private generateSecureJTI(): string {
+    const timestamp = Date.now().toString(36);
+    const random = Math.random().toString(36).substring(2);
+    return `jti_${timestamp}_${random}`;
   }
 }

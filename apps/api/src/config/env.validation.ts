@@ -107,10 +107,32 @@ export function validateEnvOnStartup() {
   try {
     const config = validateEnvironment(process.env);
     console.log('✅ Environment variables validated successfully');
+    
+    // Additional security checks
+    if (config.NODE_ENV === Environment.Production) {
+      // Check for weak secrets in production
+      if (config.JWT_SECRET.length < 64) {
+        throw new Error('JWT_SECRET must be at least 64 characters in production');
+      }
+      
+      if (config.ENCRYPTION_KEY.length !== 32) {
+        throw new Error('ENCRYPTION_KEY must be exactly 32 characters');
+      }
+      
+      // Check for default values
+      if (config.DATABASE_URL.includes('localhost') || config.DATABASE_URL.includes('127.0.0.1')) {
+        throw new Error('DATABASE_URL must not use localhost in production');
+      }
+      
+      if (config.REDIS_URL.includes('localhost') || config.REDIS_URL.includes('127.0.0.1')) {
+        throw new Error('REDIS_URL must not use localhost in production');
+      }
+    }
+    
     return config;
   } catch (error) {
     console.error('❌ Environment validation failed:');
-    console.error(error.message);
+    console.error(error instanceof Error ? error.message : 'Unknown error');
     
     // Only exit in production, allow development to continue with warnings
     if (process.env.NODE_ENV === 'production') {

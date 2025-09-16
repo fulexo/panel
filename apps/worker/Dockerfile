@@ -17,6 +17,14 @@ COPY apps/worker/ .
 COPY apps/api/prisma/schema.prisma /app/prisma/schema.prisma
 RUN npm run prisma:generate || npx prisma generate --schema /app/prisma/schema.prisma || true
 
+# Create non-root user
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S fulexo -u 1001
+
+# Change ownership of the app directory
+RUN chown -R fulexo:nodejs /app
+USER fulexo
+
 # Clean up build artifacts
 RUN rm -rf /tmp/* /var/cache/apk/*
 
