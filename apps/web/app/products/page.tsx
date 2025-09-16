@@ -270,15 +270,21 @@ export default function ProductsPage() {
       setSaving(true);
       setError(null);
       
-      const promises = selectedProducts.map(productId => 
-        api(`/products/${productId}`, {
-          method: 'PUT',
-          body: JSON.stringify({ active })
+      const response = await api('/products/bulk', {
+        method: 'PUT',
+        body: JSON.stringify({ 
+          productIds: selectedProducts, 
+          updates: { active } 
         })
-      );
+      });
 
-      await Promise.all(promises);
-      setSuccess(`${selectedProducts.length} products ${active ? 'activated' : 'deactivated'} successfully`);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to update products');
+      }
+
+      const result = await response.json();
+      setSuccess(result.message);
       setSelectedProducts([]);
       await fetchProducts();
     } catch (err: any) {
@@ -297,12 +303,18 @@ export default function ProductsPage() {
       setSaving(true);
       setError(null);
       
-      const promises = selectedProducts.map(productId => 
-        api(`/products/${productId}`, { method: 'DELETE' })
-      );
+      const response = await api('/products/bulk', {
+        method: 'DELETE',
+        body: JSON.stringify({ productIds: selectedProducts })
+      });
 
-      await Promise.all(promises);
-      setSuccess(`${selectedProducts.length} products deleted successfully`);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to delete products');
+      }
+
+      const result = await response.json();
+      setSuccess(result.message);
       setSelectedProducts([]);
       await fetchProducts();
     } catch (err: any) {

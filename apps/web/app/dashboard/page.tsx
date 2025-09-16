@@ -67,39 +67,31 @@ export default function DashboardPage() {
       const ordersData = await ordersResponse.json();
       setStats(ordersData);
 
-      // Fetch recent activity (mock data for now)
-      setRecentActivity([
-        {
-          id: '1',
-          type: 'order',
-          title: 'New Order #12345',
-          description: 'Order placed by John Doe',
-          timestamp: new Date().toISOString(),
-          status: 'pending'
-        },
-        {
-          id: '2',
-          type: 'customer',
-          title: 'New Customer',
-          description: 'Jane Smith registered',
-          timestamp: new Date(Date.now() - 3600000).toISOString(),
-        },
-        {
-          id: '3',
-          type: 'product',
-          title: 'Product Updated',
-          description: 'iPhone 15 Pro stock updated',
-          timestamp: new Date(Date.now() - 7200000).toISOString(),
-        },
-        {
-          id: '4',
-          type: 'shipment',
-          title: 'Shipment Delivered',
-          description: 'Order #12340 delivered',
-          timestamp: new Date(Date.now() - 10800000).toISOString(),
-          status: 'delivered'
+      // Fetch recent activity from API
+      try {
+        const activityResponse = await api('/orders?limit=5&sort=createdAt:desc');
+        if (activityResponse.ok) {
+          const activityData = await activityResponse.json();
+          const recentOrders = activityData?.data || [];
+          
+          const activities: RecentActivity[] = recentOrders.map((order: any, index: number) => ({
+            id: order.id,
+            type: 'order' as const,
+            title: `Order #${order.externalOrderNo || order.id.slice(0, 8)}`,
+            description: `Order placed by ${order.customerName || order.customerEmail || 'Unknown Customer'}`,
+            timestamp: order.createdAt,
+            status: order.status
+          }));
+
+          setRecentActivity(activities);
+        } else {
+          // Fallback to empty array if API fails
+          setRecentActivity([]);
         }
-      ]);
+      } catch (err) {
+        // Fallback to empty array if API fails
+        setRecentActivity([]);
+      }
 
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load dashboard data');
@@ -378,11 +370,11 @@ export default function DashboardPage() {
                     <p className="text-xs text-muted-foreground">Orders to Revenue</p>
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-lg font-bold text-foreground">
-                    {stats?.totalOrders > 0 ? ((stats.totalRevenue / stats.totalOrders) / 100).toFixed(1) : 0}%
-                  </p>
-                </div>
+                     <div className="text-right">
+                       <p className="text-lg font-bold text-foreground">
+                         {stats?.totalOrders > 0 ? ((stats.totalRevenue / stats.totalOrders) * 100).toFixed(1) : 0}%
+                       </p>
+                     </div>
               </div>
 
               <div className="flex items-center justify-between p-3 bg-accent/20 rounded-lg">

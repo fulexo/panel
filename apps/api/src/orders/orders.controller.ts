@@ -55,6 +55,26 @@ export class OrdersController {
     return this.ordersService.remove(user.tenantId, id, user.id);
   }
 
+  @Put('bulk')
+  @Roles('ADMIN')
+  @ApiOperation({ summary: 'Bulk update orders' })
+  async bulkUpdate(
+    @CurrentUser() user: any,
+    @Body() body: { orderIds: string[]; updates: Partial<UpdateOrderDto> },
+  ) {
+    return this.ordersService.bulkUpdate(user.tenantId, body.orderIds, body.updates, user.id);
+  }
+
+  @Delete('bulk')
+  @Roles('ADMIN')
+  @ApiOperation({ summary: 'Bulk delete orders' })
+  async bulkDelete(
+    @CurrentUser() user: any,
+    @Body() body: { orderIds: string[] },
+  ) {
+    return this.ordersService.bulkDelete(user.tenantId, body.orderIds, user.id);
+  }
+
   
 
   @Get(':id/timeline')

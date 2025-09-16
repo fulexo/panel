@@ -171,5 +171,25 @@ export class BillingController {
   async refundPayment(@CurrentUser() user: any, @Param('id') id: string) {
     return this.billing.refundPayment(user.tenantId, id);
   }
+
+  @Put('batches/bulk')
+  @Roles('FULEXO_ADMIN', 'FULEXO_STAFF')
+  @ApiOperation({ summary: 'Bulk update billing batches' })
+  async bulkUpdateBatches(
+    @CurrentUser() user: any,
+    @Body() body: { batchIds: string[]; updates: any },
+  ) {
+    return this.billing.bulkUpdateBatches(user.tenantId, body.batchIds, body.updates, user.id);
+  }
+
+  @Delete('batches/bulk')
+  @Roles('FULEXO_ADMIN', 'FULEXO_STAFF')
+  @ApiOperation({ summary: 'Bulk delete billing batches' })
+  async bulkDeleteBatches(
+    @CurrentUser() user: any,
+    @Body() body: { batchIds: string[] },
+  ) {
+    return this.billing.bulkDeleteBatches(user.tenantId, body.batchIds, user.id);
+  }
 }
 

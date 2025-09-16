@@ -321,21 +321,23 @@ export default function CustomersPage() {
       setSaving(true);
       setError(null);
       
-      const promises = selectedCustomers.map(customerId => {
-        const customer = customers.find(c => c.id === customerId);
-        if (!customer) return Promise.resolve();
-        
-        const currentTags = customer.tags || [];
-        const newTags = [...currentTags, tag].filter((t, i, arr) => arr.indexOf(t) === i); // Remove duplicates
-        
-        return api(`/customers/${customerId}`, {
-          method: 'PUT',
-          body: JSON.stringify({ tags: newTags })
-        });
+      const response = await api('/customers/bulk', {
+        method: 'PUT',
+        body: JSON.stringify({ 
+          customerIds: selectedCustomers, 
+          updates: { 
+            tags: [...new Set([...customers.filter(c => selectedCustomers.includes(c.id)).flatMap(c => c.tags || []), tag])]
+          } 
+        })
       });
 
-      await Promise.all(promises);
-      setSuccess(`${selectedCustomers.length} customers tagged with "${tag}" successfully`);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to add tag to customers');
+      }
+
+      const result = await response.json();
+      setSuccess(result.message);
       setSelectedCustomers([]);
       await fetchCustomers();
     } catch (err: any) {
@@ -352,21 +354,23 @@ export default function CustomersPage() {
       setSaving(true);
       setError(null);
       
-      const promises = selectedCustomers.map(customerId => {
-        const customer = customers.find(c => c.id === customerId);
-        if (!customer) return Promise.resolve();
-        
-        const currentTags = customer.tags || [];
-        const newTags = currentTags.filter(t => t !== tag);
-        
-        return api(`/customers/${customerId}`, {
-          method: 'PUT',
-          body: JSON.stringify({ tags: newTags })
-        });
+      const response = await api('/customers/bulk', {
+        method: 'PUT',
+        body: JSON.stringify({ 
+          customerIds: selectedCustomers, 
+          updates: { 
+            tags: customers.filter(c => selectedCustomers.includes(c.id)).flatMap(c => (c.tags || []).filter(t => t !== tag))
+          } 
+        })
       });
 
-      await Promise.all(promises);
-      setSuccess(`Tag "${tag}" removed from ${selectedCustomers.length} customers successfully`);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to remove tag from customers');
+      }
+
+      const result = await response.json();
+      setSuccess(result.message);
       setSelectedCustomers([]);
       await fetchCustomers();
     } catch (err: any) {
@@ -385,12 +389,18 @@ export default function CustomersPage() {
       setSaving(true);
       setError(null);
       
-      const promises = selectedCustomers.map(customerId => 
-        api(`/customers/${customerId}`, { method: 'DELETE' })
-      );
+      const response = await api('/customers/bulk', {
+        method: 'DELETE',
+        body: JSON.stringify({ customerIds: selectedCustomers })
+      });
 
-      await Promise.all(promises);
-      setSuccess(`${selectedCustomers.length} customers deleted successfully`);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to delete customers');
+      }
+
+      const result = await response.json();
+      setSuccess(result.message);
       setSelectedCustomers([]);
       await fetchCustomers();
     } catch (err: any) {

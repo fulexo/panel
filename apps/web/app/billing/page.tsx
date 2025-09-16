@@ -231,15 +231,21 @@ export default function BillingPage() {
       setSaving(true);
       setError(null);
       
-      const promises = selectedBatches.map(batchId => 
-        api(`/billing/batches/${batchId}`, {
-          method: 'PUT',
-          body: JSON.stringify({ status: newStatus })
+      const response = await api('/billing/batches/bulk', {
+        method: 'PUT',
+        body: JSON.stringify({ 
+          batchIds: selectedBatches, 
+          updates: { status: newStatus } 
         })
-      );
+      });
 
-      await Promise.all(promises);
-      setSuccess(`${selectedBatches.length} batches updated successfully`);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to update batches');
+      }
+
+      const result = await response.json();
+      setSuccess(result.message);
       setSelectedBatches([]);
       await loadBatches();
     } catch (err: any) {
@@ -258,12 +264,18 @@ export default function BillingPage() {
       setSaving(true);
       setError(null);
       
-      const promises = selectedBatches.map(batchId => 
-        api(`/billing/batches/${batchId}`, { method: 'DELETE' })
-      );
+      const response = await api('/billing/batches/bulk', {
+        method: 'DELETE',
+        body: JSON.stringify({ batchIds: selectedBatches })
+      });
 
-      await Promise.all(promises);
-      setSuccess(`${selectedBatches.length} batches deleted successfully`);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to delete batches');
+      }
+
+      const result = await response.json();
+      setSuccess(result.message);
       setSelectedBatches([]);
       await loadBatches();
     } catch (err: any) {

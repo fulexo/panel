@@ -129,4 +129,46 @@ export class AuthController {
       userAgent: req.headers['user-agent'],
     });
   }
+
+  @Get('profile')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get user profile' })
+  async getProfile(@CurrentUser() user: any) {
+    return this.authService.getUserProfile(user.id);
+  }
+
+  @Put('profile')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update user profile' })
+  async updateProfile(@CurrentUser() user: any, @Body() dto: any) {
+    return this.authService.updateUserProfile(user.id, dto);
+  }
+
+  @Put('change-password')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Change user password' })
+  async changePassword(@CurrentUser() user: any, @Body() dto: { currentPassword: string; newPassword: string }) {
+    return this.authService.changePassword(user.id, dto.currentPassword, dto.newPassword);
+  }
+
+  @Post('2fa/generate')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Generate 2FA secret' })
+  async generate2FA(@CurrentUser() user: any) {
+    return this.twoFactorService.generateSecret(user.id);
+  }
+
+  @Post('2fa/enable')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Enable 2FA with token verification' })
+  async enable2FAWithToken(@CurrentUser() user: any, @Body() dto: { token: string }) {
+    return this.twoFactorService.verifyAndEnable(user.id, dto.token);
+  }
+
+  @Post('2fa/disable')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Disable 2FA' })
+  async disable2FAWithToken(@CurrentUser() user: any, @Body() dto: { token: string }) {
+    return this.twoFactorService.disableTwoFactor(user.id, dto.token);
+  }
 }

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 
 @Injectable()
@@ -133,6 +133,70 @@ export class CustomersService {
     if (!existing) throw new NotFoundException('Customer not found');
     await this.runTenant(tenantId, async (db) => db.customer.delete({ where: { id } }));
     return { message: 'Customer deleted' };
+  }
+
+  async bulkUpdate(tenantId: string, customerIds: string[], updates: any, userId: string) {
+    if (!customerIds || customerIds.length === 0) {
+      throw new BadRequestException('No customer IDs provided');
+    }
+
+    if (customerIds.length > 100) {
+      throw new BadRequestException('Cannot update more than 100 customers at once');
+    }
+
+    const results = await this.runTenant(tenantId, async (db) => {
+      const updateData: any = {};
+      
+      if (updates.tags !== undefined) updateData.tags = updates.tags;
+      if (updates.notes !== undefined) updateData.notes = updates.notes;
+      if (updates.company !== undefined) updateData.company = updates.company;
+      if (updates.country !== undefined) updateData.country = updates.country;
+      
+      updateData.updatedAt = new Date();
+
+      const result = await db.customer.updateMany({
+        where: {
+          id: { in: customerIds },
+          tenantId,
+        },
+        data: updateData,
+      });
+
+      return result;
+    });
+
+    return {
+      message: `Successfully updated ${results.count} customers`,
+      updatedCount: results.count,
+      customerIds,
+    };
+  }
+
+  async bulkDelete(tenantId: string, customerIds: string[], userId: string) {
+    if (!customerIds || customerIds.length === 0) {
+      throw new BadRequestException('No customer IDs provided');
+    }
+
+    if (customerIds.length > 100) {
+      throw new BadRequestException('Cannot delete more than 100 customers at once');
+    }
+
+    const results = await this.runTenant(tenantId, async (db) => {
+      const result = await db.customer.deleteMany({
+        where: {
+          id: { in: customerIds },
+          tenantId,
+        },
+      });
+
+      return result;
+    });
+
+    return {
+      message: `Successfully deleted ${results.count} customers`,
+      deletedCount: results.count,
+      customerIds,
+    };
   }
 }
 

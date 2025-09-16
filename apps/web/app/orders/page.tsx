@@ -123,15 +123,21 @@ export default function OrdersPage() {
       setSaving(true);
       setError(null);
       
-      const promises = selectedOrders.map(orderId => 
-        api(`/orders/${orderId}`, {
-          method: 'PUT',
-          body: JSON.stringify({ status: newStatus })
+      const response = await api('/orders/bulk', {
+        method: 'PUT',
+        body: JSON.stringify({ 
+          orderIds: selectedOrders, 
+          updates: { status: newStatus } 
         })
-      );
+      });
 
-      await Promise.all(promises);
-      setSuccess(`${selectedOrders.length} orders updated successfully`);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to update orders');
+      }
+
+      const result = await response.json();
+      setSuccess(result.message);
       setSelectedOrders([]);
       await fetchOrders();
     } catch (err: any) {

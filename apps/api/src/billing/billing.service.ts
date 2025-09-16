@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { Prisma } from '@prisma/client';
 
@@ -306,6 +306,73 @@ export class BillingService {
       where: { id },
       data: { status: 'refunded' } as any,
     }));
+  }
+
+  async bulkUpdateBatches(tenantId: string, batchIds: string[], updates: any, userId: string) {
+    if (!batchIds || batchIds.length === 0) {
+      throw new BadRequestException('No batch IDs provided');
+    }
+
+    if (batchIds.length > 100) {
+      throw new BadRequestException('Cannot update more than 100 batches at once');
+    }
+
+    const results = await this.runTenant(tenantId, async (db) => {
+      const updateData: any = {};
+      
+      if (updates.status !== undefined) updateData.status = updates.status;
+      
+      updateData.updatedAt = new Date();
+
+      const result = await db.billingBatch.updateMany({
+        where: {
+          id: { in: batchIds },
+          tenantId,
+        },
+        data: updateData,
+      });
+
+      return result;
+    });
+
+    return {
+      message: `Successfully updated ${results.count} billing batches`,
+      updatedCount: results.count,
+      batchIds,
+    };
+  }
+
+  async bulkDeleteBatches(tenantId: string, batchIds: string[], userId: string) {
+    if (!batchIds || batchIds.length === 0) {
+      throw new BadRequestException('No batch IDs provided');
+    }
+
+    if (batchIds.length > 100) {
+      throw new BadRequestException('Cannot delete more than 100 batches at once');
+    }
+
+    const results = await this.runTenant(tenantId, async (db) => {
+      // First, delete related batch items
+      await db.billingBatchItem.deleteMany({
+        where: { batchId: { in: batchIds } },
+      });
+
+      // Then delete the batches
+      const result = await db.billingBatch.deleteMany({
+        where: {
+          id: { in: batchIds },
+          tenantId,
+        },
+      });
+
+      return result;
+    });
+
+    return {
+      message: `Successfully deleted ${results.count} billing batches`,
+      deletedCount: results.count,
+      batchIds,
+    };
   }
 }
 

@@ -173,6 +173,11 @@ export default function SettingsPage() {
         body: JSON.stringify({ service })
       });
 
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Test connection failed');
+      }
+
       const result = await response.json();
       
       if (result.connected) {

@@ -1,5 +1,6 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class ProductsService {
@@ -105,5 +106,69 @@ export class ProductsService {
     return this.runTenant(tenantId, async (db) => db.product.delete({
       where: { id }
     }));
+  }
+
+  async bulkUpdate(tenantId: string, productIds: string[], updates: any, userId: string) {
+    if (!productIds || productIds.length === 0) {
+      throw new BadRequestException('No product IDs provided');
+    }
+
+    if (productIds.length > 100) {
+      throw new BadRequestException('Cannot update more than 100 products at once');
+    }
+
+    const results = await this.runTenant(tenantId, async (db) => {
+      const updateData: any = {};
+      
+      if (updates.active !== undefined) updateData.active = updates.active;
+      if (updates.stock !== undefined) updateData.stock = updates.stock ? parseInt(updates.stock) : null;
+      if (updates.price !== undefined) updateData.price = updates.price ? new Prisma.Decimal(updates.price) : null;
+      if (updates.tags !== undefined) updateData.tags = updates.tags;
+      
+      updateData.updatedAt = new Date();
+
+      const result = await db.product.updateMany({
+        where: {
+          id: { in: productIds },
+          tenantId,
+        },
+        data: updateData,
+      });
+
+      return result;
+    });
+
+    return {
+      message: `Successfully updated ${results.count} products`,
+      updatedCount: results.count,
+      productIds,
+    };
+  }
+
+  async bulkDelete(tenantId: string, productIds: string[], userId: string) {
+    if (!productIds || productIds.length === 0) {
+      throw new BadRequestException('No product IDs provided');
+    }
+
+    if (productIds.length > 100) {
+      throw new BadRequestException('Cannot delete more than 100 products at once');
+    }
+
+    const results = await this.runTenant(tenantId, async (db) => {
+      const result = await db.product.deleteMany({
+        where: {
+          id: { in: productIds },
+          tenantId,
+        },
+      });
+
+      return result;
+    });
+
+    return {
+      message: `Successfully deleted ${results.count} products`,
+      deletedCount: results.count,
+      productIds,
+    };
   }
 }

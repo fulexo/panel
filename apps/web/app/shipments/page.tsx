@@ -196,15 +196,21 @@ export default function ShipmentsPage() {
       setSaving(true);
       setError(null);
       
-      const promises = selectedShipments.map(shipmentId => 
-        api(`/shipments/${shipmentId}`, {
-          method: 'PUT',
-          body: JSON.stringify({ status: newStatus })
+      const response = await api('/shipments/bulk', {
+        method: 'PUT',
+        body: JSON.stringify({ 
+          shipmentIds: selectedShipments, 
+          updates: { status: newStatus } 
         })
-      );
+      });
 
-      await Promise.all(promises);
-      setSuccess(`${selectedShipments.length} shipments updated successfully`);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to update shipments');
+      }
+
+      const result = await response.json();
+      setSuccess(result.message);
       setSelectedShipments([]);
       await loadShipments();
     } catch (err: any) {
@@ -223,12 +229,18 @@ export default function ShipmentsPage() {
       setSaving(true);
       setError(null);
       
-      const promises = selectedShipments.map(shipmentId => 
-        api(`/shipments/${shipmentId}`, { method: 'DELETE' })
-      );
+      const response = await api('/shipments/bulk', {
+        method: 'DELETE',
+        body: JSON.stringify({ shipmentIds: selectedShipments })
+      });
 
-      await Promise.all(promises);
-      setSuccess(`${selectedShipments.length} shipments deleted successfully`);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to delete shipments');
+      }
+
+      const result = await response.json();
+      setSuccess(result.message);
       setSelectedShipments([]);
       await loadShipments();
     } catch (err: any) {

@@ -1,5 +1,6 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class ShipmentsService {
@@ -131,5 +132,78 @@ export class ShipmentsService {
     return this.runTenant(tenantId, async (db) => db.shipment.delete({
       where: { id }
     }));
+  }
+
+  async bulkUpdate(tenantId: string, shipmentIds: string[], updates: any, userId: string) {
+    if (!shipmentIds || shipmentIds.length === 0) {
+      throw new BadRequestException('No shipment IDs provided');
+    }
+
+    if (shipmentIds.length > 100) {
+      throw new BadRequestException('Cannot update more than 100 shipments at once');
+    }
+
+    const results = await this.runTenant(tenantId, async (db) => {
+      const updateData: any = {};
+      
+      if (updates.status !== undefined) updateData.status = updates.status;
+      if (updates.carrier !== undefined) updateData.carrier = updates.carrier;
+      if (updates.trackingNo !== undefined) updateData.trackingNo = updates.trackingNo;
+      if (updates.weight !== undefined) updateData.weight = updates.weight ? new Prisma.Decimal(updates.weight) : null;
+      if (updates.dimensions !== undefined) updateData.dimensions = updates.dimensions;
+      
+      // Handle status-based timestamps
+      if (updates.status === 'shipped') {
+        updateData.shippedAt = new Date();
+      }
+      if (updates.status === 'delivered') {
+        updateData.deliveredAt = new Date();
+      }
+      
+      updateData.updatedAt = new Date();
+
+      const result = await db.shipment.updateMany({
+        where: {
+          id: { in: shipmentIds },
+          order: { tenantId },
+        },
+        data: updateData,
+      });
+
+      return result;
+    });
+
+    return {
+      message: `Successfully updated ${results.count} shipments`,
+      updatedCount: results.count,
+      shipmentIds,
+    };
+  }
+
+  async bulkDelete(tenantId: string, shipmentIds: string[], userId: string) {
+    if (!shipmentIds || shipmentIds.length === 0) {
+      throw new BadRequestException('No shipment IDs provided');
+    }
+
+    if (shipmentIds.length > 100) {
+      throw new BadRequestException('Cannot delete more than 100 shipments at once');
+    }
+
+    const results = await this.runTenant(tenantId, async (db) => {
+      const result = await db.shipment.deleteMany({
+        where: {
+          id: { in: shipmentIds },
+          order: { tenantId },
+        },
+      });
+
+      return result;
+    });
+
+    return {
+      message: `Successfully deleted ${results.count} shipments`,
+      deletedCount: results.count,
+      shipmentIds,
+    };
   }
 }

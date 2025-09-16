@@ -296,4 +296,114 @@ export class AuthService {
     }
     return userId;
   }
+
+  async getUserProfile(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        isActive: true,
+        twoFactorEnabled: true,
+        createdAt: true,
+        lastLoginAt: true,
+        notificationPreferences: true,
+      },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    return user;
+  }
+
+  async updateUserProfile(userId: string, dto: any) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    const updateData: any = {};
+    
+    if (dto.name !== undefined) updateData.name = dto.name;
+    if (dto.email !== undefined) {
+      // Check if email is already taken by another user
+      const existingUser = await this.prisma.user.findFirst({
+        where: { email: dto.email, id: { not: userId } },
+      });
+      if (existingUser) {
+        throw new ConflictException('Email is already taken');
+      }
+      updateData.email = dto.email;
+    }
+    if (dto.notificationPreferences !== undefined) {
+      updateData.notificationPreferences = dto.notificationPreferences;
+    }
+
+    const updatedUser = await this.prisma.user.update({
+      where: { id: userId },
+      data: updateData,
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        isActive: true,
+        twoFactorEnabled: true,
+        createdAt: true,
+        lastLoginAt: true,
+        notificationPreferences: true,
+      },
+    });
+
+    await this.auditService.log({
+      action: 'profile.updated',
+      userId,
+      changes: dto,
+    });
+
+    return updatedUser;
+  }
+
+  async changePassword(userId: string, currentPassword: string, newPassword: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    // Verify current password
+    const isCurrentPasswordValid = user.passwordHash ? await bcrypt.compare(currentPassword, user.passwordHash) : false;
+    if (!isCurrentPasswordValid) {
+      throw new BadRequestException('Current password is incorrect');
+    }
+
+    // Validate new password
+    if (newPassword.length < 8) {
+      throw new BadRequestException('New password must be at least 8 characters long');
+    }
+
+    // Hash new password
+    const newPasswordHash = await bcrypt.hash(newPassword, 12);
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { passwordHash: newPasswordHash },
+    });
+
+    await this.auditService.log({
+      action: 'password.changed',
+      userId,
+    });
+
+    return { message: 'Password changed successfully' };
+  }
 }

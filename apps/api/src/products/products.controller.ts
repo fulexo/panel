@@ -1,7 +1,8 @@
-import { Controller, Get, Param, Query } from '@nestjs/common';
+import { Controller, Get, Param, Query, Post, Put, Delete, Body } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { ProductsService } from './products.service';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { Roles } from '../auth/decorators/roles.decorator';
 
 @ApiTags('products')
 @ApiBearerAuth()
@@ -45,5 +46,25 @@ export class ProductsController {
   @ApiOperation({ summary: 'Delete product' })
   async delete(@CurrentUser() user: any, @Param('id') id: string) {
     return this.products.delete(user.tenantId, id);
+  }
+
+  @Put('bulk')
+  @Roles('ADMIN')
+  @ApiOperation({ summary: 'Bulk update products' })
+  async bulkUpdate(
+    @CurrentUser() user: any,
+    @Body() body: { productIds: string[]; updates: any },
+  ) {
+    return this.products.bulkUpdate(user.tenantId, body.productIds, body.updates, user.id);
+  }
+
+  @Delete('bulk')
+  @Roles('ADMIN')
+  @ApiOperation({ summary: 'Bulk delete products' })
+  async bulkDelete(
+    @CurrentUser() user: any,
+    @Body() body: { productIds: string[] },
+  ) {
+    return this.products.bulkDelete(user.tenantId, body.productIds, user.id);
   }
 }

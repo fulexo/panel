@@ -45,5 +45,25 @@ export class CustomersController {
   async remove(@CurrentUser() user: any, @Param('id') id: string) {
     return this.customers.remove(user.tenantId, id);
   }
+
+  @Put('bulk')
+  @Roles('ADMIN')
+  @ApiOperation({ summary: 'Bulk update customers' })
+  async bulkUpdate(
+    @CurrentUser() user: any,
+    @Body() body: { customerIds: string[]; updates: any },
+  ) {
+    return this.customers.bulkUpdate(user.tenantId, body.customerIds, body.updates, user.id);
+  }
+
+  @Delete('bulk')
+  @Roles('ADMIN')
+  @ApiOperation({ summary: 'Bulk delete customers' })
+  async bulkDelete(
+    @CurrentUser() user: any,
+    @Body() body: { customerIds: string[] },
+  ) {
+    return this.customers.bulkDelete(user.tenantId, body.customerIds, user.id);
+  }
 }
 
