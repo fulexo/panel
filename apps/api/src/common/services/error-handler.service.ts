@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { PrismaService } from '../../prisma.service';
+import { PrismaService } from '@/prisma.service';
 
 export interface ErrorContext {
   userId?: string;
@@ -83,8 +83,11 @@ export class ErrorHandlerService {
   }
 
   private async sendCriticalErrorAlert(errorInfo: any): Promise<void> {
-    // TODO: Implement actual alert sending (email, Slack, etc.)
+    // Implement actual alert sending (email, Slack, etc.)
     this.logger.error('CRITICAL ERROR ALERT - Manual intervention required', errorInfo);
+    
+    // TODO: Add email/Slack integration for critical alerts
+    // This should integrate with your alerting system in production
     
     // For now, just log to a separate file or send to monitoring service
     // In production, this should integrate with your alerting system

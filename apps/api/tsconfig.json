@@ -4,6 +4,17 @@
     "module": "commonjs",
     "outDir": "dist",
     "rootDir": "src",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@/common/*": ["./src/common/*"],
+      "@/modules/*": ["./src/modules/*"],
+      "@/auth/*": ["./src/auth/*"],
+      "@/orders/*": ["./src/orders/*"],
+      "@/products/*": ["./src/products/*"],
+      "@/customers/*": ["./src/customers/*"],
+      "@/tenants/*": ["./src/tenants/*"]
+    },
     "esModuleInterop": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,

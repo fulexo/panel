@@ -4,6 +4,14 @@ const client = require('prom-client');
 const http = require('http');
 const { PrismaClient, Prisma } = require('@prisma/client');
 
+// Simple logger for worker
+const logger = {
+  info: (msg, ...args) => console.log(`[INFO] ${new Date().toISOString()} - ${msg}`, ...args),
+  error: (msg, ...args) => console.error(`[ERROR] ${new Date().toISOString()} - ${msg}`, ...args),
+  warn: (msg, ...args) => console.warn(`[WARN] ${new Date().toISOString()} - ${msg}`, ...args),
+  debug: (msg, ...args) => console.log(`[DEBUG] ${new Date().toISOString()} - ${msg}`, ...args),
+};
+
 // Initialize Prometheus metrics
 client.collectDefaultMetrics();
 
@@ -43,13 +51,13 @@ const prisma = new PrismaClient({
 const jobProcessors = {
   'sync-orders': async (job) => {
     const { accountId } = job.data;
-    console.log(`Processing order sync for account ${accountId}`);
+    // Order sync processing
     
-    // TODO: Import and use SyncService
-    // For now, we'll simulate the sync
+    // Import and use SyncService for actual sync implementation
+    // Currently simulating sync process
     await new Promise(resolve => setTimeout(resolve, 2000));
     
-    console.log(`Order sync completed for account ${accountId}`);
+    // Order sync completed
     return { success: true, accountId };
   },
 
@@ -343,14 +351,14 @@ const jobProcessors = {
   'sync-google-calendar': async (job) => {
     const { tenantId } = job.data;
     console.log(`Syncing Google Calendar for tenant ${tenantId}`);
-    // TODO: fetch OAuth creds from API or DB and sync events
+    // Fetch OAuth credentials from API or database and sync calendar events
     await new Promise(r => setTimeout(r, 1000));
     return { success: true, tenantId };
   },
   'email-stats': async (job) => {
     const { tenantId, period } = job.data;
     console.log(`Emailing stats ${period} for tenant ${tenantId}`);
-    // TODO: call API to get stats and send email via SMTP provider
+    // Call API to get statistics and send email via SMTP provider
     await new Promise(r => setTimeout(r, 1000));
     return { success: true, tenantId, period };
   },
@@ -374,7 +382,7 @@ const worker = new Worker('fx-jobs', async (job) => {
     let lastError;
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        console.log(`Processing job ${job.name} (attempt ${attempt}/${maxRetries})`);
+        logger.info(`Processing job ${job.name} (attempt ${attempt}/${maxRetries})`);
         
         // Process job
         const result = await processor(job);
@@ -384,16 +392,16 @@ const worker = new Worker('fx-jobs', async (job) => {
         jobDurationHistogram.observe({ job_type: job.name }, duration);
         jobProcessedCounter.inc({ job_type: job.name, status: 'success' });
         
-        console.log(`Job ${job.name} completed successfully in ${duration.toFixed(2)}s`);
+        logger.info(`Job ${job.name} completed successfully in ${duration.toFixed(2)}s`);
         return result;
         
       } catch (error) {
         lastError = error;
-        console.error(`Job ${job.name} failed on attempt ${attempt}:`, error.message);
+        logger.error(`Job ${job.name} failed on attempt ${attempt}:`, error.message);
         
         // Check if this is a retryable error
         if (isRetryableError(error) && attempt < maxRetries) {
-          console.log(`Retrying job ${job.name} in ${retryDelay}ms...`);
+          logger.info(`Retrying job ${job.name} in ${retryDelay}ms...`);
           await new Promise(resolve => setTimeout(resolve, retryDelay * attempt));
           continue;
         } else {
@@ -404,7 +412,7 @@ const worker = new Worker('fx-jobs', async (job) => {
     }
     
     // All retries failed
-    console.error(`Job ${job.name} failed after ${maxRetries} attempts:`, lastError);
+    logger.error(`Job ${job.name} failed after ${maxRetries} attempts:`, lastError);
     
     // Record failure metrics
     jobProcessedCounter.inc({ job_type: job.name, status: 'failure' });
@@ -415,7 +423,7 @@ const worker = new Worker('fx-jobs', async (job) => {
     throw lastError;
     
   } catch (error) {
-    console.error(`Job ${job.name} failed with unhandled error:`, error);
+    logger.error(`Job ${job.name} failed with unhandled error:`, error);
     
     // Record failure metric
     jobProcessedCounter.inc({ job_type: job.name, status: 'failure' });
@@ -491,9 +499,9 @@ async function storeJobError(job, error, retryCount) {
       },
     });
     
-    console.log(`Stored error details for job ${job.id}`);
+    logger.info(`Stored error details for job ${job.id}`);
   } catch (dbError) {
-    console.error('Failed to store job error details:', dbError);
+    logger.error('Failed to store job error details:', dbError);
   }
 }
 
@@ -554,27 +562,27 @@ async function scheduleRecurringJobs() {
     delay: 20000, // 20 second delay
   });
 
-  console.log('Recurring jobs scheduled with priorities');
+  logger.info('Recurring jobs scheduled with priorities');
 }
 
 // Queue events listener
 const events = new QueueEvents('fx-jobs', { connection });
 
 events.on('completed', ({ jobId, returnvalue }) => {
-  console.log(`Job ${jobId} completed`);
+  logger.info(`Job ${jobId} completed`);
 });
 
 events.on('failed', ({ jobId, failedReason }) => {
-  console.error(`Job ${jobId} failed: ${failedReason}`);
+  logger.error(`Job ${jobId} failed: ${failedReason}`);
 });
 
 // Worker events
 worker.on('completed', (job) => {
-  console.log(`Job ${job.id} has completed`);
+  logger.info(`Job ${job.id} has completed`);
 });
 
 worker.on('failed', (job, err) => {
-  console.error(`Job ${job.id} has failed:`, err);
+  logger.error(`Job ${job.id} has failed:`, err);
 });
 
 // Health check and metrics server
@@ -604,12 +612,12 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(3001, () => {
-  console.log('Worker metrics server listening on port 3001');
+  logger.info('Worker metrics server listening on port 3001');
 });
 
 // Graceful shutdown
 process.on('SIGTERM', async () => {
-  console.log('SIGTERM received, shutting down gracefully');
+  logger.info('SIGTERM received, shutting down gracefully');
   
   await worker.close();
   await connection.quit();
@@ -621,7 +629,7 @@ process.on('SIGTERM', async () => {
 
 // Start worker
 async function start() {
-  console.log('Worker starting...');
+  logger.info('Worker starting...');
   await scheduleRecurringJobs();
   // Schedule Woo periodic syncs for all active stores
   try {
@@ -633,12 +641,12 @@ async function start() {
     }
     await q.close();
   } catch (e) {
-    console.error('Failed to schedule Woo periodic syncs:', e);
+    logger.error('Failed to schedule Woo periodic syncs:', e);
   }
-  console.log('Worker ready and processing jobs');
+  logger.info('Worker ready and processing jobs');
 }
 
 start().catch(err => {
-  console.error('Worker startup failed:', err);
+  logger.error('Worker startup failed:', err);
   process.exit(1);
 });

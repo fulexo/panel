@@ -78,7 +78,7 @@ export class InputSanitizationService {
   }
 
   // Sanitize JSON data
-  sanitizeJson(data: any): any {
+  sanitizeJson(data: unknown): unknown {
     if (!data) return data;
     
     if (typeof data === 'string') {
@@ -90,7 +90,7 @@ export class InputSanitizationService {
     }
     
     if (typeof data === 'object' && data !== null) {
-      const sanitized: any = {};
+      const sanitized: Record<string, unknown> = {};
       for (const [key, value] of Object.entries(data)) {
         const sanitizedKey = this.sanitizeText(key);
         sanitized[sanitizedKey] = this.sanitizeJson(value);
@@ -160,7 +160,7 @@ export class InputSanitizationService {
   }
 
   // Sanitize boolean input
-  sanitizeBoolean(input: any): boolean {
+  sanitizeBoolean(input: unknown): boolean {
     if (typeof input === 'boolean') {
       return input;
     }
@@ -192,7 +192,7 @@ export class InputSanitizationService {
   }
 
   // Sanitize array input
-  sanitizeArray<T>(input: any, sanitizer: (item: any) => T): T[] {
+  sanitizeArray<T>(input: unknown, sanitizer: (item: unknown) => T): T[] {
     if (!Array.isArray(input)) {
       return [];
     }
@@ -203,7 +203,7 @@ export class InputSanitizationService {
   }
 
   // Sanitize object input
-  sanitizeObject<T>(input: any, sanitizer: (obj: any) => T): T | null {
+  sanitizeObject<T>(input: unknown, sanitizer: (obj: unknown) => T): T | null {
     if (!input || typeof input !== 'object') {
       return null;
     }

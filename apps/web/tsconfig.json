@@ -10,6 +10,13 @@
     "moduleResolution": "bundler",
     "strict": true,
     "baseUrl": ".",
+    "paths": {
+      "@/*": ["./*"],
+      "@/components/*": ["./components/*"],
+      "@/lib/*": ["./lib/*"],
+      "@/types/*": ["./types/*"],
+      "@/app/*": ["./app/*"]
+    },
     "allowJs": true,
     "skipLibCheck": true,
     "noEmit": true,
