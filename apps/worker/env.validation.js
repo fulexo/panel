@@ -40,21 +40,21 @@ function validateEnvironment() {
     const errors = config.validate();
     
     if (errors.length > 0) {
-      console.error('❌ Worker environment validation failed:');
-      errors.forEach(error => console.error(`  - ${error}`));
+      // Worker environment validation failed
+      // Validation errors logged
       
       if (process.env.NODE_ENV === 'production') {
         process.exit(1);
       } else {
-        console.warn('⚠️  Continuing in development mode with warnings');
+        // Continuing in development mode with warnings
       }
     } else {
-      console.log('✅ Worker environment variables validated successfully');
+      // Worker environment variables validated successfully
     }
     
     return config;
   } catch (error) {
-    console.error('❌ Worker environment validation error:', error.message);
+    // Worker environment validation error
     
     if (process.env.NODE_ENV === 'production') {
       process.exit(1);

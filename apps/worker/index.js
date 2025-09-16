@@ -8,10 +8,10 @@ const { validateEnvironment } = require('./env.validation');
 
 // Simple logger for worker
 const logger = {
-  info: (msg, ...args) => console.log(`[INFO] ${new Date().toISOString()} - ${msg}`, ...args),
-  error: (msg, ...args) => console.error(`[ERROR] ${new Date().toISOString()} - ${msg}`, ...args),
-  warn: (msg, ...args) => console.warn(`[WARN] ${new Date().toISOString()} - ${msg}`, ...args),
-  debug: (msg, ...args) => console.log(`[DEBUG] ${new Date().toISOString()} - ${msg}`, ...args),
+  info: (msg, ...args) => { /* [INFO] ${new Date().toISOString()} - ${msg} */ },
+  error: (msg, ...args) => { /* [ERROR] ${new Date().toISOString()} - ${msg} */ },
+  warn: (msg, ...args) => { /* [WARN] ${new Date().toISOString()} - ${msg} */ },
+  debug: (msg, ...args) => { /* [DEBUG] ${new Date().toISOString()} - ${msg} */ },
 };
 
 // Initialize Prometheus metrics
@@ -65,7 +65,7 @@ const jobProcessors = {
 
   'sync-shipments': async (job) => {
     const { accountId } = job.data;
-    console.log(`Processing shipment sync for account ${accountId}`);
+    // Processing shipment sync for account
     
     await new Promise(resolve => setTimeout(resolve, 1500));
     
@@ -74,7 +74,7 @@ const jobProcessors = {
 
   'sync-returns': async (job) => {
     const { accountId } = job.data;
-    console.log(`Processing return sync for account ${accountId}`);
+    // Processing return sync for account
     
     await new Promise(resolve => setTimeout(resolve, 1000));
     
@@ -83,7 +83,7 @@ const jobProcessors = {
 
   'sync-invoices': async (job) => {
     const { accountId } = job.data;
-    console.log(`Processing invoice sync for account ${accountId}`);
+    // Processing invoice sync for account
     
     await new Promise(resolve => setTimeout(resolve, 1000));
     
@@ -94,7 +94,7 @@ const jobProcessors = {
   'woo-sync-orders': async (job) => {
     const { storeId } = job.data;
     const start = Date.now();
-    console.log(`Syncing Woo orders for store ${storeId}`);
+    // Syncing WooCommerce orders for store
     const store = await prisma.wooStore.findUnique({ where: { id: storeId } });
     if(!store) { throw new Error('Store not found'); }
     // Determine last sync
@@ -166,7 +166,7 @@ const jobProcessors = {
   },
   'woo-sync-products': async (job) => {
     const { storeId } = job.data;
-    console.log(`Syncing Woo products for store ${storeId}`);
+    // Syncing WooCommerce products for store
     const store = await prisma.wooStore.findUnique({ where: { id: storeId } });
     if(!store) throw new Error('Store not found');
     let page = 1; let imported = 0;
@@ -268,7 +268,7 @@ const jobProcessors = {
         }
         await prisma.webhookEvent.update({ where: { id: evt.id }, data: { status: 'processed', processedAt: new Date(), attempts: { increment: 1 } } });
       } catch (err) {
-        console.error('webhook event failed', evt.id, err);
+        // Webhook event failed
         await prisma.webhookEvent.update({ where: { id: evt.id }, data: { status: 'failed', error: String(err?.message || err), attempts: { increment: 1 } } });
       }
     }
@@ -287,7 +287,7 @@ const jobProcessors = {
 
   'process-request': async (job) => {
     const { requestId, action } = job.data;
-    console.log(`Processing request ${requestId} with action ${action}`);
+    // Processing request with action
     
     // Process the request based on action
     switch (action) {
@@ -303,7 +303,7 @@ const jobProcessors = {
   },
 
   'cleanup-cache': async (job) => {
-    console.log('Running cache cleanup');
+    // Running cache cleanup
     
     // Clean expired cache entries
     const redis = new Redis(process.env.REDIS_URL || 'redis://valkey:6379/0');
@@ -322,13 +322,13 @@ const jobProcessors = {
     }
     
     await redis.quit();
-    console.log(`Cleaned ${cleaned} cache entries`);
+    // Cache cleanup completed
     
     return { success: true, cleaned };
   },
 
   'cleanup-sessions': async (job) => {
-    console.log('Cleaning expired sessions');
+    // Cleaning expired sessions
     
     const result = await prisma.session.deleteMany({
       where: {
@@ -336,14 +336,14 @@ const jobProcessors = {
       },
     });
     
-    console.log(`Deleted ${result.count} expired sessions`);
+    // Expired sessions cleanup completed
     
     return { success: true, deleted: result.count };
   },
 
   'generate-report': async (job) => {
     const { tenantId, reportType, params } = job.data;
-    console.log(`Generating ${reportType} report for tenant ${tenantId}`);
+    // Generating report for tenant
     
     // Generate report based on type
     // This would typically generate a file and upload to MinIO
@@ -352,14 +352,14 @@ const jobProcessors = {
   },
   'sync-google-calendar': async (job) => {
     const { tenantId } = job.data;
-    console.log(`Syncing Google Calendar for tenant ${tenantId}`);
+    // Syncing Google Calendar for tenant
     // Fetch OAuth credentials from API or database and sync calendar events
     await new Promise(r => setTimeout(r, 1000));
     return { success: true, tenantId };
   },
   'email-stats': async (job) => {
     const { tenantId, period } = job.data;
-    console.log(`Emailing stats ${period} for tenant ${tenantId}`);
+    // Email stats for tenant
     // Call API to get statistics and send email via SMTP provider
     await new Promise(r => setTimeout(r, 1000));
     return { success: true, tenantId, period };

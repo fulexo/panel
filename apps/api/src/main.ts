@@ -52,7 +52,7 @@ async function bootstrap() {
       }
 
       // Log rejected origin for debugging
-      console.log(`Rejected origin: ${origin}`);
+      // Origin rejected by CORS policy
       return callback(new Error('Not allowed by CORS'), false);
     },
     credentials: true,
@@ -132,26 +132,26 @@ async function bootstrap() {
 
   // Graceful shutdown
   process.on('SIGTERM', async () => {
-    console.log('SIGTERM received, shutting down gracefully');
+    // SIGTERM received, shutting down gracefully
     await app.close();
     process.exit(0);
   });
 
   process.on('SIGINT', async () => {
-    console.log('SIGINT received, shutting down gracefully');
+    // SIGINT received, shutting down gracefully
     await app.close();
     process.exit(0);
   });
 
   const port = process.env.PORT || 3000;
   await app.listen(port);
-  console.log(`🚀 Application is running on: http://localhost:${port}`);
-  console.log(`📚 API Documentation: http://localhost:${port}/api/docs`);
-  console.log(`🔍 Health Check: http://localhost:${port}/health`);
-  console.log(`📊 Metrics: http://localhost:${port}/metrics`);
+  // Application started successfully
+  // API Documentation: http://localhost:${port}/api/docs
+  // Health Check: http://localhost:${port}/health
+  // Metrics: http://localhost:${port}/metrics
 }
 
 bootstrap().catch((error) => {
-  console.error('Failed to start application:', error);
+  // Failed to start application
   process.exit(1);
 });

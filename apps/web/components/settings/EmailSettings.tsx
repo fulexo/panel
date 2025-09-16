@@ -12,7 +12,7 @@ export function EmailSettings() {
   })
 
   const handleSave = async () => {
-    console.log('Saving email settings:', settings)
+    // Saving email settings
   }
 
   return (
