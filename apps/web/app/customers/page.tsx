@@ -47,6 +47,7 @@ export default function CustomersPage() {
   const router = useRouter();
   const { user } = useAuth();
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const [stores, setStores] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -79,6 +80,22 @@ export default function CustomersPage() {
   
   // Edit customer
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
+  const [editForm, setEditForm] = useState({
+    name: '',
+    email: '',
+    phoneE164: '',
+    company: '',
+    vatId: '',
+    addressLine1: '',
+    addressLine2: '',
+    city: '',
+    state: '',
+    postalCode: '',
+    country: '',
+    notes: '',
+    tags: '',
+    storeId: '',
+  });
 
   const token = () => localStorage.getItem('access_token');
   const api = (path: string, init?: any) => 
@@ -90,6 +107,9 @@ export default function CustomersPage() {
   useEffect(() => {
     if (user) {
       fetchCustomers();
+      if (user.role === 'ADMIN') {
+        fetchStores();
+      }
     } else {
       router.push('/login');
     }
@@ -130,6 +150,18 @@ export default function CustomersPage() {
       setError(err instanceof Error ? err.message : 'Failed to load customers');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchStores = async () => {
+    try {
+      const r = await api('/woo/stores');
+      if (r.ok) {
+        const data = await r.json();
+        setStores(data || []);
+      }
+    } catch (err) {
+      // Ignore store fetch errors
     }
   };
 
@@ -197,7 +229,7 @@ export default function CustomersPage() {
 
   const startEdit = (customer: Customer) => {
     setEditingCustomer(customer);
-    setCreateForm({
+    setEditForm({
       name: customer.name || '',
       email: customer.email || '',
       phoneE164: customer.phoneE164 || '',
@@ -211,6 +243,7 @@ export default function CustomersPage() {
       country: customer.country || '',
       notes: customer.notes || '',
       tags: customer.tags?.join(', ') || '',
+      storeId: customer.storeId || '',
     });
   };
 
@@ -224,19 +257,20 @@ export default function CustomersPage() {
       const r = await api(`/customers/${editingCustomer.id}`, {
         method: 'PUT',
         body: JSON.stringify({
-          name: createForm.name || undefined,
-          email: createForm.email || undefined,
-          phoneE164: createForm.phoneE164 || undefined,
-          company: createForm.company || undefined,
-          vatId: createForm.vatId || undefined,
-          addressLine1: createForm.addressLine1 || undefined,
-          addressLine2: createForm.addressLine2 || undefined,
-          city: createForm.city || undefined,
-          state: createForm.state || undefined,
-          postalCode: createForm.postalCode || undefined,
-          country: createForm.country || undefined,
-          notes: createForm.notes || undefined,
-          tags: createForm.tags ? createForm.tags.split(',').map(t => t.trim()).filter(t => t) : [],
+          name: editForm.name || undefined,
+          email: editForm.email || undefined,
+          phoneE164: editForm.phoneE164 || undefined,
+          company: editForm.company || undefined,
+          vatId: editForm.vatId || undefined,
+          addressLine1: editForm.addressLine1 || undefined,
+          addressLine2: editForm.addressLine2 || undefined,
+          city: editForm.city || undefined,
+          state: editForm.state || undefined,
+          postalCode: editForm.postalCode || undefined,
+          country: editForm.country || undefined,
+          notes: editForm.notes || undefined,
+          tags: editForm.tags ? editForm.tags.split(',').map(t => t.trim()).filter(t => t) : [],
+          storeId: editForm.storeId || undefined,
         })
       });
 
@@ -856,7 +890,7 @@ export default function CustomersPage() {
                           className="w-4 h-4 text-primary bg-background border-border rounded focus:ring-primary mt-1"
                         />
                         <div className="flex-1">
-                    <div className="flex-1">
+                        <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2">
                         <h3 className="font-semibold text-foreground text-lg">
                           {customer.name || 'Unnamed Customer'}
@@ -864,6 +898,11 @@ export default function CustomersPage() {
                         {customer.tags?.includes('vip') && (
                           <span className="px-2 py-1 bg-yellow-500/10 text-yellow-500 rounded-full text-xs font-medium">
                             VIP
+                          </span>
+                        )}
+                        {customer.wooCustomerId && (
+                          <span className="px-2 py-1 bg-blue-500/10 text-blue-500 rounded-full text-xs font-medium">
+                            WooCommerce
                           </span>
                         )}
                       </div>
@@ -879,6 +918,17 @@ export default function CustomersPage() {
                         <p className="text-sm text-muted-foreground flex items-center gap-1">
                           <span>{getCountryFlag(customer.country)}</span>
                           <span>{customer.city}, {customer.country}</span>
+                        </p>
+                      )}
+                      {customer.storeName && (
+                        <p className="text-xs text-blue-600 flex items-center gap-1">
+                          <span>🏪</span>
+                          <span>Store: {customer.storeName}</span>
+                        </p>
+                      )}
+                      {customer.wooCustomerId && (
+                        <p className="text-xs text-muted-foreground">
+                          WooCommerce ID: {customer.wooCustomerId}
                         </p>
                       )}
                     </div>
@@ -1011,8 +1061,8 @@ export default function CustomersPage() {
                       </label>
                       <input
                         type="text"
-                        value={createForm.name}
-                        onChange={(e) => setCreateForm(prev => ({ ...prev, name: e.target.value }))}
+                        value={editForm.name}
+                        onChange={(e) => setEditForm(prev => ({ ...prev, name: e.target.value }))}
                         className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
                         placeholder="Customer name"
                       />
@@ -1023,8 +1073,8 @@ export default function CustomersPage() {
                       </label>
                       <input
                         type="email"
-                        value={createForm.email}
-                        onChange={(e) => setCreateForm(prev => ({ ...prev, email: e.target.value }))}
+                        value={editForm.email}
+                        onChange={(e) => setEditForm(prev => ({ ...prev, email: e.target.value }))}
                         className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
                         placeholder="customer@example.com"
                       />
@@ -1035,8 +1085,8 @@ export default function CustomersPage() {
                       </label>
                       <input
                         type="tel"
-                        value={createForm.phoneE164}
-                        onChange={(e) => setCreateForm(prev => ({ ...prev, phoneE164: e.target.value }))}
+                        value={editForm.phoneE164}
+                        onChange={(e) => setEditForm(prev => ({ ...prev, phoneE164: e.target.value }))}
                         className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
                         placeholder="+90 555 123 4567"
                       />
@@ -1047,8 +1097,8 @@ export default function CustomersPage() {
                       </label>
                       <input
                         type="text"
-                        value={createForm.company}
-                        onChange={(e) => setCreateForm(prev => ({ ...prev, company: e.target.value }))}
+                        value={editForm.company}
+                        onChange={(e) => setEditForm(prev => ({ ...prev, company: e.target.value }))}
                         className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
                         placeholder="Company name"
                       />
@@ -1059,8 +1109,8 @@ export default function CustomersPage() {
                       </label>
                       <input
                         type="text"
-                        value={createForm.vatId}
-                        onChange={(e) => setCreateForm(prev => ({ ...prev, vatId: e.target.value }))}
+                        value={editForm.vatId}
+                        onChange={(e) => setEditForm(prev => ({ ...prev, vatId: e.target.value }))}
                         className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
                         placeholder="VAT ID"
                       />
@@ -1078,8 +1128,8 @@ export default function CustomersPage() {
                       </label>
                       <input
                         type="text"
-                        value={createForm.addressLine1}
-                        onChange={(e) => setCreateForm(prev => ({ ...prev, addressLine1: e.target.value }))}
+                        value={editForm.addressLine1}
+                        onChange={(e) => setEditForm(prev => ({ ...prev, addressLine1: e.target.value }))}
                         className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
                         placeholder="Street address"
                       />
@@ -1090,8 +1140,8 @@ export default function CustomersPage() {
                       </label>
                       <input
                         type="text"
-                        value={createForm.addressLine2}
-                        onChange={(e) => setCreateForm(prev => ({ ...prev, addressLine2: e.target.value }))}
+                        value={editForm.addressLine2}
+                        onChange={(e) => setEditForm(prev => ({ ...prev, addressLine2: e.target.value }))}
                         className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
                         placeholder="Apartment, suite, etc."
                       />
@@ -1102,8 +1152,8 @@ export default function CustomersPage() {
                       </label>
                       <input
                         type="text"
-                        value={createForm.city}
-                        onChange={(e) => setCreateForm(prev => ({ ...prev, city: e.target.value }))}
+                        value={editForm.city}
+                        onChange={(e) => setEditForm(prev => ({ ...prev, city: e.target.value }))}
                         className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
                         placeholder="City"
                       />
@@ -1114,8 +1164,8 @@ export default function CustomersPage() {
                       </label>
                       <input
                         type="text"
-                        value={createForm.state}
-                        onChange={(e) => setCreateForm(prev => ({ ...prev, state: e.target.value }))}
+                        value={editForm.state}
+                        onChange={(e) => setEditForm(prev => ({ ...prev, state: e.target.value }))}
                         className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
                         placeholder="State"
                       />
@@ -1126,8 +1176,8 @@ export default function CustomersPage() {
                       </label>
                       <input
                         type="text"
-                        value={createForm.postalCode}
-                        onChange={(e) => setCreateForm(prev => ({ ...prev, postalCode: e.target.value }))}
+                        value={editForm.postalCode}
+                        onChange={(e) => setEditForm(prev => ({ ...prev, postalCode: e.target.value }))}
                         className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
                         placeholder="Postal code"
                       />
@@ -1138,14 +1188,40 @@ export default function CustomersPage() {
                       </label>
                       <input
                         type="text"
-                        value={createForm.country}
-                        onChange={(e) => setCreateForm(prev => ({ ...prev, country: e.target.value }))}
+                        value={editForm.country}
+                        onChange={(e) => setEditForm(prev => ({ ...prev, country: e.target.value }))}
                         className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
                         placeholder="Country"
                       />
                     </div>
                   </div>
                 </div>
+
+                {/* WooCommerce Settings (Admin Only) */}
+                {user?.role === 'ADMIN' && (
+                  <div>
+                    <h4 className="font-semibold text-foreground mb-3">WooCommerce Settings</h4>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-foreground mb-2">
+                          WooCommerce Store
+                        </label>
+                        <select
+                          value={editForm.storeId}
+                          onChange={(e) => setEditForm(prev => ({ ...prev, storeId: e.target.value }))}
+                          className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
+                        >
+                          <option value="">No store assigned</option>
+                          {stores.map((store) => (
+                            <option key={store.id} value={store.id}>
+                              {store.name} ({store.baseUrl})
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* Notes and Tags */}
                 <div>
@@ -1156,8 +1232,8 @@ export default function CustomersPage() {
                         Notes
                       </label>
                       <textarea
-                        value={createForm.notes}
-                        onChange={(e) => setCreateForm(prev => ({ ...prev, notes: e.target.value }))}
+                        value={editForm.notes}
+                        onChange={(e) => setEditForm(prev => ({ ...prev, notes: e.target.value }))}
                         className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
                         rows={4}
                         placeholder="Customer notes..."
@@ -1169,8 +1245,8 @@ export default function CustomersPage() {
                       </label>
                       <input
                         type="text"
-                        value={createForm.tags}
-                        onChange={(e) => setCreateForm(prev => ({ ...prev, tags: e.target.value }))}
+                        value={editForm.tags}
+                        onChange={(e) => setEditForm(prev => ({ ...prev, tags: e.target.value }))}
                         className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
                         placeholder="vip, premium, wholesale"
                       />
