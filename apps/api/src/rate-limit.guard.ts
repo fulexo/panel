@@ -26,17 +26,58 @@ export class RateLimitGuard implements CanActivate {
     const req = httpRef.getRequest();
     const res = httpRef.getResponse();
     const user = req.user;
-    const id = opts.scope === 'user' && user?.sub ? user.sub : req.ip;
+    
+    // Enhanced IP detection for better security
+    const ip = req.ip || 
+               req.connection?.remoteAddress || 
+               req.socket?.remoteAddress ||
+               (req.connection?.socket ? req.connection.socket.remoteAddress : null) ||
+               req.headers['x-forwarded-for']?.toString().split(',')[0]?.trim() ||
+               'unknown';
+    
+    const id = opts.scope === 'user' && user?.sub ? user.sub : ip;
     const key = `rl:${opts.scope || 'ip'}:${id}`;
 
+    // Add additional security checks
+    const userAgent = req.headers['user-agent'] || '';
+    const isBot = /bot|crawler|spider|scraper/i.test(userAgent);
+    
+    // Apply stricter limits for bots
+    const effectivePoints = isBot ? Math.floor(opts.points * 0.5) : opts.points;
+
     try {
-      const rl = await this.limiter.check(key, opts.points, opts.duration);
+      const rl = await this.limiter.check(key, effectivePoints, opts.duration);
       if (!rl.allowed) {
         if (rl.retryAfterMs) {
-          try { res.setHeader('Retry-After', Math.ceil(Number(rl.retryAfterMs) / 1000)); } catch {}
+          try { 
+            res.setHeader('Retry-After', Math.ceil(Number(rl.retryAfterMs) / 1000)); 
+            res.setHeader('X-RateLimit-Limit', effectivePoints.toString());
+            res.setHeader('X-RateLimit-Remaining', '0');
+            res.setHeader('X-RateLimit-Reset', new Date(Date.now() + Number(rl.retryAfterMs)).toISOString());
+          } catch {}
         }
+        
+        // Log rate limit violations for security monitoring
+        console.warn(`Rate limit exceeded for ${opts.scope || 'ip'}:${id} on ${req.path}`, {
+          ip,
+          userAgent,
+          path: req.path,
+          method: req.method,
+          isBot,
+          points: effectivePoints,
+          duration: opts.duration
+        });
+        
         throw new HttpException('Rate limit exceeded', HttpStatus.TOO_MANY_REQUESTS);
       }
+      
+      // Set rate limit headers for successful requests
+      try {
+        res.setHeader('X-RateLimit-Limit', effectivePoints.toString());
+        res.setHeader('X-RateLimit-Remaining', rl.remaining?.toString() || '0');
+        res.setHeader('X-RateLimit-Reset', new Date(Date.now() + opts.duration).toISOString());
+      } catch {}
+      
       return true;
     } catch (e) {
       // If Redis/ratelimiter is unavailable, log error and fail closed for security

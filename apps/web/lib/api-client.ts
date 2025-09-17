@@ -1,263 +1,191 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+interface ApiResponse<T = any> {
+  success: boolean;
+  data?: T;
+  message?: string;
+  error?: string;
+  statusCode: number;
+  timestamp: string;
+  path: string;
+}
 
-// Base API client
-export const apiClient = async (path: string, init?: RequestInit) => {
-  const response = await fetch(`/api${path}`, {
-    credentials: 'include',
-    headers: {
+interface ApiError {
+  success: false;
+  error: string;
+  message: string;
+  statusCode: number;
+  timestamp: string;
+  path: string;
+  details?: any;
+}
+
+class ApiClient {
+  private baseUrl: string;
+  private defaultHeaders: Record<string, string>;
+
+  constructor() {
+    this.baseUrl = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:3000/api';
+    this.defaultHeaders = {
       'Content-Type': 'application/json',
-      ...init?.headers,
-    },
-    ...init,
-  });
-
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.message || `HTTP ${response.status}`);
+    };
   }
 
-  return response.json();
-};
+  private async request<T>(
+    endpoint: string,
+    options: RequestInit = {}
+  ): Promise<ApiResponse<T>> {
+    const url = `${this.baseUrl}${endpoint}`;
+    
+    const config: RequestInit = {
+      ...options,
+      headers: {
+        ...this.defaultHeaders,
+        ...options.headers,
+      },
+      credentials: 'include', // Include cookies for authentication
+    };
 
-// Generic API hooks
-export function useApiQuery<T>(
-  queryKey: (string | number)[],
-  queryFn: () => Promise<T>,
-  options?: {
-    enabled?: boolean;
-    staleTime?: number;
-    refetchOnWindowFocus?: boolean;
-  }
-) {
-  return useQuery({
-    queryKey,
-    queryFn,
-    ...options,
-  });
-}
-
-export function useApiMutation<TData, TVariables>(
-  mutationFn: (variables: TVariables) => Promise<TData>,
-  options?: {
-    onSuccess?: (data: TData) => void;
-    onError?: (error: Error) => void;
-    invalidateQueries?: (string | number)[][];
-  }
-) {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn,
-    onSuccess: (data) => {
-      options?.onSuccess?.(data);
-      if (options?.invalidateQueries) {
-        options.invalidateQueries.forEach(queryKey => {
-          queryClient.invalidateQueries({ queryKey });
-        });
+    try {
+      const response = await fetch(url, config);
+      
+      // Handle different response types
+      if (!response.ok) {
+        let errorData: ApiError;
+        try {
+          errorData = await response.json();
+        } catch {
+          errorData = {
+            success: false,
+            error: 'Network Error',
+            message: `HTTP ${response.status}: ${response.statusText}`,
+            statusCode: response.status,
+            timestamp: new Date().toISOString(),
+            path: endpoint,
+          };
+        }
+        throw new Error(errorData.message || errorData.error || 'Request failed');
       }
-    },
-    onError: options?.onError,
-  });
-}
 
-// Specific API hooks
-export function useOrders(params?: {
-  page?: number;
-  limit?: number;
-  search?: string;
-  status?: string;
-  storeId?: string;
-}) {
-  const queryParams = new URLSearchParams();
-  if (params?.page) queryParams.set('page', params.page.toString());
-  if (params?.limit) queryParams.set('limit', params.limit.toString());
-  if (params?.search) queryParams.set('search', params.search);
-  if (params?.status) queryParams.set('status', params.status);
-  if (params?.storeId) queryParams.set('storeId', params.storeId);
+      const data: ApiResponse<T> = await response.json();
+      
+      if (!data.success) {
+        throw new Error(data.message || data.error || 'Request failed');
+      }
 
-  return useApiQuery(
-    ['orders', params],
-    () => apiClient(`/orders?${queryParams.toString()}`),
-    {
-      staleTime: 5 * 60 * 1000, // 5 minutes
+      return data;
+    } catch (error) {
+      console.error('API request failed:', error);
+      throw error;
     }
-  );
-}
+  }
 
-export function useProducts(params?: {
-  page?: number;
-  limit?: number;
-  search?: string;
-  status?: string;
-  category?: string;
-  storeId?: string;
-}) {
-  const queryParams = new URLSearchParams();
-  if (params?.page) queryParams.set('page', params.page.toString());
-  if (params?.limit) queryParams.set('limit', params.limit.toString());
-  if (params?.search) queryParams.set('search', params.search);
-  if (params?.status) queryParams.set('status', params.status);
-  if (params?.category) queryParams.set('category', params.category);
-  if (params?.storeId) queryParams.set('storeId', params.storeId);
+  // GET request
+  async get<T>(endpoint: string, headers?: Record<string, string>): Promise<ApiResponse<T>> {
+    return this.request<T>(endpoint, {
+      method: 'GET',
+      headers,
+    });
+  }
 
-  return useApiQuery(
-    ['products', params],
-    () => apiClient(`/products?${queryParams.toString()}`),
-    {
-      staleTime: 5 * 60 * 1000, // 5 minutes
-    }
-  );
-}
-
-export function useCustomers(params?: {
-  page?: number;
-  limit?: number;
-  search?: string;
-  status?: string;
-  tag?: string;
-  storeId?: string;
-}) {
-  const queryParams = new URLSearchParams();
-  if (params?.page) queryParams.set('page', params.page.toString());
-  if (params?.limit) queryParams.set('limit', params.limit.toString());
-  if (params?.search) queryParams.set('search', params.search);
-  if (params?.status) queryParams.set('status', params.status);
-  if (params?.tag) queryParams.set('tag', params.tag);
-  if (params?.storeId) queryParams.set('storeId', params.storeId);
-
-  return useApiQuery(
-    ['customers', params],
-    () => apiClient(`/customers?${queryParams.toString()}`),
-    {
-      staleTime: 5 * 60 * 1000, // 5 minutes
-    }
-  );
-}
-
-export function useSettings(category: string) {
-  return useApiQuery(
-    ['settings', category],
-    () => apiClient(`/settings/${category}`),
-    {
-      staleTime: 10 * 60 * 1000, // 10 minutes
-    }
-  );
-}
-
-// Mutation hooks
-export function useCreateOrder() {
-  return useApiMutation(
-    (data: any) => apiClient('/orders', {
+  // POST request
+  async post<T>(
+    endpoint: string,
+    data?: any,
+    headers?: Record<string, string>
+  ): Promise<ApiResponse<T>> {
+    return this.request<T>(endpoint, {
       method: 'POST',
-      body: JSON.stringify(data),
-    }),
-    {
-      invalidateQueries: [['orders']],
-    }
-  );
-}
+      body: data ? JSON.stringify(data) : undefined,
+      headers,
+    });
+  }
 
-export function useUpdateOrder() {
-  return useApiMutation(
-    ({ id, data }: { id: string; data: any }) => apiClient(`/orders/${id}`, {
+  // PUT request
+  async put<T>(
+    endpoint: string,
+    data?: any,
+    headers?: Record<string, string>
+  ): Promise<ApiResponse<T>> {
+    return this.request<T>(endpoint, {
       method: 'PUT',
-      body: JSON.stringify(data),
-    }),
-    {
-      invalidateQueries: [['orders']],
-    }
-  );
-}
+      body: data ? JSON.stringify(data) : undefined,
+      headers,
+    });
+  }
 
-export function useDeleteOrder() {
-  return useApiMutation(
-    (id: string) => apiClient(`/orders/${id}`, {
+  // DELETE request
+  async delete<T>(endpoint: string, headers?: Record<string, string>): Promise<ApiResponse<T>> {
+    return this.request<T>(endpoint, {
       method: 'DELETE',
-    }),
-    {
-      invalidateQueries: [['orders']],
-    }
-  );
-}
+      headers,
+    });
+  }
 
-export function useCreateProduct() {
-  return useApiMutation(
-    (data: any) => apiClient('/products', {
+  // PATCH request
+  async patch<T>(
+    endpoint: string,
+    data?: any,
+    headers?: Record<string, string>
+  ): Promise<ApiResponse<T>> {
+    return this.request<T>(endpoint, {
+      method: 'PATCH',
+      body: data ? JSON.stringify(data) : undefined,
+      headers,
+    });
+  }
+
+  // Upload file
+  async upload<T>(
+    endpoint: string,
+    file: File,
+    additionalData?: Record<string, any>,
+    headers?: Record<string, string>
+  ): Promise<ApiResponse<T>> {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    if (additionalData) {
+      Object.entries(additionalData).forEach(([key, value]) => {
+        formData.append(key, value);
+      });
+    }
+
+    return this.request<T>(endpoint, {
       method: 'POST',
-      body: JSON.stringify(data),
-    }),
-    {
-      invalidateQueries: [['products']],
-    }
-  );
+      body: formData,
+      headers: {
+        ...headers,
+        // Don't set Content-Type for FormData, let browser set it
+        'Content-Type': undefined,
+      },
+    });
+  }
+
+  // Set authentication token
+  setAuthToken(token: string) {
+    this.defaultHeaders['Authorization'] = `Bearer ${token}`;
+  }
+
+  // Remove authentication token
+  removeAuthToken() {
+    delete this.defaultHeaders['Authorization'];
+  }
+
+  // Set custom header
+  setHeader(key: string, value: string) {
+    this.defaultHeaders[key] = value;
+  }
+
+  // Remove custom header
+  removeHeader(key: string) {
+    delete this.defaultHeaders[key];
+  }
 }
 
-export function useUpdateProduct() {
-  return useApiMutation(
-    ({ id, data }: { id: string; data: any }) => apiClient(`/products/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    }),
-    {
-      invalidateQueries: [['products']],
-    }
-  );
-}
+// Create singleton instance
+export const apiClient = new ApiClient();
 
-export function useDeleteProduct() {
-  return useApiMutation(
-    (id: string) => apiClient(`/products/${id}`, {
-      method: 'DELETE',
-    }),
-    {
-      invalidateQueries: [['products']],
-    }
-  );
-}
+// Export types
+export type { ApiResponse, ApiError };
 
-export function useCreateCustomer() {
-  return useApiMutation(
-    (data: any) => apiClient('/customers', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
-    {
-      invalidateQueries: [['customers']],
-    }
-  );
-}
-
-export function useUpdateCustomer() {
-  return useApiMutation(
-    ({ id, data }: { id: string; data: any }) => apiClient(`/customers/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    }),
-    {
-      invalidateQueries: [['customers']],
-    }
-  );
-}
-
-export function useDeleteCustomer() {
-  return useApiMutation(
-    (id: string) => apiClient(`/customers/${id}`, {
-      method: 'DELETE',
-    }),
-    {
-      invalidateQueries: [['customers']],
-    }
-  );
-}
-
-export function useUpdateSettings() {
-  return useApiMutation(
-    ({ category, data }: { category: string; data: any }) => apiClient(`/settings/${category}`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    }),
-    {
-      invalidateQueries: [['settings']],
-    }
-  );
-}
+// Export individual methods for convenience
+export const { get, post, put, delete: del, patch, upload, setAuthToken, removeAuthToken } = apiClient;

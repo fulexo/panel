@@ -2,11 +2,13 @@
 # This file will be processed by envsubst to replace environment variables
 
 # Rate limiting zones
-limit_req_zone $binary_remote_addr zone=api:10m rate=50r/s;
-limit_req_zone $binary_remote_addr zone=web:10m rate=100r/s;
-limit_req_zone $binary_remote_addr zone=auth:10m rate=5r/s;
-limit_req_zone $binary_remote_addr zone=upload:10m rate=10r/s;
-limit_req_zone $binary_remote_addr zone=api_strict:10m rate=20r/s;
+limit_req_zone $binary_remote_addr zone=api:10m rate=30r/s;
+limit_req_zone $binary_remote_addr zone=web:10m rate=50r/s;
+limit_req_zone $binary_remote_addr zone=auth:10m rate=3r/s;
+limit_req_zone $binary_remote_addr zone=upload:10m rate=5r/s;
+limit_req_zone $binary_remote_addr zone=api_strict:10m rate=10r/s;
+limit_req_zone $binary_remote_addr zone=login:10m rate=1r/s;
+limit_req_zone $binary_remote_addr zone=register:10m rate=1r/s;
 
 # Connection limiting
 limit_conn_zone $binary_remote_addr zone=conn_limit_per_ip:10m;
@@ -51,11 +53,18 @@ server {
     ssl_session_timeout 10m;
 
     # Security headers
-    add_header X-Frame-Options DENY;
-    add_header X-Content-Type-Options nosniff;
-    add_header X-XSS-Protection "1; mode=block";
-    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
-    add_header Referrer-Policy "strict-origin-when-cross-origin";
+    add_header X-Frame-Options "DENY" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header Permissions-Policy "geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=()" always;
+    add_header Cross-Origin-Embedder-Policy "require-corp" always;
+    add_header Cross-Origin-Opener-Policy "same-origin" always;
+    add_header Cross-Origin-Resource-Policy "same-origin" always;
+    add_header X-DNS-Prefetch-Control "off" always;
+    add_header X-Download-Options "noopen" always;
+    add_header X-Permitted-Cross-Domain-Policies "none" always;
 
     # Rate limiting
     limit_req zone=api burst=100 nodelay;
@@ -63,7 +72,7 @@ server {
     
     # Stricter rate limiting for auth endpoints
     location /api/auth/ {
-        limit_req zone=auth burst=10 nodelay;
+        limit_req zone=auth burst=5 nodelay;
         proxy_pass http://api_backend;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
@@ -75,6 +84,32 @@ server {
         proxy_cache_bypass $http_upgrade;
         proxy_read_timeout 300s;
         proxy_connect_timeout 75s;
+    }
+    
+    # Very strict rate limiting for login
+    location /api/auth/login {
+        limit_req zone=login burst=2 nodelay;
+        proxy_pass http://api_backend;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 30s;
+        proxy_connect_timeout 10s;
+    }
+    
+    # Very strict rate limiting for register
+    location /api/auth/register {
+        limit_req zone=register burst=1 nodelay;
+        proxy_pass http://api_backend;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 30s;
+        proxy_connect_timeout 10s;
     }
     
     # Stricter rate limiting for upload endpoints
@@ -176,11 +211,18 @@ server {
     ssl_session_timeout 10m;
 
     # Security headers
-    add_header X-Frame-Options DENY;
-    add_header X-Content-Type-Options nosniff;
-    add_header X-XSS-Protection "1; mode=block";
-    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
-    add_header Referrer-Policy "strict-origin-when-cross-origin";
+    add_header X-Frame-Options "DENY" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header Permissions-Policy "geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=()" always;
+    add_header Cross-Origin-Embedder-Policy "require-corp" always;
+    add_header Cross-Origin-Opener-Policy "same-origin" always;
+    add_header Cross-Origin-Resource-Policy "same-origin" always;
+    add_header X-DNS-Prefetch-Control "off" always;
+    add_header X-Download-Options "noopen" always;
+    add_header X-Permitted-Cross-Domain-Policies "none" always;
 
     # Rate limiting
     limit_req zone=web burst=200 nodelay;
@@ -256,11 +298,18 @@ server {
     ssl_session_timeout 10m;
 
     # Security headers
-    add_header X-Frame-Options DENY;
-    add_header X-Content-Type-Options nosniff;
-    add_header X-XSS-Protection "1; mode=block";
-    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
-    add_header Referrer-Policy "strict-origin-when-cross-origin";
+    add_header X-Frame-Options "DENY" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header Permissions-Policy "geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=()" always;
+    add_header Cross-Origin-Embedder-Policy "require-corp" always;
+    add_header Cross-Origin-Opener-Policy "same-origin" always;
+    add_header Cross-Origin-Resource-Policy "same-origin" always;
+    add_header X-DNS-Prefetch-Control "off" always;
+    add_header X-Download-Options "noopen" always;
+    add_header X-Permitted-Cross-Domain-Policies "none" always;
 
     # Restrict access to internal networks only
     allow 127.0.0.1;

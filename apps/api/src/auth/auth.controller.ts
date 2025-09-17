@@ -7,6 +7,7 @@ import { Public } from './decorators/public.decorator';
 import { CurrentUser } from './decorators/current-user.decorator';
 import { LoginDto, RegisterDto, Verify2FADto, RefreshTokenDto, UpdateProfileDto, ChangePasswordDto, SetTokensDto } from './dto';
 import { RateLimit } from '../rate-limit.decorator';
+import { ResponseUtil } from '../common/utils/response.util';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -30,14 +31,15 @@ export class AuthController {
     
     // If 2FA is required, return the temp token
     if (result.requiresTwoFactor) {
-      return {
-        requiresTwoFactor: true,
-        tempToken: result.tempToken,
-        message: '2FA verification required',
-        statusCode: 200,
-        timestamp: new Date().toISOString(),
-        path: '/api/auth/login'
-      };
+      return ResponseUtil.success(
+        {
+          requiresTwoFactor: true,
+          tempToken: result.tempToken,
+        },
+        '2FA verification required',
+        200,
+        '/api/auth/login'
+      );
     }
     
     // Set httpOnly cookies for tokens
@@ -57,13 +59,12 @@ export class AuthController {
       path: '/',
     });
     
-    return {
-      data: result.user,
-      message: 'Login successful',
-      statusCode: 200,
-      timestamp: new Date().toISOString(),
-      path: '/api/auth/login'
-    };
+    return ResponseUtil.success(
+      result.user,
+      'Login successful',
+      200,
+      '/api/auth/login'
+    );
   }
 
   @Post('register')
@@ -73,7 +74,8 @@ export class AuthController {
     if (!user || user.role !== 'ADMIN') {
       throw new UnauthorizedException('Not allowed');
     }
-    return this.authService.register(dto);
+    const result = await this.authService.register(dto);
+    return ResponseUtil.created(result, 'User registered successfully', '/api/auth/register');
   }
 
   @Public()
@@ -81,7 +83,8 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Refresh access token' })
   async refresh(@Body() dto: RefreshTokenDto) {
-    return this.authService.refreshToken(dto.refreshToken);
+    const result = await this.authService.refreshToken(dto.refreshToken);
+    return ResponseUtil.success(result, 'Token refreshed successfully', 200, '/api/auth/refresh');
   }
 
   @Post('logout')
@@ -97,12 +100,7 @@ export class AuthController {
     req.res.clearCookie('refresh_token', { path: '/' });
     req.res.clearCookie('user', { path: '/' });
     
-    return { 
-      message: 'Logged out successfully',
-      statusCode: 200,
-      timestamp: new Date().toISOString(),
-      path: '/api/auth/logout'
-    };
+    return ResponseUtil.success(null, 'Logged out successfully', 200, '/api/auth/logout');
   }
 
   @Get('me')
@@ -110,13 +108,7 @@ export class AuthController {
   @ApiOperation({ summary: 'Get current user info' })
   async me(@CurrentUser() user: { id: string; email: string; role: string; tenantId: string }) {
     const userInfo = await this.authService.getUserInfo(user.id);
-    return {
-      data: userInfo,
-      message: 'User info retrieved successfully',
-      statusCode: 200,
-      timestamp: new Date().toISOString(),
-      path: '/api/auth/me'
-    };
+    return ResponseUtil.success(userInfo, 'User info retrieved successfully', 200, '/api/auth/me');
   }
 
   @Get('sessions')

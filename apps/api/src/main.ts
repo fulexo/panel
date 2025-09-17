@@ -75,6 +75,16 @@ async function bootstrap() {
         return callback(new Error('Origin required in production'), false);
       }
 
+      // Validate origin format
+      try {
+        const url = new URL(origin);
+        if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+          return callback(new Error('Invalid protocol'), false);
+        }
+      } catch (error) {
+        return callback(new Error('Invalid origin format'), false);
+      }
+
       if (allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
@@ -102,6 +112,7 @@ async function bootstrap() {
       'X-Page-Count',
     ],
     maxAge: 86400, // 24 hours
+    optionsSuccessStatus: 200, // Some legacy browsers choke on 204
   });
 
   // Enhanced security headers
@@ -110,11 +121,14 @@ async function bootstrap() {
     res.setHeader('X-Frame-Options', 'DENY');
     res.setHeader('X-XSS-Protection', '1; mode=block');
     res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
-    res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
+    res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=()');
     res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
     res.setHeader('X-DNS-Prefetch-Control', 'off');
     res.setHeader('X-Download-Options', 'noopen');
     res.setHeader('X-Permitted-Cross-Domain-Policies', 'none');
+    res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
+    res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
+    res.setHeader('Cross-Origin-Resource-Policy', 'same-origin');
     next();
   });
 

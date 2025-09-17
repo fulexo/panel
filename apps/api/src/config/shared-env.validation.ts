@@ -1,116 +1,116 @@
-const { plainToClass } = require('class-transformer');
-const { IsString, IsOptional, validateSync, IsEnum, MinLength, IsPort, IsUrl } = require('class-validator');
+import { plainToClass } from 'class-transformer';
+import { IsString, IsEnum, IsOptional, validateSync, MinLength, IsPort, IsUrl } from 'class-validator';
 
-const Environment = {
-  Development: 'development',
-  Production: 'production',
-  Test: 'test',
-};
+enum Environment {
+  Development = 'development',
+  Production = 'production',
+  Test = 'test',
+}
 
-class EnvironmentVariables {
+export class SharedEnvironmentVariables {
   @IsEnum(Environment)
-  NODE_ENV = Environment.Development;
+  NODE_ENV: Environment = Environment.Development;
 
   @IsPort()
   @IsOptional()
-  PORT = '3000';
+  PORT?: string = '3000';
 
   // Database
   @IsString()
-  DATABASE_URL;
+  DATABASE_URL!: string;
 
   // Redis
   @IsString()
-  REDIS_URL;
+  REDIS_URL!: string;
 
   // Security
   @IsString()
   @MinLength(64)
-  JWT_SECRET;
+  JWT_SECRET!: string;
 
   @IsString()
   @MinLength(32)
-  ENCRYPTION_KEY;
+  ENCRYPTION_KEY!: string;
 
   // Domains
   @IsString()
   @IsUrl()
-  DOMAIN_API;
+  DOMAIN_API!: string;
 
   @IsString()
   @IsUrl()
-  DOMAIN_APP;
+  DOMAIN_APP!: string;
 
   // Frontend URLs
   @IsString()
   @IsUrl()
-  NEXT_PUBLIC_API_BASE;
+  NEXT_PUBLIC_API_BASE!: string;
 
   @IsString()
   @IsUrl()
-  NEXT_PUBLIC_APP_URL;
+  NEXT_PUBLIC_APP_URL!: string;
 
   @IsString()
   @IsOptional()
   @IsUrl()
-  SHARE_BASE_URL;
+  SHARE_BASE_URL?: string;
 
   // S3/MinIO
   @IsString()
   @IsUrl()
-  S3_ENDPOINT;
+  S3_ENDPOINT!: string;
 
   @IsString()
-  S3_ACCESS_KEY;
+  S3_ACCESS_KEY!: string;
 
   @IsString()
-  S3_SECRET_KEY;
+  S3_SECRET_KEY!: string;
 
   @IsString()
-  S3_BUCKET;
+  S3_BUCKET!: string;
 
   // Optional
   @IsString()
   @IsOptional()
-  SHARE_TOKEN_SECRET;
+  SHARE_TOKEN_SECRET?: string;
 
   @IsString()
   @IsOptional()
-  LOG_LEVEL = 'info';
+  LOG_LEVEL?: string = 'info';
 
   @IsString()
   @IsOptional()
-  SMTP_HOST;
+  SMTP_HOST?: string;
 
   @IsPort()
   @IsOptional()
-  SMTP_PORT;
+  SMTP_PORT?: string;
 
   @IsString()
   @IsOptional()
-  SMTP_USER;
+  SMTP_USER?: string;
 
   @IsString()
   @IsOptional()
-  SMTP_PASS;
+  SMTP_PASS?: string;
 
   @IsString()
   @IsOptional()
-  SMTP_FROM;
+  SMTP_FROM?: string;
 
   // Additional security
   @IsString()
   @IsOptional()
-  MASTER_KEY_HEX;
+  MASTER_KEY_HEX?: string;
 
   // Worker specific
   @IsPort()
   @IsOptional()
-  WORKER_PORT = '3002';
+  WORKER_PORT?: string = '3002';
 }
 
-function validateEnvironment(config = process.env) {
-  const validatedConfig = plainToClass(EnvironmentVariables, config, {
+export function validateSharedEnvironment(config: Record<string, unknown>) {
+  const validatedConfig = plainToClass(SharedEnvironmentVariables, config, {
     enableImplicitConversion: true,
   });
 
@@ -130,9 +130,9 @@ function validateEnvironment(config = process.env) {
   return validatedConfig;
 }
 
-function validateEnvOnStartup() {
+export function validateSharedEnvOnStartup() {
   try {
-    const config = validateEnvironment(process.env);
+    const config = validateSharedEnvironment(process.env);
     
     // Additional security checks
     if (config.NODE_ENV === Environment.Production) {
@@ -187,4 +187,47 @@ function validateEnvOnStartup() {
   }
 }
 
-module.exports = { validateEnvironment, validateEnvOnStartup };
+export const sharedEnvValidationSchema = {
+  validate: (config: Record<string, unknown>) => {
+    return validateSharedEnvironment(config);
+  },
+  type: 'object',
+  required: [
+    'DATABASE_URL', 
+    'REDIS_URL', 
+    'JWT_SECRET', 
+    'ENCRYPTION_KEY', 
+    'DOMAIN_API', 
+    'DOMAIN_APP', 
+    'NEXT_PUBLIC_API_BASE',
+    'NEXT_PUBLIC_APP_URL',
+    'S3_ENDPOINT', 
+    'S3_ACCESS_KEY', 
+    'S3_SECRET_KEY', 
+    'S3_BUCKET'
+  ],
+  properties: {
+    NODE_ENV: { type: 'string', enum: ['development', 'production', 'test'], default: 'development' },
+    PORT: { type: 'string', default: '3000' },
+    DATABASE_URL: { type: 'string' },
+    REDIS_URL: { type: 'string' },
+    JWT_SECRET: { type: 'string', minLength: 64 },
+    ENCRYPTION_KEY: { type: 'string', minLength: 32 },
+    DOMAIN_API: { type: 'string' },
+    DOMAIN_APP: { type: 'string' },
+    NEXT_PUBLIC_API_BASE: { type: 'string' },
+    NEXT_PUBLIC_APP_URL: { type: 'string' },
+    S3_ENDPOINT: { type: 'string' },
+    S3_ACCESS_KEY: { type: 'string' },
+    S3_SECRET_KEY: { type: 'string' },
+    S3_BUCKET: { type: 'string' },
+    SHARE_TOKEN_SECRET: { type: 'string' },
+    LOG_LEVEL: { type: 'string', default: 'info' },
+    SMTP_HOST: { type: 'string' },
+    SMTP_PORT: { type: 'string' },
+    SMTP_USER: { type: 'string' },
+    SMTP_PASS: { type: 'string' },
+    SMTP_FROM: { type: 'string' },
+  },
+  additionalProperties: false,
+};

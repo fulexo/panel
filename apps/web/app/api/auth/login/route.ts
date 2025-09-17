@@ -54,8 +54,8 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    if (data.user) {
-      cookieStore.set('user', JSON.stringify(data.user), {
+    if (data.data) {
+      cookieStore.set('user', JSON.stringify(data.data), {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
@@ -66,10 +66,11 @@ export async function POST(request: NextRequest) {
 
     // Return the response without sensitive data
     return NextResponse.json({
-      success: true,
-      user: data.user,
-      requiresTwoFactor: data.requiresTwoFactor,
-      tempToken: data.tempToken,
+      success: data.success,
+      data: data.data,
+      message: data.message,
+      requiresTwoFactor: data.data?.requiresTwoFactor,
+      tempToken: data.data?.tempToken,
     });
   } catch (error) {
     return NextResponse.json(

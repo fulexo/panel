@@ -19,6 +19,9 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
+# Generate Prisma client
+RUN cd apps/worker && npx prisma generate --schema ../api/prisma/schema.prisma
+
 # Build the application
 RUN cd apps/worker && npm run build
 
@@ -34,6 +37,7 @@ RUN adduser --system --uid 1001 worker
 COPY --from=builder --chown=worker:nodejs /app/apps/worker/dist ./dist
 COPY --from=builder --chown=worker:nodejs /app/apps/worker/node_modules ./node_modules
 COPY --from=builder --chown=worker:nodejs /app/apps/worker/package*.json ./
+COPY --from=builder --chown=worker:nodejs /app/apps/api/prisma ./prisma
 
 # Create logs directory
 RUN mkdir -p /app/logs && chown worker:nodejs /app/logs

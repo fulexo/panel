@@ -17,6 +17,7 @@ const nextConfig = {
   compress: true,
   poweredByHeader: false,
   generateEtags: false,
+  output: 'standalone',
   i18n: {
     locales: ['en', 'tr'],
     defaultLocale: 'en',

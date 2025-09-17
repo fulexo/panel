@@ -84,12 +84,31 @@ export function middleware(request: NextRequest) {
   if (request.method !== 'GET' && request.method !== 'HEAD') {
     const origin = request.headers.get('origin');
     const host = request.headers.get('host');
+    const referer = request.headers.get('referer');
     
+    // Enhanced CSRF protection
     if (origin && host && !origin.includes(host)) {
+      console.warn(`CSRF: Origin mismatch - Origin: ${origin}, Host: ${host}`);
       return NextResponse.json(
         { error: 'CSRF protection: Origin mismatch' },
         { status: 403 }
       );
+    }
+    
+    // Additional referer check
+    if (referer && host && !referer.includes(host)) {
+      console.warn(`CSRF: Referer mismatch - Referer: ${referer}, Host: ${host}`);
+      return NextResponse.json(
+        { error: 'CSRF protection: Referer mismatch' },
+        { status: 403 }
+      );
+    }
+    
+    // Check for suspicious patterns
+    const userAgent = request.headers.get('user-agent') || '';
+    if (userAgent.length < 10 || /bot|crawler|spider|scraper/i.test(userAgent)) {
+      // Allow but log suspicious activity
+      console.warn(`Suspicious user agent detected: ${userAgent}`);
     }
   }
 
