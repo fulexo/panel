@@ -51,6 +51,16 @@ export default [
         CryptoKey: 'readonly',
         // React globals
         React: 'readonly',
+        // Jest globals
+        describe: 'readonly',
+        it: 'readonly',
+        test: 'readonly',
+        expect: 'readonly',
+        beforeEach: 'readonly',
+        afterEach: 'readonly',
+        beforeAll: 'readonly',
+        afterAll: 'readonly',
+        jest: 'readonly',
         // HTML element types
         HTMLInputElement: 'readonly',
         HTMLSelectElement: 'readonly',
@@ -78,6 +88,16 @@ export default [
     },
   },
   {
-    ignores: ['dist/', 'node_modules/', '*.js', 'coverage/', '.next/', 'build/', '**/prisma/seed.*'],
+    ignores: [
+      '**/dist/**',
+      '**/node_modules/**',
+      '**/*.js',
+      '**/coverage/**',
+      '**/.next/**',
+      '**/build/**',
+      '**/prisma/seed.*',
+      '**/dist/**/*.js',
+      'apps/*/dist/**',
+    ],
   },
 ];

@@ -136,7 +136,7 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Revoke all sessions except current' })
-  async revokeAllSessions(@CurrentUser() user: { id: string; email: string; role: string; tenantId: string }, @Req() req: any) {
+  async revokeAllSessions(@CurrentUser() user: { id: string; email: string; role: string; tenantId: string }, @Req() req: Request) {
     const currentToken = req.headers.authorization?.replace('Bearer ', '');
     await this.sessionService.revokeAllSessions(user.id, currentToken);
     return { message: 'All other sessions revoked successfully' };
@@ -145,7 +145,7 @@ export class AuthController {
   @Post('2fa/enable')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Enable 2FA for user' })
-  async enable2FA(@CurrentUser() user: any) {
+  async enable2FA(@CurrentUser() user: { id: string; email: string; role: string; tenantId: string }) {
     return this.twoFactorService.enableTwoFactor(user.id);
   }
 
@@ -153,7 +153,7 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Verify 2FA setup' })
-  async verify2FASetup(@CurrentUser() user: any, @Body() dto: Verify2FADto) {
+  async verify2FASetup(@CurrentUser() user: { id: string; email: string; role: string; tenantId: string }, @Body() dto: Verify2FADto) {
     const verified = await this.twoFactorService.verifyAndEnable(user.id, dto.token);
     if (!verified) {
       throw new BadRequestException('Invalid 2FA token');
@@ -165,7 +165,7 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Disable 2FA' })
-  async disable2FA(@CurrentUser() user: any, @Body() dto: Verify2FADto) {
+  async disable2FA(@CurrentUser() user: { id: string; email: string; role: string; tenantId: string }, @Body() dto: Verify2FADto) {
     await this.twoFactorService.disableTwoFactor(user.id, dto.token);
     return { message: '2FA disabled successfully' };
   }
@@ -181,7 +181,7 @@ export class AuthController {
   @Post('2fa/login')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Complete login with 2FA token' })
-  async login2FA(@Body() dto: { tempToken: string; twoFactorToken: string }, @Req() req: any) {
+  async login2FA(@Body() dto: { tempToken: string; twoFactorToken: string }, @Req() req: Request) {
     const result = await this.authService.completeTwoFactorLogin(dto.tempToken, dto.twoFactorToken, {
       ipAddress: req.ip,
       userAgent: req.headers['user-agent'],
@@ -216,7 +216,7 @@ export class AuthController {
   @Get('profile')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get user profile' })
-  async getProfile(@CurrentUser() user: any) {
+  async getProfile(@CurrentUser() user: { id: string; email: string; role: string; tenantId: string }) {
     return this.authService.getUserProfile(user.id);
   }
 
@@ -270,7 +270,7 @@ export class AuthController {
   @Post('clear-tokens')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Clear httpOnly cookies' })
-  async clearTokens(@Req() req: any) {
+  async clearTokens(@Req() req: Request) {
     // Clear httpOnly cookies
     if (req.res) {
       req.res.clearCookie('access_token', { path: '/' });

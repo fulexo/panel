@@ -1,12 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
+import { LoggerService } from '../logger/logger.service';
 
 export interface AuditLogData {
   action: string;
   entityType?: string;
   entityId?: string;
-  changes?: any;
-  metadata?: any;
+  changes?: Record<string, unknown>;
+  metadata?: Record<string, unknown>;
   userId?: string;
   tenantId?: string;
   ipAddress?: string;
@@ -15,7 +16,10 @@ export interface AuditLogData {
 
 @Injectable()
 export class AuditService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private logger: LoggerService
+  ) {}
 
   async log(data: AuditLogData) {
     try {
@@ -34,7 +38,7 @@ export class AuditService {
       });
     } catch (error) {
       // Silent fail for audit logging to prevent breaking the main flow
-      console.error('Audit logging failed:', error);
+      this.logger.error('Audit logging failed', error instanceof Error ? error.stack : undefined, 'AuditService');
     }
   }
 
@@ -47,7 +51,7 @@ export class AuditService {
     page?: number;
     limit?: number;
   }) {
-    const where: any = { tenantId };
+    const where: Record<string, unknown> = { tenantId };
     
     if (filters?.userId) where.userId = filters.userId;
     if (filters?.action) where.action = filters.action;
