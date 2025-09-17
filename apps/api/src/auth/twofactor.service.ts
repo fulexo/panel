@@ -140,8 +140,13 @@ export class TwoFactorService {
 
   async generateBackupCodes(_userId: string): Promise<string[]> {
     const codes: string[] = [];
+    const crypto = require('crypto');
+    
     for (let i = 0; i < 10; i++) {
-      codes.push(speakeasy.generateSecret({ length: 8 }).base32.substring(0, 8));
+      // Use cryptographically secure random generation
+      const randomBytes = crypto.randomBytes(4);
+      const code = randomBytes.toString('hex').toUpperCase().substring(0, 8);
+      codes.push(code);
     }
     
     // In production, these should be hashed and stored in the database
@@ -172,5 +177,52 @@ export class TwoFactorService {
       qrCode: qrCodeUrl,
       manualEntry: secret.otpauth_url,
     };
+  }
+
+  async generateTempToken(userId: string): Promise<string> {
+    const crypto = require('crypto');
+    
+    // Generate cryptographically secure random token
+    const randomBytes = crypto.randomBytes(32);
+    const token = randomBytes.toString('hex');
+    
+    // Store token temporarily in database with expiration
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        temp2faToken: token,
+        temp2faTokenExpires: new Date(Date.now() + 5 * 60 * 1000), // 5 minutes
+      },
+    });
+    
+    return token;
+  }
+
+  async validateTempToken(userId: string, token: string): Promise<boolean> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user || !user.temp2faToken || !user.temp2faTokenExpires) {
+      return false;
+    }
+
+    if (user.temp2faToken !== token) {
+      return false;
+    }
+
+    if (new Date() > user.temp2faTokenExpires) {
+      // Clean up expired token
+      await this.prisma.user.update({
+        where: { id: userId },
+        data: {
+          temp2faToken: null,
+          temp2faTokenExpires: null,
+        },
+      });
+      return false;
+    }
+
+    return true;
   }
 }

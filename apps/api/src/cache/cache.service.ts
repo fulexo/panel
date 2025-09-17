@@ -101,8 +101,9 @@ export class CacheService implements OnModuleDestroy {
     return this.generateKey('orders', 'list', tenantId, page, filterHash);
   }
 
-  orderDetailKey(orderId: string): string {
-    return this.generateKey('orders', 'detail', orderId);
+  orderDetailKey(orderId: string, role?: string): string {
+    const roleSuffix = role ? `:${role}` : '';
+    return this.generateKey('orders', 'detail', orderId + roleSuffix);
   }
 
   productListKey(tenantId: string, page: number, filters: any): string {

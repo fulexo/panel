@@ -162,6 +162,9 @@ export function validateEnvOnStartup() {
 }
 
 export const envValidationSchema = {
+  validate: (config: Record<string, unknown>) => {
+    return validateEnvironment(config);
+  },
   type: 'object',
   required: ['DATABASE_URL', 'REDIS_URL', 'JWT_SECRET', 'ENCRYPTION_KEY', 'DOMAIN_API', 'DOMAIN_APP', 'S3_ENDPOINT', 'S3_ACCESS_KEY', 'S3_SECRET_KEY', 'S3_BUCKET'],
   properties: {

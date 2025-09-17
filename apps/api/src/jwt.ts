@@ -70,15 +70,30 @@ export class JwtService {
   }
 
   private async initHMACKey() {
-    const secret = process.env['JWT_SECRET'];
+    let secret = process.env['JWT_SECRET'];
     
     if (!secret) {
-      throw new Error('JWT_SECRET environment variable is required');
+      if (process.env['NODE_ENV'] === 'development') {
+        // Generate a secure fallback for development
+        const crypto = require('crypto');
+        secret = crypto.randomBytes(64).toString('hex');
+        console.warn('JWT_SECRET not set, using generated fallback for development. This should NOT be used in production.');
+      } else {
+        throw new Error('JWT_SECRET environment variable is required');
+      }
     }
     
     // Validate secret strength
     if (secret.length < 64) {
-      throw new Error('JWT_SECRET must be at least 64 characters long');
+      if (process.env['NODE_ENV'] === 'development') {
+        console.warn('JWT_SECRET is shorter than 64 characters. This is not recommended for production.');
+        // Pad with random data for development
+        const crypto = require('crypto');
+        const padding = crypto.randomBytes(64 - secret.length).toString('hex');
+        secret = secret + padding;
+      } else {
+        throw new Error('JWT_SECRET must be at least 64 characters long');
+      }
     }
     
     // Check for weak secrets
@@ -97,13 +112,29 @@ export class JwtService {
     ];
     
     if (weakPatterns.some(pattern => secret.toLowerCase().includes(pattern))) {
-      throw new Error('JWT_SECRET contains weak patterns. Please use a stronger secret.');
+      if (process.env['NODE_ENV'] === 'development') {
+        console.warn('JWT_SECRET contains weak patterns. This is not recommended for production.');
+        // Generate a secure replacement for development
+        const crypto = require('crypto');
+        secret = crypto.randomBytes(64).toString('hex');
+        console.warn('Using generated secure secret for development.');
+      } else {
+        throw new Error('JWT_SECRET contains weak patterns. Please use a stronger secret.');
+      }
     }
     
     // Check for sufficient entropy
     const uniqueChars = new Set(secret).size;
     if (uniqueChars < 16) {
-      throw new Error('JWT_SECRET must contain at least 16 unique characters');
+      if (process.env['NODE_ENV'] === 'development') {
+        console.warn('JWT_SECRET has insufficient entropy. This is not recommended for production.');
+        // Generate a secure replacement for development
+        const crypto = require('crypto');
+        secret = crypto.randomBytes(64).toString('hex');
+        console.warn('Using generated secure secret for development.');
+      } else {
+        throw new Error('JWT_SECRET must contain at least 16 unique characters');
+      }
     }
     
     const secretBuffer = new TextEncoder().encode(secret);

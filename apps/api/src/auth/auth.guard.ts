@@ -33,8 +33,8 @@ export class AuthGuard implements CanActivate {
 
     try {
       const payload = await this.jwtService.verifyAccessToken(token);
-      const isActive = await this.sessionService.validateSession(token);
-      if (!isActive) {
+      const sessionResult = await this.sessionService.validateSession(token);
+      if (!sessionResult.valid) {
         throw new UnauthorizedException('Session expired or revoked');
       }
       const user = await this.prisma.user.findUnique({ where: { id: String((payload as any).sub) } });
