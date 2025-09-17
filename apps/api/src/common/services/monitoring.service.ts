@@ -31,7 +31,7 @@ export class MonitoringService {
           action: 'ERROR_LOGGED',
           entityType: 'ERROR',
           entityId: errorData.type,
-          changes: errorData as any,
+          changes: errorData as Record<string, unknown>,
           metadata: {
             type: errorData.type,
             url: errorData.url,
@@ -60,7 +60,7 @@ export class MonitoringService {
             operation,
             duration,
             metadata,
-          } as any,
+          } as Record<string, unknown>,
           metadata: {
             operation,
             duration,
@@ -83,7 +83,7 @@ export class MonitoringService {
           changes: {
             action,
             metadata,
-          } as any,
+          } as Record<string, unknown>,
           metadata: {
             action,
             timestamp: new Date().toISOString(),

@@ -42,8 +42,8 @@ export default function TwoFAPage() {
       } else {
         throw new Error('Invalid response from server');
       }
-    } catch(e:any){
-      setError(e.message || '2FA verification failed');
+    } catch(e: unknown){
+      setError(e instanceof Error ? e.message : '2FA verification failed');
     } finally {
       setLoading(false);
     }

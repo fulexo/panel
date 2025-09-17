@@ -115,14 +115,14 @@ export class OrdersService {
     const offset = (page - 1) * limit;
 
     // Try to get from cache
-    const cacheKey = this.cache.orderListKey(tenantId, page, query as any);
+    const cacheKey = this.cache.orderListKey(tenantId, page, query as Record<string, unknown>);
     const cached = await this.cache.get(cacheKey);
     if (cached) {
       return cached;
     }
 
     // Build where clause
-    const where: any = {
+    const where: Record<string, unknown> = {
       tenantId,
     };
 

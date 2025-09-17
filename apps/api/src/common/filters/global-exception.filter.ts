@@ -34,7 +34,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
         const responseObj = exceptionResponse as { message?: string; error?: string; errorCode?: string; details?: unknown };
         message = responseObj.message || responseObj.error || message;
         errorCode = responseObj.errorCode || 'HTTP_ERROR';
-        details = (responseObj as any).details || null;
+        details = (responseObj as Record<string, unknown>).details || null;
       }
     } else if (exception instanceof Prisma.PrismaClientKnownRequestError) {
       status = HttpStatus.BAD_REQUEST;

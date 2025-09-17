@@ -6,10 +6,10 @@ import * as bcrypt from 'bcrypt';
 export class UsersService {
   constructor(private prisma: PrismaService) {}
 
-  async list(currentUser: any, page: number, limit: number, search?: string) {
+  async list(currentUser: Record<string, unknown>, page: number, limit: number, search?: string) {
     const offset = (page - 1) * limit;
     
-    const whereClause: any = {};
+    const whereClause: Record<string, unknown> = {};
     
     // Role-based filtering
     if (currentUser.role === 'CUSTOMER') {
@@ -96,7 +96,7 @@ export class UsersService {
     return user;
   }
 
-  async update(currentUser: any, id: string, data: any) {
+  async update(currentUser: Record<string, unknown>, id: string, data: Record<string, unknown>) {
     // const _user = await this.get(currentUser, id);
 
     // Additional permission checks
@@ -140,7 +140,7 @@ export class UsersService {
     return updatedUser;
   }
 
-  async remove(currentUser: any, id: string) {
+  async remove(currentUser: Record<string, unknown>, id: string) {
     if (currentUser.role !== 'ADMIN') {
       throw new ForbiddenException('Only ADMIN can delete users');
     }
@@ -160,7 +160,7 @@ export class UsersService {
     return { message: 'User deleted successfully' };
   }
 
-  async resetPassword(currentUser: any, id: string, password?: string) {
+  async resetPassword(currentUser: Record<string, unknown>, id: string, password?: string) {
     if (currentUser.role !== 'ADMIN') {
       throw new ForbiddenException('Only ADMIN can reset passwords');
     }

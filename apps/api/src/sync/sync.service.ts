@@ -25,7 +25,7 @@ export class SyncService {
     
     // Initialize sync queue
     this.syncQueue = new Queue(this.queueName, {
-      connection: this.redis as any,
+      connection: this.redis as Record<string, unknown>,
     });
   }
 
@@ -35,7 +35,7 @@ export class SyncService {
     try {
       // Get account details
       // Placeholder: account retrieval removed with BaseLinker; use WooStore in new flows
-      const account: any = null;
+      const account: Record<string, unknown> | null = null;
 
       // No-op if account concept not applicable
 
@@ -54,7 +54,7 @@ export class SyncService {
       //   get_unconfirmed_orders: false,
       // };
 
-      const orders: any[] = [];
+      const orders: Record<string, unknown>[] = [];
 
       this.logger.log(`Fetched ${orders.length} orders`);
 
@@ -75,12 +75,12 @@ export class SyncService {
       this.logger.log(`Order sync completed for account ${accountId}`);
     } catch (error) {
       this.logger.error(`Order sync failed for account ${accountId}:`, error);
-      await this.updateSyncState(accountId, 'orders', null, 'failed', (error as any).message);
+      await this.updateSyncState(accountId, 'orders', null, 'failed', error instanceof Error ? error.message : String(error));
       throw error;
     }
   }
 
-  private async processOrder(remoteOrder: any, account: any) {
+  private async processOrder(remoteOrder: Record<string, unknown>, account: Record<string, unknown> | null) {
     try {
       // Determine tenant ownership
       const tenantId = await this.determineOwnership(remoteOrder, account);
@@ -194,7 +194,7 @@ export class SyncService {
     }
   }
 
-  private async determineOwnership(remoteOrder: any, account: any): Promise<string | null> {
+  private async determineOwnership(remoteOrder: Record<string, unknown>, account: Record<string, unknown> | null): Promise<string | null> {
     // If account has direct tenant assignment
     if (account && account.tenantId) {
       return account.tenantId;
@@ -245,7 +245,7 @@ export class SyncService {
     return true;
   }
 
-  private getFieldValue(order: any, field: string): any {
+  private getFieldValue(order: Record<string, unknown>, field: string): unknown {
     const parts = field.split('.');
     let value = order;
     
@@ -303,7 +303,7 @@ export class SyncService {
   private async updateSyncState(
     accountId: string,
     entityType: string,
-    checkpoint: any,
+    checkpoint: Record<string, unknown> | null,
     status: string = 'idle',
     error: string | null = null,
   ) {

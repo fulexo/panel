@@ -62,7 +62,7 @@ export class WooService {
       const s = await tx.wooStore.findFirst({ where: { id } });
       if(!s) throw new BadRequestException('Store not found');
       const url = `${s.baseUrl}/wp-json/wc/${s.apiVersion}/orders?per_page=1`;
-      const r = await fetch(url, { headers: { Authorization: buildAuthHeader(s.consumerKey, s.consumerSecret) } } as any);
+      const r = await fetch(url, { headers: { Authorization: buildAuthHeader(s.consumerKey, s.consumerSecret) } } as RequestInit);
       return { ok: r.ok, status: r.status };
     });
   }
@@ -86,7 +86,7 @@ export class WooService {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: buildAuthHeader(s.consumerKey, s.consumerSecret) },
           body: JSON.stringify(body)
-        } as any);
+        } as RequestInit);
         results.push({ topic, ok: r.ok, status: r.status });
       }
       return { results };
@@ -120,7 +120,7 @@ export class WooService {
       provider: 'woocommerce',
       topic,
       signature: signature || null,
-      payload: payload as any,
+      payload: payload as Record<string, unknown>,
       status: valid ? 'received' : 'failed',
       error: valid ? null : 'invalid_signature',
     }});

@@ -58,7 +58,7 @@ export class TenantsService {
     return { tokens, context: { tenantId: tenant.id, impersonated: true, originalTenantId: user.tenantId } };
   }
 
-  async stopImpersonation(userPayload: any) {
+  async stopImpersonation(userPayload: Record<string, unknown>) {
     const { sub: userId, originalTenantId, impersonated } = userPayload || {};
     if (!impersonated || !originalTenantId) {
       throw new BadRequestException('Not impersonating');

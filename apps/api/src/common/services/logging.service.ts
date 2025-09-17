@@ -119,7 +119,7 @@ export class LoggingService implements LoggerService {
               message: entry.message,
               context: entry.context,
               metadata: entry.metadata,
-            } as any,
+            } as Record<string, unknown>,
             metadata: {
               level: entry.level,
               timestamp: entry.timestamp,
@@ -190,8 +190,8 @@ export class LoggingService implements LoggerService {
         action,
         entityType,
         entityId,
-        changes: changes as any,
-        metadata: metadata as any,
+        changes: changes as Record<string, unknown>,
+        metadata: metadata as Record<string, unknown>,
         ipAddress: metadata?.['ipAddress'] as string,
         userAgent: metadata?.['userAgent'] as string,
       },
@@ -221,7 +221,7 @@ export class LoggingService implements LoggerService {
           event,
           severity,
           metadata,
-        } as any,
+        } as Record<string, unknown>,
         metadata: {
           severity,
           timestamp: new Date(),

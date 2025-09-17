@@ -34,7 +34,7 @@ export class RequestsService {
         tenantId,
         createdBy: userId,
         type: dto.type,
-        priority: (dto.priority as any) || 'normal',
+        priority: dto.priority || 'normal',
         status: 'SUBMITTED',
         payload: dto.payload,
       },

@@ -11,11 +11,11 @@ export class ShipmentsService {
     return this.prisma.withTenant(tenantId, fn);
   }
 
-  async list(tenantId: string, page = 1, limit = 50, query: any = {}) {
+  async list(tenantId: string, page = 1, limit = 50, query: Record<string, unknown> = {}) {
     const take = Math.min(limit, 200);
     const skip = (page - 1) * take;
 
-    const where: any = { order: { tenantId } };
+    const where: Record<string, unknown> = { order: { tenantId } };
     
     if (query.search) {
       where.OR = [

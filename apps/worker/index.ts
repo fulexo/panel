@@ -60,7 +60,7 @@ const prisma = new PrismaClient({
 
 // Job processors
 const jobProcessors = {
-  'sync-orders': async (job: any) => {
+  'sync-orders': async (job: { data: Record<string, unknown> }) => {
     try {
       const { accountId } = job.data;
       if (!accountId) {
@@ -82,7 +82,7 @@ const jobProcessors = {
     }
   },
 
-  'sync-shipments': async (job: any) => {
+  'sync-shipments': async (job: { data: Record<string, unknown> }) => {
     try {
       const { accountId } = job.data;
       if (!accountId) {
@@ -102,7 +102,7 @@ const jobProcessors = {
     }
   },
 
-  'sync-returns': async (job: any) => {
+  'sync-returns': async (job: { data: Record<string, unknown> }) => {
     try {
       const { accountId } = job.data;
       if (!accountId) {
@@ -122,7 +122,7 @@ const jobProcessors = {
     }
   },
 
-  'sync-invoices': async (job: any) => {
+  'sync-invoices': async (job: { data: Record<string, unknown> }) => {
     try {
       const { accountId } = job.data;
       if (!accountId) {
@@ -143,7 +143,7 @@ const jobProcessors = {
   },
 
   // WooCommerce sync placeholders
-  'woo-sync-orders': async (job: any) => {
+  'woo-sync-orders': async (job: { data: Record<string, unknown> }) => {
     const { storeId } = job.data;
     if (!storeId) {
       throw new Error('Store ID is required for woo-sync-orders job');
@@ -174,7 +174,7 @@ const jobProcessors = {
       const res = await fetch(url, { 
         headers: { Authorization: 'Basic '+Buffer.from(store.consumerKey+':'+store.consumerSecret).toString('base64') },
         timeout: 30000 // 30 second timeout
-      } as any);
+      } as RequestInit);
       
       if(!res.ok){ 
         logger.error(`WooCommerce API error: ${res.status} ${res.statusText}`);
@@ -191,7 +191,7 @@ const jobProcessors = {
           orderSource: 'woo',
           status: String(o.status || 'pending'),
           mappedStatus: String(o.status || 'pending'),
-          total: o.total ? new (Prisma as any).Decimal(o.total) : null,
+          total: o.total ? new Prisma.Decimal(o.total) : null,
           currency: o.currency || 'TRY',
           customerEmail: o.billing?.email || null,
           customerPhone: o.billing?.phone || null,
@@ -219,7 +219,7 @@ const jobProcessors = {
                 sku: li.sku || null,
                 name: li.name || null,
                 qty: Number(li.quantity || 0),
-                price: li.total ? new (Prisma as any).Decimal(li.total) : null,
+                price: li.total ? new Prisma.Decimal(li.total) : null,
               }});
             }
           }
@@ -238,7 +238,7 @@ const jobProcessors = {
     syncLagGauge.set({ account_id: storeId, entity_type: 'orders' }, 0);
     return { success: true, storeId, imported, duration: dur };
   },
-  'woo-sync-products': async (job: any) => {
+  'woo-sync-products': async (job: { data: Record<string, unknown> }) => {
     const { storeId } = job.data;
     if (!storeId) {
       throw new Error('Store ID is required for woo-sync-products job');
@@ -260,7 +260,7 @@ const jobProcessors = {
       const res = await fetch(url, { 
         headers: { Authorization: 'Basic '+Buffer.from(store.consumerKey+':'+store.consumerSecret).toString('base64') },
         timeout: 30000 // 30 second timeout
-      } as any);
+      } as RequestInit);
       if(!res.ok) { 
         logger.error(`WooCommerce API error: ${res.status} ${res.statusText}`);
         throw new Error('Woo HTTP '+res.status); 
@@ -325,7 +325,7 @@ const jobProcessors = {
             orderSource: 'woo',
             status: String(o.status || 'pending'),
             mappedStatus: String(o.status || 'pending'),
-            total: o.total ? new (Prisma as any).Decimal(o.total) : null,
+            total: o.total ? new Prisma.Decimal(o.total) : null,
             currency: o.currency || 'TRY',
             customerEmail: o.billing?.email || null,
             customerPhone: o.billing?.phone || null,
@@ -349,7 +349,7 @@ const jobProcessors = {
                 sku: li.sku || null,
                 name: li.name || null,
                 qty: Number(li.quantity || 0),
-                price: li.total ? new (Prisma as any).Decimal(li.total) : null,
+                price: li.total ? new Prisma.Decimal(li.total) : null,
               }});
             }
           }
@@ -362,10 +362,10 @@ const jobProcessors = {
             tenantId: store.tenantId,
             sku: p.sku || String(p.id),
             name: p.name || null,
-            price: p.price ? new (Prisma as any).Decimal(p.price) : null,
+            price: p.price ? new Prisma.Decimal(p.price) : null,
             stock: (typeof p.stock_quantity==='number') ? p.stock_quantity : null,
-            images: Array.isArray(p.images) ? p.images.map((i: any)=>i.src).filter(Boolean) : [],
-            tags: Array.isArray(p.tags) ? p.tags.map((t: any)=>t.name).filter(Boolean) : [],
+            images: Array.isArray(p.images) ? p.images.map((i: Record<string, unknown>)=>i.src as string).filter(Boolean) : [],
+            tags: Array.isArray(p.tags) ? p.tags.map((t: Record<string, unknown>)=>t.name as string).filter(Boolean) : [],
             active: p.status !== 'draft' && p.status !== 'trash',
           };
           if(existing){
@@ -458,7 +458,7 @@ const jobProcessors = {
     return { success: true, requestId, action };
   },
 
-  'cleanup-cache': async (_job: any) => {
+  'cleanup-cache': async (_job: { data: Record<string, unknown> }) => {
     // Running cache cleanup
     
     // Use existing connection instead of creating new one
@@ -484,7 +484,7 @@ const jobProcessors = {
     }
   },
 
-  'cleanup-sessions': async (_job: any) => {
+  'cleanup-sessions': async (_job: { data: Record<string, unknown> }) => {
     // Cleaning expired sessions
     
     const result = await prisma.session.deleteMany({
@@ -498,7 +498,7 @@ const jobProcessors = {
     return { success: true, deleted: result.count };
   },
 
-  'generate-report': async (job: any) => {
+  'generate-report': async (job: { data: Record<string, unknown> }) => {
     const { tenantId, reportType } = job.data;
     // Generating report for tenant
     
@@ -507,14 +507,14 @@ const jobProcessors = {
     
     return { success: true, reportType, tenantId };
   },
-  'sync-google-calendar': async (job: any) => {
+  'sync-google-calendar': async (job: { data: Record<string, unknown> }) => {
     const { tenantId } = job.data;
     // Syncing Google Calendar for tenant
     // Fetch OAuth credentials from API or database and sync calendar events
     await new Promise(r => setTimeout(r, 1000));
     return { success: true, tenantId };
   },
-  'email-stats': async (job: any) => {
+  'email-stats': async (job: { data: Record<string, unknown> }) => {
     const { tenantId, period } = job.data;
     // Email stats for tenant
     // Call API to get statistics and send email via SMTP provider

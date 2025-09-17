@@ -6,7 +6,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 
 export default function InboundPage(){
   const router = useRouter();
-  const [items, setItems] = useState<any[]>([]);
+  const [items, setItems] = useState<Record<string, unknown>[]>([]);
   const [loading, setLoading] = useState(true);
   const [ref, setRef] = useState('');
   const [selected, setSelected] = useState<string>('');
@@ -66,7 +66,7 @@ export default function InboundPage(){
         <div className="flex flex-col md:flex-row gap-2">
           <select value={selected} onChange={e=>setSelected(e.target.value)} className="px-3 py-2 bg-gray-900 border border-gray-700 rounded">
             <option value="">Select Shipment</option>
-            {items.map((s:any)=> (<option key={s.id} value={s.id}>{s.reference || s.id.slice(0,8)} • {s.status}</option>))}
+            {items.map((s: Record<string, unknown>)=> (<option key={s.id as string} value={s.id as string}>{s.reference as string || (s.id as string).slice(0,8)} • {s.status as string}</option>))}
           </select>
           <input value={sku} onChange={e=>setSku(e.target.value)} placeholder="SKU (optional)" className="px-3 py-2 bg-gray-900 border border-gray-700 rounded" />
           <input value={name} onChange={e=>setName(e.target.value)} placeholder="Name (optional)" className="px-3 py-2 bg-gray-900 border border-gray-700 rounded" />
@@ -76,7 +76,7 @@ export default function InboundPage(){
       </div>
 
       <div className="grid gap-3">
-        {items.map((s:any)=> (
+        {items.map((s: Record<string, unknown>)=> (
           <div key={s.id} className="bg-gray-800 p-4 rounded border border-gray-700">
             <div className="flex justify-between items-center">
               <div>
@@ -89,7 +89,7 @@ export default function InboundPage(){
               </div>
             </div>
             <div className="mt-3 text-sm">
-              {(s.items||[]).map((it:any)=> (
+              {((s.items as Record<string, unknown>[])||[]).map((it: Record<string, unknown>)=> (
                 <div key={it.id} className="flex justify-between">
                   <span>{it.quantity} x {it.name || it.sku || '—'}</span>
                 </div>

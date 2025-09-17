@@ -19,7 +19,7 @@ export class CsrfGuard implements CanActivate {
 
     // Check for CSRF token
     const csrfToken = request.headers['x-csrf-token'] as string;
-    const sessionToken = (request as any).session?.csrfToken;
+    const sessionToken = (request as { session?: { csrfToken?: string } }).session?.csrfToken;
 
     if (!csrfToken || !sessionToken) {
       throw new ForbiddenException('CSRF token missing');

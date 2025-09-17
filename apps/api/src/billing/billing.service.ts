@@ -28,19 +28,19 @@ export class BillingService {
         periodFrom: dto.periodFrom ? new Date(dto.periodFrom) : null,
         periodTo: dto.periodTo ? new Date(dto.periodTo) : null,
         status: 'created',
-      } as any,
+      },
     }));
   }
 
   async addInvoices(tenantId: string, batchId: string, invoiceIds: string[]) {
     const batch = await this.runTenant(tenantId, async (db) => db.billingBatch.findFirst({ where: { id: batchId, tenantId } }));
     if (!batch) throw new NotFoundException('Batch not found');
-    let total = new (Prisma as any).Decimal(batch.total || 0);
+    let total = new Prisma.Decimal(batch.total || 0);
     for (const invoiceId of invoiceIds) {
       const inv = await this.runTenant(tenantId, async (db) => db.invoice.findFirst({ where: { id: invoiceId, order: { tenantId } } }));
       if (!inv) continue;
-      await this.runTenant(tenantId, async (db) => db.billingBatchItem.create({ data: { batchId, invoiceId, amount: inv.total || new (Prisma as any).Decimal(0) } }));
-      total = total.add(inv.total || new (Prisma as any).Decimal(0));
+      await this.runTenant(tenantId, async (db) => db.billingBatchItem.create({ data: { batchId, invoiceId, amount: inv.total || new Prisma.Decimal(0) } }));
+      total = total.add(inv.total || new Prisma.Decimal(0));
     }
     await this.runTenant(tenantId, async (db) => db.billingBatch.update({ where: { id: batchId }, data: { total } }));
     return this.getBatch(tenantId, batchId);

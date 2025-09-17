@@ -290,7 +290,7 @@ export class QueryOptimizationService {
         { customerPhone: { contains: searchTerm } },
         { notes: { contains: searchTerm } },
       ],
-    } as any;
+    } as Record<string, unknown>;
 
     const [orders, total] = await Promise.all([
       this.prisma.forTenant(tenantId).order.findMany({
