@@ -111,7 +111,7 @@ export class EmailService {
 
   async sendOrderNotification(
     tenantId: string,
-    orderData: any
+    orderData: Record<string, unknown>
   ) {
     const notificationSettings = await this.settingsService.getSettingsByCategory(
       tenantId,

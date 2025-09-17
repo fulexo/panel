@@ -30,14 +30,14 @@ export class SettingsController {
   @Get()
   @ApiOperation({ summary: 'Get all settings' })
   @Roles('ADMIN')
-  async getSettings(@Req() req: any, @Query('category') category?: string) {
+  async getSettings(@Req() req: { user: { tenantId: string } }, @Query('category') category?: string) {
     return this.settingsService.getSettings(req.user.tenantId, category);
   }
 
   @Get('email')
   @ApiOperation({ summary: 'Get email settings' })
   @Roles('ADMIN')
-  async getEmailSettings(@Req() req: any) {
+  async getEmailSettings(@Req() req: { user: { tenantId: string } }) {
     return this.settingsService.getSettingsByCategory(req.user.tenantId, 'email');
   }
 
@@ -45,7 +45,7 @@ export class SettingsController {
   @ApiOperation({ summary: 'Update email settings' })
   @Roles('ADMIN')
   async updateEmailSettings(
-    @Req() req: any,
+    @Req() req: { user: { tenantId: string } },
     @Body() dto: EmailSettingsDto
   ) {
     await this.settingsService.updateSettings(
@@ -62,7 +62,7 @@ export class SettingsController {
   @Get('notification')
   @ApiOperation({ summary: 'Get notification settings' })
   @Roles('ADMIN')
-  async getNotificationSettings(@Req() req: any) {
+  async getNotificationSettings(@Req() req: { user: { tenantId: string } }) {
     return this.settingsService.getSettingsByCategory(req.user.tenantId, 'notification');
   }
 
@@ -70,7 +70,7 @@ export class SettingsController {
   @ApiOperation({ summary: 'Update notification settings' })
   @Roles('ADMIN')
   async updateNotificationSettings(
-    @Req() req: any,
+    @Req() req: { user: { tenantId: string } },
     @Body() dto: NotificationSettingsDto
   ) {
     await this.settingsService.updateSettings(
@@ -85,7 +85,7 @@ export class SettingsController {
   @Get('general')
   @ApiOperation({ summary: 'Get general settings' })
   @Roles('ADMIN', 'CUSTOMER')
-  async getGeneralSettings(@Req() req: any) {
+  async getGeneralSettings(@Req() req: { user: { tenantId: string } }) {
     return this.settingsService.getSettingsByCategory(req.user.tenantId, 'general');
   }
 
@@ -93,7 +93,7 @@ export class SettingsController {
   @ApiOperation({ summary: 'Update general settings' })
   @Roles('ADMIN')
   async updateGeneralSettings(
-    @Req() req: any,
+    @Req() req: { user: { tenantId: string } },
     @Body() dto: GeneralSettingsDto
   ) {
     await this.settingsService.updateSettings(
@@ -108,7 +108,7 @@ export class SettingsController {
   @Get('woocommerce')
   @ApiOperation({ summary: 'Get WooCommerce settings' })
   @Roles('ADMIN')
-  async getWooCommerceSettings(@Req() req: any) {
+  async getWooCommerceSettings(@Req() req: { user: { tenantId: string } }) {
     return this.settingsService.getSettingsByCategory(req.user.tenantId, 'woocommerce' as any);
   }
 
@@ -116,7 +116,7 @@ export class SettingsController {
   @ApiOperation({ summary: 'Update WooCommerce settings' })
   @Roles('ADMIN')
   async updateWooCommerceSettings(
-    @Req() req: any,
+    @Req() req: { user: { tenantId: string } },
     @Body() dto: WooCommerceSettingsDto
   ) {
     await this.settingsService.updateSettings(
@@ -131,7 +131,7 @@ export class SettingsController {
   @Get('security')
   @ApiOperation({ summary: 'Get security settings' })
   @Roles('ADMIN')
-  async getSecuritySettings(@Req() req: any) {
+  async getSecuritySettings(@Req() req: { user: { tenantId: string } }) {
     return this.settingsService.getSettingsByCategory(req.user.tenantId, 'security' as any);
   }
 
@@ -139,7 +139,7 @@ export class SettingsController {
   @ApiOperation({ summary: 'Update security settings' })
   @Roles('ADMIN')
   async updateSecuritySettings(
-    @Req() req: any,
+    @Req() req: { user: { tenantId: string } },
     @Body() dto: SecuritySettingsDto
   ) {
     await this.settingsService.updateSettings(
@@ -154,7 +154,7 @@ export class SettingsController {
   @Post('test-connection')
   @ApiOperation({ summary: 'Test service connection' })
   @Roles('ADMIN')
-  async testConnection(@Req() req: any, @Body() dto: TestConnectionDto) {
+  async testConnection(@Req() req: { user: { tenantId: string } }, @Body() dto: TestConnectionDto) {
     let result: boolean;
     
     switch (dto.service) {
@@ -176,7 +176,7 @@ export class SettingsController {
   @ApiOperation({ summary: 'Get specific setting' })
   @Roles('ADMIN')
   async getSetting(
-    @Req() req: any,
+    @Req() req: { user: { tenantId: string } },
     @Param('category') category: string,
     @Param('key') key: string
   ) {
@@ -192,7 +192,7 @@ export class SettingsController {
   @ApiOperation({ summary: 'Delete specific setting' })
   @Roles('ADMIN')
   async deleteSetting(
-    @Req() req: any,
+    @Req() req: { user: { tenantId: string } },
     @Param('category') category: string,
     @Param('key') key: string
   ) {

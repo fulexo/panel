@@ -13,13 +13,13 @@ export class InvoicesController {
   @ApiOperation({ summary: 'List invoices' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
-  async list(@CurrentUser() user: any, @Query('page') page = 1, @Query('limit') limit = 50) {
+  async list(@CurrentUser() user: { id: string; email: string; role: string; tenantId: string }, @Query('page') page = 1, @Query('limit') limit = 50) {
     return this.invoices.list(user.tenantId, Number(page), Number(limit));
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Get invoice by ID' })
-  async get(@CurrentUser() user: any, @Param('id') id: string) {
+  async get(@CurrentUser() user: { id: string; email: string; role: string; tenantId: string }, @Param('id') id: string) {
     return this.invoices.get(user.tenantId, id);
   }
 }

@@ -72,12 +72,12 @@ export class BillingService {
   }
 
   // Invoice methods
-  async listInvoices(tenantId: string, query: any) {
+  async listInvoices(tenantId: string, query: { page?: string; limit?: string; search?: string; status?: string; dateFrom?: string; dateTo?: string }) {
     const page = Number(query.page) || 1;
     const limit = Math.min(Number(query.limit) || 50, 200);
     const skip = (page - 1) * limit;
 
-    const where: any = { tenantId };
+    const where: Record<string, unknown> = { tenantId };
     
     if (query.search) {
       where.OR = [
@@ -139,7 +139,7 @@ export class BillingService {
     };
   }
 
-  async createInvoice(tenantId: string, dto: any) {
+  async createInvoice(tenantId: string, dto: Record<string, unknown>) {
     return this.runTenant(tenantId, async (db) => db.invoice.create({
       data: {
         tenantId,
@@ -164,7 +164,7 @@ export class BillingService {
     return invoice;
   }
 
-  async updateInvoice(tenantId: string, id: string, dto: any) {
+  async updateInvoice(tenantId: string, id: string, dto: Record<string, unknown>) {
     const invoice = await this.runTenant(tenantId, async (db) => 
       db.invoice.findFirst({ where: { id, tenantId } })
     );
@@ -194,12 +194,12 @@ export class BillingService {
   }
 
   // Payment methods
-  async listPayments(tenantId: string, query: any) {
+  async listPayments(tenantId: string, query: { page?: string; limit?: string; search?: string; status?: string; dateFrom?: string; dateTo?: string }) {
     const page = Number(query.page) || 1;
     const limit = Math.min(Number(query.limit) || 50, 200);
     const skip = (page - 1) * limit;
 
-    const where: any = { tenantId };
+    const where: Record<string, unknown> = { tenantId };
     
     if (query.search) {
       where.OR = [
@@ -277,7 +277,7 @@ export class BillingService {
     return payment;
   }
 
-  async updatePayment(tenantId: string, id: string, dto: any) {
+  async updatePayment(tenantId: string, id: string, dto: Record<string, unknown>) {
     const payment = await this.runTenant(tenantId, async (db) => 
       db.payment.findFirst({ where: { id, tenantId } })
     );
@@ -309,7 +309,7 @@ export class BillingService {
     }));
   }
 
-  async bulkUpdateBatches(tenantId: string, batchIds: string[], updates: any, _userId: string) {
+  async bulkUpdateBatches(tenantId: string, batchIds: string[], updates: Record<string, unknown>, _userId: string) {
     if (!batchIds || batchIds.length === 0) {
       throw new BadRequestException('No batch IDs provided');
     }
@@ -319,7 +319,7 @@ export class BillingService {
     }
 
     const results = await this.runTenant(tenantId, async (db) => {
-      const updateData: any = {};
+      const updateData: Record<string, unknown> = {};
       
       if (updates.status !== undefined) updateData.status = updates.status;
       

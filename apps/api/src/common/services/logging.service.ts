@@ -5,7 +5,7 @@ export interface LogEntry {
   level: 'debug' | 'info' | 'warn' | 'error' | 'fatal';
   message: string;
   context?: string;
-  metadata?: Record<string, any> | undefined;
+  metadata?: Record<string, unknown> | undefined;
   userId?: string;
   tenantId?: string;
   requestId?: string;
@@ -23,7 +23,7 @@ export class LoggingService implements LoggerService {
     this.context = context;
   }
 
-  log(message: string, context?: string, metadata?: Record<string, any>) {
+  log(message: string, context?: string, metadata?: Record<string, unknown>) {
     this.writeLog({
       level: 'info',
       message,
@@ -33,7 +33,7 @@ export class LoggingService implements LoggerService {
     });
   }
 
-  error(message: string, trace?: string, context?: string, metadata?: Record<string, any>) {
+  error(message: string, trace?: string, context?: string, metadata?: Record<string, unknown>) {
     this.writeLog({
       level: 'error',
       message,
@@ -46,7 +46,7 @@ export class LoggingService implements LoggerService {
     });
   }
 
-  warn(message: string, context?: string, metadata?: Record<string, any>) {
+  warn(message: string, context?: string, metadata?: Record<string, unknown>) {
     this.writeLog({
       level: 'warn',
       message,
@@ -56,7 +56,7 @@ export class LoggingService implements LoggerService {
     });
   }
 
-  debug(message: string, context?: string, metadata?: Record<string, any>) {
+  debug(message: string, context?: string, metadata?: Record<string, unknown>) {
     this.writeLog({
       level: 'debug',
       message,
@@ -66,11 +66,11 @@ export class LoggingService implements LoggerService {
     });
   }
 
-  verbose(message: string, context?: string, metadata?: Record<string, any>) {
+  verbose(message: string, context?: string, metadata?: Record<string, unknown>) {
     this.debug(message, context, metadata);
   }
 
-  fatal(message: string, context?: string, metadata?: Record<string, any>) {
+  fatal(message: string, context?: string, metadata?: Record<string, unknown>) {
     this.writeLog({
       level: 'fatal',
       message,
@@ -174,8 +174,8 @@ export class LoggingService implements LoggerService {
     action: string,
     entityType: string,
     entityId: string,
-    changes?: Record<string, any>,
-    metadata?: Record<string, any>
+    changes?: Record<string, unknown>,
+    metadata?: Record<string, unknown>
   ) {
     await this.prisma.auditLog.create({
       data: {
@@ -205,7 +205,7 @@ export class LoggingService implements LoggerService {
   async logSecurityEvent(
     event: string,
     severity: 'low' | 'medium' | 'high' | 'critical',
-    metadata?: Record<string, any>
+    metadata?: Record<string, unknown>
   ) {
     await this.prisma.auditLog.create({
       data: {
@@ -226,7 +226,7 @@ export class LoggingService implements LoggerService {
     });
 
     const level = severity === 'critical' ? 'fatal' : severity === 'high' ? 'error' : 'warn';
-    (this as any)[level](`Security event: ${event}`, 'Security', {
+    (this as { [key: string]: (message: string, context: string, metadata?: Record<string, unknown>) => void })[level](`Security event: ${event}`, 'Security', {
       event,
       severity,
       ...metadata,
@@ -236,7 +236,7 @@ export class LoggingService implements LoggerService {
   async logPerformanceMetric(
     operation: string,
     duration: number,
-    metadata?: Record<string, any>
+    metadata?: Record<string, unknown>
   ) {
     this.debug(`Performance metric: ${operation}`, 'Performance', {
       operation,

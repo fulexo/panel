@@ -9,7 +9,7 @@ export interface ErrorLogData {
   url?: string;
   userId?: string;
   tenantId?: string;
-  metadata?: any;
+  metadata?: Record<string, unknown>;
 }
 
 @Injectable()
@@ -50,7 +50,7 @@ export class MonitoringService {
     }
   }
 
-  async logPerformance(operation: string, duration: number, metadata?: any) {
+  async logPerformance(operation: string, duration: number, metadata?: Record<string, unknown>) {
     try {
       await this.prisma.auditLog.create({
         data: {
@@ -74,7 +74,7 @@ export class MonitoringService {
     }
   }
 
-  async logUserActivity(userId: string, action: string, metadata?: any) {
+  async logUserActivity(userId: string, action: string, metadata?: Record<string, unknown>) {
     try {
       await this.prisma.auditLog.create({
         data: {

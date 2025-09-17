@@ -6,7 +6,7 @@ export interface ErrorContext {
   tenantId?: string;
   action?: string;
   resource?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 @Injectable()
@@ -60,7 +60,7 @@ export class ErrorHandlerService {
     }
   }
 
-  private async storeErrorInDatabase(errorInfo: any): Promise<void> {
+  private async storeErrorInDatabase(errorInfo: Record<string, unknown>): Promise<void> {
     try {
       await this.prisma.auditLog.create({
         data: {
@@ -82,7 +82,7 @@ export class ErrorHandlerService {
     }
   }
 
-  private async sendCriticalErrorAlert(errorInfo: any): Promise<void> {
+  private async sendCriticalErrorAlert(errorInfo: Record<string, unknown>): Promise<void> {
     this.logger.error('CRITICAL ERROR ALERT - Manual intervention required', errorInfo);
     
     try {
@@ -103,23 +103,23 @@ export class ErrorHandlerService {
     }
   }
 
-  private async sendToMonitoringService(errorInfo: any): Promise<void> {
+  private async sendToMonitoringService(errorInfo: Record<string, unknown>): Promise<void> {
     // Implementation for monitoring service integration
     // This could be Prometheus, DataDog, New Relic, etc.
     this.logger.debug('Sending error to monitoring service', errorInfo);
   }
 
-  private async sendEmailAlert(errorInfo: any): Promise<void> {
+  private async sendEmailAlert(errorInfo: Record<string, unknown>): Promise<void> {
     // Implementation for email alerts
     this.logger.debug('Sending email alert', errorInfo);
   }
 
-  private async sendSlackAlert(errorInfo: any): Promise<void> {
+  private async sendSlackAlert(errorInfo: Record<string, unknown>): Promise<void> {
     // Implementation for Slack alerts
     this.logger.debug('Sending Slack alert', errorInfo);
   }
 
-  async handleDatabaseError(error: any, context: ErrorContext = {}): Promise<void> {
+  async handleDatabaseError(error: Error | unknown, context: ErrorContext = {}): Promise<void> {
     let severity: 'low' | 'medium' | 'high' | 'critical' = 'medium';
     let message = 'Database operation failed';
 
@@ -143,7 +143,7 @@ export class ErrorHandlerService {
     }, severity);
   }
 
-  async handleValidationError(error: any, context: ErrorContext = {}): Promise<void> {
+  async handleValidationError(error: Error | unknown, context: ErrorContext = {}): Promise<void> {
     await this.handleError(new Error(`Validation Error: ${error.message}`), {
       ...context,
       action: 'VALIDATION',
@@ -151,7 +151,7 @@ export class ErrorHandlerService {
     }, 'low');
   }
 
-  async handleAuthenticationError(error: any, context: ErrorContext = {}): Promise<void> {
+  async handleAuthenticationError(error: Error | unknown, context: ErrorContext = {}): Promise<void> {
     await this.handleError(new Error(`Authentication Error: ${error.message}`), {
       ...context,
       action: 'AUTHENTICATION',
@@ -159,7 +159,7 @@ export class ErrorHandlerService {
     }, 'medium');
   }
 
-  async handleAuthorizationError(error: any, context: ErrorContext = {}): Promise<void> {
+  async handleAuthorizationError(error: Error | unknown, context: ErrorContext = {}): Promise<void> {
     await this.handleError(new Error(`Authorization Error: ${error.message}`), {
       ...context,
       action: 'AUTHORIZATION',
@@ -167,7 +167,7 @@ export class ErrorHandlerService {
     }, 'medium');
   }
 
-  async handleExternalServiceError(service: string, error: any, context: ErrorContext = {}): Promise<void> {
+  async handleExternalServiceError(service: string, error: Error | unknown, context: ErrorContext = {}): Promise<void> {
     await this.handleError(new Error(`External Service Error (${service}): ${error.message}`), {
       ...context,
       action: 'EXTERNAL_SERVICE_CALL',

@@ -229,9 +229,9 @@ export function IsValidUrl(validationOptions?: ValidationOptions) {
 // Date range validation
 @ValidatorConstraint({ name: 'isValidDateRange', async: false })
 export class IsValidDateRangeConstraint implements ValidatorConstraintInterface {
-  validate(value: any, args: ValidationArguments) {
+  validate(value: unknown, args: ValidationArguments) {
     const [relatedPropertyName] = args.constraints;
-    const relatedValue = (args.object as any)[relatedPropertyName];
+    const relatedValue = (args.object as Record<string, unknown>)[relatedPropertyName];
     
     if (!value || !relatedValue) return true;
     

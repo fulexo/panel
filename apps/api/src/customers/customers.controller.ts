@@ -19,7 +19,7 @@ export class CustomersController {
   @ApiQuery({ name: 'tag', required: false, type: String })
   @ApiQuery({ name: 'storeId', required: false, type: String })
   async list(
-    @CurrentUser() user: any, 
+    @CurrentUser() user: { id: string; email: string; role: string; tenantId: string }, 
     @Query('page') page = 1, 
     @Query('limit') limit = 50, 
     @Query('search') search?: string,
@@ -39,14 +39,14 @@ export class CustomersController {
   @Post()
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Create customer (admin only)' })
-  async create(@CurrentUser() user: any, @Body() body: any) {
+  async create(@CurrentUser() user: { id: string; email: string; role: string; tenantId: string }, @Body() body: Record<string, unknown>) {
     return this.customers.create(user.tenantId, body);
   }
 
   @Put(':id')
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Update customer (admin only)' })
-  async update(@CurrentUser() user: any, @Param('id') id: string, @Body() body: any) {
+  async update(@CurrentUser() user: { id: string; email: string; role: string; tenantId: string }, @Param('id') id: string, @Body() body: Record<string, unknown>) {
     return this.customers.update(user.tenantId, id, body);
   }
 
@@ -61,8 +61,8 @@ export class CustomersController {
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Bulk update customers' })
   async bulkUpdate(
-    @CurrentUser() user: any,
-    @Body() body: { customerIds: string[]; updates: any },
+    @CurrentUser() user: { id: string; email: string; role: string; tenantId: string },
+    @Body() body: { customerIds: string[]; updates: Record<string, unknown> },
   ) {
     return this.customers.bulkUpdate(user.tenantId, body.customerIds, body.updates, user.id);
   }
@@ -71,7 +71,7 @@ export class CustomersController {
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Bulk delete customers' })
   async bulkDelete(
-    @CurrentUser() user: any,
+    @CurrentUser() user: { id: string; email: string; role: string; tenantId: string },
     @Body() body: { customerIds: string[] },
   ) {
     return this.customers.bulkDelete(user.tenantId, body.customerIds, user.id);

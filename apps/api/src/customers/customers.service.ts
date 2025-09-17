@@ -13,7 +13,7 @@ export class CustomersService {
   async list(tenantId: string, page = 1, limit = 50, search?: string, status?: string, tag?: string, storeId?: string) {
     const take = Math.min(limit, 200);
     const skip = (page - 1) * take;
-    const where: any = { tenantId };
+    const where: Record<string, unknown> = { tenantId };
     
     if (search) {
       where.OR = [
@@ -63,10 +63,10 @@ export class CustomersService {
     ]));
     
     // Calculate order stats for each customer
-    const customersWithStats = data.map((customer: any) => {
+    const customersWithStats = data.map((customer: Record<string, unknown>) => {
       const orders = customer.orders || [];
       const totalOrders = orders.length;
-      const totalSpent = orders.reduce((sum: any, order: any) => sum + (order.total || 0), 0);
+      const totalSpent = orders.reduce((sum: number, order: Record<string, unknown>) => sum + (Number(order.total) || 0), 0);
       const averageOrderValue = totalOrders > 0 ? totalSpent / totalOrders : 0;
       const lastOrderDate = orders.length > 0 ? orders[0].createdAt : null;
       
@@ -114,10 +114,10 @@ export class CustomersService {
         });
         
         const totalOrders = orders.length;
-        const totalSpent = orders.reduce((sum: any, order: any) => sum + Number(order.total || 0), 0);
+        const totalSpent = orders.reduce((sum: number, order: Record<string, unknown>) => sum + Number(order.total || 0), 0);
         const averageOrderValue = totalOrders > 0 ? totalSpent / totalOrders : 0;
         const lastOrderDate = orders.length > 0 
-          ? orders.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0]?.createdAt
+          ? orders.sort((a: Record<string, unknown>, b: Record<string, unknown>) => new Date(b.createdAt as string).getTime() - new Date(a.createdAt as string).getTime())[0]?.createdAt
           : null;
         
         return {
@@ -138,7 +138,7 @@ export class CustomersService {
     return customer;
   }
 
-  async create(tenantId: string, body: any) {
+  async create(tenantId: string, body: Record<string, unknown>) {
     return this.runTenant(tenantId, async (db) => db.customer.create({ 
       data: { 
         tenantId, 
@@ -160,7 +160,7 @@ export class CustomersService {
     }));
   }
 
-  async update(tenantId: string, id: string, body: any) {
+  async update(tenantId: string, id: string, body: Record<string, unknown>) {
     const existing = await this.runTenant(tenantId, async (db) => db.customer.findFirst({ where: { id, tenantId } }));
     if (!existing) throw new NotFoundException('Customer not found');
     return this.runTenant(tenantId, async (db) => db.customer.update({ 
@@ -191,7 +191,7 @@ export class CustomersService {
     return { message: 'Customer deleted' };
   }
 
-  async bulkUpdate(tenantId: string, customerIds: string[], updates: any, _userId: string) {
+  async bulkUpdate(tenantId: string, customerIds: string[], updates: Record<string, unknown>, _userId: string) {
     if (!customerIds || customerIds.length === 0) {
       throw new BadRequestException('No customer IDs provided');
     }
@@ -201,7 +201,7 @@ export class CustomersService {
     }
 
     const results = await this.runTenant(tenantId, async (db) => {
-      const updateData: any = {};
+      const updateData: Record<string, unknown> = {};
       
       if (updates.tags !== undefined) updateData.tags = updates.tags;
       if (updates.notes !== undefined) updateData.notes = updates.notes;
