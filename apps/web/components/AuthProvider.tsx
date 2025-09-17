@@ -19,15 +19,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const checkAuth = async () => {
     try {
-      const token = AuthUtils.getToken();
-      if (!token || !AuthUtils.isAuthenticated()) {
-        setLoading(false);
-        return;
-      }
-
+      // Since tokens are now in httpOnly cookies, we need to make a request to check auth
+      // The server will automatically include the httpOnly cookies
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:3000'}/api/auth/me`, {
+        method: 'GET',
+        credentials: 'include', // Include httpOnly cookies
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
       });
 
@@ -35,6 +33,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const userData: ApiResponse<User> = await response.json();
         setUser(userData.data);
       } else {
+        // If auth fails, clear any local data and redirect to login
         await AuthUtils.clearTokens();
         setUser(null);
       }
@@ -61,7 +60,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const login = async (email: string, password: string) => {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:3000'}/api/auth/login`, {
+    const response = await fetch('/api/auth/login', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -70,29 +69,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     if (!response.ok) {
-      throw new Error('Login failed');
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Login failed');
     }
 
-    const data: LoginResponse = await response.json();
+    const data = await response.json();
     
     if (data.requiresTwoFactor) {
       // tempToken'ı güvenli şekilde sakla
       if (data.tempToken) {
         if (typeof window !== 'undefined') {
-          localStorage.setItem('temp_2fa_token', data.tempToken);
+          sessionStorage.setItem('temp_2fa_token', data.tempToken);
         }
       }
       throw new Error('2FA_REQUIRED');
     }
 
-    // Güvenli token saklama
-    await AuthUtils.setTokens(data.access, data.refresh, data.user);
-    
+    // Tokens are now set as httpOnly cookies by the server
+    // We just need to set the user data locally
     setUser(data.user);
     router.push('/dashboard');
   };
 
   const logout = async () => {
+    // Call backend logout to invalidate session
+    try {
+      await fetch(`${process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:3000'}/api/auth/logout`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+    } catch (error) {
+      // Ignore logout errors
+    }
+    
     await AuthUtils.clearTokens();
     setUser(null);
     router.push('/login');

@@ -3,6 +3,7 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { register } from 'prom-client';
+import * as cookieParser from 'cookie-parser';
 import { PrismaService } from './prisma.service';
 import { validateEnvOnStartup } from './config/env.validation';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
@@ -32,6 +33,9 @@ async function bootstrap() {
 
   // Global exception filter
   app.useGlobalFilters(new GlobalExceptionFilter());
+
+  // Cookie parser
+  app.use(cookieParser());
 
   // Set global prefix for all routes
   app.setGlobalPrefix('api');
