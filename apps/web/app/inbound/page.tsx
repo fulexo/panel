@@ -13,11 +13,11 @@ export default function InboundPage(){
   const [name, setName] = useState('');
   const [qty, setQty] = useState('');
 
-  const token = () => localStorage.getItem('access_token');
-  const api = (path: string, init?: any) => fetch(`/api${path}`, { headers: { Authorization: `Bearer ${token()}`, 'Content-Type': 'application/json' }, ...init });
+  // Token is now handled by httpOnly cookies
+  const api = (path: string, init?: any) => fetch(`/api${path}`, { headers: { 'Content-Type': 'application/json' }, ...init });
 
   const load = async () => {
-    const t = token(); if(!t){ router.push('/login'); return; }
+    const t = null; if(!t){ router.push('/login'); return; }
     const r = await api('/inbound/shipments');
     if(!r.ok){ if(r.status===401) router.push('/login'); return; }
     const data = await r.json();
@@ -47,9 +47,8 @@ export default function InboundPage(){
   if(loading) return <div className="min-h-screen bg-gray-900 text-white p-8">Loading...</div>;
 
   return (
-  <ProtectedRoute>
-    
-    <div className="min-h-screen bg-gray-900 text-white p-8">
+    <ProtectedRoute>
+      <div className="min-h-screen bg-gray-900 text-white p-8">
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-2xl font-bold">Inbound Shipments</h1>
       </div>
@@ -104,6 +103,5 @@ export default function InboundPage(){
     </div>
   </ProtectedRoute>
 );
-  );
 }
 

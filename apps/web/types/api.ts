@@ -33,7 +33,7 @@ export interface User {
   lastLoginAt?: string;
 }
 
-export type UserRole = 'ADMIN' | 'CUSTOMER' | 'CUSTOMER_USER' | 'FULEXO_ADMIN' | 'FULEXO_STAFF';
+export type UserRole = 'ADMIN' | 'CUSTOMER';
 
 // Tenant Types
 export interface Tenant {

@@ -104,13 +104,34 @@ async function handleRequest(
       responseData = responseText;
     }
 
+    // Prepare response headers
+    const responseHeaders: HeadersInit = {
+      'Content-Type': response.headers.get('content-type') || 'application/json',
+    };
+
+    // Copy Set-Cookie headers for authentication
+    const setCookieHeaders = response.headers.getSetCookie();
+    if (setCookieHeaders && setCookieHeaders.length > 0) {
+      // Next.js requires Set-Cookie headers to be set individually
+      const nextResponse = NextResponse.json(responseData, {
+        status: response.status,
+        statusText: response.statusText,
+        headers: responseHeaders,
+      });
+      
+      // Set each Set-Cookie header
+      setCookieHeaders.forEach(cookie => {
+        nextResponse.headers.append('Set-Cookie', cookie);
+      });
+      
+      return nextResponse;
+    }
+
     // Return response with same status and headers
     return NextResponse.json(responseData, {
       status: response.status,
       statusText: response.statusText,
-      headers: {
-        'Content-Type': response.headers.get('content-type') || 'application/json',
-      },
+      headers: responseHeaders,
     });
 
   } catch (error) {

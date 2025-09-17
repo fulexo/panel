@@ -65,10 +65,10 @@ export default function CustomerDetailPage() {
     tags: '',
   });
 
-  const token = () => localStorage.getItem('access_token');
+  // Token is now handled by httpOnly cookies
   const api = (path: string, init?: any) => 
     fetch(`/api${path}`, {
-      headers: { Authorization: `Bearer ${token()}`, 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json' },
       ...init
     });
 
@@ -206,8 +206,7 @@ export default function CustomerDetailPage() {
 
   if (loading) {
     return (
-  <ProtectedRoute>
-    
+    <ProtectedRoute>
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <div className="spinner"></div>
@@ -824,5 +823,4 @@ export default function CustomerDetailPage() {
     </div>
   </ProtectedRoute>
 );
-  );
 }

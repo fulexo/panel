@@ -61,10 +61,10 @@ export default function ShipmentsPage() {
     status: 'pending',
   });
 
-  const token = () => localStorage.getItem('access_token');
+  // Token is now handled by httpOnly cookies
   const api = (path: string, init?: any) => 
     fetch(`/api${path}`, {
-      headers: { Authorization: `Bearer ${token()}`, 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json' },
       ...init
     });
 
@@ -72,7 +72,7 @@ export default function ShipmentsPage() {
     try {
       setLoading(true);
       setError(null);
-      const t = token();
+      const t = null;
       if (!t) { 
         router.push('/login'); 
         return; 
@@ -335,8 +335,7 @@ export default function ShipmentsPage() {
 
   if (loading) {
     return (
-  <ProtectedRoute>
-    
+    <ProtectedRoute>
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <div className="spinner"></div>
@@ -838,5 +837,4 @@ export default function ShipmentsPage() {
     </div>
   </ProtectedRoute>
 );
-  );
 }

@@ -34,9 +34,8 @@ export default function SearchPage(){
   }, []);
 
   return (
-  <ProtectedRoute>
-    
-    <div className="min-h-screen bg-gray-900 text-white p-8">
+    <ProtectedRoute>
+      <div className="min-h-screen bg-gray-900 text-white p-8">
       <h1 className="text-2xl font-bold mb-4">Search</h1>
       <div className="mb-6 flex gap-2">
         <input value={q} onChange={e=>setQ(e.target.value)} placeholder="Search..." className="px-3 py-2 bg-gray-800 border border-gray-700 rounded w-full max-w-2xl" />
@@ -88,6 +87,5 @@ export default function SearchPage(){
     </div>
   </ProtectedRoute>
 );
-  );
 }
 
