@@ -20,22 +20,22 @@ export class ProductsService {
     const where: Record<string, unknown> = { tenantId };
     
     if (search) {
-      where.OR = [
+      where['OR'] = [
         { sku: { contains: search, mode: 'insensitive' } },
         { name: { contains: search, mode: 'insensitive' } },
       ];
     }
     
     if (status) {
-      where.active = status === 'active';
+      where['active'] = status === 'active';
     }
     
     if (category) {
-      where.category = { slug: category };
+      where['category'] = { slug: category };
     }
     
     if (storeId) {
-      where.storeId = storeId;
+      where['storeId'] = storeId;
     }
     
     const [data, total] = await this.runTenant(tenantId, async (db) => Promise.all([

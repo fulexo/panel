@@ -74,13 +74,13 @@ export class TenantsService {
     //   tenantId: originalTenantId,
     // } as any;
 
-    const tokens = await this.jwt.issueTokens(user.id, user.email, user.role, originalTenantId);
+    const tokens = await this.jwt.issueTokens(user.id, user.email as string, user.role as string, originalTenantId as string);
     await this.sessions.createSession(user.id, tokens.access, {});
 
     await this.audit.log({
       action: 'tenant.impersonation.stop',
       userId: user.id,
-      tenantId: originalTenantId,
+      tenantId: originalTenantId as string,
     });
 
     return { tokens, context: { tenantId: originalTenantId, impersonated: false } };

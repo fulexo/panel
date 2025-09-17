@@ -1,6 +1,7 @@
 import { Injectable, UnauthorizedException, BadRequestException, ConflictException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma.service';
+import { toPrismaJsonValue } from '../common/utils/json-utils';
 import { JwtService } from '../jwt';
 import { SessionService } from './session.service';
 import { AuditService } from '../audit/audit.service';
@@ -373,12 +374,12 @@ export class AuthService {
       updateData.email = dto.email;
     }
     if (dto.notificationPreferences !== undefined) {
-      updateData.notificationPreferences = dto.notificationPreferences;
+      updateData.notificationPreferences = toPrismaJsonValue(dto.notificationPreferences) as any;
     }
 
     const updatedUser = await this.prisma.user.update({
       where: { id: userId },
-      data: updateData,
+      data: updateData as any,
       select: {
         id: true,
         email: true,

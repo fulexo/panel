@@ -17,28 +17,28 @@ export class ShipmentsService {
 
     const where: Record<string, unknown> = { order: { tenantId } };
     
-    if (query.search) {
-      where.OR = [
-        { trackingNo: { contains: query.search, mode: 'insensitive' } },
-        { carrier: { contains: query.search, mode: 'insensitive' } },
-        { order: { externalOrderNo: { contains: query.search, mode: 'insensitive' } } },
-        { order: { customerEmail: { contains: query.search, mode: 'insensitive' } } },
+    if (query['search']) {
+      where['OR'] = [
+        { trackingNo: { contains: query['search'], mode: 'insensitive' } },
+        { carrier: { contains: query['search'], mode: 'insensitive' } },
+        { order: { externalOrderNo: { contains: query['search'], mode: 'insensitive' } } },
+        { order: { customerEmail: { contains: query['search'], mode: 'insensitive' } } },
       ];
     }
     
-    if (query.status) {
-      where.status = query.status;
+    if (query['status']) {
+      where['status'] = query['status'];
     }
     
-    if (query.carrier) {
-      where.carrier = query.carrier;
+    if (query['carrier']) {
+      where['carrier'] = query['carrier'];
     }
 
-    if (query.dateFilter) {
+    if (query['dateFilter']) {
       const now = new Date();
       let dateFrom: Date;
       
-      switch (query.dateFilter) {
+      switch (query['dateFilter']) {
         case 'today':
           dateFrom = new Date(now.getFullYear(), now.getMonth(), now.getDate());
           break;
@@ -58,11 +58,12 @@ export class ShipmentsService {
           dateFrom = new Date(0);
       }
       
-      where.createdAt = { gte: dateFrom };
+      where['createdAt'] = { gte: dateFrom };
     }
 
-    if (query.storeId) {
-      where.order = { ...where.order, storeId: query.storeId };
+    if (query['storeId']) {
+      const orderWhere = where['order'] as Record<string, unknown> | undefined;
+      where['order'] = { ...orderWhere, storeId: query['storeId'] };
     }
 
     const [data, total] = await this.runTenant(tenantId, async (db) => Promise.all([

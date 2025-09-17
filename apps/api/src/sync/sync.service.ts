@@ -4,6 +4,40 @@ import { PrismaService } from '../prisma.service';
 // import { EncryptionService } from '../crypto';
 import Redis from 'ioredis';
 import { Queue } from 'bullmq';
+import { toPrismaJsonValue } from '../common/utils/json-utils';
+
+interface RemoteOrder {
+  external_order_id?: string;
+  email?: string;
+  delivery_fullname?: string;
+  invoice_fullname?: string;
+  phone?: string;
+  invoice_company?: string;
+  delivery_address?: string;
+  delivery_city?: string;
+  delivery_postcode?: string;
+  delivery_country_code?: string;
+  order_source?: string;
+  order_status_id?: number;
+  payment_done?: string;
+  currency?: string;
+  delivery_company?: string;
+  invoice_address?: string;
+  invoice_city?: string;
+  invoice_postcode?: string;
+  invoice_country_code?: string;
+  invoice_nip?: string;
+  payment_method?: string;
+  date_confirmed?: number;
+  products?: Array<{
+    id?: string;
+    name?: string;
+    sku?: string;
+    quantity?: number;
+    price?: string;
+    total?: string;
+  }>;
+}
 
 @Injectable()
 export class SyncService {
@@ -25,7 +59,7 @@ export class SyncService {
     
     // Initialize sync queue
     this.syncQueue = new Queue(this.queueName, {
-      connection: this.redis as Record<string, unknown>,
+      connection: this.redis as unknown as Record<string, unknown>,
     });
   }
 
@@ -80,7 +114,7 @@ export class SyncService {
     }
   }
 
-  private async processOrder(remoteOrder: Record<string, unknown>, account: Record<string, unknown> | null) {
+  private async processOrder(remoteOrder: RemoteOrder, account: Record<string, unknown> | null) {
     try {
       // Determine tenant ownership
       const tenantId = await this.determineOwnership(remoteOrder, account);
@@ -104,24 +138,24 @@ export class SyncService {
           where: {
             tenantId_emailNormalized: {
               tenantId,
-              emailNormalized: remoteOrder.email.toLowerCase(),
+              emailNormalized: (remoteOrder.email as string).toLowerCase(),
             },
           },
           update: {
-            name: remoteOrder.delivery_fullname || remoteOrder.invoice_fullname,
-            phoneE164: remoteOrder.phone,
+            name: (remoteOrder.delivery_fullname || remoteOrder.invoice_fullname) as string | null,
+            phoneE164: remoteOrder.phone as string | null,
           },
           create: {
             tenantId,
-            email: remoteOrder.email,
-            emailNormalized: remoteOrder.email.toLowerCase(),
-            name: remoteOrder.delivery_fullname || remoteOrder.invoice_fullname,
-            phoneE164: remoteOrder.phone,
-            company: remoteOrder.invoice_company,
-            addressLine1: remoteOrder.delivery_address,
-            city: remoteOrder.delivery_city,
-            postalCode: remoteOrder.delivery_postcode,
-            country: remoteOrder.delivery_country_code,
+            email: remoteOrder.email as string,
+            emailNormalized: (remoteOrder.email as string).toLowerCase(),
+            name: (remoteOrder.delivery_fullname || remoteOrder.invoice_fullname) as string | null,
+            phoneE164: remoteOrder.phone as string | null,
+            company: remoteOrder.invoice_company as string | null,
+            addressLine1: remoteOrder.delivery_address as string | null,
+            city: remoteOrder.delivery_city as string | null,
+            postalCode: remoteOrder.delivery_postcode as string | null,
+            country: remoteOrder.delivery_country_code as string | null,
           },
         });
         customerId = customer.id;
@@ -130,33 +164,33 @@ export class SyncService {
       const orderData = {
         tenantId,
         customerId,
-        externalOrderNo: remoteOrder.external_order_id,
-        orderSource: remoteOrder.order_source,
-        status: this.mapOrderStatus(remoteOrder.order_status_id),
-        mappedStatus: remoteOrder.order_status_id,
-        total: parseFloat(remoteOrder.payment_done || 0),
-        currency: remoteOrder.currency,
-        customerEmail: remoteOrder.email,
-        customerPhone: remoteOrder.phone,
+        externalOrderNo: remoteOrder.external_order_id as string | null,
+        orderSource: remoteOrder.order_source as string | null,
+        status: this.mapOrderStatus(remoteOrder.order_status_id as number),
+        mappedStatus: remoteOrder.order_status_id?.toString() || null,
+        total: parseFloat((remoteOrder.payment_done as string) || '0'),
+        currency: remoteOrder.currency as string | null,
+        customerEmail: remoteOrder.email as string | null,
+        customerPhone: remoteOrder.phone as string | null,
         shippingAddress: {
-          fullName: remoteOrder.delivery_fullname,
-          company: remoteOrder.delivery_company,
-          address: remoteOrder.delivery_address,
-          city: remoteOrder.delivery_city,
-          postcode: remoteOrder.delivery_postcode,
-          country: remoteOrder.delivery_country_code,
+          fullName: remoteOrder.delivery_fullname as string | null,
+          company: remoteOrder.delivery_company as string | null,
+          address: remoteOrder.delivery_address as string | null,
+          city: remoteOrder.delivery_city as string | null,
+          postcode: remoteOrder.delivery_postcode as string | null,
+          country: remoteOrder.delivery_country_code as string | null,
         },
         billingAddress: {
-          fullName: remoteOrder.invoice_fullname,
-          company: remoteOrder.invoice_company,
-          address: remoteOrder.invoice_address,
-          city: remoteOrder.invoice_city,
-          postcode: remoteOrder.invoice_postcode,
-          country: remoteOrder.invoice_country_code,
-          nip: remoteOrder.invoice_nip,
+          fullName: remoteOrder.invoice_fullname as string | null,
+          company: remoteOrder.invoice_company as string | null,
+          address: remoteOrder.invoice_address as string | null,
+          city: remoteOrder.invoice_city as string | null,
+          postcode: remoteOrder.invoice_postcode as string | null,
+          country: remoteOrder.invoice_country_code as string | null,
+          nip: remoteOrder.invoice_nip as string | null,
         },
-        paymentMethod: remoteOrder.payment_method,
-        confirmedAt: new Date(remoteOrder.date_confirmed * 1000),
+        paymentMethod: remoteOrder.payment_method as string | null,
+        confirmedAt: new Date((remoteOrder.date_confirmed as number) * 1000),
       };
 
       if (existingOrder) {
@@ -180,10 +214,10 @@ export class SyncService {
             await this.prisma.orderItem.create({
               data: {
                 orderId: order.id,
-                sku: product.sku || product.product_id,
+                sku: product.sku || product.id,
                 name: product.name,
-                qty: parseInt(product.quantity),
-                price: parseFloat(product.price_brutto),
+                qty: parseInt(product.quantity?.toString() || '0'),
+                price: parseFloat(product.price || '0'),
               },
             });
           }
@@ -194,10 +228,10 @@ export class SyncService {
     }
   }
 
-  private async determineOwnership(remoteOrder: Record<string, unknown>, account: Record<string, unknown> | null): Promise<string | null> {
+  private async determineOwnership(remoteOrder: RemoteOrder | Record<string, unknown>, account: Record<string, unknown> | null): Promise<string | null> {
     // If account has direct tenant assignment
     if (account && account.tenantId) {
-      return account.tenantId;
+      return account.tenantId as string;
     }
 
     // Apply ownership rules
@@ -251,7 +285,7 @@ export class SyncService {
     
     for (const part of parts) {
       if (value && typeof value === 'object') {
-        value = value[part];
+        value = (value as Record<string, unknown>)[part] as Record<string, unknown>;
       } else {
         return null;
       }
@@ -316,7 +350,7 @@ export class SyncService {
       },
       update: {
         lastSyncAt: new Date(),
-        checkpoint,
+        checkpoint: toPrismaJsonValue(checkpoint),
         status,
         error,
       },
@@ -324,7 +358,7 @@ export class SyncService {
         accountId,
         entityType,
         lastSyncAt: new Date(),
-        checkpoint,
+        checkpoint: toPrismaJsonValue(checkpoint),
         status,
         error,
       },

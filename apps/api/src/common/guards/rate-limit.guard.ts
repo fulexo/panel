@@ -1,5 +1,5 @@
 import { Injectable, ExecutionContext, HttpException, HttpStatus, Logger } from '@nestjs/common';
-import { ThrottlerGuard } from '@nestjs/throttler';
+import { ThrottlerGuard, ThrottlerModuleOptions } from '@nestjs/throttler';
 import { Request } from 'express';
 
 @Injectable()
@@ -7,7 +7,7 @@ export class CustomRateLimitGuard extends ThrottlerGuard {
   private readonly logger = new Logger(CustomRateLimitGuard.name);
 
   constructor() {
-    super({} as Record<string, unknown>, {} as Record<string, unknown>, {} as Record<string, unknown>);
+    super({} as ThrottlerModuleOptions, {} as any, {} as any);
   }
 
   protected override async handleRequest(

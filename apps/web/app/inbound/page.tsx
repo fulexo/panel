@@ -66,7 +66,7 @@ export default function InboundPage(){
         <div className="flex flex-col md:flex-row gap-2">
           <select value={selected} onChange={e=>setSelected(e.target.value)} className="px-3 py-2 bg-gray-900 border border-gray-700 rounded">
             <option value="">Select Shipment</option>
-            {items.map((s: Record<string, unknown>)=> (<option key={s.id as string} value={s.id as string}>{s.reference as string || (s.id as string).slice(0,8)} • {s.status as string}</option>))}
+            {items.map((s: Record<string, unknown>)=> (<option key={s['id'] as string} value={s['id'] as string}>{s['reference'] as string || (s['id'] as string).slice(0,8)} • {s['status'] as string}</option>))}
           </select>
           <input value={sku} onChange={e=>setSku(e.target.value)} placeholder="SKU (optional)" className="px-3 py-2 bg-gray-900 border border-gray-700 rounded" />
           <input value={name} onChange={e=>setName(e.target.value)} placeholder="Name (optional)" className="px-3 py-2 bg-gray-900 border border-gray-700 rounded" />
@@ -77,24 +77,24 @@ export default function InboundPage(){
 
       <div className="grid gap-3">
         {items.map((s: Record<string, unknown>)=> (
-          <div key={s.id} className="bg-gray-800 p-4 rounded border border-gray-700">
+          <div key={s['id'] as string} className="bg-gray-800 p-4 rounded border border-gray-700">
             <div className="flex justify-between items-center">
               <div>
-                <div className="text-sm text-gray-400">{new Date(s.createdAt).toLocaleString()}</div>
-                <div className="font-semibold">{s.reference || s.id}</div>
-                <div className="text-sm">Status: {s.status}</div>
+                <div className="text-sm text-gray-400">{new Date(s['createdAt'] as string).toLocaleString()}</div>
+                <div className="font-semibold">{String(s['reference'] || s['id'])}</div>
+                <div className="text-sm">Status: {String(s['status'])}</div>
               </div>
               <div className="flex gap-2">
-                {s.status==='created' && <button onClick={()=>receive(s.id)} className="px-2 py-1 bg-green-600 rounded text-sm">Receive</button>}
+                {s['status']==='created' && <button onClick={()=>receive(s['id'] as string)} className="px-2 py-1 bg-green-600 rounded text-sm">Receive</button>}
               </div>
             </div>
             <div className="mt-3 text-sm">
-              {((s.items as Record<string, unknown>[])||[]).map((it: Record<string, unknown>)=> (
-                <div key={it.id} className="flex justify-between">
-                  <span>{it.quantity} x {it.name || it.sku || '—'}</span>
+              {((s['items'] as Record<string, unknown>[])||[]).map((it: Record<string, unknown>)=> (
+                <div key={it['id'] as string} className="flex justify-between">
+                  <span>{String(it['quantity'])} x {String(it['name'] || it['sku'] || '—')}</span>
                 </div>
               ))}
-              {(!s.items || s.items.length===0) && <div className="text-gray-500">No items</div>}
+              {(!s['items'] || (s['items'] as any[]).length===0) && <div className="text-gray-500">No items</div>}
             </div>
           </div>
         ))}

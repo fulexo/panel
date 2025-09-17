@@ -1,5 +1,6 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
+import { toPrismaJsonValue } from '../common/utils/json-utils';
 import { AuditService } from '../audit/audit.service';
 import { PrismaClient } from '@prisma/client';
 import { CreateRequestDto } from './dto';
@@ -36,7 +37,7 @@ export class RequestsService {
         type: dto.type,
         priority: dto.priority || 'normal',
         status: 'SUBMITTED',
-        payload: dto.payload,
+        payload: toPrismaJsonValue(dto.payload) as any,
       },
     }));
 

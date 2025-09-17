@@ -141,10 +141,10 @@ export class OrdersService {
     if (query.dateFrom || query.dateTo) {
       where.confirmedAt = {};
       if (query.dateFrom) {
-        where.confirmedAt.gte = new Date(query['dateFrom']);
+        (where.confirmedAt as Record<string, unknown>).gte = new Date(query['dateFrom']);
       }
       if (query.dateTo) {
-        where.confirmedAt.lte = new Date(query['dateTo']);
+        (where.confirmedAt as Record<string, unknown>).lte = new Date(query['dateTo']);
       }
     }
 

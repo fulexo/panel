@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../prisma.service';
+import { toPrismaJson, toPrismaJsonValue } from '../utils/json-utils';
 
 export interface ErrorLogData {
   type: string;
@@ -31,7 +32,7 @@ export class MonitoringService {
           action: 'ERROR_LOGGED',
           entityType: 'ERROR',
           entityId: errorData.type,
-          changes: errorData as Record<string, unknown>,
+          changes: toPrismaJsonValue(errorData),
           metadata: {
             type: errorData.type,
             url: errorData.url,
@@ -56,11 +57,11 @@ export class MonitoringService {
         data: {
           action: 'PERFORMANCE_LOG',
           entityType: 'PERFORMANCE',
-          changes: {
+          changes: toPrismaJson({
             operation,
             duration,
             metadata,
-          } as Record<string, unknown>,
+          }),
           metadata: {
             operation,
             duration,
@@ -80,10 +81,10 @@ export class MonitoringService {
         data: {
           action: `USER_${action}`,
           entityType: 'USER_ACTIVITY',
-          changes: {
+          changes: toPrismaJson({
             action,
             metadata,
-          } as Record<string, unknown>,
+          }),
           metadata: {
             action,
             timestamp: new Date().toISOString(),
