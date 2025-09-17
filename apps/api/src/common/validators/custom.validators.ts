@@ -235,8 +235,8 @@ export class IsValidDateRangeConstraint implements ValidatorConstraintInterface 
     
     if (!value || !relatedValue) return true;
     
-    const startDate = new Date(value);
-    const endDate = new Date(relatedValue);
+    const startDate = new Date(value as string);
+    const endDate = new Date(relatedValue as string);
     
     return startDate <= endDate;
   }

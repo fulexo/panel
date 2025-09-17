@@ -1,6 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { PrismaClient } from '@prisma/client';
+import { CreateCalendarEventDto } from './dto/create-calendar-event.dto';
+import { UpdateCalendarEventDto } from './dto/update-calendar-event.dto';
 
 @Injectable()
 export class CalendarService {
@@ -11,7 +13,7 @@ export class CalendarService {
   }
 
   async listEvents(tenantId: string, from?: string, to?: string) {
-    const where: Record<string, unknown> = { tenantId };
+    const where: any = { tenantId };
     if (from || to) {
       where.startAt = {};
       if (from) where.startAt.gte = new Date(from);
@@ -44,7 +46,7 @@ export class CalendarService {
     return lines.join('\r\n');
   }
 
-  async createEvent(tenantId: string, dto: Record<string, unknown>) {
+  async createEvent(tenantId: string, dto: CreateCalendarEventDto) {
     const ev = await this.runTenant(tenantId, async (db) => db.calendarEvent.create({
       data: {
         tenantId,
@@ -58,7 +60,7 @@ export class CalendarService {
     return ev;
   }
 
-  async updateEvent(tenantId: string, id: string, dto: Record<string, unknown>) {
+  async updateEvent(tenantId: string, id: string, dto: UpdateCalendarEventDto) {
     const existing = await this.runTenant(tenantId, async (db) => db.calendarEvent.findFirst({ where: { id, tenantId } }));
     if (!existing) throw new NotFoundException('Event not found');
     return this.runTenant(tenantId, async (db) => db.calendarEvent.update({

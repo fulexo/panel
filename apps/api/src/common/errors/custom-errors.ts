@@ -93,7 +93,7 @@ export class ExternalServiceError extends HttpException {
         errorCode: 'EXTERNAL_SERVICE_ERROR',
         message: `External service '${service}' error: ${message}`,
         service,
-        originalError: originalError?.message,
+        originalError: (originalError as any)?.message,
         timestamp: new Date().toISOString(),
       },
       HttpStatus.BAD_GATEWAY
@@ -122,7 +122,7 @@ export class DatabaseError extends HttpException {
         errorCode: 'DATABASE_ERROR',
         message: `Database operation '${operation}' failed`,
         operation,
-        originalError: originalError?.message,
+        originalError: (originalError as any)?.message,
         timestamp: new Date().toISOString(),
       },
       HttpStatus.INTERNAL_SERVER_ERROR

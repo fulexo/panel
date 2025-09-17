@@ -52,7 +52,7 @@ export class SettingsController {
       req.user.tenantId,
       'email',
       dto,
-      req.user.id
+      (req.user as any).id
     );
     return { message: 'Email settings updated successfully' };
   }
@@ -77,7 +77,7 @@ export class SettingsController {
       req.user.tenantId,
       'notification',
       dto,
-      req.user.id
+      (req.user as any).id
     );
     return { message: 'Notification settings updated successfully' };
   }
@@ -100,7 +100,7 @@ export class SettingsController {
       req.user.tenantId,
       'general',
       dto,
-      req.user.id
+      (req.user as any).id
     );
     return { message: 'General settings updated successfully' };
   }
@@ -123,7 +123,7 @@ export class SettingsController {
       req.user.tenantId,
       'woocommerce',
       dto,
-      req.user.id
+      (req.user as any).id
     );
     return { message: 'WooCommerce settings updated successfully' };
   }
@@ -146,7 +146,7 @@ export class SettingsController {
       req.user.tenantId,
       'security',
       dto,
-      req.user.id
+      (req.user as any).id
     );
     return { message: 'Security settings updated successfully' };
   }

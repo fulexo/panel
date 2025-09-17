@@ -5,7 +5,7 @@ import { Request } from 'express';
 @Injectable()
 export class CustomRateLimitGuard extends ThrottlerGuard {
   constructor() {
-    super({} as unknown, {} as unknown, {} as unknown);
+    super({} as any, {} as any, {} as any);
   }
 
   protected override async handleRequest(

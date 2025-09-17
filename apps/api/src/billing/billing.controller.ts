@@ -5,6 +5,8 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { BillingService } from './billing.service';
 import { Response } from 'express';
 import { Res } from '@nestjs/common';
+import { CreateBillingBatchDto } from './dto/create-billing-batch.dto';
+// import { UpdateBillingBatchDto } from './dto/update-billing-batch.dto';
 
 @ApiTags('billing')
 @ApiBearerAuth()
@@ -24,8 +26,8 @@ export class BillingController {
   @Post('batches')
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Create billing batch' })
-  async create(@CurrentUser() user: { id: string; email: string; role: string; tenantId: string }, @Body() dto: { periodFrom?: string; periodTo?: string }) {
-    return this.billing.createBatch(user.tenantId, dto);
+  async create(@CurrentUser() user: { id: string; email: string; role: string; tenantId: string }, @Body() dto: CreateBillingBatchDto) {
+    return this.billing.createBatch(user.tenantId, dto as any);
   }
 
   @Get('batches/:id')
@@ -62,7 +64,7 @@ export class BillingController {
   async exportCsv(@CurrentUser() user: { id: string; email: string; role: string; tenantId: string }, @Param('id') id: string, @Res() res: Response) {
     const batch = await this.billing.getBatch(user.tenantId, id);
     const header = ['invoice_number','order_id','amount','currency','issued_at'];
-    const rows = batch.items.map((it: Record<string, unknown>)=> [it.invoice?.number||'', it.invoice?.orderId, it.amount, it.invoice?.currency||'', it.invoice?.issuedAt||'']);
+    const rows = batch.items.map((it: any)=> [(it['invoice'] as any)?.number||'', (it['invoice'] as any)?.orderId, it['amount'], (it['invoice'] as any)?.currency||'', (it['invoice'] as any)?.issuedAt||'']);
     const csv = [header.join(','), ...rows.map((r: unknown[])=> r.join(','))].join('\n');
     res.setHeader('Content-Type', 'text/csv');
     res.setHeader('Content-Disposition', `attachment; filename="billing_${id}.csv"`);

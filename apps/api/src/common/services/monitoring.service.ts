@@ -60,7 +60,7 @@ export class MonitoringService {
             operation,
             duration,
             metadata,
-          },
+          } as any,
           metadata: {
             operation,
             duration,
@@ -83,7 +83,7 @@ export class MonitoringService {
           changes: {
             action,
             metadata,
-          },
+          } as any,
           metadata: {
             action,
             timestamp: new Date().toISOString(),

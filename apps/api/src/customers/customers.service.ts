@@ -1,6 +1,9 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { PrismaClient } from '@prisma/client';
+import { CreateCustomerDto } from './dto/create-customer.dto';
+import { UpdateCustomerDto } from './dto/update-customer.dto';
+// import { CustomerQueryDto } from './dto/customer-query.dto';
 
 @Injectable()
 export class CustomersService {
@@ -13,7 +16,7 @@ export class CustomersService {
   async list(tenantId: string, page = 1, limit = 50, search?: string, status?: string, tag?: string, storeId?: string) {
     const take = Math.min(limit, 200);
     const skip = (page - 1) * take;
-    const where: Record<string, unknown> = { tenantId };
+    const where: any = { tenantId };
     
     if (search) {
       where.OR = [
@@ -64,11 +67,11 @@ export class CustomersService {
     
     // Calculate order stats for each customer
     const customersWithStats = data.map((customer: Record<string, unknown>) => {
-      const orders = customer.orders || [];
+      const orders = (customer as any).orders || [];
       const totalOrders = orders.length;
-      const totalSpent = orders.reduce((sum: number, order: Record<string, unknown>) => sum + (Number(order.total) || 0), 0);
+      const totalSpent = orders.reduce((sum: number, order: any) => sum + (Number(order['total']) || 0), 0);
       const averageOrderValue = totalOrders > 0 ? totalSpent / totalOrders : 0;
-      const lastOrderDate = orders.length > 0 ? orders[0].createdAt : null;
+      const lastOrderDate = orders.length > 0 ? (orders[0] as any).createdAt : null;
       
       return {
         ...customer,
@@ -114,10 +117,10 @@ export class CustomersService {
         });
         
         const totalOrders = orders.length;
-        const totalSpent = orders.reduce((sum: number, order: Record<string, unknown>) => sum + Number(order.total || 0), 0);
+        const totalSpent = orders.reduce((sum: number, order: any) => sum + Number(order['total'] || 0), 0);
         const averageOrderValue = totalOrders > 0 ? totalSpent / totalOrders : 0;
         const lastOrderDate = orders.length > 0 
-          ? orders.sort((a: Record<string, unknown>, b: Record<string, unknown>) => new Date(b.createdAt as string).getTime() - new Date(a.createdAt as string).getTime())[0]?.createdAt
+          ? orders.sort((a: any, b: any) => new Date(b['createdAt'] as string).getTime() - new Date(a['createdAt'] as string).getTime())[0]?.['createdAt']
           : null;
         
         return {
@@ -138,29 +141,29 @@ export class CustomersService {
     return customer;
   }
 
-  async create(tenantId: string, body: Record<string, unknown>) {
+  async create(tenantId: string, body: CreateCustomerDto) {
     return this.runTenant(tenantId, async (db) => db.customer.create({ 
       data: { 
         tenantId, 
         email: body.email || null, 
         emailNormalized: body.email ? String(body.email).toLowerCase() : null, 
         name: body.name || null, 
-        phoneE164: body.phoneE164 || null, 
-        company: body.company || null,
-        vatId: body.vatId || null,
-        addressLine1: body.addressLine1 || null,
-        addressLine2: body.addressLine2 || null,
-        city: body.city || null,
-        state: body.state || null,
-        postalCode: body.postalCode || null,
-        country: body.country || null,
-        notes: body.notes || null,
-        tags: body.tags || [],
+        phoneE164: body['phoneE164'] || null, 
+        company: body['company'] || null,
+        vatId: body['vatId'] || null,
+        addressLine1: body['addressLine1'] || null,
+        addressLine2: body['addressLine2'] || null,
+        city: body['city'] || null,
+        state: body['state'] || null,
+        postalCode: body['postalCode'] || null,
+        country: body['country'] || null,
+        notes: body['notes'] || null,
+        tags: body['tags'] || [],
       } as any 
     }));
   }
 
-  async update(tenantId: string, id: string, body: Record<string, unknown>) {
+  async update(tenantId: string, id: string, body: UpdateCustomerDto) {
     const existing = await this.runTenant(tenantId, async (db) => db.customer.findFirst({ where: { id, tenantId } }));
     if (!existing) throw new NotFoundException('Customer not found');
     return this.runTenant(tenantId, async (db) => db.customer.update({ 
@@ -169,17 +172,17 @@ export class CustomersService {
         email: body.email ?? existing.email, 
         emailNormalized: body.email ? String(body.email).toLowerCase() : existing.emailNormalized, 
         name: body.name ?? existing.name, 
-        phoneE164: body.phoneE164 ?? existing.phoneE164, 
-        company: body.company ?? existing.company,
-        vatId: body.vatId ?? existing.vatId,
-        addressLine1: body.addressLine1 ?? existing.addressLine1,
-        addressLine2: body.addressLine2 ?? existing.addressLine2,
-        city: body.city ?? existing.city,
-        state: body.state ?? existing.state,
-        postalCode: body.postalCode ?? existing.postalCode,
-        country: body.country ?? existing.country,
-        notes: body.notes ?? existing.notes,
-        tags: body.tags ?? existing.tags,
+        phoneE164: body['phoneE164'] ?? existing.phoneE164, 
+        company: body['company'] ?? existing.company,
+        vatId: body['vatId'] ?? existing.vatId,
+        addressLine1: body['addressLine1'] ?? existing.addressLine1,
+        addressLine2: body['addressLine2'] ?? existing.addressLine2,
+        city: body['city'] ?? existing.city,
+        state: body['state'] ?? existing.state,
+        postalCode: body['postalCode'] ?? existing.postalCode,
+        country: body['country'] ?? existing.country,
+        notes: body['notes'] ?? existing.notes,
+        tags: body['tags'] ?? existing.tags,
       } 
     }));
   }
@@ -191,7 +194,7 @@ export class CustomersService {
     return { message: 'Customer deleted' };
   }
 
-  async bulkUpdate(tenantId: string, customerIds: string[], updates: Record<string, unknown>, _userId: string) {
+  async bulkUpdate(tenantId: string, customerIds: string[], updates: Partial<UpdateCustomerDto>, _userId: string) {
     if (!customerIds || customerIds.length === 0) {
       throw new BadRequestException('No customer IDs provided');
     }
@@ -201,12 +204,12 @@ export class CustomersService {
     }
 
     const results = await this.runTenant(tenantId, async (db) => {
-      const updateData: Record<string, unknown> = {};
+      const updateData: any = {};
       
-      if (updates.tags !== undefined) updateData.tags = updates.tags;
-      if (updates.notes !== undefined) updateData.notes = updates.notes;
-      if (updates.company !== undefined) updateData.company = updates.company;
-      if (updates.country !== undefined) updateData.country = updates.country;
+      if (updates['tags'] !== undefined) updateData.tags = updates['tags'];
+      if (updates['notes'] !== undefined) updateData.notes = updates['notes'];
+      if (updates['company'] !== undefined) updateData.company = updates['company'];
+      if (updates['country'] !== undefined) updateData.country = updates['country'];
       
       updateData.updatedAt = new Date();
 

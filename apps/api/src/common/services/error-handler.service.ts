@@ -68,13 +68,13 @@ export class ErrorHandlerService {
           entityType: 'ERROR',
           changes: {
             error: errorInfo,
-          },
+          } as any,
           metadata: {
-            severity: errorInfo.severity,
-            context: errorInfo.context,
-          },
-          tenantId: errorInfo.context.tenantId,
-          userId: errorInfo.context.userId,
+            severity: errorInfo['severity'],
+            context: errorInfo['context'],
+          } as any,
+          tenantId: (errorInfo['context'] as any)?.tenantId,
+          userId: (errorInfo['context'] as any)?.userId,
         },
       });
     } catch (error) {
@@ -144,7 +144,7 @@ export class ErrorHandlerService {
   }
 
   async handleValidationError(error: Error | unknown, context: ErrorContext = {}): Promise<void> {
-    await this.handleError(new Error(`Validation Error: ${error.message}`), {
+    await this.handleError(new Error(`Validation Error: ${(error as any).message}`), {
       ...context,
       action: 'VALIDATION',
       resource: 'INPUT_VALIDATION',
@@ -152,7 +152,7 @@ export class ErrorHandlerService {
   }
 
   async handleAuthenticationError(error: Error | unknown, context: ErrorContext = {}): Promise<void> {
-    await this.handleError(new Error(`Authentication Error: ${error.message}`), {
+    await this.handleError(new Error(`Authentication Error: ${(error as any).message}`), {
       ...context,
       action: 'AUTHENTICATION',
       resource: 'AUTH',
@@ -160,7 +160,7 @@ export class ErrorHandlerService {
   }
 
   async handleAuthorizationError(error: Error | unknown, context: ErrorContext = {}): Promise<void> {
-    await this.handleError(new Error(`Authorization Error: ${error.message}`), {
+    await this.handleError(new Error(`Authorization Error: ${(error as any).message}`), {
       ...context,
       action: 'AUTHORIZATION',
       resource: 'AUTH',
@@ -168,7 +168,7 @@ export class ErrorHandlerService {
   }
 
   async handleExternalServiceError(service: string, error: Error | unknown, context: ErrorContext = {}): Promise<void> {
-    await this.handleError(new Error(`External Service Error (${service}): ${error.message}`), {
+    await this.handleError(new Error(`External Service Error (${service}): ${(error as any).message}`), {
       ...context,
       action: 'EXTERNAL_SERVICE_CALL',
       resource: service.toUpperCase(),

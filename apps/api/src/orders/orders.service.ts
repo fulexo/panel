@@ -2,7 +2,10 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { PrismaService } from '../prisma.service';
 import { CacheService } from '../cache/cache.service';
 import { AuditService } from '../audit/audit.service';
-import { CreateOrderDto, UpdateOrderDto, OrderQueryDto, CreateChargeDto } from './dto';
+import { CreateOrderDto } from './dto/create-order.dto';
+import { UpdateOrderDto } from './dto/update-order.dto';
+import { OrderQueryDto } from './dto/order-query.dto';
+import { CreateChargeDto } from './dto/create-charge.dto';
 import { Prisma, PrismaClient } from '@prisma/client';
 import * as jose from 'jose';
 
@@ -112,19 +115,19 @@ export class OrdersService {
     const offset = (page - 1) * limit;
 
     // Try to get from cache
-    const cacheKey = this.cache.orderListKey(tenantId, page, query);
+    const cacheKey = this.cache.orderListKey(tenantId, page, query as any);
     const cached = await this.cache.get(cacheKey);
     if (cached) {
       return cached;
     }
 
     // Build where clause
-    const where: Record<string, unknown> = {
+    const where: any = {
       tenantId,
     };
 
     if (query.status) {
-      where.status = query.status;
+      where.status = query['status'];
     }
 
     if (query.search) {
@@ -138,19 +141,19 @@ export class OrdersService {
     if (query.dateFrom || query.dateTo) {
       where.confirmedAt = {};
       if (query.dateFrom) {
-        where.confirmedAt.gte = new Date(query.dateFrom);
+        where.confirmedAt.gte = new Date(query['dateFrom']);
       }
       if (query.dateTo) {
-        where.confirmedAt.lte = new Date(query.dateTo);
+        where.confirmedAt.lte = new Date(query['dateTo']);
       }
     }
 
     if (query.storeId) {
-      where.storeId = query.storeId;
+      where.storeId = query['storeId'];
     }
 
     if (query.customerId) {
-      where.customerId = query.customerId;
+      where.customerId = query['customerId'];
     }
 
     // Execute query with optimized selects to avoid N+1
@@ -264,14 +267,14 @@ export class OrdersService {
         currency: dto.currency || 'TRY',
         customerEmail: dto.customerEmail,
         customerPhone: dto.customerPhone,
-        shippingAddress: dto.shippingAddress || {},
-        billingAddress: dto.billingAddress || {},
+        shippingAddress: dto.shippingAddress || {} as any,
+        billingAddress: dto.billingAddress || {} as any,
         paymentMethod: dto.paymentMethod,
         notes: dto.notes,
         tags: dto.tags || [],
         confirmedAt: dto.confirmedAt || new Date(),
         items: {
-          create: dto.items?.map(item => ({
+          create: dto.items?.map((item: any) => ({
             sku: item.sku,
             name: item.name,
             qty: item.qty,
@@ -317,8 +320,8 @@ export class OrdersService {
         status: dto.status || undefined,
         notes: dto.notes || undefined,
         tags: dto.tags || undefined,
-        shippingAddress: dto.shippingAddress,
-        billingAddress: dto.billingAddress,
+        shippingAddress: dto.shippingAddress as any,
+        billingAddress: dto.billingAddress as any,
         updatedAt: new Date(),
       },
     }));
@@ -330,7 +333,7 @@ export class OrdersService {
       tenantId,
       entityType: 'order',
       entityId: order.id,
-      changes: dto,
+      changes: dto as any,
     });
 
     // Invalidate cache
@@ -412,13 +415,13 @@ export class OrdersService {
     // }
 
     // Sort by date
-    timeline.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    timeline.sort((a, b) => new Date(b['date'] as string).getTime() - new Date(a['date'] as string).getTime());
 
     return timeline;
   }
 
   async getOrderStats(tenantId: string, query: { dateFrom?: string; dateTo?: string; storeId?: string }) {
-    const where: Record<string, unknown> = {
+    const where: any = {
       tenantId,
     };
 
@@ -483,9 +486,9 @@ export class OrdersService {
     return {
       totalOrders,
       totalRevenue: totalRevenue._sum.total || 0,
-      statusBreakdown: statusCounts.map((s: Record<string, unknown>) => ({
-        status: s.status,
-        count: s._count,
+      statusBreakdown: statusCounts.map((s: any) => ({
+        status: s['status'],
+        count: s['_count'],
       })),
       dailyStats: ordersByDay,
     };
@@ -576,13 +579,13 @@ export class OrdersService {
     const charge = await this.runTenant(tenantId, async (db) => db.orderServiceCharge.create({
       data: {
         orderId,
-        type: dto.type,
+        type: dto['type'] || 'service',
         amount: new (Prisma as any).Decimal(dto.amount),
         currency: dto.currency || order.currency || 'TRY',
-        notes: dto.notes || null,
+        notes: dto['notes'] || null,
       },
     }));
-    await this.audit.log({ action: 'order.charge.added', userId, tenantId, entityType: 'order', entityId: orderId, changes: dto });
+    await this.audit.log({ action: 'order.charge.added', userId, tenantId, entityType: 'order', entityId: orderId, changes: dto as any });
     await this.cache.invalidateOrderCache(tenantId, orderId);
     return charge;
   }
@@ -608,12 +611,12 @@ export class OrdersService {
     }
 
     const results = await this.runTenant(tenantId, async (db) => {
-      const updateData: Record<string, unknown> = {};
+      const updateData: any = {};
       
-      if (updates.status !== undefined) updateData.status = updates.status;
-      if (updates.notes !== undefined) updateData.notes = updates.notes;
-      if (updates.tags !== undefined) updateData.tags = updates.tags;
-      if (updates.billingAddress !== undefined) updateData.billingAddress = updates.billingAddress;
+      if (updates['status'] !== undefined) updateData.status = updates['status'];
+      if (updates['notes'] !== undefined) updateData.notes = updates['notes'];
+      if (updates['tags'] !== undefined) updateData.tags = updates['tags'];
+      if (updates['billingAddress'] !== undefined) updateData.billingAddress = updates['billingAddress'];
       
       updateData.updatedAt = new Date();
 

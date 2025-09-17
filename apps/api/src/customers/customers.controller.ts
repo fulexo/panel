@@ -3,6 +3,8 @@ import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger'
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { CustomersService } from './customers.service';
+import { CreateCustomerDto } from './dto/create-customer.dto';
+import { UpdateCustomerDto } from './dto/update-customer.dto';
 
 @ApiTags('customers')
 @ApiBearerAuth()
@@ -39,14 +41,14 @@ export class CustomersController {
   @Post()
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Create customer (admin only)' })
-  async create(@CurrentUser() user: { id: string; email: string; role: string; tenantId: string }, @Body() body: Record<string, unknown>) {
+  async create(@CurrentUser() user: { id: string; email: string; role: string; tenantId: string }, @Body() body: CreateCustomerDto) {
     return this.customers.create(user.tenantId, body);
   }
 
   @Put(':id')
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Update customer (admin only)' })
-  async update(@CurrentUser() user: { id: string; email: string; role: string; tenantId: string }, @Param('id') id: string, @Body() body: Record<string, unknown>) {
+  async update(@CurrentUser() user: { id: string; email: string; role: string; tenantId: string }, @Param('id') id: string, @Body() body: UpdateCustomerDto) {
     return this.customers.update(user.tenantId, id, body);
   }
 
@@ -62,7 +64,7 @@ export class CustomersController {
   @ApiOperation({ summary: 'Bulk update customers' })
   async bulkUpdate(
     @CurrentUser() user: { id: string; email: string; role: string; tenantId: string },
-    @Body() body: { customerIds: string[]; updates: Record<string, unknown> },
+    @Body() body: { customerIds: string[]; updates: Partial<UpdateCustomerDto> },
   ) {
     return this.customers.bulkUpdate(user.tenantId, body.customerIds, body.updates, user.id);
   }

@@ -120,7 +120,7 @@ export class WooService {
       provider: 'woocommerce',
       topic,
       signature: signature || null,
-      payload,
+      payload: payload as any,
       status: valid ? 'received' : 'failed',
       error: valid ? null : 'invalid_signature',
     }});
