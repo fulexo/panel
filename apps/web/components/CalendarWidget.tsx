@@ -21,6 +21,7 @@ export default function CalendarWidget() {
   const [businessHours, setBusinessHours] = useState<BusinessHours[]>([]);
   const [holidays, setHolidays] = useState<Holiday[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     loadCalendarData();
@@ -43,6 +44,7 @@ export default function CalendarWidget() {
       }
     } catch (error) {
       console.error('Takvim verisi yüklenemedi:', error);
+      setError('Takvim verisi yüklenirken hata oluştu');
     } finally {
       setLoading(false);
     }
@@ -76,6 +78,25 @@ export default function CalendarWidget() {
             <div className="h-3 bg-gray-200 rounded"></div>
             <div className="h-3 bg-gray-200 rounded w-2/3"></div>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-white rounded-lg shadow p-6">
+        <div className="text-red-600 text-center">
+          <p>{error}</p>
+          <button 
+            onClick={() => {
+              setError(null);
+              loadCalendarData();
+            }}
+            className="mt-2 px-4 py-2 bg-red-100 text-red-700 rounded hover:bg-red-200"
+          >
+            Tekrar Dene
+          </button>
         </div>
       </div>
     );
