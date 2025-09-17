@@ -91,10 +91,9 @@ export function useApi<T = any>(
 // Specialized hooks for common operations
 export function useOrders() {
   const apiCall = useCallback(async (endpoint: string, options?: RequestInit) => {
-    const token = sessionStorage.getItem('access_token');
     return fetch(`/api${endpoint}`, {
+      credentials: 'include', // Include httpOnly cookies
       headers: {
-        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
         ...options?.headers,
       },
@@ -107,10 +106,9 @@ export function useOrders() {
 
 export function useProducts() {
   const apiCall = useCallback(async (endpoint: string, options?: RequestInit) => {
-    const token = sessionStorage.getItem('access_token');
     return fetch(`/api${endpoint}`, {
+      credentials: 'include', // Include httpOnly cookies
       headers: {
-        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
         ...options?.headers,
       },
@@ -123,10 +121,9 @@ export function useProducts() {
 
 export function useCustomers() {
   const apiCall = useCallback(async (endpoint: string, options?: RequestInit) => {
-    const token = sessionStorage.getItem('access_token');
     return fetch(`/api${endpoint}`, {
+      credentials: 'include', // Include httpOnly cookies
       headers: {
-        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
         ...options?.headers,
       },

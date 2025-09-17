@@ -129,7 +129,7 @@ async function bootstrap() {
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api/docs', app, document, {
+  SwaggerModule.setup('docs', app, document, {
     swaggerOptions: {
       persistAuthorization: true,
     },
@@ -204,8 +204,14 @@ async function bootstrap() {
   });
 
   // JWKS endpoint
-  app.getHttpAdapter().get('/auth/.well-known/jwks.json', (_req, res) => {
-    res.json({ keys: [] });
+  app.getHttpAdapter().get('/auth/.well-known/jwks.json', async (_req, res) => {
+    try {
+      const jwtService = app.get('JwtService');
+      const jwks = await jwtService.getJwks();
+      res.json(jwks);
+    } catch (error) {
+      res.json({ keys: [] });
+    }
   });
 
   // Graceful shutdown

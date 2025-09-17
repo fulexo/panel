@@ -47,7 +47,9 @@ export class WooController {
   async webhook(@Param('id') storeId: string, @Req() req: any, @Body() body: any){
     const topic = req.headers['x-wc-webhook-topic'] || req.headers['X-WC-Webhook-Topic'] || 'unknown';
     const signature = req.headers['x-wc-webhook-signature'] || req.headers['X-WC-Webhook-Signature'] || '';
-    await this.woo.handleWebhook(storeId, String(topic), String(signature), body);
+    // Get raw body for signature verification
+    const rawBody = req.rawBody || JSON.stringify(body);
+    await this.woo.handleWebhook(storeId, String(topic), String(signature), body, rawBody);
     return { ok: true };
   }
 }

@@ -61,6 +61,12 @@ async function handleRequest(
     if (authHeader) {
       headers['Authorization'] = authHeader;
     }
+    
+    // Copy cookies for httpOnly authentication
+    const cookieHeader = request.headers.get('cookie');
+    if (cookieHeader) {
+      headers['Cookie'] = cookieHeader;
+    }
 
     // Copy other important headers
     const contentType = request.headers.get('content-type');

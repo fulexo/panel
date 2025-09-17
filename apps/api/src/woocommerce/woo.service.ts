@@ -85,9 +85,11 @@ export class WooService {
     if (!secret) return true; // allow if no secret configured
     if (!signature) return false;
     try{
+      // Use raw payload string instead of JSON.stringify
+      const payloadString = typeof payload === 'string' ? payload : JSON.stringify(payload);
       const computed = crypto
         .createHmac('sha256', secret)
-        .update(JSON.stringify(payload))
+        .update(payloadString)
         .digest('base64');
       return crypto.timingSafeEqual(Buffer.from(computed), Buffer.from(String(signature)));
     }catch{
@@ -95,11 +97,11 @@ export class WooService {
     }
   }
 
-  async handleWebhook(storeId: string, topic: string, signature: string, payload: any){
+  async handleWebhook(storeId: string, topic: string, signature: string, payload: any, rawBody?: string){
     const s = await this.prisma.wooStore.findFirst({ where: { id: storeId } });
     if(!s) throw new BadRequestException('Store not found');
 
-    const valid = this.verifySignature(payload, s.webhookSecret || undefined, signature);
+    const valid = this.verifySignature(rawBody || payload, s.webhookSecret || undefined, signature);
     await this.prisma.webhookEvent.create({ data: {
       tenantId: s.tenantId,
       storeId: s.id,

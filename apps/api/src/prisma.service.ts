@@ -69,13 +69,13 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
 
   // Optimize includes to prevent N+1 queries
   private _optimizeIncludes(_include: unknown): unknown {
-    if (!include || typeof include !== 'object') {
-      return include;
+    if (!_include || typeof _include !== 'object') {
+      return _include;
     }
 
     const optimized: Record<string, unknown> = {};
     
-    for (const [key, value] of Object.entries(include as Record<string, unknown>)) {
+    for (const [key, value] of Object.entries(_include as Record<string, unknown>)) {
       if (value === true) {
         optimized[key] = true;
       } else if (typeof value === 'object' && value !== null) {

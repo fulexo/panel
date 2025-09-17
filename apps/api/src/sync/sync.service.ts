@@ -196,7 +196,7 @@ export class SyncService {
 
   private async determineOwnership(remoteOrder: any, account: any): Promise<string | null> {
     // If account has direct tenant assignment
-    if (account.tenantId) {
+    if (account && account.tenantId) {
       return account.tenantId;
     }
 
