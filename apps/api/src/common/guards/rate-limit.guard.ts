@@ -1,27 +1,26 @@
-import { Injectable, CanActivate, ExecutionContext, HttpException, HttpStatus } from '@nestjs/common';
-import { Reflector } from '@nestjs/core';
+import { Injectable, ExecutionContext, HttpException, HttpStatus } from '@nestjs/common';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { Request } from 'express';
 
 @Injectable()
 export class CustomRateLimitGuard extends ThrottlerGuard {
   constructor() {
-    super();
+    super({} as any, {} as any, {} as any);
   }
 
-  protected async handleRequest(
+  protected override async handleRequest(
     context: ExecutionContext,
     limit: number,
     ttl: number,
   ): Promise<boolean> {
     const request = context.switchToHttp().getRequest<Request>();
-    const key = this.generateKey(context, request);
+    const key = this.generateKey(context, '', '');
     
     // Get current request count
     const current = await this.storageService.increment(key, ttl);
     
     // Check if limit exceeded
-    if (current > limit) {
+    if (Number(current) > limit) {
       // Log rate limit exceeded
       console.warn(`Rate limit exceeded for ${request.ip} on ${request.path}`, {
         ip: request.ip,
@@ -47,7 +46,8 @@ export class CustomRateLimitGuard extends ThrottlerGuard {
     return true;
   }
 
-  private generateKey(context: ExecutionContext, request: Request): string {
+  protected override generateKey(context: ExecutionContext, _suffix: string, _name: string): string {
+    const request = context.switchToHttp().getRequest<Request>();
     const { ip, path, method } = request;
     const user = (request as any).user;
     

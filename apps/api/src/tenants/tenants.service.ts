@@ -36,14 +36,14 @@ export class TenantsService {
     const user = await this.prisma.user.findUnique({ where: { id: actingUserId } });
     if (!user) throw new NotFoundException('User not found');
 
-    const payload = {
-      sub: user.id,
-      email: user.email,
-      role: user.role,
-      tenantId: tenant.id,
-      impersonated: true,
-      originalTenantId: user.tenantId,
-    } as any;
+    // const payload = {
+    //   sub: user.id,
+    //   email: user.email,
+    //   role: user.role,
+    //   tenantId: tenant.id,
+    //   impersonated: true,
+    //   originalTenantId: user.tenantId,
+    // } as any;
 
     const tokens = await this.jwt.issueTokens(user.id, user.email, user.role, tenant.id);
     await this.sessions.createSession(user.id, tokens.access, {});
@@ -67,12 +67,12 @@ export class TenantsService {
     const user = await this.prisma.user.findUnique({ where: { id: String(userId) } });
     if (!user) throw new NotFoundException('User not found');
 
-    const payload = {
-      sub: user.id,
-      email: user.email,
-      role: user.role,
-      tenantId: originalTenantId,
-    } as any;
+    // const payload = {
+    //   sub: user.id,
+    //   email: user.email,
+    //   role: user.role,
+    //   tenantId: originalTenantId,
+    // } as any;
 
     const tokens = await this.jwt.issueTokens(user.id, user.email, user.role, originalTenantId);
     await this.sessions.createSession(user.id, tokens.access, {});

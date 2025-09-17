@@ -125,7 +125,7 @@ export class JwtService {
       'demo',
     ];
     
-    if (secret && weakPatterns.some(pattern => secret.toLowerCase().includes(pattern))) {
+    if (secret && weakPatterns.some(pattern => secret!.toLowerCase().includes(pattern))) {
       if (process.env['NODE_ENV'] === 'development') {
         console.warn('JWT_SECRET contains weak patterns. This is not recommended for production.');
         // Generate a secure replacement for development

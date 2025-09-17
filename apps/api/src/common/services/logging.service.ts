@@ -1,5 +1,5 @@
 import { Injectable, LoggerService } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { PrismaService } from '../../prisma.service';
 
 export interface LogEntry {
   level: 'debug' | 'info' | 'warn' | 'error' | 'fatal';
@@ -226,11 +226,11 @@ export class LoggingService implements LoggerService {
     });
 
     const level = severity === 'critical' ? 'fatal' : severity === 'high' ? 'error' : 'warn';
-    this[level](`Security event: ${event}`, 'Security', {
+    (this as any)[level](`Security event: ${event}`, 'Security', {
       event,
       severity,
       ...metadata,
-    } as Record<string, any>);
+    });
   }
 
   async logPerformanceMetric(

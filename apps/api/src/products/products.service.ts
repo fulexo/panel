@@ -41,7 +41,7 @@ export class ProductsService {
         orderBy: { createdAt: 'desc' }, 
         take, 
         skip,
-        include: { categories: true }
+        // include: { category: true }
       }),
       db.product.count({ where }),
     ]));
@@ -51,7 +51,7 @@ export class ProductsService {
   async get(tenantId: string, id: string) {
     const product = await this.runTenant(tenantId, async (db) => db.product.findFirst({ 
       where: { id, tenantId },
-      include: { category: true }
+        // include: { category: true }
     }));
     if (!product) throw new NotFoundException('Product not found');
     return product;

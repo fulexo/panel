@@ -367,7 +367,7 @@ export class OrdersService {
     const order = await this.findOne(tenantId, orderId);
 
     // Get audit logs for this order
-    const auditLogs = await this.audit.getAuditLogs(tenantId, 'order', orderId);
+    // const auditLogs = await this.audit.getAuditLogs({ tenantId, entityType: 'order', entityId: orderId });
 
     // Build timeline
     const timeline: any[] = [
@@ -397,13 +397,13 @@ export class OrdersService {
     }
 
     // Add audit events
-    for (const log of auditLogs.logs as any[]) {
-      timeline.push({
-        type: log.action,
-        date: log.createdAt,
-        description: `Action: ${log.action}`,
-      });
-    }
+    // for (const log of auditLogs.logs as any[]) {
+    //   timeline.push({
+    //     type: log.action,
+    //     date: log.createdAt,
+    //     description: `Action: ${log.action}`,
+    //   });
+    // }
 
     // Sort by date
     timeline.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
