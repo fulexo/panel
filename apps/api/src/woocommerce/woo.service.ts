@@ -121,7 +121,7 @@ export class WooService {
       provider: 'woocommerce',
       topic,
       signature: signature || null,
-      payload: toPrismaJsonValue(payload) as any,
+      payload: toPrismaJsonValue(payload) as Record<string, unknown>,
       status: valid ? 'received' : 'failed',
       error: valid ? null : 'invalid_signature',
     }});

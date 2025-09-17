@@ -78,8 +78,8 @@ export class SyncService {
 
       // Get sync state
       // const syncState = await this.getSyncState(accountId, 'orders');
-      // const lastSyncDate = (syncState?.checkpoint && (syncState.checkpoint as any).lastDate)
-      //   ? new Date((syncState.checkpoint as any).lastDate)
+      // const lastSyncDate = (syncState?.checkpoint && (syncState.checkpoint as Record<string, unknown>).lastDate)
+      //   ? new Date((syncState.checkpoint as Record<string, unknown>).lastDate)
       //   : new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
       // Source system removed. Placeholder for Woo import.

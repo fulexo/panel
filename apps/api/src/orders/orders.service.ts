@@ -200,7 +200,7 @@ export class OrdersService {
         tenantId,
       },
       include: this.getOrderIncludes(role),
-    }) as any);
+    }) as Record<string, unknown>);
 
     if (!order) {
       throw new NotFoundException('Order not found');
@@ -252,7 +252,7 @@ export class OrdersService {
     const current = await this.runTenant(tenantId, async (db) => db.$queryRaw`
       SELECT "value" FROM "_OrderNoSeq" WHERE "tenantId" = ${tenantId}::uuid
     `);
-    const nextOrderNo = Number((current as any[])?.[0]?.value || 1);
+    const nextOrderNo = Number((current as Record<string, unknown>[])?.[0]?.value || 1);
 
     // Create order
     const order = await this.runTenant(tenantId, async (db) => db.order.create({
@@ -267,8 +267,8 @@ export class OrdersService {
         currency: dto.currency || 'TRY',
         customerEmail: dto.customerEmail,
         customerPhone: dto.customerPhone,
-        shippingAddress: dto.shippingAddress || {} as any,
-        billingAddress: dto.billingAddress || {} as any,
+        shippingAddress: dto.shippingAddress || {} as Record<string, unknown>,
+        billingAddress: dto.billingAddress || {} as Record<string, unknown>,
         paymentMethod: dto.paymentMethod,
         notes: dto.notes,
         tags: dto.tags || [],
@@ -320,8 +320,8 @@ export class OrdersService {
         status: dto.status || undefined,
         notes: dto.notes || undefined,
         tags: dto.tags || undefined,
-        shippingAddress: dto.shippingAddress as any,
-        billingAddress: dto.billingAddress as any,
+        shippingAddress: dto.shippingAddress as Record<string, unknown>,
+        billingAddress: dto.billingAddress as Record<string, unknown>,
         updatedAt: new Date(),
       },
     }));
@@ -333,7 +333,7 @@ export class OrdersService {
       tenantId,
       entityType: 'order',
       entityId: order.id,
-      changes: dto as any,
+      changes: dto as Record<string, unknown>,
     });
 
     // Invalidate cache
@@ -406,7 +406,7 @@ export class OrdersService {
     }
 
     // Add audit events
-    // for (const log of auditLogs.logs as any[]) {
+    // for (const log of auditLogs.logs as Record<string, unknown>[]) {
     //   timeline.push({
     //     type: log.action,
     //     date: log.createdAt,
@@ -421,7 +421,7 @@ export class OrdersService {
   }
 
   async getOrderStats(tenantId: string, query: { dateFrom?: string; dateTo?: string; storeId?: string }) {
-    const where: any = {
+    const where: Record<string, unknown> = {
       tenantId,
     };
 
@@ -580,12 +580,12 @@ export class OrdersService {
       data: {
         orderId,
         type: dto['type'] || 'service',
-        amount: new (Prisma as any).Decimal(dto.amount),
+        amount: new (Prisma as Record<string, unknown>).Decimal(dto.amount),
         currency: dto.currency || order.currency || 'TRY',
         notes: dto['notes'] || null,
       },
     }));
-    await this.audit.log({ action: 'order.charge.added', userId, tenantId, entityType: 'order', entityId: orderId, changes: dto as any });
+    await this.audit.log({ action: 'order.charge.added', userId, tenantId, entityType: 'order', entityId: orderId, changes: dto as Record<string, unknown> });
     await this.cache.invalidateOrderCache(tenantId, orderId);
     return charge;
   }
@@ -611,7 +611,7 @@ export class OrdersService {
     }
 
     const results = await this.runTenant(tenantId, async (db) => {
-      const updateData: any = {};
+      const updateData: Record<string, unknown> = {};
       
       if (updates['status'] !== undefined) updateData.status = updates['status'];
       if (updates['notes'] !== undefined) updateData.notes = updates['notes'];

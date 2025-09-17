@@ -374,12 +374,12 @@ export class AuthService {
       updateData.email = dto.email;
     }
     if (dto.notificationPreferences !== undefined) {
-      updateData.notificationPreferences = toPrismaJsonValue(dto.notificationPreferences) as any;
+      updateData.notificationPreferences = toPrismaJsonValue(dto.notificationPreferences) as Record<string, unknown>;
     }
 
     const updatedUser = await this.prisma.user.update({
       where: { id: userId },
-      data: updateData as any,
+      data: updateData as Record<string, unknown>,
       select: {
         id: true,
         email: true,

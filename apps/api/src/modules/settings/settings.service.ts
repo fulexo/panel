@@ -34,7 +34,7 @@ export class SettingsService {
   ) {}
 
   async getSettings(tenantId: string, category?: string): Promise<Record<string, unknown>[]> {
-    const where: any = { tenantId };
+    const where: Record<string, unknown> = { tenantId };
     if (category) where.category = category;
 
     const settings = await this.prisma.settings.findMany({ where });
@@ -54,7 +54,7 @@ export class SettingsService {
   ): Promise<Partial<SettingCategory[K]>> {
     const settings = await this.getSettings(tenantId, category);
     
-    const result: any = {};
+    const result: Record<string, unknown> = {};
     settings.forEach(setting => {
       result[setting['key'] as string] = setting['value'];
     });
@@ -104,13 +104,13 @@ export class SettingsService {
         value: encryptedValue,
         isSecret,
         updatedBy: updatedBy || null,
-        metadata: metadata as any,
+        metadata: metadata as Record<string, unknown>,
       },
       update: {
         value: encryptedValue,
         isSecret,
         updatedBy: updatedBy || null,
-        metadata: metadata as any,
+        metadata: metadata as Record<string, unknown>,
       },
     });
   }

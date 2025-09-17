@@ -21,7 +21,7 @@ export class CalendarController {
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Create calendar event (admin only)' })
   async createEvent(@CurrentUser() user: { id: string; email: string; role: string; tenantId: string }, @Body() dto: Record<string, unknown>) {
-    return this.calendar.createEvent(user.tenantId, dto as any);
+    return this.calendar.createEvent(user.tenantId, dto as Record<string, unknown>);
   }
 
   @Put('events/:id')
@@ -49,7 +49,7 @@ export class CalendarController {
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Set business hours (admin)' })
   async setBusinessHours(@CurrentUser() user: { id: string; email: string; role: string; tenantId: string }, @Body() dto: Record<string, unknown>) {
-    return this.calendar.setBusinessHours(user.tenantId, dto as any);
+    return this.calendar.setBusinessHours(user.tenantId, dto as Record<string, unknown>);
   }
 
   // Holidays
@@ -63,7 +63,7 @@ export class CalendarController {
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Add holiday (admin)' })
   async addHoliday(@CurrentUser() user: { id: string; email: string; role: string; tenantId: string }, @Body() dto: Record<string, unknown>) {
-    return this.calendar.addHoliday(user.tenantId, dto as any);
+    return this.calendar.addHoliday(user.tenantId, dto as Record<string, unknown>);
   }
 
   @Delete('holidays/:id')

@@ -27,7 +27,7 @@ export class BillingController {
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Create billing batch' })
   async create(@CurrentUser() user: { id: string; email: string; role: string; tenantId: string }, @Body() dto: CreateBillingBatchDto) {
-    return this.billing.createBatch(user.tenantId, dto as any);
+    return this.billing.createBatch(user.tenantId, dto as Record<string, unknown>);
   }
 
   @Get('batches/:id')
@@ -64,7 +64,7 @@ export class BillingController {
   async exportCsv(@CurrentUser() user: { id: string; email: string; role: string; tenantId: string }, @Param('id') id: string, @Res() res: Response) {
     const batch = await this.billing.getBatch(user.tenantId, id);
     const header = ['invoice_number','order_id','amount','currency','issued_at'];
-    const rows = batch.items.map((it: any)=> [(it['invoice'] as any)?.number||'', (it['invoice'] as any)?.orderId, it['amount'], (it['invoice'] as any)?.currency||'', (it['invoice'] as any)?.issuedAt||'']);
+    const rows = batch.items.map((it: any)=> [(it['invoice'] as Record<string, unknown>)?.number||'', (it['invoice'] as Record<string, unknown>)?.orderId, it['amount'], (it['invoice'] as Record<string, unknown>)?.currency||'', (it['invoice'] as Record<string, unknown>)?.issuedAt||'']);
     const csv = [header.join(','), ...rows.map((r: unknown[])=> r.join(','))].join('\n');
     res.setHeader('Content-Type', 'text/csv');
     res.setHeader('Content-Disposition', `attachment; filename="billing_${id}.csv"`);
@@ -86,8 +86,8 @@ export class BillingController {
       doc.fontSize(18).text('Billing Summary', { underline: true });
       doc.moveDown();
       doc.fontSize(12).text(`Batch ID: ${batch.id}`);
-      if(batch.periodFrom) doc.text(`Period From: ${new Date(batch.periodFrom as any).toLocaleString()}`);
-      if(batch.periodTo) doc.text(`Period To: ${new Date(batch.periodTo as any).toLocaleString()}`);
+      if(batch.periodFrom) doc.text(`Period From: ${new Date(batch.periodFrom as Record<string, unknown>).toLocaleString()}`);
+      if(batch.periodTo) doc.text(`Period To: ${new Date(batch.periodTo as Record<string, unknown>).toLocaleString()}`);
       doc.text(`Status: ${batch.status}`);
       doc.text(`Total: ${batch.total || 0}`);
       doc.moveDown();

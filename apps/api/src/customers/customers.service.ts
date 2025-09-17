@@ -67,11 +67,11 @@ export class CustomersService {
     
     // Calculate order stats for each customer
     const customersWithStats = data.map((customer: Record<string, unknown>) => {
-      const orders = (customer as any).orders || [];
+      const orders = (customer as Record<string, unknown>).orders || [];
       const totalOrders = orders.length;
       const totalSpent = orders.reduce((sum: number, order: any) => sum + (Number(order['total']) || 0), 0);
       const averageOrderValue = totalOrders > 0 ? totalSpent / totalOrders : 0;
-      const lastOrderDate = orders.length > 0 ? (orders[0] as any).createdAt : null;
+      const lastOrderDate = orders.length > 0 ? (orders[0] as Record<string, unknown>).createdAt : null;
       
       return {
         ...customer,
@@ -159,7 +159,7 @@ export class CustomersService {
         country: body['country'] || null,
         notes: body['notes'] || null,
         tags: body['tags'] || [],
-      } as any 
+      } as Record<string, unknown> 
     }));
   }
 
@@ -204,7 +204,7 @@ export class CustomersService {
     }
 
     const results = await this.runTenant(tenantId, async (db) => {
-      const updateData: any = {};
+      const updateData: Record<string, unknown> = {};
       
       if (updates['tags'] !== undefined) updateData.tags = updates['tags'];
       if (updates['notes'] !== undefined) updateData.notes = updates['notes'];

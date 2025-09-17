@@ -16,9 +16,9 @@ export class PolicyService {
     const actions: Record<string, unknown> = {};
     const dataScope: Record<string, unknown> = {};
     for(const p of pol){
-      Object.assign(modules, (p as any)['modules'] || {});
-      Object.assign(actions, (p as any)['actions'] || {});
-      Object.assign(dataScope, (p as any)['dataScope'] || {});
+      Object.assign(modules, (p as Record<string, unknown>)['modules'] || {});
+      Object.assign(actions, (p as Record<string, unknown>)['actions'] || {});
+      Object.assign(dataScope, (p as Record<string, unknown>)['dataScope'] || {});
     }
     return { modules, actions, dataScope };
   }

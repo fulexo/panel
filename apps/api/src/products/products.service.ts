@@ -75,15 +75,15 @@ export class ProductsService {
         sku: dto.sku,
         name: dto.name,
         description: dto.description,
-        price: dto.price !== undefined && dto.price !== null ? new (Prisma as any).Decimal(dto.price) : null,
+        price: dto.price !== undefined && dto.price !== null ? new (Prisma as Record<string, unknown>).Decimal(dto.price) : null,
         stock: dto.stock !== undefined && dto.stock !== null ? parseInt(dto.stock) : null,
-        weight: dto.weight !== undefined && dto.weight !== null ? new (Prisma as any).Decimal(dto.weight) : null,
+        weight: dto.weight !== undefined && dto.weight !== null ? new (Prisma as Record<string, unknown>).Decimal(dto.weight) : null,
         dimensions: dto.dimensions,
         images: dto.images || [],
         tags: dto.tags || [],
         active: dto.active !== undefined ? dto.active : true,
         categoryId: dto.categoryId,
-      } as any,
+      } as Record<string, unknown>,
     }));
   }
 
@@ -109,15 +109,15 @@ export class ProductsService {
         ...(dto.sku !== undefined && { sku: dto.sku }),
         ...(dto.name !== undefined && { name: dto.name }),
         ...(dto.description !== undefined && { description: dto.description }),
-        ...(dto.price !== undefined && { price: dto.price !== null ? new (Prisma as any).Decimal(dto.price) : null }),
+        ...(dto.price !== undefined && { price: dto.price !== null ? new (Prisma as Record<string, unknown>).Decimal(dto.price) : null }),
         ...(dto.stock !== undefined && { stock: dto.stock !== null ? parseInt(dto.stock) : null }),
-        ...(dto.weight !== undefined && { weight: dto.weight !== null ? new (Prisma as any).Decimal(dto.weight) : null }),
+        ...(dto.weight !== undefined && { weight: dto.weight !== null ? new (Prisma as Record<string, unknown>).Decimal(dto.weight) : null }),
         ...(dto.dimensions !== undefined && { dimensions: dto.dimensions }),
         ...(dto.images !== undefined && { images: dto.images }),
         ...(dto.tags !== undefined && { tags: dto.tags }),
         ...(dto.active !== undefined && { active: dto.active }),
         ...(dto.categoryId !== undefined && { categoryId: dto.categoryId }),
-      } as any,
+      } as Record<string, unknown>,
     }));
   }
 
@@ -142,11 +142,11 @@ export class ProductsService {
     }
 
     const results = await this.runTenant(tenantId, async (db) => {
-      const updateData: any = {};
+      const updateData: Record<string, unknown> = {};
       
       if (updates.active !== undefined) updateData.active = updates.active;
       if (updates.stock !== undefined) updateData.stock = updates.stock !== null ? parseInt(updates.stock) : null;
-      if (updates.price !== undefined) updateData.price = updates.price !== null ? new (Prisma as any).Decimal(updates.price) : null;
+      if (updates.price !== undefined) updateData.price = updates.price !== null ? new (Prisma as Record<string, unknown>).Decimal(updates.price) : null;
       if (updates.tags !== undefined) updateData.tags = updates.tags;
       
       updateData.updatedAt = new Date();

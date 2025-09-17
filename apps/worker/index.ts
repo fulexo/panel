@@ -175,7 +175,7 @@ const jobProcessors = {
       const res = await fetch(url, {
         headers: { Authorization: 'Basic '+Buffer.from(store.consumerKey+':'+store.consumerSecret).toString('base64') },
         timeout: 30000 // 30 second timeout
-      } as any);
+      } as Record<string, unknown>);
       
       if(!res.ok){ 
         logger.error(`WooCommerce API error: ${res.status} ${res.statusText}`);
@@ -261,7 +261,7 @@ const jobProcessors = {
       const res = await fetch(url, {
         headers: { Authorization: 'Basic '+Buffer.from(store.consumerKey+':'+store.consumerSecret).toString('base64') },
         timeout: 30000 // 30 second timeout
-      } as any);
+      } as Record<string, unknown>);
       if(!res.ok) { 
         logger.error(`WooCommerce API error: ${res.status} ${res.statusText}`);
         throw new Error('Woo HTTP '+res.status); 
@@ -274,7 +274,7 @@ const jobProcessors = {
           tenantId: store.tenantId,
           sku: p.sku || String(p.id),
           name: p.name || null,
-          price: p.price ? new (Prisma as any).Decimal(p.price) : null,
+          price: p.price ? new (Prisma as Record<string, unknown>).Decimal(p.price) : null,
           stock: (typeof p.stock_quantity==='number') ? p.stock_quantity : null,
           images: Array.isArray(p.images) ? p.images.map((i: any)=>i.src).filter(Boolean) : [],
           tags: Array.isArray(p.tags) ? p.tags.map((t: any)=>t.name).filter(Boolean) : [],
@@ -378,7 +378,7 @@ const jobProcessors = {
         await prisma.webhookEvent.update({ where: { id: evt.id }, data: { status: 'processed', processedAt: new Date(), attempts: { increment: 1 } } });
       } catch (err) {
         // Webhook event failed
-        await prisma.webhookEvent.update({ where: { id: evt.id }, data: { status: 'failed', error: String((err as any)?.message || err), attempts: { increment: 1 } } });
+        await prisma.webhookEvent.update({ where: { id: evt.id }, data: { status: 'failed', error: String((err as Record<string, unknown>)?.message || err), attempts: { increment: 1 } } });
       }
     }
     return { success: true, processed: pending.length };
@@ -578,7 +578,7 @@ const worker = new Worker('fx-jobs', async (job) => {
     jobProcessedCounter.inc({ job_type: job.name, status: 'failure' });
     
     // Store error details for debugging
-    await storeJobError(job as any, lastError, maxRetries);
+    await storeJobError(job as Record<string, unknown>, lastError, maxRetries);
     
     throw lastError;
     
@@ -589,7 +589,7 @@ const worker = new Worker('fx-jobs', async (job) => {
     jobProcessedCounter.inc({ job_type: job.name, status: 'failure' });
     
     // Store error details
-    await storeJobError(job as any, error, 0);
+    await storeJobError(job as Record<string, unknown>, error, 0);
     
     throw error;
   }
@@ -921,7 +921,7 @@ async function start() {
   try {
     // validateEnvOnStartup();
   } catch (error) {
-    logger.error('Environment validation failed:', (error as any).message);
+    logger.error('Environment validation failed:', (error as Record<string, unknown>).message);
     process.exit(1);
   }
   
