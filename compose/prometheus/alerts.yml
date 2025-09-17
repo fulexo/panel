@@ -76,3 +76,29 @@ groups:
         for: 10m
         labels: { severity: warning }
         annotations: { summary: "Sync lag high", description: "Orders sync lag > 30m" }
+      
+      - alert: WebhookProcessingFailed
+        expr: rate(webhook_events_failed_total[5m]) > 0.1
+        for: 5m
+        labels: { severity: warning }
+        annotations: { summary: "High webhook failure rate", description: "Webhook processing failure rate is {{ $value }} failures per second" }
+
+  - name: fulexo_system
+    rules:
+      - alert: HighMemoryUsage
+        expr: (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes > 0.9
+        for: 5m
+        labels: { severity: warning }
+        annotations: { summary: "High memory usage", description: "Memory usage is {{ $value }}% of total" }
+      
+      - alert: HighDiskUsage
+        expr: (node_filesystem_size_bytes - node_filesystem_free_bytes) / node_filesystem_size_bytes > 0.9
+        for: 5m
+        labels: { severity: warning }
+        annotations: { summary: "High disk usage", description: "Disk usage is {{ $value }}% of total" }
+      
+      - alert: HighCPUUsage
+        expr: 100 - (avg by (instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 5m
+        labels: { severity: warning }
+        annotations: { summary: "High CPU usage", description: "CPU usage is {{ $value }}%" }

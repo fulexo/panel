@@ -37,22 +37,26 @@ scrape_configs:
     static_configs:
       - targets: ['nginx:9113']
     scrape_interval: 15s
+    scrape_timeout: 10s
 
   - job_name: 'postgres'
     static_configs:
       - targets: ['postgres:9187']
     scrape_interval: 15s
+    scrape_timeout: 10s
 
   - job_name: 'redis'
     static_configs:
       - targets: ['valkey:9121']
     scrape_interval: 15s
+    scrape_timeout: 10s
 
   - job_name: 'minio'
     static_configs:
       - targets: ['minio:9000']
     metrics_path: '/minio/v2/metrics/cluster'
     scrape_interval: 15s
+    scrape_timeout: 10s
 
   - job_name: 'node-exporter'
     static_configs:

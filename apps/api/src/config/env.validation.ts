@@ -108,26 +108,35 @@ export function validateEnvOnStartup() {
     const config = validateEnvironment(process.env);
     // Environment variables validated successfully
     
-    // Additional security checks
-    if (config.NODE_ENV === Environment.Production) {
-      // Check for weak secrets in production
-      if (config.JWT_SECRET.length < 64) {
-        throw new Error('JWT_SECRET must be at least 64 characters in production');
-      }
-      
-      if (config.ENCRYPTION_KEY.length !== 32) {
-        throw new Error('ENCRYPTION_KEY must be exactly 32 characters');
-      }
-      
-      // Check for default values
-      if (config.DATABASE_URL.includes('localhost') || config.DATABASE_URL.includes('127.0.0.1')) {
-        throw new Error('DATABASE_URL must not use localhost in production');
-      }
-      
-      if (config.REDIS_URL.includes('localhost') || config.REDIS_URL.includes('127.0.0.1')) {
-        throw new Error('REDIS_URL must not use localhost in production');
-      }
+  // Additional security checks
+  if (config.NODE_ENV === Environment.Production) {
+    // Check for weak secrets in production
+    if (config.JWT_SECRET.length < 64) {
+      throw new Error('JWT_SECRET must be at least 64 characters in production');
     }
+    
+    if (config.ENCRYPTION_KEY.length !== 32) {
+      throw new Error('ENCRYPTION_KEY must be exactly 32 characters');
+    }
+    
+    // Check for default values
+    if (config.DATABASE_URL.includes('localhost') || config.DATABASE_URL.includes('127.0.0.1')) {
+      throw new Error('DATABASE_URL must not use localhost in production');
+    }
+    
+    if (config.REDIS_URL.includes('localhost') || config.REDIS_URL.includes('127.0.0.1')) {
+      throw new Error('REDIS_URL must not use localhost in production');
+    }
+  } else {
+    // Development environment - warn about weak secrets but don't fail
+    if (config.JWT_SECRET && config.JWT_SECRET.length < 64) {
+      console.warn('WARNING: JWT_SECRET is shorter than 64 characters. This is not recommended for production.');
+    }
+    
+    if (config.ENCRYPTION_KEY && config.ENCRYPTION_KEY.length !== 32) {
+      console.warn('WARNING: ENCRYPTION_KEY should be exactly 32 characters for production.');
+    }
+  }
     
     return config;
   } catch (error) {
