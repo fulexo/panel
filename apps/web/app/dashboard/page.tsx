@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../components/AuthProvider';
 import ProtectedRoute from '../../components/ProtectedRoute';
+import CalendarWidget from '../../components/CalendarWidget';
 import Link from 'next/link';
 
 interface DashboardStats {
@@ -430,7 +431,7 @@ export default function DashboardPage() {
           </Link>
         </div>
 
-        {/* Recent Activity */}
+        {/* Recent Activity & Calendar */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-slide-up">
           <div className="card p-6">
             <h3 className="h4 text-primary mb-4">Recent Activity</h3>
@@ -458,6 +459,9 @@ export default function DashboardPage() {
               ))}
             </div>
           </div>
+          
+          {/* Calendar Widget */}
+          <CalendarWidget />
 
           {/* Quick Stats */}
           <div className="card p-6">
