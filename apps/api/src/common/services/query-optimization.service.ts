@@ -9,8 +9,8 @@ export class QueryOptimizationService {
   async getOrdersWithDetails(tenantId: string, options: {
     skip?: number;
     take?: number;
-    where?: any;
-    orderBy?: any;
+    where?: Record<string, unknown>;
+    orderBy?: Record<string, unknown>;
   } = {}) {
     return this.prisma.forTenant(tenantId).order.findMany({
       ...options,
@@ -72,8 +72,8 @@ export class QueryOptimizationService {
   async getCustomersWithStats(tenantId: string, options: {
     skip?: number;
     take?: number;
-    where?: any;
-    orderBy?: any;
+    where?: Record<string, unknown>;
+    orderBy?: Record<string, unknown>;
   } = {}) {
     return this.prisma.forTenant(tenantId).customer.findMany({
       ...options,
@@ -109,8 +109,8 @@ export class QueryOptimizationService {
   async getProductsWithStock(tenantId: string, options: {
     skip?: number;
     take?: number;
-    where?: any;
-    orderBy?: any;
+    where?: Record<string, unknown>;
+    orderBy?: Record<string, unknown>;
   } = {}) {
     return this.prisma.forTenant(tenantId).product.findMany({
       ...options,
@@ -262,7 +262,7 @@ export class QueryOptimizationService {
   // Batch operations to prevent N+1 queries
   async batchUpdateOrders(tenantId: string, updates: Array<{
     id: string;
-    data: any;
+    data: Record<string, unknown>;
   }>) {
     const results = [];
     

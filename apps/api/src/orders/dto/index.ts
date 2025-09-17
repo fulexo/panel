@@ -64,12 +64,12 @@ export class CreateOrderDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsObject()
-  shippingAddress?: any;
+  shippingAddress?: Record<string, unknown>;
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsObject()
-  billingAddress?: any;
+  billingAddress?: Record<string, unknown>;
 
   @ApiPropertyOptional()
   @IsOptional()
@@ -120,12 +120,12 @@ export class UpdateOrderDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsObject()
-  shippingAddress?: any;
+  shippingAddress?: Record<string, unknown>;
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsObject()
-  billingAddress?: any;
+  billingAddress?: Record<string, unknown>;
 }
 
 export class OrderQueryDto {

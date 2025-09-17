@@ -13,20 +13,20 @@ export class InboundController {
   @ApiOperation({ summary: 'List inbound shipments' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
-  async list(@CurrentUser() user: any, @Query('page') page = 1, @Query('limit') limit = 50) {
+  async list(@CurrentUser() user: { id: string; email: string; role: string; tenantId: string }, @Query('page') page = 1, @Query('limit') limit = 50) {
     return this.inbound.list(user.tenantId, Number(page), Number(limit));
   }
 
   @Post('shipments')
   @ApiOperation({ summary: 'Create inbound shipment' })
-  async create(@CurrentUser() user: any, @Body() dto: { reference?: string }) {
+  async create(@CurrentUser() user: { id: string; email: string; role: string; tenantId: string }, @Body() dto: { reference?: string }) {
     return this.inbound.create(user.tenantId, dto);
   }
 
   @Post('shipments/:id/items')
   @ApiOperation({ summary: 'Add item to inbound shipment' })
   async addItem(
-    @CurrentUser() user: any,
+    @CurrentUser() user: { id: string; email: string; role: string; tenantId: string },
     @Param('id') id: string,
     @Body() dto: { productId?: string; sku?: string; name?: string; quantity: number },
   ) {
@@ -35,7 +35,7 @@ export class InboundController {
 
   @Post('shipments/:id/receive')
   @ApiOperation({ summary: 'Mark inbound shipment as received and apply stock' })
-  async receive(@CurrentUser() user: any, @Param('id') id: string) {
+  async receive(@CurrentUser() user: { id: string; email: string; role: string; tenantId: string }, @Param('id') id: string) {
     return this.inbound.receive(user.tenantId, id);
   }
 }

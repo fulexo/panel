@@ -12,7 +12,7 @@ export class MonitoringController {
   @Post('errors')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Log error from frontend' })
-  async logError(@Body() errorData: any) {
+  async logError(@Body() errorData: Record<string, unknown>) {
     await this.monitoringService.logError({
       type: errorData.type || 'unknown',
       message: errorData.message || 'Unknown error',
@@ -35,7 +35,7 @@ export class MonitoringController {
   @Post('performance')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Log performance metrics' })
-  async logPerformance(@Body() performanceData: any) {
+  async logPerformance(@Body() performanceData: Record<string, unknown>) {
     await this.monitoringService.logPerformance(
       performanceData.operation,
       performanceData.duration,
@@ -49,7 +49,7 @@ export class MonitoringController {
   @Post('activity')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Log user activity' })
-  async logActivity(@Body() activityData: any) {
+  async logActivity(@Body() activityData: Record<string, unknown>) {
     await this.monitoringService.logUserActivity(
       activityData.userId,
       activityData.action,

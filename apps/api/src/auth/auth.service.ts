@@ -46,7 +46,7 @@ export class AuthService {
     if (!isPasswordValid) {
       // Increment failed attempts
       const failedAttempts = user.failedAttempts + 1;
-      const updates: any = { failedAttempts };
+      const updates: { failedAttempts: number; lockedUntil?: Date } = { failedAttempts };
       
       // Lock account after 5 failed attempts
       if (failedAttempts >= 5) {
@@ -350,7 +350,7 @@ export class AuthService {
     return user;
   }
 
-  async updateUserProfile(userId: string, dto: { name?: string; email?: string; notificationPreferences?: any }) {
+  async updateUserProfile(userId: string, dto: { name?: string; email?: string; notificationPreferences?: Record<string, unknown> }) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
     });
@@ -359,7 +359,7 @@ export class AuthService {
       throw new UnauthorizedException('User not found');
     }
 
-    const updateData: any = {};
+    const updateData: { name?: string; email?: string; notificationPreferences?: Record<string, unknown> } = {};
     
     if (dto.name !== undefined) updateData.name = dto.name;
     if (dto.email !== undefined) {

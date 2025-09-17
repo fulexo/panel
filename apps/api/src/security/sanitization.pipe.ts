@@ -4,8 +4,8 @@ import { validate } from 'class-validator';
 import * as DOMPurify from 'isomorphic-dompurify';
 
 @Injectable()
-export class SanitizationPipe implements PipeTransform<any> {
-  async transform(value: any, { metatype }: ArgumentMetadata) {
+export class SanitizationPipe implements PipeTransform<unknown> {
+  async transform(value: unknown, { metatype }: ArgumentMetadata) {
     if (!metatype || !this.toValidate(metatype)) {
       return value;
     }
@@ -28,7 +28,7 @@ export class SanitizationPipe implements PipeTransform<any> {
     return !types.includes(metatype);
   }
 
-  private sanitizeObject(obj: any): any {
+  private sanitizeObject(obj: unknown): unknown {
     if (obj === null || obj === undefined) {
       return obj;
     }
@@ -46,7 +46,7 @@ export class SanitizationPipe implements PipeTransform<any> {
     }
 
     if (typeof obj === 'object') {
-      const sanitized: any = {};
+      const sanitized: Record<string, unknown> = {};
       for (const key in obj) {
         if (Object.prototype.hasOwnProperty.call(obj, key)) {
           sanitized[key] = this.sanitizeObject(obj[key]);

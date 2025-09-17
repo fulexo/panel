@@ -1,4 +1,8 @@
 import { defineConfig, devices } from '@playwright/test';
+import dotenv from 'dotenv';
+
+// Load test environment variables
+dotenv.config({ path: '.env.test' });
 
 export default defineConfig({
   testDir: './tests/e2e',
@@ -39,11 +43,19 @@ export default defineConfig({
       command: 'cd apps/web && npm run dev',
       port: 3000,
       reuseExistingServer: !process.env.CI,
+      env: {
+        ...process.env,
+        NODE_ENV: 'test',
+      },
     },
     {
       command: 'cd apps/api && npm run dev',
       port: 3001,
       reuseExistingServer: !process.env.CI,
+      env: {
+        ...process.env,
+        NODE_ENV: 'test',
+      },
     },
   ],
 });

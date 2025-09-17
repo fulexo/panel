@@ -56,7 +56,7 @@ export default function InvoicesPage() {
   });
 
   // Token is now handled by httpOnly cookies
-  const api = (path: string, init?: any) => 
+  const api = (path: string, init?: Record<string, unknown>) => 
     fetch(`/api${path}`, {
       headers: { 'Content-Type': 'application/json' },
       ...init
@@ -126,8 +126,8 @@ export default function InvoicesPage() {
         dueDate: '',
       });
       await loadInvoices();
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setSaving(false);
     }
@@ -150,8 +150,8 @@ export default function InvoicesPage() {
 
       setSuccess('Invoice updated successfully');
       await loadInvoices();
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setSaving(false);
     }
@@ -173,8 +173,8 @@ export default function InvoicesPage() {
 
       setSuccess('Invoice deleted successfully');
       await loadInvoices();
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setSaving(false);
     }

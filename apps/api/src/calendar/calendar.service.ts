@@ -11,7 +11,7 @@ export class CalendarService {
   }
 
   async listEvents(tenantId: string, from?: string, to?: string) {
-    const where: any = { tenantId };
+    const where: Record<string, unknown> = { tenantId };
     if (from || to) {
       where.startAt = {};
       if (from) where.startAt.gte = new Date(from);
@@ -44,7 +44,7 @@ export class CalendarService {
     return lines.join('\r\n');
   }
 
-  async createEvent(tenantId: string, dto: any) {
+  async createEvent(tenantId: string, dto: Record<string, unknown>) {
     const ev = await this.runTenant(tenantId, async (db) => db.calendarEvent.create({
       data: {
         tenantId,
@@ -58,7 +58,7 @@ export class CalendarService {
     return ev;
   }
 
-  async updateEvent(tenantId: string, id: string, dto: any) {
+  async updateEvent(tenantId: string, id: string, dto: Record<string, unknown>) {
     const existing = await this.runTenant(tenantId, async (db) => db.calendarEvent.findFirst({ where: { id, tenantId } }));
     if (!existing) throw new NotFoundException('Event not found');
     return this.runTenant(tenantId, async (db) => db.calendarEvent.update({
@@ -115,7 +115,7 @@ export class CalendarService {
     return { message: 'Holiday removed' };
   }
 
-  async saveOAuth(tenantId: string, provider: string, credentialsJson: any) {
+  async saveOAuth(tenantId: string, provider: string, credentialsJson: Record<string, unknown>) {
     const enc = new (require('../crypto').EncryptionService)(process.env['MASTER_KEY_HEX'] || process.env['ENCRYPTION_KEY'] || ''.padEnd(64,'0'));
     const payload = enc.encrypt(JSON.stringify(credentialsJson));
     await this.runTenant(tenantId, async (db) => db.oAuthCredential.upsert({

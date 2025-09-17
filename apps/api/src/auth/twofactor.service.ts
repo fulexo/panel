@@ -25,7 +25,9 @@ export class TwoFactorService {
       if (parsed && parsed.ciphertext && parsed.nonce) {
         return this.enc.decrypt(parsed);
       }
-    } catch {}
+    } catch (error) {
+      // Silent fail for decryption - return original value
+    }
     return value;
   }
 

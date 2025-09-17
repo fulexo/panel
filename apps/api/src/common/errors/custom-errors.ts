@@ -14,7 +14,7 @@ export class BusinessError extends HttpException {
 }
 
 export class ValidationError extends HttpException {
-  constructor(message: string, details?: any) {
+  constructor(message: string, details?: Record<string, unknown>) {
     super(
       {
         errorCode: 'VALIDATION_ERROR',
@@ -73,7 +73,7 @@ export class ResourceNotFoundError extends HttpException {
 }
 
 export class ConflictError extends HttpException {
-  constructor(message: string, details?: any) {
+  constructor(message: string, details?: Record<string, unknown>) {
     super(
       {
         errorCode: 'CONFLICT_ERROR',
@@ -87,7 +87,7 @@ export class ConflictError extends HttpException {
 }
 
 export class ExternalServiceError extends HttpException {
-  constructor(service: string, message: string, originalError?: any) {
+  constructor(service: string, message: string, originalError?: Error | unknown) {
     super(
       {
         errorCode: 'EXTERNAL_SERVICE_ERROR',
@@ -116,7 +116,7 @@ export class RateLimitError extends HttpException {
 }
 
 export class DatabaseError extends HttpException {
-  constructor(operation: string, originalError: any) {
+  constructor(operation: string, originalError: Error | unknown) {
     super(
       {
         errorCode: 'DATABASE_ERROR',

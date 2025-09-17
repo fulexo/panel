@@ -68,7 +68,7 @@ export default class ErrorBoundary extends Component<Props, State> {
     }
   }
 
-  private async logErrorToService(errorData: any) {
+  private async logErrorToService(errorData: Record<string, unknown>) {
     try {
       await fetch('/api/errors', {
         method: 'POST',

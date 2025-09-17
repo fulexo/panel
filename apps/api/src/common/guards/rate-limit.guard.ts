@@ -5,7 +5,7 @@ import { Request } from 'express';
 @Injectable()
 export class CustomRateLimitGuard extends ThrottlerGuard {
   constructor() {
-    super({} as any, {} as any, {} as any);
+    super({} as unknown, {} as unknown, {} as unknown);
   }
 
   protected override async handleRequest(
@@ -49,7 +49,7 @@ export class CustomRateLimitGuard extends ThrottlerGuard {
   protected override generateKey(context: ExecutionContext, _suffix: string, _name: string): string {
     const request = context.switchToHttp().getRequest<Request>();
     const { ip, path, method } = request;
-    const user = (request as any).user;
+    const user = (request as { user?: { id?: string } }).user;
     
     // Include user ID in key if authenticated
     const userKey = user?.id ? `user:${user.id}` : `ip:${ip}`;

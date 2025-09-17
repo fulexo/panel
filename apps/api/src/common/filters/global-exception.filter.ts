@@ -31,7 +31,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       if (typeof exceptionResponse === 'string') {
         message = exceptionResponse;
       } else if (typeof exceptionResponse === 'object' && exceptionResponse !== null) {
-        const responseObj = exceptionResponse as any;
+        const responseObj = exceptionResponse as { message?: string; error?: string; errorCode?: string; details?: unknown };
         message = responseObj.message || responseObj.error || message;
         errorCode = responseObj.errorCode || 'HTTP_ERROR';
         details = responseObj.details || null;
@@ -99,8 +99,8 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       details,
       userAgent: request.get('User-Agent'),
       ip: request.ip,
-      userId: (request as any).user?.id || null,
-      tenantId: (request as any).tenantId || null,
+      userId: (request as { user?: { id?: string } }).user?.id || null,
+      tenantId: (request as { tenantId?: string }).tenantId || null,
     };
 
     if (status >= 500) {

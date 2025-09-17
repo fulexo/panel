@@ -21,7 +21,7 @@ export class OrdersController {
   @ApiQuery({ name: 'search', required: false, type: String })
   @ApiQuery({ name: 'dateFrom', required: false, type: String })
   @ApiQuery({ name: 'dateTo', required: false, type: String })
-  async findAll(@CurrentUser() user: any, @Query() query: OrderQueryDto) {
+  async findAll(@CurrentUser() user: { id: string; email: string; role: string; tenantId: string }, @Query() query: OrderQueryDto) {
     return this.ordersService.findAll(user.tenantId, query, user.role);
   }
 
@@ -30,20 +30,20 @@ export class OrdersController {
   @ApiQuery({ name: 'dateFrom', required: false, type: String })
   @ApiQuery({ name: 'dateTo', required: false, type: String })
   @ApiQuery({ name: 'storeId', required: false, type: String })
-  async getStats(@CurrentUser() user: any, @Query() query: { dateFrom?: string; dateTo?: string; storeId?: string }) {
+  async getStats(@CurrentUser() user: { id: string; email: string; role: string; tenantId: string }, @Query() query: { dateFrom?: string; dateTo?: string; storeId?: string }) {
     return this.ordersService.getOrderStats(user.tenantId, query);
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Get order by ID' })
-  async findOne(@CurrentUser() user: any, @Param('id') id: string) {
+  async findOne(@CurrentUser() user: { id: string; email: string; role: string; tenantId: string }, @Param('id') id: string) {
     return this.ordersService.findOne(user.tenantId, id, user.role);
   }
 
   @Post()
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Create order (admin only)' })
-  async create(@CurrentUser() user: any, @Body() dto: CreateOrderDto) {
+  async create(@CurrentUser() user: { id: string; email: string; role: string; tenantId: string }, @Body() dto: CreateOrderDto) {
     return this.ordersService.create(user.tenantId, dto, user.id);
   }
 
@@ -51,7 +51,7 @@ export class OrdersController {
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Update order' })
   async update(
-    @CurrentUser() user: any,
+    @CurrentUser() user: { id: string; email: string; role: string; tenantId: string },
     @Param('id') id: string,
     @Body() dto: UpdateOrderDto,
   ) {
@@ -61,7 +61,7 @@ export class OrdersController {
   @Delete(':id')
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Delete order (admin only)' })
-  async remove(@CurrentUser() user: any, @Param('id') id: string) {
+  async remove(@CurrentUser() user: { id: string; email: string; role: string; tenantId: string }, @Param('id') id: string) {
     return this.ordersService.remove(user.tenantId, id, user.id);
   }
 
@@ -69,7 +69,7 @@ export class OrdersController {
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Bulk update orders' })
   async bulkUpdate(
-    @CurrentUser() user: any,
+    @CurrentUser() user: { id: string; email: string; role: string; tenantId: string },
     @Body() body: { orderIds: string[]; updates: Partial<UpdateOrderDto> },
   ) {
     return this.ordersService.bulkUpdate(user.tenantId, body.orderIds, body.updates, user.id);
@@ -79,7 +79,7 @@ export class OrdersController {
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Bulk delete orders' })
   async bulkDelete(
-    @CurrentUser() user: any,
+    @CurrentUser() user: { id: string; email: string; role: string; tenantId: string },
     @Body() body: { orderIds: string[] },
   ) {
     return this.ordersService.bulkDelete(user.tenantId, body.orderIds, user.id);
@@ -87,13 +87,13 @@ export class OrdersController {
 
   @Get(':id/timeline')
   @ApiOperation({ summary: 'Get order timeline' })
-  async getTimeline(@CurrentUser() user: any, @Param('id') id: string) {
+  async getTimeline(@CurrentUser() user: { id: string; email: string; role: string; tenantId: string }, @Param('id') id: string) {
     return this.ordersService.getOrderTimeline(user.tenantId, id);
   }
 
   @Get(':id/charges')
   @ApiOperation({ summary: 'List service charges for an order' })
-  async listCharges(@CurrentUser() user: any, @Param('id') id: string) {
+  async listCharges(@CurrentUser() user: { id: string; email: string; role: string; tenantId: string }, @Param('id') id: string) {
     return this.ordersService.listCharges(user.tenantId, id);
   }
 
@@ -101,7 +101,7 @@ export class OrdersController {
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Add a service charge to an order' })
   async addCharge(
-    @CurrentUser() user: any,
+    @CurrentUser() user: { id: string; email: string; role: string; tenantId: string },
     @Param('id') id: string,
     @Body() dto: CreateChargeDto,
   ) {
@@ -112,7 +112,7 @@ export class OrdersController {
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Remove a service charge from an order' })
   async removeCharge(
-    @CurrentUser() user: any,
+    @CurrentUser() user: { id: string; email: string; role: string; tenantId: string },
     @Param('id') id: string,
     @Param('chargeId') chargeId: string,
   ) {
@@ -122,7 +122,7 @@ export class OrdersController {
   @Post(':id/share')
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Create a share link token for order info (email-safe)' })
-  async createShare(@CurrentUser() user: any, @Param('id') id: string) {
+  async createShare(@CurrentUser() user: { id: string; email: string; role: string; tenantId: string }, @Param('id') id: string) {
     return this.ordersService.createShareLink(user.tenantId, id, user.id);
   }
 

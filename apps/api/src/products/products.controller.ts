@@ -19,7 +19,7 @@ export class ProductsController {
   @ApiQuery({ name: 'category', required: false, type: String })
   @ApiQuery({ name: 'storeId', required: false, type: String })
   async list(
-    @CurrentUser() user: any,
+    @CurrentUser() user: { id: string; email: string; role: string; tenantId: string },
     @Query('page') page = 1,
     @Query('limit') limit = 50,
     @Query('search') search?: string,
@@ -32,25 +32,25 @@ export class ProductsController {
 
   @Get(':id')
   @ApiOperation({ summary: 'Get product by ID' })
-  async get(@CurrentUser() user: any, @Param('id') id: string) {
+  async get(@CurrentUser() user: { id: string; email: string; role: string; tenantId: string }, @Param('id') id: string) {
     return this.products.get(user.tenantId, id);
   }
 
   @Post()
   @ApiOperation({ summary: 'Create product' })
-  async create(@CurrentUser() user: any, @Body() dto: any) {
+  async create(@CurrentUser() user: { id: string; email: string; role: string; tenantId: string }, @Body() dto: Record<string, unknown>) {
     return this.products.create(user.tenantId, dto);
   }
 
   @Put(':id')
   @ApiOperation({ summary: 'Update product' })
-  async update(@CurrentUser() user: any, @Param('id') id: string, @Body() dto: any) {
+  async update(@CurrentUser() user: { id: string; email: string; role: string; tenantId: string }, @Param('id') id: string, @Body() dto: Record<string, unknown>) {
     return this.products.update(user.tenantId, id, dto);
   }
 
   @Delete(':id')
   @ApiOperation({ summary: 'Delete product' })
-  async delete(@CurrentUser() user: any, @Param('id') id: string) {
+  async delete(@CurrentUser() user: { id: string; email: string; role: string; tenantId: string }, @Param('id') id: string) {
     return this.products.delete(user.tenantId, id);
   }
 
@@ -58,8 +58,8 @@ export class ProductsController {
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Bulk update products' })
   async bulkUpdate(
-    @CurrentUser() user: any,
-    @Body() body: { productIds: string[]; updates: any },
+    @CurrentUser() user: { id: string; email: string; role: string; tenantId: string },
+    @Body() body: { productIds: string[]; updates: Record<string, unknown> },
   ) {
     return this.products.bulkUpdate(user.tenantId, body.productIds, body.updates, user.id);
   }
@@ -68,7 +68,7 @@ export class ProductsController {
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Bulk delete products' })
   async bulkDelete(
-    @CurrentUser() user: any,
+    @CurrentUser() user: { id: string; email: string; role: string; tenantId: string },
     @Body() body: { productIds: string[] },
   ) {
     return this.products.bulkDelete(user.tenantId, body.productIds, user.id);

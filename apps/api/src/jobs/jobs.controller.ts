@@ -11,7 +11,7 @@ export class JobsController {
   @HttpCode(202)
   @ApiOperation({ summary: 'Enqueue a background job' })
   @Roles('ADMIN')
-  async enqueue(@CurrentUser() user: any, @Body() body: { name: string; data?: any; }){
+  async enqueue(@CurrentUser() user: { id: string; email: string; role: string; tenantId: string }, @Body() body: { name: string; data?: Record<string, unknown>; }){
     const { Queue } = await import('bullmq');
     const Redis = (await import('ioredis')).default;
     const connection = new Redis(process.env['REDIS_URL'] || 'redis://valkey:6379/0', { maxRetriesPerRequest: null });

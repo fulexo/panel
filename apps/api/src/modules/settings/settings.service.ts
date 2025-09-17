@@ -33,8 +33,8 @@ export class SettingsService {
     private encryption: EncryptionService,
   ) {}
 
-  async getSettings(tenantId: string, category?: string): Promise<any[]> {
-    const where: any = { tenantId };
+  async getSettings(tenantId: string, category?: string): Promise<Record<string, unknown>[]> {
+    const where: Record<string, unknown> = { tenantId };
     if (category) where.category = category;
 
     const settings = await this.prisma.settings.findMany({ where });
@@ -54,7 +54,7 @@ export class SettingsService {
   ): Promise<Partial<SettingCategory[K]>> {
     const settings = await this.getSettings(tenantId, category);
     
-    const result: any = {};
+    const result: Record<string, unknown> = {};
     settings.forEach(setting => {
       result[setting.key] = setting.value;
     });
@@ -87,8 +87,8 @@ export class SettingsService {
     value: string | null,
     isSecret: boolean = false,
     updatedBy?: string,
-    metadata?: any
-  ): Promise<any> {
+    metadata?: Record<string, unknown>
+  ): Promise<Record<string, unknown>> {
     const encryptedValue = isSecret && value 
       ? this.encryption.encrypt(value)
       : value;

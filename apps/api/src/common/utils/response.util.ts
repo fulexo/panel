@@ -47,7 +47,7 @@ export class ResponseUtil {
     message: string,
     statusCode: number = 400,
     path: string = '/',
-    details?: any
+    details?: Record<string, unknown>
   ): ErrorResponse {
     return {
       success: false,

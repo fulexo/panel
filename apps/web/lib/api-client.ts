@@ -1,4 +1,4 @@
-interface ApiResponse<T = any> {
+interface ApiResponse<T = unknown> {
   success: boolean;
   data?: T;
   message?: string;
@@ -15,7 +15,7 @@ interface ApiError {
   statusCode: number;
   timestamp: string;
   path: string;
-  details?: any;
+  details?: Record<string, unknown>;
 }
 
 class ApiClient {
@@ -89,7 +89,7 @@ class ApiClient {
   // POST request
   async post<T>(
     endpoint: string,
-    data?: any,
+    data?: Record<string, unknown>,
     headers?: Record<string, string>
   ): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, {
@@ -102,7 +102,7 @@ class ApiClient {
   // PUT request
   async put<T>(
     endpoint: string,
-    data?: any,
+    data?: Record<string, unknown>,
     headers?: Record<string, string>
   ): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, {
@@ -123,7 +123,7 @@ class ApiClient {
   // PATCH request
   async patch<T>(
     endpoint: string,
-    data?: any,
+    data?: Record<string, unknown>,
     headers?: Record<string, string>
   ): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, {

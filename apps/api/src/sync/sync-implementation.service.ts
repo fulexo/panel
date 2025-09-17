@@ -129,7 +129,7 @@ export class SyncImplementationService {
   }
 
   // Helper methods for upserting data
-  private async upsertOrder(accountId: string, orderData: any): Promise<void> {
+  private async upsertOrder(accountId: string, orderData: Record<string, unknown>): Promise<void> {
     // Implement order upsert logic
     const existing = await this.prisma.order.findFirst({
       where: {
@@ -153,7 +153,7 @@ export class SyncImplementationService {
     }
   }
 
-  private async upsertShipment(_accountId: string, _shipmentData: any): Promise<void> {
+  private async upsertShipment(_accountId: string, _shipmentData: Record<string, unknown>): Promise<void> {
     // Implement shipment upsert logic
   }
 
