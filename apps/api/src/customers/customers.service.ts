@@ -144,7 +144,9 @@ export class CustomersService {
   async create(tenantId: string, body: CreateCustomerDto) {
     return this.runTenant(tenantId, async (db) => db.customer.create({ 
       data: { 
-        tenantId, 
+        tenant: {
+          connect: { id: tenantId }
+        },
         email: body.email || null, 
         emailNormalized: body.email ? String(body.email).toLowerCase() : null, 
         name: body.name || null, 
@@ -159,7 +161,7 @@ export class CustomersService {
         country: body['country'] || null,
         notes: body['notes'] || null,
         tags: body['tags'] || [],
-      } as Record<string, unknown> 
+      } 
     }));
   }
 

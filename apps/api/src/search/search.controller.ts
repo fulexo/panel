@@ -2,6 +2,7 @@ import { Controller, Get, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { SearchService } from './search.service';
+import { AuthenticatedUser } from '../auth/types/user.types';
 
 @ApiTags('search')
 @ApiBearerAuth()
@@ -15,7 +16,7 @@ export class SearchController {
   @ApiQuery({ name: 'types', required: false, type: String, description: 'Comma-separated: orders,products,customers' })
   @ApiQuery({ name: 'limitPerType', required: false, type: Number })
   async query(
-    @CurrentUser() user: Record<string, unknown>,
+    @CurrentUser() user: AuthenticatedUser,
     @Query('q') q: string,
     @Query('types') types?: string,
     @Query('limitPerType') limitPerType: number = 10,

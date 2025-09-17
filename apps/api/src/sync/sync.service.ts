@@ -244,7 +244,7 @@ export class SyncService {
     });
 
     for (const rule of rules) {
-      if (this.matchesRule(remoteOrder, rule.conditionsJson)) {
+      if (this.matchesRule(remoteOrder as any, rule.conditionsJson as any)) {
         return rule.tenantId;
       }
     }
@@ -255,7 +255,7 @@ export class SyncService {
   private matchesRule(order: Record<string, unknown>, conditions: Record<string, unknown>): boolean {
     if (!conditions || !conditions.conditions) return false;
 
-    for (const condition of conditions.conditions) {
+    for (const condition of (conditions.conditions as any) || []) {
       const fieldValue = this.getFieldValue(order, condition.field);
       
       switch (condition.op) {

@@ -142,14 +142,18 @@ export class BillingService {
   async createInvoice(tenantId: string, dto: Record<string, unknown>) {
     return this.runTenant(tenantId, async (db) => db.invoice.create({
       data: {
-        tenantId,
-        orderId: dto['orderId'],
-        number: dto['number'],
+        tenant: {
+          connect: { id: tenantId }
+        },
+        order: {
+          connect: { id: dto['orderId'] as string }
+        },
+        number: dto['number'] as string,
         total: new Prisma.Decimal(dto['total'] as string),
-        currency: dto['currency'] || 'USD',
+        currency: (dto['currency'] as string) || 'USD',
         status: 'draft',
         dueDate: dto['dueDate'] ? new Date(dto['dueDate'] as string) : null,
-      } as Record<string, unknown>,
+      },
     }));
   }
 

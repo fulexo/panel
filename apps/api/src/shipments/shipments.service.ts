@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { PrismaService } from '../prisma.service';
 import { PrismaClient } from '@prisma/client';
 import { Prisma } from '@prisma/client';
+import { toPrismaJsonValue } from '../common/utils/prisma-json.util';
 
 @Injectable()
 export class ShipmentsService {
@@ -97,15 +98,20 @@ export class ShipmentsService {
 
     return this.runTenant(tenantId, async (db) => db.shipment.create({
       data: {
-        orderId: dto.orderId,
-        carrier: dto.carrier,
-        trackingNo: dto.trackingNo,
-        status: dto.status || 'pending',
+        order: {
+          connect: { id: dto.orderId as string }
+        },
+        tenant: {
+          connect: { id: tenantId }
+        },
+        carrier: dto.carrier as string,
+        trackingNo: dto.trackingNo as string,
+        status: (dto.status as string) || 'pending',
         weight: dto.weight ? new Prisma.Decimal(dto.weight as string) : null,
-        dimensions: dto.dimensions,
+        dimensions: dto.dimensions ? toPrismaJsonValue(dto.dimensions) : undefined,
         ...(dto.status === 'shipped' && { shippedAt: new Date() }),
         ...(dto.status === 'delivered' && { deliveredAt: new Date() }),
-      } as Record<string, unknown>,
+      },
     }));
   }
 

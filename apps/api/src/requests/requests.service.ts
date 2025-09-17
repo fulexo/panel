@@ -37,7 +37,7 @@ export class RequestsService {
         type: dto.type,
         priority: dto.priority || 'normal',
         status: 'SUBMITTED',
-        payload: toPrismaJsonValue(dto.payload) as Record<string, unknown>,
+        payload: toPrismaJsonValue(dto.payload) || Prisma.JsonNull,
       },
     }));
 

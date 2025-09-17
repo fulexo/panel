@@ -4,6 +4,7 @@ import { PrismaClient } from '@prisma/client';
 import { Prisma } from '@prisma/client';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
+import { toPrismaJsonValue } from '../common/utils/prisma-json.util';
 // import { ProductQueryDto } from './dto/product-query.dto';
 
 @Injectable()
@@ -71,19 +72,21 @@ export class ProductsService {
 
     return this.runTenant(tenantId, async (db) => db.product.create({
       data: {
-        tenantId,
+        tenant: {
+          connect: { id: tenantId }
+        },
         sku: dto.sku,
         name: dto.name,
         description: dto.description,
         price: dto.price !== undefined && dto.price !== null ? new Prisma.Decimal(dto.price) : null,
         stock: dto.stock !== undefined && dto.stock !== null ? parseInt(dto.stock) : null,
         weight: dto.weight !== undefined && dto.weight !== null ? new Prisma.Decimal(dto.weight) : null,
-        dimensions: dto.dimensions,
+        dimensions: dto.dimensions ? toPrismaJsonValue(dto.dimensions) : undefined,
         images: dto.images || [],
         tags: dto.tags || [],
         active: dto.active !== undefined ? dto.active : true,
         categoryId: dto.categoryId,
-      } as Record<string, unknown>,
+      },
     }));
   }
 
