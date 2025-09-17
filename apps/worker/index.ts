@@ -1,3 +1,15 @@
+/**
+ * @fileoverview Fulexo Worker Service
+ * @description Background job processor for Fulexo platform that handles:
+ * - WooCommerce data synchronization
+ * - Order, product, and shipment processing
+ * - Webhook event processing
+ * - Cache cleanup and maintenance tasks
+ * - Report generation and email notifications
+ * @author Fulexo Team
+ * @version 1.0.0
+ */
+
 import { Worker, QueueEvents, Queue } from 'bullmq';
 import Redis from 'ioredis';
 import * as client from 'prom-client';
@@ -8,7 +20,10 @@ import { validateEnvironment, validateEnvOnStartup } from './env.validation.js';
 import { logger } from './lib/logger';
 import fetch from 'node-fetch';
 
-// Initialize Prometheus metrics
+/**
+ * Initialize Prometheus metrics collection
+ * Collects default Node.js metrics (memory, CPU, etc.)
+ */
 client.collectDefaultMetrics();
 
 const jobProcessedCounter = new client.Counter({
@@ -130,10 +145,16 @@ const jobProcessors = {
   // WooCommerce sync placeholders
   'woo-sync-orders': async (job) => {
     const { storeId } = job.data;
+    if (!storeId) {
+      throw new Error('Store ID is required for woo-sync-orders job');
+    }
+    
     const start = Date.now();
     // Syncing WooCommerce orders for store
     const store = await prisma.wooStore.findUnique({ where: { id: storeId } });
-    if(!store) { throw new Error('Store not found'); }
+    if(!store) { 
+      throw new Error(`Store not found with ID: ${storeId}`); 
+    }
     // Determine last sync
     const last = (store.lastSync && store.lastSync.ordersUpdatedAfter) ? store.lastSync.ordersUpdatedAfter : null;
     const since = last ? new Date(last) : new Date(Date.now() - 7*24*60*60*1000);
@@ -219,16 +240,31 @@ const jobProcessors = {
   },
   'woo-sync-products': async (job) => {
     const { storeId } = job.data;
+    if (!storeId) {
+      throw new Error('Store ID is required for woo-sync-products job');
+    }
+    
     // Syncing WooCommerce products for store
     const store = await prisma.wooStore.findUnique({ where: { id: storeId } });
-    if(!store) throw new Error('Store not found');
-    let page = 1; let imported = 0;
-    while(true){
+    if(!store) { 
+      throw new Error(`Store not found with ID: ${storeId}`); 
+    }
+    let page = 1; 
+    let imported = 0;
+    const maxPages = 100; // Safety limit to prevent infinite loops
+    
+    while(page <= maxPages){
       const url = new URL(`/wp-json/wc/${store.apiVersion}/products`, store.baseUrl);
       url.searchParams.set('per_page','50');
       url.searchParams.set('page', String(page));
-      const res = await fetch(url, { headers: { Authorization: 'Basic '+Buffer.from(store.consumerKey+':'+store.consumerSecret).toString('base64') } });
-      if(!res.ok) throw new Error('Woo HTTP '+res.status);
+      const res = await fetch(url, { 
+        headers: { Authorization: 'Basic '+Buffer.from(store.consumerKey+':'+store.consumerSecret).toString('base64') },
+        timeout: 30000 // 30 second timeout
+      } as any);
+      if(!res.ok) { 
+        logger.error(`WooCommerce API error: ${res.status} ${res.statusText}`);
+        throw new Error('Woo HTTP '+res.status); 
+      }
       const list = await res.json();
       if(!Array.isArray(list) || list.length===0) break;
       for(const p of list){
@@ -251,15 +287,34 @@ const jobProcessors = {
         imported++;
       }
       page++;
+      
+      // Add delay between requests to avoid rate limiting
+      if (page <= maxPages) {
+        await new Promise(resolve => setTimeout(resolve, 100)); // 100ms delay
+      }
     }
     return { success: true, storeId, imported };
   },
   'process-webhook-events': async () => {
     // Poll and process pending webhook events
-    const pending = await prisma.webhookEvent.findMany({ where: { status: 'received', provider: 'woocommerce' }, take: 50, orderBy: { createdAt: 'asc' } });
+    const pending = await prisma.webhookEvent.findMany({ 
+      where: { status: 'received', provider: 'woocommerce' }, 
+      take: 50, 
+      orderBy: { createdAt: 'asc' } 
+    });
+    
+    if (!pending || pending.length === 0) {
+      return { success: true, processed: 0 };
+    }
+    
     for(const evt of pending){
+      if (!evt.id || !evt.topic || !evt.payload) {
+        logger.warn('Invalid webhook event, skipping:', evt);
+        continue;
+      }
+      
       try {
-        if(evt.topic?.startsWith('order.')){
+        if(evt.topic.startsWith('order.')){
           const o = evt.payload;
           const store = await prisma.wooStore.findUnique({ where: { id: evt.storeId } });
           if(!store) throw new Error('Store not found for webhook');

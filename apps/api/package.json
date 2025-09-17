@@ -1,6 +1,7 @@
 {
   "name": "fulexo-api",
   "version": "1.0.0",
+  "description": "Fulexo Platform - NestJS Backend API",
   "type": "commonjs",
   "main": "dist/main.js",
   "scripts": {

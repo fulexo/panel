@@ -466,8 +466,8 @@ export default function CustomersPage() {
 
   if (loading) {
     return (
-    <ProtectedRoute>
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <ProtectedRoute>
+        <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <div className="spinner"></div>
           <div className="text-lg text-foreground">Loading customers...</div>

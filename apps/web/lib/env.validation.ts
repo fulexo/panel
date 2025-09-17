@@ -1,24 +1,13 @@
-import { SharedEnvironmentVariables, validateSharedEnvironment } from '../shared-env.validation';
-
-// Use shared environment validation for consistency
-export const EnvironmentVariables = SharedEnvironmentVariables;
-
-export function validateEnvironment(config: Record<string, unknown>) {
-  return validateSharedEnvironment(config);
-}
-
 export function validateEnvOnStartup() {
-  try {
-    const config = validateEnvironment(process.env);
-    // Web environment variables validated successfully
-    return config;
-  } catch (error) {
-    // Web environment validation failed
-    console.error('Web environment validation failed:', error.message);
-    
-    // Only exit in production, allow development to continue with warnings
-    if (process.env.NODE_ENV === 'production') {
-      process.exit(1);
-    }
+  // Basic environment validation for frontend
+  const requiredEnvVars = [
+    'NEXT_PUBLIC_API_BASE',
+    'NEXT_PUBLIC_APP_URL',
+  ];
+
+  const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
+  
+  if (missingVars.length > 0) {
+    throw new Error(`Missing required environment variables: ${missingVars.join(', ')}`);
   }
 }

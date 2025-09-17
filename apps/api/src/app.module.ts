@@ -1,3 +1,11 @@
+/**
+ * @fileoverview Main application module for Fulexo API
+ * @description This module serves as the root module that imports and configures
+ * all feature modules, middleware, and global providers for the Fulexo platform.
+ * @author Fulexo Team
+ * @version 1.0.0
+ */
+
 import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_FILTER, APP_GUARD } from '@nestjs/core';
@@ -34,6 +42,27 @@ import { MonitoringService } from './common/services/monitoring.service';
 import { MonitoringModule } from './monitoring/monitoring.module';
 import { SettingsModule } from './modules/settings/settings.module';
 
+/**
+ * Main application module that configures the entire Fulexo API
+ * 
+ * This module imports all feature modules and configures:
+ * - Global configuration with environment validation
+ * - Rate limiting and throttling
+ * - Authentication and authorization
+ * - All business logic modules (orders, products, etc.)
+ * - Security and monitoring modules
+ * - Global exception handling and rate limiting
+ * 
+ * @class AppModule
+ * @implements {NestModule} Implements NestModule for middleware configuration
+ * 
+ * @example
+ * ```typescript
+ * // The module is automatically imported by the main.ts bootstrap function
+ * // All routes are protected by the CookieAuthMiddleware
+ * // Rate limiting is applied globally via RateLimitGuard
+ * ```
+ */
 @Module({
   imports: [
     ConfigModule.forRoot({

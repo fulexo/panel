@@ -1,7 +1,7 @@
 import { Controller, Get, HttpStatus, Res } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { Response } from 'express';
-import { PrismaService } from '../common/prisma/prisma.service';
+import { PrismaService } from '../prisma.service';
 import { LoggingService } from '../common/services/logging.service';
 
 @ApiTags('health')
