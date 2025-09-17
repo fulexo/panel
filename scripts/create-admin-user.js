@@ -26,7 +26,7 @@ async function createAdminUser() {
     }
 
     // Şifreyi hash'le
-    const passwordHash = await bcrypt.hash(process.env.ADMIN_PASSWORD || 'Adem_123*', 10);
+    const passwordHash = await bcrypt.hash(process.env.ADMIN_PASSWORD || 'demo123', 10);
 
     // Admin kullanıcısını oluştur/güncelle
     const admin = await prisma.user.upsert({
@@ -46,7 +46,7 @@ async function createAdminUser() {
 
     console.log('✅ Admin kullanıcısı hazırlandı:');
     console.log('   Email: fulexo@fulexo.com');
-    console.log('   Şifre: Adem_123*');
+    console.log('   Şifre: demo123');
     console.log('   Rol: ADMIN');
 
     // Eski admin kullanıcısını sil (varsa)

@@ -97,7 +97,7 @@ export default function LoginPage() {
             </div>
 
             {error && (
-              <div className="bg-destructive/10 border border-destructive text-destructive px-4 py-3 rounded-lg animate-slide-down">
+              <div className="alert alert-error animate-slide-down">
                 <div className="flex items-center gap-2">
                   <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -110,11 +110,11 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-3 px-4 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed btn-animate"
+              className="w-full btn btn-primary btn-lg btn-animate"
             >
               {loading ? (
                 <div className="flex items-center justify-center gap-2">
-                  <div className="spinner w-4 h-4"></div>
+                  <div className="spinner-sm"></div>
                   <span>Signing in...</span>
                 </div>
               ) : (
@@ -125,10 +125,10 @@ export default function LoginPage() {
 
           {/* Demo Credentials */}
           <div className="mt-6 p-4 bg-accent/50 rounded-lg">
-            <h3 className="text-sm font-medium text-foreground mb-2">Demo Credentials</h3>
-            <div className="text-xs text-muted-foreground space-y-1">
+            <h3 className="text-sm font-medium text-primary mb-2">Demo Credentials</h3>
+            <div className="text-xs text-muted space-y-1">
               <div><strong>Email:</strong> fulexo@fulexo.com</div>
-              <div><strong>Password:</strong> Adem_123*</div>
+              <div><strong>Password:</strong> demo123</div>
             </div>
           </div>
         </div>

@@ -648,7 +648,7 @@ export default function CustomerDetailPage() {
                         value={editForm.email}
                         onChange={(e) => setEditForm(prev => ({ ...prev, email: e.target.value }))}
                         className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
-                        placeholder="customer@example.com"
+                        placeholder="customer@fulexo.com"
                       />
                     </div>
                     <div>

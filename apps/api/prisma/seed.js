@@ -49,53 +49,28 @@ async function main() {
     });
     console.log('✅ Created tenant:', tenant.name);
     // Create admin user
-    const adminPassword = await bcrypt.hash(process.env.ADMIN_PASSWORD || 'Admin123!', 10);
+    const adminPassword = await bcrypt.hash(process.env.ADMIN_PASSWORD || 'demo123', 10);
     const admin = await prisma.user.upsert({
-        where: { email: 'admin@example.com' },
+        where: { email: 'fulexo@fulexo.com' },
         update: {},
         create: {
-            email: 'admin@example.com',
+            email: 'fulexo@fulexo.com',
             passwordHash: adminPassword,
-            role: 'FULEXO_ADMIN',
+            role: 'ADMIN',
             tenantId: tenant.id,
         },
     });
     console.log('✅ Created admin user:', admin.email);
-    // Create staff user
-    const staffPassword = await bcrypt.hash(process.env.STAFF_PASSWORD || 'Staff123!', 10);
-    const staff = await prisma.user.upsert({
-        where: { email: 'staff@example.com' },
-        update: {},
-        create: {
-            email: 'staff@example.com',
-            passwordHash: staffPassword,
-            role: 'FULEXO_STAFF',
-            tenantId: tenant.id,
-        },
-    });
-    console.log('✅ Created staff user:', staff.email);
-    // Create customer admin user
-    const customerAdminPassword = await bcrypt.hash(process.env.CUSTOMER_ADMIN_PASSWORD || 'Customer123!', 10);
-    const customerAdmin = await prisma.user.upsert({
-        where: { email: 'customer.admin@example.com' },
-        update: {},
-        create: {
-            email: 'customer.admin@example.com',
-            passwordHash: customerAdminPassword,
-            role: 'CUSTOMER_ADMIN',
-            tenantId: tenant.id,
-        },
-    });
-    console.log('✅ Created customer admin:', customerAdmin.email);
+    
     // Create customer user
-    const customerPassword = await bcrypt.hash(process.env.CUSTOMER_PASSWORD || 'Customer123!', 10);
+    const customerPassword = await bcrypt.hash(process.env.CUSTOMER_PASSWORD || 'demo123', 10);
     const customer = await prisma.user.upsert({
-        where: { email: 'customer@example.com' },
+        where: { email: 'customer@fulexo.com' },
         update: {},
         create: {
-            email: 'customer@example.com',
+            email: 'customer@fulexo.com',
             passwordHash: customerPassword,
-            role: 'CUSTOMER_USER',
+            role: 'CUSTOMER',
             tenantId: tenant.id,
         },
     });
@@ -159,8 +134,8 @@ async function main() {
         {
             tenantId: tenant.id,
             name: 'John Doe',
-            email: 'john.doe@example.com',
-            emailNormalized: 'john.doe@example.com',
+            email: 'john.doe@fulexo.com',
+            emailNormalized: 'john.doe@fulexo.com',
             phoneE164: '+905551234567',
             company: 'Acme Corp',
             city: 'Istanbul',
@@ -169,8 +144,8 @@ async function main() {
         {
             tenantId: tenant.id,
             name: 'Jane Smith',
-            email: 'jane.smith@example.com',
-            emailNormalized: 'jane.smith@example.com',
+            email: 'jane.smith@fulexo.com',
+            emailNormalized: 'jane.smith@fulexo.com',
             phoneE164: '+905559876543',
             company: 'Tech Solutions',
             city: 'Ankara',
@@ -212,10 +187,8 @@ async function main() {
     }
     console.log('🎉 Database seed completed successfully!');
     console.log('\n📝 Login credentials:');
-    console.log('Admin: admin@example.com / Admin123!');
-    console.log('Staff: staff@example.com / Staff123!');
-    console.log('Customer Admin: customer.admin@example.com / Customer123!');
-    console.log('Customer: customer@example.com / Customer123!');
+    console.log('Admin: fulexo@fulexo.com / demo123');
+    console.log('Customer: customer@fulexo.com / demo123');
 }
 main()
     .catch((e) => {

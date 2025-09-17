@@ -257,8 +257,8 @@ export default function StoresPage() {
 
   const getStatusColor = (active: boolean) => {
     return active 
-      ? 'bg-green-500/10 text-green-500 border-green-500/20'
-      : 'bg-red-500/10 text-red-500 border-red-500/20';
+      ? 'badge-success'
+      : 'badge-error';
   };
 
   const getStatusIcon = (active: boolean) => {
@@ -283,14 +283,14 @@ export default function StoresPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 animate-fade-in">
           <div>
-            <h1 className="mobile-heading text-foreground">WooCommerce Stores</h1>
-            <p className="text-muted-foreground mobile-text">
+            <h1 className="h1 text-primary">WooCommerce Stores</h1>
+            <p className="text-secondary mobile-text">
               Manage your WooCommerce store integrations ({stores.length} stores)
             </p>
           </div>
           <button 
             onClick={() => setShowCreateForm(!showCreateForm)}
-            className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors btn-animate"
+            className="btn btn-primary btn-md btn-animate"
           >
             + Add Store
           </button>
@@ -298,7 +298,7 @@ export default function StoresPage() {
 
         {/* Error Message */}
         {error && (
-          <div className="bg-destructive/10 border border-destructive text-destructive px-4 py-3 rounded-lg animate-slide-down">
+          <div className="alert alert-error animate-slide-down">
             <div className="flex items-center gap-2">
               <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -310,8 +310,8 @@ export default function StoresPage() {
 
         {/* Create Store Form */}
         {showCreateForm && (
-          <div className="bg-card p-6 rounded-lg border border-border animate-slide-down">
-            <h2 className="text-lg font-semibold text-foreground mb-4">Add New WooCommerce Store</h2>
+          <div className="card p-6 animate-slide-down">
+            <h2 className="h4 text-primary mb-4">Add New WooCommerce Store</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">Store Name</label>

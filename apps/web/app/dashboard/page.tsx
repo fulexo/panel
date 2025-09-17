@@ -49,8 +49,8 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const api = (path: string, init?: any) => 
-    fetch(`${process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:3000'}${path}`, {
+  const api = (path: string, init?: RequestInit) => 
+    fetch(`/api${path}`, {
       credentials: 'include', // Include httpOnly cookies
       headers: { 'Content-Type': 'application/json' },
       ...init
@@ -103,7 +103,15 @@ export default function DashboardPage() {
           const activityData = await activityResponse.json();
           const recentOrders = activityData?.data || [];
           
-          const activities: RecentActivity[] = recentOrders.map((order: any, index: number) => ({
+          const activities: RecentActivity[] = recentOrders.map((order: {
+            id: string;
+            externalOrderNo?: string;
+            customerName?: string;
+            customerEmail?: string;
+            createdAt: string;
+            status?: string;
+            storeName?: string;
+          }, index: number) => ({
             id: order.id,
             type: 'order' as const,
             title: `Order #${order.externalOrderNo || order.id.slice(0, 8)}`,
@@ -166,14 +174,15 @@ export default function DashboardPage() {
 
   const getStatusColor = (status: string) => {
     const colors = {
-      pending: 'text-yellow-500',
-      processing: 'text-blue-500',
-      completed: 'text-green-500',
-      shipped: 'text-green-500',
-      delivered: 'text-green-500',
-      cancelled: 'text-red-500'
+      pending: 'status-pending',
+      processing: 'status-processing',
+      completed: 'status-completed',
+      shipped: 'status-shipped',
+      delivered: 'status-delivered',
+      cancelled: 'status-cancelled',
+      failed: 'status-failed'
     };
-    return colors[status as keyof typeof colors] || 'text-gray-500';
+    return colors[status as keyof typeof colors] || 'badge-default';
   };
 
   // Get status counts from breakdown
@@ -202,10 +211,10 @@ export default function DashboardPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 animate-fade-in">
           <div>
-            <h1 className="mobile-heading text-foreground">
+            <h1 className="h1 text-primary">
               Welcome back, {user?.email?.split('@')[0]}! 👋
             </h1>
-            <p className="text-muted-foreground mobile-text">
+            <p className="text-secondary mobile-text">
               Here's your business overview for today
             </p>
           </div>
@@ -242,7 +251,7 @@ export default function DashboardPage() {
 
         {/* Error Message */}
         {error && (
-          <div className="bg-destructive/10 border border-destructive text-destructive px-4 py-3 rounded-lg animate-slide-down">
+          <div className="alert alert-error animate-slide-down">
             <div className="flex items-center gap-2">
               <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -254,27 +263,27 @@ export default function DashboardPage() {
 
         {/* WooCommerce Stores */}
         {stores.length > 0 && (
-          <div className="bg-card p-6 rounded-lg border border-border animate-slide-up">
+          <div className="card p-6 animate-slide-up">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-foreground">WooCommerce Stores</h2>
-              <Link href="/stores" className="text-sm text-primary hover:text-primary/80">
+              <h2 className="h3 text-primary">WooCommerce Stores</h2>
+              <Link href="/stores" className="btn btn-outline btn-sm">
                 Manage Stores →
               </Link>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {stores.map((store) => (
-                <div key={store.id} className="bg-muted/50 p-4 rounded-lg border border-border">
+                <div key={store.id} className="card p-4 card-hover">
                   <div className="flex items-center justify-between mb-2">
-                    <h3 className="font-medium text-foreground">{store.name}</h3>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      store.active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                    <h3 className="h5 text-primary">{store.name}</h3>
+                    <span className={`badge ${
+                      store.active ? 'badge-success' : 'badge-error'
                     }`}>
                       {store.active ? 'Active' : 'Inactive'}
                     </span>
                   </div>
-                  <p className="text-sm text-muted-foreground mb-2">{store.baseUrl}</p>
+                  <p className="text-muted mb-2">{store.baseUrl}</p>
                   {store.lastSync && (
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-subtle text-xs">
                       Last sync: {new Date(store.lastSync).toLocaleString()}
                     </p>
                   )}
@@ -286,25 +295,25 @@ export default function DashboardPage() {
 
         {/* Key Metrics */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 animate-slide-up">
-          <div className="bg-card p-6 rounded-lg border border-border card-hover">
+          <div className="card p-6 card-hover">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground mb-1">Total Orders</p>
-                <p className="text-3xl font-bold text-foreground">{stats?.totalOrders || 0}</p>
-                <p className="text-xs text-muted-foreground mt-1">All time</p>
+                <p className="text-sm text-muted mb-1">Total Orders</p>
+                <p className="h2 text-primary">{stats?.totalOrders || 0}</p>
+                <p className="text-subtle text-xs mt-1">All time</p>
               </div>
-              <div className="p-3 bg-blue-500/10 rounded-lg">
+              <div className="p-3 bg-primary/10 rounded-lg">
                 <span className="text-2xl">📦</span>
               </div>
             </div>
           </div>
 
-          <div className="bg-card p-6 rounded-lg border border-border card-hover">
+          <div className="card p-6 card-hover">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground mb-1">Total Revenue</p>
-                <p className="text-3xl font-bold text-foreground">{formatCurrency(stats?.totalRevenue || 0)}</p>
-                <p className="text-xs text-muted-foreground mt-1">All time</p>
+                <p className="text-sm text-muted mb-1">Total Revenue</p>
+                <p className="h2 text-primary">{formatCurrency(stats?.totalRevenue || 0)}</p>
+                <p className="text-subtle text-xs mt-1">All time</p>
               </div>
               <div className="p-3 bg-green-500/10 rounded-lg">
                 <span className="text-2xl">💰</span>
@@ -312,12 +321,12 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="bg-card p-6 rounded-lg border border-border card-hover">
+          <div className="card p-6 card-hover">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground mb-1">Pending Orders</p>
-                <p className="text-3xl font-bold text-foreground">{pendingOrders}</p>
-                <p className="text-xs text-muted-foreground mt-1">Needs attention</p>
+                <p className="text-sm text-muted mb-1">Pending Orders</p>
+                <p className="h2 text-primary">{pendingOrders}</p>
+                <p className="text-subtle text-xs mt-1">Needs attention</p>
               </div>
               <div className="p-3 bg-yellow-500/10 rounded-lg">
                 <span className="text-2xl">⏳</span>
@@ -325,12 +334,12 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="bg-card p-6 rounded-lg border border-border card-hover">
+          <div className="card p-6 card-hover">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground mb-1">Completed</p>
-                <p className="text-3xl font-bold text-foreground">{completedOrders}</p>
-                <p className="text-xs text-muted-foreground mt-1">Successfully processed</p>
+                <p className="text-sm text-muted mb-1">Completed</p>
+                <p className="h2 text-primary">{completedOrders}</p>
+                <p className="text-subtle text-xs mt-1">Successfully processed</p>
               </div>
               <div className="p-3 bg-green-500/10 rounded-lg">
                 <span className="text-2xl">✅</span>
@@ -341,15 +350,15 @@ export default function DashboardPage() {
 
         {/* Status Breakdown */}
         {stats?.statusBreakdown && stats.statusBreakdown.length > 0 && (
-          <div className="bg-card p-6 rounded-lg border border-border animate-slide-up">
-            <h3 className="text-lg font-semibold text-foreground mb-4">Order Status Breakdown</h3>
+          <div className="card p-6 animate-slide-up">
+            <h3 className="h4 text-primary mb-4">Order Status Breakdown</h3>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
               {stats.statusBreakdown.map((status, index) => (
                 <div key={status.status} className="text-center">
-                  <div className="text-2xl font-bold text-foreground mb-1">
+                  <div className="h3 text-primary mb-1">
                     {status.count}
                   </div>
-                  <div className="text-sm text-muted-foreground capitalize">
+                  <div className="text-sm text-muted capitalize">
                     {status.status}
                   </div>
                 </div>
@@ -360,63 +369,63 @@ export default function DashboardPage() {
 
         {/* Quick Actions */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 animate-slide-up">
-          <a
+          <Link
             href="/orders"
-            className="bg-primary text-primary-foreground p-6 rounded-lg hover:bg-primary/90 transition-colors btn-animate group"
+            className="card p-6 card-interactive group"
           >
             <div className="flex items-center gap-3">
               <span className="text-2xl group-hover:scale-110 transition-transform">📋</span>
               <div>
-                <h3 className="font-semibold text-lg">Orders</h3>
-                <p className="text-primary-foreground/80 text-sm">Manage all orders</p>
+                <h3 className="h5 text-primary">Orders</h3>
+                <p className="text-muted text-sm">Manage all orders</p>
               </div>
             </div>
-          </a>
+          </Link>
 
-          <a
+          <Link
             href="/products"
-            className="bg-accent text-accent-foreground p-6 rounded-lg hover:bg-accent/90 transition-colors btn-animate group"
+            className="card p-6 card-interactive group"
           >
             <div className="flex items-center gap-3">
               <span className="text-2xl group-hover:scale-110 transition-transform">📱</span>
               <div>
-                <h3 className="font-semibold text-lg">Products</h3>
-                <p className="text-accent-foreground/80 text-sm">Manage inventory</p>
+                <h3 className="h5 text-primary">Products</h3>
+                <p className="text-muted text-sm">Manage inventory</p>
               </div>
             </div>
-          </a>
+          </Link>
 
-          <a
+          <Link
             href="/customers"
-            className="bg-secondary text-secondary-foreground p-6 rounded-lg hover:bg-secondary/90 transition-colors btn-animate group"
+            className="card p-6 card-interactive group"
           >
             <div className="flex items-center gap-3">
               <span className="text-2xl group-hover:scale-110 transition-transform">👥</span>
               <div>
-                <h3 className="font-semibold text-lg">Customers</h3>
-                <p className="text-secondary-foreground/80 text-sm">Customer management</p>
+                <h3 className="h5 text-primary">Customers</h3>
+                <p className="text-muted text-sm">Customer management</p>
               </div>
             </div>
-          </a>
+          </Link>
 
-          <a
+          <Link
             href="/shipments"
-            className="bg-muted text-muted-foreground p-6 rounded-lg hover:bg-muted/90 transition-colors btn-animate group"
+            className="card p-6 card-interactive group"
           >
             <div className="flex items-center gap-3">
               <span className="text-2xl group-hover:scale-110 transition-transform">🚚</span>
               <div>
-                <h3 className="font-semibold text-lg">Shipments</h3>
-                <p className="text-muted-foreground/80 text-sm">Track deliveries</p>
+                <h3 className="h5 text-primary">Shipments</h3>
+                <p className="text-muted text-sm">Track deliveries</p>
               </div>
             </div>
-          </a>
+          </Link>
         </div>
 
         {/* Recent Activity */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-slide-up">
-          <div className="bg-card p-6 rounded-lg border border-border">
-            <h3 className="text-lg font-semibold text-foreground mb-4">Recent Activity</h3>
+          <div className="card p-6">
+            <h3 className="h4 text-primary mb-4">Recent Activity</h3>
             <div className="space-y-4">
               {recentActivity.map((activity, index) => (
                 <div
@@ -427,15 +436,15 @@ export default function DashboardPage() {
                   <div className="text-xl">{getActivityIcon(activity.type)}</div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <h4 className="font-medium text-foreground text-sm">{activity.title}</h4>
+                      <h4 className="font-medium text-primary text-sm">{activity.title}</h4>
                       {activity.status && (
-                        <span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(activity.status)} bg-current/10`}>
+                        <span className={`badge ${getStatusColor(activity.status)}`}>
                           {activity.status}
                         </span>
                       )}
                     </div>
-                    <p className="text-sm text-muted-foreground mb-1">{activity.description}</p>
-                    <p className="text-xs text-muted-foreground">{formatDate(activity.timestamp)}</p>
+                    <p className="text-sm text-muted mb-1">{activity.description}</p>
+                    <p className="text-xs text-subtle">{formatDate(activity.timestamp)}</p>
                   </div>
                 </div>
               ))}
@@ -443,19 +452,19 @@ export default function DashboardPage() {
           </div>
 
           {/* Quick Stats */}
-          <div className="bg-card p-6 rounded-lg border border-border">
-            <h3 className="text-lg font-semibold text-foreground mb-4">Quick Stats</h3>
+          <div className="card p-6">
+            <h3 className="h4 text-primary mb-4">Quick Stats</h3>
             <div className="space-y-4">
               <div className="flex items-center justify-between p-3 bg-accent/20 rounded-lg">
                 <div className="flex items-center gap-3">
                   <span className="text-xl">📊</span>
                   <div>
-                    <p className="text-sm font-medium text-foreground">Conversion Rate</p>
-                    <p className="text-xs text-muted-foreground">Orders to Revenue</p>
+                    <p className="text-sm font-medium text-primary">Conversion Rate</p>
+                    <p className="text-xs text-muted">Orders to Revenue</p>
                   </div>
                 </div>
                      <div className="text-right">
-                       <p className="text-lg font-bold text-foreground">
+                       <p className="h5 text-primary">
                          {stats?.totalOrders > 0 ? ((stats.totalRevenue / stats.totalOrders) * 100).toFixed(1) : 0}%
                        </p>
                      </div>
@@ -465,12 +474,12 @@ export default function DashboardPage() {
                 <div className="flex items-center gap-3">
                   <span className="text-xl">📈</span>
                   <div>
-                    <p className="text-sm font-medium text-foreground">Avg Order Value</p>
-                    <p className="text-xs text-muted-foreground">Revenue per order</p>
+                    <p className="text-sm font-medium text-primary">Avg Order Value</p>
+                    <p className="text-xs text-muted">Revenue per order</p>
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="text-lg font-bold text-foreground">
+                  <p className="h5 text-primary">
                     {formatCurrency(stats?.totalOrders > 0 ? (stats.totalRevenue / stats.totalOrders) : 0)}
                   </p>
                 </div>
@@ -480,12 +489,12 @@ export default function DashboardPage() {
                 <div className="flex items-center gap-3">
                   <span className="text-xl">⚡</span>
                   <div>
-                    <p className="text-sm font-medium text-foreground">Processing Rate</p>
-                    <p className="text-xs text-muted-foreground">Completed orders</p>
+                    <p className="text-sm font-medium text-primary">Processing Rate</p>
+                    <p className="text-xs text-muted">Completed orders</p>
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="text-lg font-bold text-foreground">
+                  <p className="h5 text-primary">
                     {stats?.totalOrders > 0 ? ((completedOrders / stats.totalOrders) * 100).toFixed(1) : 0}%
                   </p>
                 </div>

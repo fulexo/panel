@@ -194,12 +194,13 @@ export default function OrderDetailPage() {
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
-      case 'pending': return 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20';
-      case 'processing': return 'bg-blue-500/10 text-blue-500 border-blue-500/20';
-      case 'shipped': return 'bg-purple-500/10 text-purple-500 border-purple-500/20';
-      case 'delivered': return 'bg-green-500/10 text-green-500 border-green-500/20';
-      case 'cancelled': return 'bg-red-500/10 text-red-500 border-red-500/20';
-      default: return 'bg-gray-500/10 text-gray-500 border-gray-500/20';
+      case 'pending': return 'status-pending';
+      case 'processing': return 'status-processing';
+      case 'shipped': return 'status-shipped';
+      case 'delivered': return 'status-delivered';
+      case 'cancelled': return 'status-cancelled';
+      case 'failed': return 'status-failed';
+      default: return 'badge-default';
     }
   };
 
@@ -241,7 +242,7 @@ export default function OrderDetailPage() {
           <p className="text-muted-foreground mb-4">The order you're looking for doesn't exist.</p>
           <button
             onClick={() => router.push('/orders')}
-            className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors btn-animate"
+            className="btn btn-primary btn-md btn-animate"
           >
             Back to Orders
           </button>
@@ -273,22 +274,22 @@ export default function OrderDetailPage() {
               </svg>
             </button>
             <div>
-              <h1 className="mobile-heading text-foreground">
+              <h1 className="h1 text-primary">
                 Order #{order.externalOrderNo || order.orderNo || order.id}
               </h1>
-              <p className="text-muted-foreground mobile-text">
+              <p className="text-secondary mobile-text">
                 {order.customerEmail || 'No email'} • {new Date(order.createdAt).toLocaleDateString()}
               </p>
             </div>
           </div>
           
           <div className="flex items-center gap-3">
-            <span className={`px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(order.status)}`}>
+            <span className={`badge ${getStatusColor(order.status)}`}>
               <span className="mr-2">{getStatusIcon(order.status)}</span>
               {order.status}
             </span>
             <div className="text-right">
-              <div className="text-lg font-bold text-foreground">
+              <div className="h4 text-primary">
                 {order.total ? `${order.total} ${order.currency}` : 'No amount'}
               </div>
             </div>
@@ -297,7 +298,7 @@ export default function OrderDetailPage() {
 
         {/* Messages */}
         {error && (
-          <div className="bg-destructive/10 border border-destructive text-destructive px-4 py-3 rounded-lg animate-slide-down">
+          <div className="alert alert-error animate-slide-down">
             <div className="flex items-center gap-2">
               <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -308,7 +309,7 @@ export default function OrderDetailPage() {
         )}
 
         {success && (
-          <div className="bg-green-500/10 border border-green-500 text-green-500 px-4 py-3 rounded-lg animate-slide-down">
+          <div className="alert alert-success animate-slide-down">
             <div className="flex items-center gap-2">
               <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
@@ -319,7 +320,7 @@ export default function OrderDetailPage() {
         )}
 
         {/* Tabs */}
-        <div className="bg-card rounded-lg border border-border animate-slide-up">
+        <div className="card animate-slide-up">
           <div className="flex flex-wrap border-b border-border">
             {tabs.map((tab) => (
               <button

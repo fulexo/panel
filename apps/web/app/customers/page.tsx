@@ -482,18 +482,18 @@ export default function CustomersPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 animate-fade-in">
           <div>
-            <h1 className="mobile-heading text-foreground">Customer Management</h1>
-            <p className="text-muted-foreground mobile-text">
+            <h1 className="h1 text-primary">Customer Management</h1>
+            <p className="text-secondary mobile-text">
               Manage your customer database ({totalCustomers} customers)
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-sm text-muted-foreground">
+            <span className="text-sm text-muted">
               {totalCustomers} customers total
             </span>
             <button 
               onClick={() => setShowCreateForm(!showCreateForm)}
-              className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors btn-animate"
+              className="btn btn-primary btn-md btn-animate"
             >
               + Add Customer
             </button>
@@ -502,7 +502,7 @@ export default function CustomersPage() {
 
         {/* Messages */}
         {error && (
-          <div className="bg-destructive/10 border border-destructive text-destructive px-4 py-3 rounded-lg animate-slide-down">
+          <div className="alert alert-error animate-slide-down">
             <div className="flex items-center gap-2">
               <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -513,7 +513,7 @@ export default function CustomersPage() {
         )}
 
         {success && (
-          <div className="bg-green-500/10 border border-green-500 text-green-500 px-4 py-3 rounded-lg animate-slide-down">
+          <div className="alert alert-success animate-slide-down">
             <div className="flex items-center gap-2">
               <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
@@ -524,7 +524,7 @@ export default function CustomersPage() {
         )}
 
         {/* Search and Filters */}
-        <div className="bg-card p-4 rounded-lg border border-border animate-slide-up">
+        <div className="card p-4 animate-slide-up">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
             {/* Search */}
             <div className="lg:col-span-2">
@@ -723,7 +723,7 @@ export default function CustomersPage() {
                       type="email"
                       value={createForm.email}
                       onChange={(e) => setCreateForm(prev => ({ ...prev, email: e.target.value }))}
-                      placeholder="customer@example.com"
+                      placeholder="customer@fulexo.com"
                       className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
                     />
                   </div>
@@ -1096,7 +1096,7 @@ export default function CustomersPage() {
                         value={editForm.email}
                         onChange={(e) => setEditForm(prev => ({ ...prev, email: e.target.value }))}
                         className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
-                        placeholder="customer@example.com"
+                        placeholder="customer@fulexo.com"
                       />
                     </div>
                     <div>

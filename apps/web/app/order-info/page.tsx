@@ -37,7 +37,7 @@ export default function OrderInfoPage() {
 
     const fetchOrderInfo = async () => {
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/orders/public/${token}`);
+        const response = await fetch(`/api/orders/public/${token}`);
         
         if (!response.ok) {
           if (response.status === 404) {

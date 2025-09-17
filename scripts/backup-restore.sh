@@ -76,7 +76,7 @@ send_backup_notification() {
     
     # Send email notification if configured
     if command -v mail >/dev/null 2>&1; then
-        local admin_email=$(grep "^ADMIN_EMAIL=" "$ENV_FILE" 2>/dev/null | cut -d'=' -f2 || echo "admin@fulexo.com")
+        local admin_email=$(grep "^ADMIN_EMAIL=" "$ENV_FILE" 2>/dev/null | cut -d'=' -f2 || echo "fulexo@fulexo.com")
         local subject="Fulexo Backup $status - $date"
         local body="Backup $status for date $date on $(hostname)"
         
