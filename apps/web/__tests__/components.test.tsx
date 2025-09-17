@@ -4,7 +4,7 @@ import '@testing-library/jest-dom';
 
 // Mock Next.js components
 jest.mock('next/link', () => {
-  return ({ children, href }: { children: React.ReactNode; href: string }) => (
+  return ({ children, href }) => (
     <a href={href}>{children}</a>
   );
 });
@@ -14,12 +14,29 @@ jest.mock('next/navigation', () => ({
     push: jest.fn(),
     replace: jest.fn(),
     prefetch: jest.fn(),
+    back: jest.fn(),
+    forward: jest.fn(),
+    refresh: jest.fn(),
   }),
   useSearchParams: () => ({
     get: jest.fn(),
+    getAll: jest.fn(),
+    has: jest.fn(),
+    keys: jest.fn(),
+    values: jest.fn(),
+    entries: jest.fn(),
+    forEach: jest.fn(),
+    toString: jest.fn(),
   }),
   usePathname: () => '/',
+  useParams: () => ({}),
 }));
+
+jest.mock('next/image', () => {
+  return ({ src, alt, ...props }) => (
+    <img src={src} alt={alt} {...props} />
+  );
+});
 
 describe('Basic Component Tests', () => {
   it('should render a simple div', () => {
