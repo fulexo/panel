@@ -67,7 +67,7 @@ export class CacheService implements OnModuleDestroy {
       let cursor = '0';
       const toDelete: string[] = [];
       do {
-        const res: [string, string[]] = await (this.redis as any).scan(cursor, 'MATCH', pattern, 'COUNT', 1000);
+        const res: [string, string[]] = await (this.redis as unknown as { scan: (cursor: string, ...args: string[]) => Promise<[string, string[]]> }).scan(cursor, 'MATCH', pattern, 'COUNT', '1000');
         cursor = res[0];
         const batch: string[] = res[1] || [];
         if (batch.length) toDelete.push(...batch);
@@ -150,7 +150,7 @@ export class CacheService implements OnModuleDestroy {
   }
 
   // Stats and monitoring
-  async getStats(): Promise<any> {
+  async getStats(): Promise<{ dbSize: number; info: string }> {
     const info = await this.redis.info('stats');
     const dbSize = await this.redis.dbsize();
     return {

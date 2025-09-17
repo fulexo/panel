@@ -16,7 +16,7 @@ export class CustomersService {
   async list(tenantId: string, page = 1, limit = 50, search?: string, status?: string, tag?: string, storeId?: string) {
     const take = Math.min(limit, 200);
     const skip = (page - 1) * take;
-    const where: any = { tenantId };
+    const where: Record<string, unknown> = { tenantId };
     
     if (search) {
       where.OR = [

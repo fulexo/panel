@@ -27,7 +27,7 @@ export class RedisRateLimiter {
 
 	async check(key: string, limit: number, windowMs: number): Promise<RateLimitResult> {
 		const now = Date.now();
-		const result = (await (this.redis as any).eval(this.luaScript, 1, key, limit, windowMs, now)) as any[];
+		const result = (await (this.redis as unknown as { eval: (script: string, ...args: (string | number)[]) => Promise<unknown[]> }).eval(this.luaScript, 1, key, limit, windowMs, now)) as unknown[];
 		const allowed = Number(result?.[0]) === 1;
 		const remaining = result?.[1] !== undefined ? Number(result[1]) : undefined;
 		const retryAfterMs = result?.[2] !== undefined ? Number(result[2]) : undefined;

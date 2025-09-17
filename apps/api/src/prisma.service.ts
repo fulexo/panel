@@ -35,7 +35,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
     return this.$extends({
       query: {
         $allModels: {
-          async findMany({ args, query }: { args: any; query: (args: any) => Promise<unknown> }) {
+          async findMany({ args, query }: { args: Record<string, unknown>; query: (args: Record<string, unknown>) => Promise<unknown> }) {
             args.where = { ...args.where, tenantId };
             
             // Optimize includes to prevent N+1 queries
@@ -45,7 +45,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
             
             return query(args);
           },
-          async findFirst({ args, query }: { args: any; query: (args: any) => Promise<unknown> }) {
+          async findFirst({ args, query }: { args: Record<string, unknown>; query: (args: Record<string, unknown>) => Promise<unknown> }) {
             args.where = { ...args.where, tenantId };
             
             if (args.include) {
@@ -54,7 +54,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
             
             return query(args);
           },
-          async findUnique({ args, query }: { args: any; query: (args: any) => Promise<unknown> }) {
+          async findUnique({ args, query }: { args: Record<string, unknown>; query: (args: Record<string, unknown>) => Promise<unknown> }) {
             args.where = { ...args.where, tenantId };
             
             if (args.include) {
@@ -63,15 +63,15 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
             
             return query(args);
           },
-          async create({ args, query }: { args: any; query: (args: any) => Promise<unknown> }) {
+          async create({ args, query }: { args: Record<string, unknown>; query: (args: Record<string, unknown>) => Promise<unknown> }) {
             args.data = { ...args.data, tenantId };
             return query(args);
           },
-          async update({ args, query }: { args: any; query: (args: any) => Promise<unknown> }) {
+          async update({ args, query }: { args: Record<string, unknown>; query: (args: Record<string, unknown>) => Promise<unknown> }) {
             args.where = { ...args.where, tenantId };
             return query(args);
           },
-          async delete({ args, query }: { args: any; query: (args: any) => Promise<unknown> }) {
+          async delete({ args, query }: { args: Record<string, unknown>; query: (args: Record<string, unknown>) => Promise<unknown> }) {
             args.where = { ...args.where, tenantId };
             return query(args);
           },
@@ -110,14 +110,14 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
       if (userId) {
         await tx.$executeRaw`SET LOCAL app.user_id = ${userId}::uuid`;
       }
-      return fn(tx as any);
+      return fn(tx as PrismaClient);
     });
   }
 
   async withUser<T>(userId: string, fn: (tx: PrismaClient) => Promise<T>): Promise<T> {
     return this.$transaction(async (tx) => {
       await tx.$executeRaw`SET LOCAL app.user_id = ${userId}::uuid`;
-      return fn(tx as any);
+      return fn(tx as PrismaClient);
     });
   }
 }

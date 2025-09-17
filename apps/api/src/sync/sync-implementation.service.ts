@@ -107,23 +107,23 @@ export class SyncImplementationService {
   }
 
   // Helper methods for fetching data from external sources
-  private async fetchOrdersFromSource(_accountId: string): Promise<any[]> {
+  private async fetchOrdersFromSource(_accountId: string): Promise<Record<string, unknown>[]> {
     // Implement actual API call to external source
     // This is a placeholder
     return [];
   }
 
-  private async fetchShipmentsFromSource(_accountId: string): Promise<any[]> {
+  private async fetchShipmentsFromSource(_accountId: string): Promise<Record<string, unknown>[]> {
     // Implement actual API call to external source
     return [];
   }
 
-  private async fetchReturnsFromSource(_accountId: string): Promise<any[]> {
+  private async fetchReturnsFromSource(_accountId: string): Promise<Record<string, unknown>[]> {
     // Implement actual API call to external source
     return [];
   }
 
-  private async fetchInvoicesFromSource(_accountId: string): Promise<any[]> {
+  private async fetchInvoicesFromSource(_accountId: string): Promise<Record<string, unknown>[]> {
     // Implement actual API call to external source
     return [];
   }
@@ -157,11 +157,11 @@ export class SyncImplementationService {
     // Implement shipment upsert logic
   }
 
-  private async upsertReturn(_accountId: string, _returnData: any): Promise<void> {
+  private async upsertReturn(_accountId: string, _returnData: Record<string, unknown>): Promise<void> {
     // Implement return upsert logic
   }
 
-  private async upsertInvoice(_accountId: string, _invoiceData: any): Promise<void> {
+  private async upsertInvoice(_accountId: string, _invoiceData: Record<string, unknown>): Promise<void> {
     // Implement invoice upsert logic
   }
 }

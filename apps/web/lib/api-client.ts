@@ -73,6 +73,7 @@ class ApiClient {
 
       return data;
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error('API request failed:', error);
       throw error;
     }
@@ -137,7 +138,7 @@ class ApiClient {
   async upload<T>(
     endpoint: string,
     file: File,
-    additionalData?: Record<string, any>,
+    additionalData?: Record<string, unknown>,
     headers?: Record<string, string>
   ): Promise<ApiResponse<T>> {
     const formData = new FormData();

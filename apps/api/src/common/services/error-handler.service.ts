@@ -68,13 +68,13 @@ export class ErrorHandlerService {
           entityType: 'ERROR',
           changes: {
             error: errorInfo,
-          } as any,
+          } as Record<string, unknown>,
           metadata: {
             severity: errorInfo['severity'],
             context: errorInfo['context'],
-          } as any,
-          tenantId: (errorInfo['context'] as any)?.tenantId,
-          userId: (errorInfo['context'] as any)?.userId,
+          } as Record<string, unknown>,
+          tenantId: (errorInfo['context'] as Record<string, unknown>)?.tenantId as string,
+          userId: (errorInfo['context'] as Record<string, unknown>)?.userId as string,
         },
       });
     } catch (error) {
@@ -144,7 +144,7 @@ export class ErrorHandlerService {
   }
 
   async handleValidationError(error: Error | unknown, context: ErrorContext = {}): Promise<void> {
-    await this.handleError(new Error(`Validation Error: ${(error as any).message}`), {
+    await this.handleError(new Error(`Validation Error: ${error instanceof Error ? error.message : String(error)}`), {
       ...context,
       action: 'VALIDATION',
       resource: 'INPUT_VALIDATION',
@@ -152,7 +152,7 @@ export class ErrorHandlerService {
   }
 
   async handleAuthenticationError(error: Error | unknown, context: ErrorContext = {}): Promise<void> {
-    await this.handleError(new Error(`Authentication Error: ${(error as any).message}`), {
+    await this.handleError(new Error(`Authentication Error: ${error instanceof Error ? error.message : String(error)}`), {
       ...context,
       action: 'AUTHENTICATION',
       resource: 'AUTH',
@@ -160,7 +160,7 @@ export class ErrorHandlerService {
   }
 
   async handleAuthorizationError(error: Error | unknown, context: ErrorContext = {}): Promise<void> {
-    await this.handleError(new Error(`Authorization Error: ${(error as any).message}`), {
+    await this.handleError(new Error(`Authorization Error: ${error instanceof Error ? error.message : String(error)}`), {
       ...context,
       action: 'AUTHORIZATION',
       resource: 'AUTH',
@@ -168,7 +168,7 @@ export class ErrorHandlerService {
   }
 
   async handleExternalServiceError(service: string, error: Error | unknown, context: ErrorContext = {}): Promise<void> {
-    await this.handleError(new Error(`External Service Error (${service}): ${(error as any).message}`), {
+    await this.handleError(new Error(`External Service Error (${service}): ${error instanceof Error ? error.message : String(error)}`), {
       ...context,
       action: 'EXTERNAL_SERVICE_CALL',
       resource: service.toUpperCase(),

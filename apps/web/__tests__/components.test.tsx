@@ -33,7 +33,7 @@ jest.mock('next/navigation', () => ({
 }));
 
 jest.mock('next/image', () => {
-  return ({ src, alt, ...props }: { src: string; alt: string; [key: string]: any }) => (
+  return ({ src, alt, ...props }: { src: string; alt: string; [key: string]: unknown }) => (
     <img src={src} alt={alt} {...props} />
   );
 });

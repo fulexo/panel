@@ -138,29 +138,29 @@ async function handleRequest(
     // Copy other important headers
     const cacheControl = response.headers.get('cache-control');
     if (cacheControl) {
-      (responseHeaders as any)['Cache-Control'] = cacheControl;
+      (responseHeaders as Record<string, string>)['Cache-Control'] = cacheControl;
     }
 
     const etag = response.headers.get('etag');
     if (etag) {
-      (responseHeaders as any)['ETag'] = etag;
+      (responseHeaders as Record<string, string>)['ETag'] = etag;
     }
 
     const lastModified = response.headers.get('last-modified');
     if (lastModified) {
-      (responseHeaders as any)['Last-Modified'] = lastModified;
+      (responseHeaders as Record<string, string>)['Last-Modified'] = lastModified;
     }
 
     // Copy Content-Disposition for file downloads
     const contentDisposition = response.headers.get('content-disposition');
     if (contentDisposition) {
-      (responseHeaders as any)['Content-Disposition'] = contentDisposition;
+      (responseHeaders as Record<string, string>)['Content-Disposition'] = contentDisposition;
     }
 
     // Copy Content-Length for binary content
     const contentLength = response.headers.get('content-length');
     if (contentLength) {
-      (responseHeaders as any)['Content-Length'] = contentLength;
+      (responseHeaders as Record<string, string>)['Content-Length'] = contentLength;
     }
 
     // Copy Set-Cookie headers for authentication

@@ -14,7 +14,7 @@ export class CreateRequestDto {
 
   @ApiProperty()
   @IsObject()
-  payload: any;
+  payload: Record<string, unknown>;
 }
 
 export class RejectRequestDto {

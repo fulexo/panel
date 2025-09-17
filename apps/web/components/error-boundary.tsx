@@ -24,12 +24,14 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   override componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    // eslint-disable-next-line no-console
     console.error('ErrorBoundary caught an error:', error, errorInfo);
     this.setState({ error, errorInfo });
     
     // Log error to monitoring service
     if (typeof window !== 'undefined') {
       // You can integrate with your error reporting service here
+      // eslint-disable-next-line no-console
       console.error('Error details:', {
         error: error.message,
         stack: error.stack,

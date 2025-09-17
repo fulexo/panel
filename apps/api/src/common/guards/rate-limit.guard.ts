@@ -1,11 +1,13 @@
-import { Injectable, ExecutionContext, HttpException, HttpStatus } from '@nestjs/common';
+import { Injectable, ExecutionContext, HttpException, HttpStatus, Logger } from '@nestjs/common';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { Request } from 'express';
 
 @Injectable()
 export class CustomRateLimitGuard extends ThrottlerGuard {
+  private readonly logger = new Logger(CustomRateLimitGuard.name);
+
   constructor() {
-    super({} as any, {} as any, {} as any);
+    super({} as Record<string, unknown>, {} as Record<string, unknown>, {} as Record<string, unknown>);
   }
 
   protected override async handleRequest(
@@ -22,7 +24,7 @@ export class CustomRateLimitGuard extends ThrottlerGuard {
     // Check if limit exceeded
     if (Number(current) > limit) {
       // Log rate limit exceeded
-      console.warn(`Rate limit exceeded for ${request.ip} on ${request.path}`, {
+      this.logger.warn(`Rate limit exceeded for ${request.ip} on ${request.path}`, {
         ip: request.ip,
         path: request.path,
         method: request.method,

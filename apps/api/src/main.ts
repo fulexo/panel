@@ -8,7 +8,7 @@
 
 import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, Logger } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { register } from 'prom-client';
 import cookieParser from 'cookie-parser';
@@ -44,6 +44,8 @@ import { Request, Response, NextFunction } from 'express';
  * ```
  */
 async function bootstrap() {
+  const logger = new Logger('Bootstrap');
+  
   // Validate environment variables
   validateEnvOnStartup();
   
@@ -100,7 +102,7 @@ async function bootstrap() {
 
       // Validate that we have at least one allowed origin in production
       if (!isDevelopment && allowedOrigins.length === 0) {
-        console.error('No allowed origins configured for production');
+        logger.error('No allowed origins configured for production');
         return callback(new Error('CORS configuration error'), false);
       }
 
@@ -127,7 +129,7 @@ async function bootstrap() {
       }
 
       // Log rejected origin for debugging
-      console.warn(`CORS: Origin rejected: ${origin}. Allowed origins: ${allowedOrigins.join(', ')}`);
+      logger.warn(`CORS: Origin rejected: ${origin}. Allowed origins: ${allowedOrigins.join(', ')}`);
       return callback(new Error('Not allowed by CORS'), false);
     },
     credentials: true,
@@ -214,7 +216,7 @@ async function bootstrap() {
       } catch (error) {
         // Log database health check failure
         if (process.env['NODE_ENV'] === 'development') {
-          console.error('Database health check failed:', error);
+          logger.error('Database health check failed:', error);
         }
       }
       
@@ -229,7 +231,7 @@ async function bootstrap() {
       } catch (error) {
         // Log Redis health check failure
         if (process.env['NODE_ENV'] === 'development') {
-          console.error('Redis health check failed:', error);
+          logger.error('Redis health check failed:', error);
         }
       }
       

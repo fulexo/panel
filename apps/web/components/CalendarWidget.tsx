@@ -43,6 +43,7 @@ export default function CalendarWidget() {
         setHolidays(holidaysData.holidays || []);
       }
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error('Takvim verisi yüklenemedi:', error);
       setError('Takvim verisi yüklenirken hata oluştu');
     } finally {

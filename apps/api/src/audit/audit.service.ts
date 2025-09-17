@@ -28,8 +28,8 @@ export class AuditService {
           action: data.action,
           entityType: data.entityType,
           entityId: data.entityId,
-          changes: data.changes as any,
-          metadata: data.metadata as any,
+          changes: data.changes as Record<string, unknown>,
+          metadata: data.metadata as Record<string, unknown>,
           userId: data.userId,
           tenantId: data.tenantId,
           ipAddress: data.ipAddress,
@@ -51,7 +51,7 @@ export class AuditService {
     page?: number;
     limit?: number;
   }) {
-    const where: any = { tenantId };
+    const where: Record<string, unknown> = { tenantId };
     
     if (filters?.userId) where.userId = filters['userId'];
     if (filters?.action) where.action = filters['action'];

@@ -89,15 +89,19 @@ export class LoggingService implements LoggerService {
         switch (entry.level) {
           case 'error':
           case 'fatal':
+            // eslint-disable-next-line no-console
             console.error(logMessage, entry.metadata);
             break;
           case 'warn':
+            // eslint-disable-next-line no-console
             console.warn(logMessage, entry.metadata);
             break;
           case 'debug':
+            // eslint-disable-next-line no-console
             console.debug(logMessage, entry.metadata);
             break;
           default:
+            // eslint-disable-next-line no-console
             console.log(logMessage, entry.metadata);
         }
       }
@@ -115,7 +119,7 @@ export class LoggingService implements LoggerService {
               message: entry.message,
               context: entry.context,
               metadata: entry.metadata,
-            } as any,
+            } as Record<string, unknown>,
             metadata: {
               level: entry.level,
               timestamp: entry.timestamp,
@@ -132,7 +136,9 @@ export class LoggingService implements LoggerService {
       }
     } catch (error) {
       // Fallback to console if database logging fails
+      // eslint-disable-next-line no-console
       console.error('Failed to write log entry:', error);
+      // eslint-disable-next-line no-console
       console.error('Original log entry:', entry);
     }
   }
@@ -184,8 +190,8 @@ export class LoggingService implements LoggerService {
         action,
         entityType,
         entityId,
-        changes: changes as any,
-        metadata: metadata as any,
+        changes: changes as Record<string, unknown>,
+        metadata: metadata as Record<string, unknown>,
         ipAddress: metadata?.['ipAddress'] as string,
         userAgent: metadata?.['userAgent'] as string,
       },
@@ -215,7 +221,7 @@ export class LoggingService implements LoggerService {
           event,
           severity,
           metadata,
-        } as any,
+        } as Record<string, unknown>,
         metadata: {
           severity,
           timestamp: new Date(),

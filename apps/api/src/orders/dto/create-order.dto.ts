@@ -78,5 +78,5 @@ export class CreateOrderDto {
   @IsArray()
   @IsObject({ each: true })
   @IsOptional()
-  items?: any[];
+  items?: Record<string, unknown>[];
 }
