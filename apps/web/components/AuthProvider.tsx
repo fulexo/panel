@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { AuthContextType, User, LoginResponse } from '@/types/auth';
+import { AuthContextType, User } from '@/types/auth';
 import { ApiResponse } from '@/types/api';
 import { AuthUtils } from '@/lib/auth-utils';
 

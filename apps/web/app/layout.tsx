@@ -6,7 +6,8 @@
  * @version 1.0.0
  */
 
-import type { Metadata } from 'next';
+"use client";
+
 import './globals.css';
 import { AuthProvider } from '@/components/AuthProvider';
 import { AppProvider } from '@/contexts/AppContext';
@@ -16,19 +17,7 @@ import { NotificationContainer } from '@/contexts/AppContext';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { QueryProvider } from '@/components/QueryProvider';
 
-/**
- * Application metadata configuration
- * Defines SEO and browser behavior settings
- */
-export const metadata: Metadata = {
-  title: 'Fulexo Platform',
-  description: 'Multi-tenant e-commerce management platform',
-  keywords: ['e-commerce', 'woocommerce', 'multi-tenant', 'management', 'platform'],
-  authors: [{ name: 'Fulexo Team' }],
-  viewport: 'width=device-width, initial-scale=1',
-  themeColor: '#1f2937',
-  robots: 'noindex, nofollow',
-};
+// Metadata is handled by Next.js head management
 
 export default function RootLayout({
   children,

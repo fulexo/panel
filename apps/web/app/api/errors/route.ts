@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
     
     // Send to backend monitoring service
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:3000'}/api/monitoring/errors`, {
+      const response = await fetch(`${process.env['NEXT_PUBLIC_API_BASE'] || 'http://localhost:3000'}/api/monitoring/errors`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

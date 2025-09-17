@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Call the backend login endpoint
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:3000'}/api/auth/login`, {
+    const response = await fetch(`${process.env['NEXT_PUBLIC_API_BASE'] || 'http://localhost:3000'}/api/auth/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -41,6 +41,7 @@ export async function POST(request: NextRequest) {
       const cookies = setCookieHeaders.split(',').map(cookie => cookie.trim());
       for (const cookie of cookies) {
         const [nameValue, ...options] = cookie.split(';');
+        if (!nameValue) continue;
         const [name, value] = nameValue.split('=');
         
         if (name && value) {
@@ -54,12 +55,13 @@ export async function POST(request: NextRequest) {
           // Parse cookie options
           for (const option of options) {
             const [optName, optValue] = option.trim().split('=');
+            if (!optName) continue;
             switch (optName.toLowerCase()) {
               case 'max-age':
-                cookieOptions.maxAge = parseInt(optValue, 10);
+                if (optValue) cookieOptions.maxAge = parseInt(optValue, 10);
                 break;
               case 'expires':
-                cookieOptions.expires = new Date(optValue);
+                if (optValue) cookieOptions.expires = new Date(optValue);
                 break;
               case 'domain':
                 cookieOptions.domain = optValue;

@@ -56,7 +56,7 @@ export default function CalendarWidget() {
     const todayStr = today.toISOString().split('T')[0];
     
     const todayHours = businessHours.find(h => h.weekday === todayWeekday);
-    const todayHoliday = holidays.find(h => h.date.startsWith(todayStr));
+    const todayHoliday = holidays.find(h => todayStr && h.date.startsWith(todayStr));
     
     return { todayHours, todayHoliday, todayWeekday };
   };

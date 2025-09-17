@@ -32,7 +32,7 @@ export default class ErrorBoundary extends Component<Props, State> {
     };
   }
 
-  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+  override componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     const errorId = this.state.errorId || `error_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     
     // Enhanced error logging
@@ -103,7 +103,7 @@ export default class ErrorBoundary extends Component<Props, State> {
   private handleRetry = () => {
     if (this.retryCount < this.maxRetries) {
       this.retryCount++;
-      this.setState({ hasError: false, error: undefined, errorInfo: undefined });
+      this.setState({ hasError: false });
     } else {
       // Reset retry count and reload page
       this.retryCount = 0;
@@ -119,7 +119,7 @@ export default class ErrorBoundary extends Component<Props, State> {
     window.location.href = '/dashboard';
   };
 
-  render() {
+  override render() {
     if (this.state.hasError) {
       if (this.props.fallback) {
         return this.props.fallback;

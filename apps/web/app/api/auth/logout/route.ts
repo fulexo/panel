@@ -7,7 +7,7 @@ export async function POST(request: NextRequest) {
     const authHeader = request.headers.get('authorization');
     
     // Call the backend logout endpoint
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:3000'}/api/auth/logout`, {
+    const response = await fetch(`${process.env['NEXT_PUBLIC_API_BASE'] || 'http://localhost:3000'}/api/auth/logout`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

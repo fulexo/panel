@@ -66,7 +66,7 @@ export default function Sidebar({ isOpen, onClose, isDesktopCollapsed = false, o
     );
   };
 
-  const renderNavItems = (items: any[], section: string) => {
+  const renderNavItems = (items: any[], _section: string) => {
     return items.map((item) => {
       if (item.roles && !item.roles.includes(user?.role)) return null;
       return (

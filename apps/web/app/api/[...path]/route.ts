@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:3000';
+const API_BASE = process.env['NEXT_PUBLIC_API_BASE'] || 'http://localhost:3000';
 
 export async function GET(
   request: NextRequest,
@@ -132,35 +132,35 @@ async function handleRequest(
 
     // Prepare response headers
     const responseHeaders: HeadersInit = {
-      'Content-Type': contentType,
+      'Content-Type': contentType || 'application/json',
     };
 
     // Copy other important headers
     const cacheControl = response.headers.get('cache-control');
     if (cacheControl) {
-      responseHeaders['Cache-Control'] = cacheControl;
+      (responseHeaders as any)['Cache-Control'] = cacheControl;
     }
 
     const etag = response.headers.get('etag');
     if (etag) {
-      responseHeaders['ETag'] = etag;
+      (responseHeaders as any)['ETag'] = etag;
     }
 
     const lastModified = response.headers.get('last-modified');
     if (lastModified) {
-      responseHeaders['Last-Modified'] = lastModified;
+      (responseHeaders as any)['Last-Modified'] = lastModified;
     }
 
     // Copy Content-Disposition for file downloads
     const contentDisposition = response.headers.get('content-disposition');
     if (contentDisposition) {
-      responseHeaders['Content-Disposition'] = contentDisposition;
+      (responseHeaders as any)['Content-Disposition'] = contentDisposition;
     }
 
     // Copy Content-Length for binary content
     const contentLength = response.headers.get('content-length');
     if (contentLength) {
-      responseHeaders['Content-Length'] = contentLength;
+      (responseHeaders as any)['Content-Length'] = contentLength;
     }
 
     // Copy Set-Cookie headers for authentication

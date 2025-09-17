@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:3000';
+const API_BASE = process.env['NEXT_PUBLIC_API_BASE'] || 'http://localhost:3000';
 
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   try {
     const response = await fetch(`${API_BASE}/api/auth/clear-tokens`, {
       method: 'POST',

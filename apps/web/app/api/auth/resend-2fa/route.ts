@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Forward to backend
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:3000'}/api/auth/resend-2fa`, {
+    const response = await fetch(`${process.env['NEXT_PUBLIC_API_BASE'] || 'http://localhost:3000'}/api/auth/resend-2fa`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
