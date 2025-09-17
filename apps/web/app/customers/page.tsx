@@ -723,7 +723,7 @@ export default function CustomersPage() {
                       type="email"
                       value={createForm.email}
                       onChange={(e) => setCreateForm(prev => ({ ...prev, email: e.target.value }))}
-                      placeholder="customer@example.com"
+                      placeholder="customer@fulexo.com"
                       className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
                     />
                   </div>
@@ -1096,7 +1096,7 @@ export default function CustomersPage() {
                         value={editForm.email}
                         onChange={(e) => setEditForm(prev => ({ ...prev, email: e.target.value }))}
                         className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
-                        placeholder="customer@example.com"
+                        placeholder="customer@fulexo.com"
                       />
                     </div>
                     <div>
