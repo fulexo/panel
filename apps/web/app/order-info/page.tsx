@@ -53,6 +53,7 @@ export default function OrderInfoPage() {
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Failed to load order information';
         setError(errorMessage);
+        // eslint-disable-next-line no-console
         console.error('Error fetching order info:', err);
       } finally {
         setLoading(false);

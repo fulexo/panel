@@ -89,15 +89,19 @@ export class LoggingService implements LoggerService {
         switch (entry.level) {
           case 'error':
           case 'fatal':
+            // eslint-disable-next-line no-console
             console.error(logMessage, entry.metadata);
             break;
           case 'warn':
+            // eslint-disable-next-line no-console
             console.warn(logMessage, entry.metadata);
             break;
           case 'debug':
+            // eslint-disable-next-line no-console
             console.debug(logMessage, entry.metadata);
             break;
           default:
+            // eslint-disable-next-line no-console
             console.log(logMessage, entry.metadata);
         }
       }
@@ -132,7 +136,9 @@ export class LoggingService implements LoggerService {
       }
     } catch (error) {
       // Fallback to console if database logging fails
+      // eslint-disable-next-line no-console
       console.error('Failed to write log entry:', error);
+      // eslint-disable-next-line no-console
       console.error('Original log entry:', entry);
     }
   }

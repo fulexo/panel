@@ -1,5 +1,6 @@
 import { plainToClass } from 'class-transformer';
 import { IsString, IsEnum, IsOptional, validateSync, MinLength, IsPort, IsUrl } from 'class-validator';
+import { Logger } from '@nestjs/common';
 
 enum Environment {
   Development = 'development',
@@ -110,6 +111,7 @@ export class SharedEnvironmentVariables {
 }
 
 export function validateSharedEnvironment(config: Record<string, unknown>) {
+  const logger = new Logger('EnvironmentValidation');
   const validatedConfig = plainToClass(SharedEnvironmentVariables, config, {
     enableImplicitConversion: true,
   });
@@ -165,18 +167,18 @@ export function validateSharedEnvOnStartup() {
     } else {
       // Development environment - warn about weak secrets but don't fail
       if (config.JWT_SECRET && config.JWT_SECRET.length < 64) {
-        console.warn('WARNING: JWT_SECRET is shorter than 64 characters. This is not recommended for production.');
+        logger.warn('WARNING: JWT_SECRET is shorter than 64 characters. This is not recommended for production.');
       }
       
       if (config.ENCRYPTION_KEY && config.ENCRYPTION_KEY.length !== 32) {
-        console.warn('WARNING: ENCRYPTION_KEY should be exactly 32 characters for production.');
+        logger.warn('WARNING: ENCRYPTION_KEY should be exactly 32 characters for production.');
       }
     }
     
     return config;
   } catch (error) {
     // Environment validation failed
-    console.error('Environment validation failed:', error instanceof Error ? error.message : String(error));
+    logger.error('Environment validation failed:', error instanceof Error ? error.message : String(error));
     
     // Only exit in production, allow development to continue with warnings
     if (process.env['NODE_ENV'] === 'production') {

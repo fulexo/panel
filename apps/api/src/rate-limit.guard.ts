@@ -85,7 +85,7 @@ export class RateLimitGuard implements CanActivate {
       return true;
     } catch {
       // If Redis/ratelimiter is unavailable, log error and fail closed for security
-      console.error('Rate limiting service unavailable');
+      this.logger.error('Rate limiting service unavailable');
       throw new HttpException('Service temporarily unavailable', HttpStatus.SERVICE_UNAVAILABLE);
     }
   }

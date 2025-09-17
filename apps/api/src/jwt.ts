@@ -1,5 +1,6 @@
 import * as jose from 'jose';
 import { PrismaService } from './prisma.service';
+import { Logger } from '@nestjs/common';
 
 export interface JWTPayload {
   sub: string;
@@ -16,11 +17,12 @@ export class JwtService {
   private publicKey: CryptoKey | null = null;
   private keyId: string | null = null;
   private initialized: boolean = false;
+  private readonly logger = new Logger(JwtService.name);
 
   constructor(private prisma: PrismaService) {
     // Initialize immediately
     this.init().catch(error => {
-      console.error('JWT Service initialization failed:', error);
+      this.logger.error('JWT Service initialization failed:', error);
     });
   }
 
@@ -36,7 +38,7 @@ export class JwtService {
       }
       this.initialized = true;
     } catch (error) {
-      console.error('JWT Service initialization failed:', error);
+      this.logger.error('JWT Service initialization failed:', error);
       throw error;
     }
   }
@@ -91,7 +93,7 @@ export class JwtService {
         // Generate a secure fallback for development
         const crypto = require('crypto');
         secret = crypto.randomBytes(64).toString('hex');
-        console.warn('JWT_SECRET not set, using generated fallback for development. This should NOT be used in production.');
+        this.logger.warn('JWT_SECRET not set, using generated fallback for development. This should NOT be used in production.');
       } else {
         throw new Error('JWT_SECRET environment variable is required');
       }
@@ -100,7 +102,7 @@ export class JwtService {
     // Validate secret strength
     if (secret && secret.length < 64) {
       if (process.env['NODE_ENV'] === 'development') {
-        console.warn('JWT_SECRET is shorter than 64 characters. This is not recommended for production.');
+        this.logger.warn('JWT_SECRET is shorter than 64 characters. This is not recommended for production.');
         // Pad with random data for development
         const crypto = require('crypto');
         const padding = crypto.randomBytes(64 - secret!.length).toString('hex');
@@ -127,11 +129,11 @@ export class JwtService {
     
     if (secret && weakPatterns.some(pattern => secret!.toLowerCase().includes(pattern))) {
       if (process.env['NODE_ENV'] === 'development') {
-        console.warn('JWT_SECRET contains weak patterns. This is not recommended for production.');
+        this.logger.warn('JWT_SECRET contains weak patterns. This is not recommended for production.');
         // Generate a secure replacement for development
         const crypto = require('crypto');
         secret = crypto.randomBytes(64).toString('hex');
-        console.warn('Using generated secure secret for development.');
+        this.logger.warn('Using generated secure secret for development.');
       } else {
         throw new Error('JWT_SECRET contains weak patterns. Please use a stronger secret.');
       }
@@ -141,11 +143,11 @@ export class JwtService {
     const uniqueChars = new Set(secret).size;
     if (uniqueChars < 16) {
       if (process.env['NODE_ENV'] === 'development') {
-        console.warn('JWT_SECRET has insufficient entropy. This is not recommended for production.');
+        this.logger.warn('JWT_SECRET has insufficient entropy. This is not recommended for production.');
         // Generate a secure replacement for development
         const crypto = require('crypto');
         secret = crypto.randomBytes(64).toString('hex');
-        console.warn('Using generated secure secret for development.');
+        this.logger.warn('Using generated secure secret for development.');
       } else {
         throw new Error('JWT_SECRET must contain at least 16 unique characters');
       }
@@ -382,7 +384,7 @@ export class JwtService {
       });
     } catch (error) {
       // Error blacklisting token - log but don't fail
-      console.error('Error blacklisting token:', error);
+      this.logger.error('Error blacklisting token:', error);
     }
   }
 
