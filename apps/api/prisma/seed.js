@@ -56,37 +56,12 @@ async function main() {
         create: {
             email: 'admin@example.com',
             passwordHash: adminPassword,
-            role: 'FULEXO_ADMIN',
+            role: 'ADMIN',
             tenantId: tenant.id,
         },
     });
     console.log('✅ Created admin user:', admin.email);
-    // Create staff user
-    const staffPassword = await bcrypt.hash(process.env.STAFF_PASSWORD || 'Staff123!', 10);
-    const staff = await prisma.user.upsert({
-        where: { email: 'staff@example.com' },
-        update: {},
-        create: {
-            email: 'staff@example.com',
-            passwordHash: staffPassword,
-            role: 'FULEXO_STAFF',
-            tenantId: tenant.id,
-        },
-    });
-    console.log('✅ Created staff user:', staff.email);
-    // Create customer admin user
-    const customerAdminPassword = await bcrypt.hash(process.env.CUSTOMER_ADMIN_PASSWORD || 'Customer123!', 10);
-    const customerAdmin = await prisma.user.upsert({
-        where: { email: 'customer.admin@example.com' },
-        update: {},
-        create: {
-            email: 'customer.admin@example.com',
-            passwordHash: customerAdminPassword,
-            role: 'CUSTOMER_ADMIN',
-            tenantId: tenant.id,
-        },
-    });
-    console.log('✅ Created customer admin:', customerAdmin.email);
+    
     // Create customer user
     const customerPassword = await bcrypt.hash(process.env.CUSTOMER_PASSWORD || 'Customer123!', 10);
     const customer = await prisma.user.upsert({
@@ -95,7 +70,7 @@ async function main() {
         create: {
             email: 'customer@example.com',
             passwordHash: customerPassword,
-            role: 'CUSTOMER_USER',
+            role: 'CUSTOMER',
             tenantId: tenant.id,
         },
     });
@@ -213,8 +188,6 @@ async function main() {
     console.log('🎉 Database seed completed successfully!');
     console.log('\n📝 Login credentials:');
     console.log('Admin: admin@example.com / Admin123!');
-    console.log('Staff: staff@example.com / Staff123!');
-    console.log('Customer Admin: customer.admin@example.com / Customer123!');
     console.log('Customer: customer@example.com / Customer123!');
 }
 main()

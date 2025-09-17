@@ -99,8 +99,6 @@ LOG_LEVEL=LOG
 # These passwords are used when creating initial admin users
 ADMIN_PASSWORD=Admin123!
 CUSTOMER_PASSWORD=Customer123!
-STAFF_PASSWORD=Staff123!
-CUSTOMER_ADMIN_PASSWORD=Customer123!
 
 # =============================================================================
 # ALERTING CONFIGURATION (optional)

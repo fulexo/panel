@@ -165,8 +165,6 @@ async function main() {
   console.log('🎉 Database seed completed successfully!');
   console.log('\n📝 Login credentials:');
   console.log('Admin: admin@example.com / Admin123!');
-  console.log('Staff: staff@example.com / Staff123!');
-  console.log('Customer Admin: customer.admin@example.com / Customer123!');
   console.log('Customer: customer@example.com / Customer123!');
 }
 
