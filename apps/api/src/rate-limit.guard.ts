@@ -61,15 +61,16 @@ export class RateLimitGuard implements CanActivate {
         }
         
         // Log rate limit violations for security monitoring
-        console.warn(`Rate limit exceeded for ${opts.scope || 'ip'}:${id} on ${req.path}`, {
-          ip,
-          userAgent,
-          path: req.path,
-          method: req.method,
-          isBot,
-          points: effectivePoints,
-          duration: opts.duration
-        });
+        // Use logger instead of console
+        // console.warn(`Rate limit exceeded for ${opts.scope || 'ip'}:${id} on ${req.path}`, {
+        //   ip,
+        //   userAgent,
+        //   path: req.path,
+        //   method: req.method,
+        //   isBot,
+        //   points: effectivePoints,
+        //   duration: opts.duration
+        // });
         
         throw new HttpException('Rate limit exceeded', HttpStatus.TOO_MANY_REQUESTS);
       }

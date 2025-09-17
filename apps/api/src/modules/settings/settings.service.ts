@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma.service';
+import { Prisma } from '@prisma/client';
 import { EncryptionService } from '../encryption/encryption.service';
 // import { Settings } from '@prisma/client';
 
@@ -104,13 +105,13 @@ export class SettingsService {
         value: encryptedValue,
         isSecret,
         updatedBy: updatedBy || null,
-        metadata: metadata as any,
+        metadata: metadata as Prisma.InputJsonValue,
       },
       update: {
         value: encryptedValue,
         isSecret,
         updatedBy: updatedBy || null,
-        metadata: metadata as any,
+        metadata: metadata as Prisma.InputJsonValue,
       },
     });
   }

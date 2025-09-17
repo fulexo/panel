@@ -10,7 +10,7 @@ import {
   Req,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
-import { SettingsService } from './settings.service';
+import { SettingsService, SettingCategory } from './settings.service';
 import { Roles } from '../../auth/decorators/roles.decorator';
 import {
   EmailSettingsDto,
@@ -51,8 +51,8 @@ export class SettingsController {
     await this.settingsService.updateSettings(
       req.user.tenantId,
       'email',
-      dto as any,
-      (req.user as any).id
+      dto as Record<string, unknown>,
+      (req.user as { id: string; tenantId: string }).id
     );
     return { message: 'Email settings updated successfully' };
   }
@@ -76,8 +76,8 @@ export class SettingsController {
     await this.settingsService.updateSettings(
       req.user.tenantId,
       'notification',
-      dto as any,
-      (req.user as any).id
+      dto as Record<string, unknown>,
+      (req.user as { id: string; tenantId: string }).id
     );
     return { message: 'Notification settings updated successfully' };
   }
@@ -99,8 +99,8 @@ export class SettingsController {
     await this.settingsService.updateSettings(
       req.user.tenantId,
       'general',
-      dto as any,
-      (req.user as any).id
+      dto as Record<string, unknown>,
+      (req.user as { id: string; tenantId: string }).id
     );
     return { message: 'General settings updated successfully' };
   }
@@ -109,7 +109,7 @@ export class SettingsController {
   @ApiOperation({ summary: 'Get WooCommerce settings' })
   @Roles('ADMIN')
   async getWooCommerceSettings(@Req() req: { user: { tenantId: string } }) {
-    return this.settingsService.getSettingsByCategory(req.user.tenantId, 'woocommerce' as any);
+    return this.settingsService.getSettingsByCategory(req.user.tenantId, 'woocommerce' as keyof SettingCategory);
   }
 
   @Put('woocommerce')
@@ -122,8 +122,8 @@ export class SettingsController {
     await this.settingsService.updateSettings(
       req.user.tenantId,
       'woocommerce',
-      dto as any,
-      (req.user as any).id
+      dto as Record<string, unknown>,
+      (req.user as { id: string; tenantId: string }).id
     );
     return { message: 'WooCommerce settings updated successfully' };
   }
@@ -132,7 +132,7 @@ export class SettingsController {
   @ApiOperation({ summary: 'Get security settings' })
   @Roles('ADMIN')
   async getSecuritySettings(@Req() req: { user: { tenantId: string } }) {
-    return this.settingsService.getSettingsByCategory(req.user.tenantId, 'security' as any);
+    return this.settingsService.getSettingsByCategory(req.user.tenantId, 'security' as keyof SettingCategory);
   }
 
   @Put('security')
@@ -145,8 +145,8 @@ export class SettingsController {
     await this.settingsService.updateSettings(
       req.user.tenantId,
       'security',
-      dto as any,
-      (req.user as any).id
+      dto as Record<string, unknown>,
+      (req.user as { id: string; tenantId: string }).id
     );
     return { message: 'Security settings updated successfully' };
   }
