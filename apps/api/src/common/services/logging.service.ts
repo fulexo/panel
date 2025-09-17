@@ -1,5 +1,6 @@
 import { Injectable, LoggerService } from '@nestjs/common';
 import { PrismaService } from '../../prisma.service';
+import { toPrismaJson } from '../utils/json-utils';
 
 export interface LogEntry {
   level: 'debug' | 'info' | 'warn' | 'error' | 'fatal';
@@ -115,11 +116,11 @@ export class LoggingService implements LoggerService {
             action: `LOG_${entry.level.toUpperCase()}`,
             entityType: 'LOG_ENTRY',
             entityId: entry.requestId,
-            changes: {
+            changes: toPrismaJson({
               message: entry.message,
               context: entry.context,
               metadata: entry.metadata,
-            } as Record<string, unknown>,
+            }),
             metadata: {
               level: entry.level,
               timestamp: entry.timestamp,
@@ -190,8 +191,8 @@ export class LoggingService implements LoggerService {
         action,
         entityType,
         entityId,
-        changes: changes as Record<string, unknown>,
-        metadata: metadata as Record<string, unknown>,
+        changes: toPrismaJson(changes),
+        metadata: toPrismaJson(metadata),
         ipAddress: metadata?.['ipAddress'] as string,
         userAgent: metadata?.['userAgent'] as string,
       },
@@ -217,11 +218,11 @@ export class LoggingService implements LoggerService {
       data: {
         action: `SECURITY_${event.toUpperCase()}`,
         entityType: 'SECURITY_EVENT',
-        changes: {
+        changes: toPrismaJson({
           event,
           severity,
           metadata,
-        } as Record<string, unknown>,
+        }),
         metadata: {
           severity,
           timestamp: new Date(),
@@ -232,7 +233,7 @@ export class LoggingService implements LoggerService {
     });
 
     const level = severity === 'critical' ? 'fatal' : severity === 'high' ? 'error' : 'warn';
-    (this as any)[level](`Security event: ${event}`, 'Security', {
+    (this as Record<string, unknown>)[level](`Security event: ${event}`, 'Security', {
       event,
       severity,
       ...metadata,

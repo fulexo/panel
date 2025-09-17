@@ -111,7 +111,6 @@ export class SharedEnvironmentVariables {
 }
 
 export function validateSharedEnvironment(config: Record<string, unknown>) {
-  const logger = new Logger('EnvironmentValidation');
   const validatedConfig = plainToClass(SharedEnvironmentVariables, config, {
     enableImplicitConversion: true,
   });
@@ -133,6 +132,7 @@ export function validateSharedEnvironment(config: Record<string, unknown>) {
 }
 
 export function validateSharedEnvOnStartup() {
+  const logger = new Logger('EnvironmentValidation');
   try {
     const config = validateSharedEnvironment(process.env);
     

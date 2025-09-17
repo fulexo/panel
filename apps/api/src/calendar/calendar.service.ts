@@ -16,8 +16,8 @@ export class CalendarService {
     const where: Record<string, unknown> = { tenantId };
     if (from || to) {
       where.startAt = {};
-      if (from) where.startAt.gte = new Date(from);
-      if (to) where.startAt.lte = new Date(to);
+      if (from) (where.startAt as Record<string, unknown>).gte = new Date(from);
+      if (to) (where.startAt as Record<string, unknown>).lte = new Date(to);
     }
     const events = await this.runTenant(tenantId, async (db) => db.calendarEvent.findMany({ where, orderBy: { startAt: 'asc' } }));
     return { events };

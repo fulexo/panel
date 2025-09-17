@@ -17,28 +17,28 @@ export class ShipmentsService {
 
     const where: Record<string, unknown> = { order: { tenantId } };
     
-    if (query.search) {
-      where.OR = [
-        { trackingNo: { contains: query.search, mode: 'insensitive' } },
-        { carrier: { contains: query.search, mode: 'insensitive' } },
-        { order: { externalOrderNo: { contains: query.search, mode: 'insensitive' } } },
-        { order: { customerEmail: { contains: query.search, mode: 'insensitive' } } },
+    if (query['search']) {
+      where['OR'] = [
+        { trackingNo: { contains: query['search'], mode: 'insensitive' } },
+        { carrier: { contains: query['search'], mode: 'insensitive' } },
+        { order: { externalOrderNo: { contains: query['search'], mode: 'insensitive' } } },
+        { order: { customerEmail: { contains: query['search'], mode: 'insensitive' } } },
       ];
     }
     
-    if (query.status) {
-      where.status = query.status;
+    if (query['status']) {
+      where['status'] = query['status'];
     }
     
-    if (query.carrier) {
-      where.carrier = query.carrier;
+    if (query['carrier']) {
+      where['carrier'] = query['carrier'];
     }
 
-    if (query.dateFilter) {
+    if (query['dateFilter']) {
       const now = new Date();
       let dateFrom: Date;
       
-      switch (query.dateFilter) {
+      switch (query['dateFilter']) {
         case 'today':
           dateFrom = new Date(now.getFullYear(), now.getMonth(), now.getDate());
           break;
@@ -58,11 +58,12 @@ export class ShipmentsService {
           dateFrom = new Date(0);
       }
       
-      where.createdAt = { gte: dateFrom };
+      where['createdAt'] = { gte: dateFrom };
     }
 
-    if (query.storeId) {
-      where.order = { ...where.order, storeId: query.storeId };
+    if (query['storeId']) {
+      const orderWhere = where['order'] as Record<string, unknown> | undefined;
+      where['order'] = { ...orderWhere, storeId: query['storeId'] };
     }
 
     const [data, total] = await this.runTenant(tenantId, async (db) => Promise.all([
@@ -87,7 +88,7 @@ export class ShipmentsService {
     return shipment;
   }
 
-  async create(tenantId: string, dto: any) {
+  async create(tenantId: string, dto: Record<string, unknown>) {
     // Verify order exists and belongs to tenant
     const order = await this.runTenant(tenantId, async (db) => db.order.findFirst({
       where: { id: dto.orderId, tenantId }
@@ -100,15 +101,15 @@ export class ShipmentsService {
         carrier: dto.carrier,
         trackingNo: dto.trackingNo,
         status: dto.status || 'pending',
-        weight: dto.weight ? new (Prisma as any).Decimal(dto.weight) : null,
+        weight: dto.weight ? new (Prisma as Record<string, unknown>).Decimal(dto.weight) : null,
         dimensions: dto.dimensions,
         ...(dto.status === 'shipped' && { shippedAt: new Date() }),
         ...(dto.status === 'delivered' && { deliveredAt: new Date() }),
-      } as any,
+      } as Record<string, unknown>,
     }));
   }
 
-  async update(tenantId: string, id: string, dto: any) {
+  async update(tenantId: string, id: string, dto: Record<string, unknown>) {
     const shipment = await this.runTenant(tenantId, async (db) => db.shipment.findFirst({
       where: { id, order: { tenantId } }
     }));
@@ -120,11 +121,11 @@ export class ShipmentsService {
         ...(dto.carrier !== undefined && { carrier: dto.carrier }),
         ...(dto.trackingNo !== undefined && { trackingNo: dto.trackingNo }),
         ...(dto.status !== undefined && { status: dto.status }),
-        ...(dto.weight !== undefined && { weight: dto.weight ? new (Prisma as any).Decimal(dto.weight) : null }),
+        ...(dto.weight !== undefined && { weight: dto.weight ? new (Prisma as Record<string, unknown>).Decimal(dto.weight) : null }),
         ...(dto.dimensions !== undefined && { dimensions: dto.dimensions }),
         ...(dto.status === 'shipped' && !shipment.shippedAt && { shippedAt: new Date() }),
         ...(dto.status === 'delivered' && !shipment.deliveredAt && { deliveredAt: new Date() }),
-      } as any,
+      } as Record<string, unknown>,
     }));
   }
 
@@ -139,7 +140,7 @@ export class ShipmentsService {
     }));
   }
 
-  async bulkUpdate(tenantId: string, shipmentIds: string[], updates: any, _userId: string) {
+  async bulkUpdate(tenantId: string, shipmentIds: string[], updates: Record<string, unknown>, _userId: string) {
     if (!shipmentIds || shipmentIds.length === 0) {
       throw new BadRequestException('No shipment IDs provided');
     }
@@ -149,12 +150,12 @@ export class ShipmentsService {
     }
 
     const results = await this.runTenant(tenantId, async (db) => {
-      const updateData: any = {};
+      const updateData: Record<string, unknown> = {};
       
       if (updates.status !== undefined) updateData.status = updates.status;
       if (updates.carrier !== undefined) updateData.carrier = updates.carrier;
       if (updates.trackingNo !== undefined) updateData.trackingNo = updates.trackingNo;
-      if (updates.weight !== undefined) updateData.weight = updates.weight ? new (Prisma as any).Decimal(updates.weight) : null;
+      if (updates.weight !== undefined) updateData.weight = updates.weight ? new (Prisma as Record<string, unknown>).Decimal(updates.weight) : null;
       if (updates.dimensions !== undefined) updateData.dimensions = updates.dimensions;
       
       // Handle status-based timestamps

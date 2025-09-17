@@ -36,43 +36,49 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
       query: {
         $allModels: {
           async findMany({ args, query }: { args: Record<string, unknown>; query: (args: Record<string, unknown>) => Promise<unknown> }) {
-            args.where = { ...args.where, tenantId };
+            const where = args['where'] as Record<string, unknown> | undefined;
+            args['where'] = { ...where, tenantId };
             
             // Optimize includes to prevent N+1 queries
-            if (args.include) {
+            if (args['include']) {
               // args.include = this.optimizeIncludes(args.include);
             }
             
             return query(args);
           },
           async findFirst({ args, query }: { args: Record<string, unknown>; query: (args: Record<string, unknown>) => Promise<unknown> }) {
-            args.where = { ...args.where, tenantId };
+            const where = args['where'] as Record<string, unknown> | undefined;
+            args['where'] = { ...where, tenantId };
             
-            if (args.include) {
+            if (args['include']) {
               // args.include = this.optimizeIncludes(args.include);
             }
             
             return query(args);
           },
           async findUnique({ args, query }: { args: Record<string, unknown>; query: (args: Record<string, unknown>) => Promise<unknown> }) {
-            args.where = { ...args.where, tenantId };
+            const where = args['where'] as Record<string, unknown> | undefined;
+            args['where'] = { ...where, tenantId };
             
-            if (args.include) {
+            if (args['include']) {
               // args.include = this.optimizeIncludes(args.include);
             }
             
             return query(args);
           },
           async create({ args, query }: { args: Record<string, unknown>; query: (args: Record<string, unknown>) => Promise<unknown> }) {
-            args.data = { ...args.data, tenantId };
+            const data = args['data'] as Record<string, unknown> | undefined;
+            args['data'] = { ...data, tenantId };
             return query(args);
           },
           async update({ args, query }: { args: Record<string, unknown>; query: (args: Record<string, unknown>) => Promise<unknown> }) {
-            args.where = { ...args.where, tenantId };
+            const where = args['where'] as Record<string, unknown> | undefined;
+            args['where'] = { ...where, tenantId };
             return query(args);
           },
           async delete({ args, query }: { args: Record<string, unknown>; query: (args: Record<string, unknown>) => Promise<unknown> }) {
-            args.where = { ...args.where, tenantId };
+            const where = args['where'] as Record<string, unknown> | undefined;
+            args['where'] = { ...where, tenantId };
             return query(args);
           },
         },

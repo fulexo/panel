@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
+import { toPrismaJson } from '../common/utils/json-utils';
 import { LoggerService } from '../logger/logger.service';
 
 export interface AuditLogData {
@@ -28,8 +29,8 @@ export class AuditService {
           action: data.action,
           entityType: data.entityType,
           entityId: data.entityId,
-          changes: data.changes as Record<string, unknown>,
-          metadata: data.metadata as Record<string, unknown>,
+          changes: toPrismaJson(data.changes),
+          metadata: toPrismaJson(data.metadata),
           userId: data.userId,
           tenantId: data.tenantId,
           ipAddress: data.ipAddress,
@@ -58,8 +59,8 @@ export class AuditService {
     if (filters?.entityType) where.entityType = filters['entityType'];
     if (filters?.dateFrom || filters?.dateTo) {
       where.createdAt = {};
-      if (filters.dateFrom) where.createdAt.gte = filters['dateFrom'];
-      if (filters.dateTo) where.createdAt.lte = filters['dateTo'];
+      if (filters.dateFrom) (where.createdAt as Record<string, unknown>).gte = filters['dateFrom'];
+      if (filters.dateTo) (where.createdAt as Record<string, unknown>).lte = filters['dateTo'];
     }
 
     const page = filters?.page || 1;

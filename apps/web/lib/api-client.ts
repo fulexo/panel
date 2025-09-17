@@ -146,7 +146,7 @@ class ApiClient {
     
     if (additionalData) {
       Object.entries(additionalData).forEach(([key, value]) => {
-        formData.append(key, value);
+        formData.append(key, value as string);
       });
     }
 

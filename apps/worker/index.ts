@@ -16,6 +16,7 @@ import * as client from 'prom-client';
 import express from 'express';
 import cors from 'cors';
 import { PrismaClient, Prisma } from '@prisma/client';
+import { Decimal } from 'decimal.js';
 // import { validateEnvOnStartup } from './env.validation.js';
 import { logger } from './lib/logger';
 import fetch from 'node-fetch';
@@ -77,7 +78,7 @@ const jobProcessors = {
       logger.info(`Order sync completed for account: ${accountId}`);
       return { success: true, accountId };
     } catch (error) {
-      logger.error(`Order sync failed for account ${job.data?.accountId}:`, error);
+      logger.error(`Order sync failed for account ${job.data?.['accountId']}:`, error);
       throw error;
     }
   },
@@ -97,7 +98,7 @@ const jobProcessors = {
       logger.info(`Shipment sync completed for account: ${accountId}`);
       return { success: true, accountId };
     } catch (error) {
-      logger.error(`Shipment sync failed for account ${job.data?.accountId}:`, error);
+      logger.error(`Shipment sync failed for account ${job.data?.['accountId']}:`, error);
       throw error;
     }
   },
@@ -117,7 +118,7 @@ const jobProcessors = {
       logger.info(`Return sync completed for account: ${accountId}`);
       return { success: true, accountId };
     } catch (error) {
-      logger.error(`Return sync failed for account ${job.data?.accountId}:`, error);
+      logger.error(`Return sync failed for account ${job.data?.['accountId']}:`, error);
       throw error;
     }
   },
@@ -137,7 +138,7 @@ const jobProcessors = {
       logger.info(`Invoice sync completed for account: ${accountId}`);
       return { success: true, accountId };
     } catch (error) {
-      logger.error(`Invoice sync failed for account ${job.data?.accountId}:`, error);
+      logger.error(`Invoice sync failed for account ${job.data?.['accountId']}:`, error);
       throw error;
     }
   },
@@ -171,10 +172,10 @@ const jobProcessors = {
       url.searchParams.set('order', 'asc');
       url.searchParams.set('modified_after', updatedAfter);
       
-      const res = await fetch(url, { 
+      const res = await fetch(url, {
         headers: { Authorization: 'Basic '+Buffer.from(store.consumerKey+':'+store.consumerSecret).toString('base64') },
         timeout: 30000 // 30 second timeout
-      } as RequestInit);
+      } as Record<string, unknown>);
       
       if(!res.ok){ 
         logger.error(`WooCommerce API error: ${res.status} ${res.statusText}`);
@@ -191,7 +192,7 @@ const jobProcessors = {
           orderSource: 'woo',
           status: String(o.status || 'pending'),
           mappedStatus: String(o.status || 'pending'),
-          total: o.total ? new Prisma.Decimal(o.total) : null,
+          total: o.total ? new Decimal(o.total) : null,
           currency: o.currency || 'TRY',
           customerEmail: o.billing?.email || null,
           customerPhone: o.billing?.phone || null,
@@ -219,7 +220,7 @@ const jobProcessors = {
                 sku: li.sku || null,
                 name: li.name || null,
                 qty: Number(li.quantity || 0),
-                price: li.total ? new Prisma.Decimal(li.total) : null,
+                price: li.total ? new Decimal(li.total) : null,
               }});
             }
           }
@@ -235,7 +236,7 @@ const jobProcessors = {
     // update lastSync
     await prisma.wooStore.update({ where: { id: storeId }, data: { lastSync: { ...(store.lastSync||{}), ordersUpdatedAfter: new Date().toISOString() } } });
     const dur = (Date.now()-start)/1000;
-    syncLagGauge.set({ account_id: storeId, entity_type: 'orders' }, 0);
+    syncLagGauge.set({ account_id: storeId as string, entity_type: 'orders' }, 0);
     return { success: true, storeId, imported, duration: dur };
   },
   'woo-sync-products': async (job: { data: Record<string, unknown> }) => {
@@ -257,10 +258,10 @@ const jobProcessors = {
       const url = new URL(`/wp-json/wc/${store.apiVersion}/products`, store.baseUrl);
       url.searchParams.set('per_page','50');
       url.searchParams.set('page', String(page));
-      const res = await fetch(url, { 
+      const res = await fetch(url, {
         headers: { Authorization: 'Basic '+Buffer.from(store.consumerKey+':'+store.consumerSecret).toString('base64') },
         timeout: 30000 // 30 second timeout
-      } as RequestInit);
+      } as Record<string, unknown>);
       if(!res.ok) { 
         logger.error(`WooCommerce API error: ${res.status} ${res.statusText}`);
         throw new Error('Woo HTTP '+res.status); 
@@ -273,10 +274,10 @@ const jobProcessors = {
           tenantId: store.tenantId,
           sku: p.sku || String(p.id),
           name: p.name || null,
-          price: p.price ? new (Prisma as any).Decimal(p.price) : null,
+          price: p.price ? new (Prisma as Record<string, unknown>).Decimal(p.price) : null,
           stock: (typeof p.stock_quantity==='number') ? p.stock_quantity : null,
-          images: Array.isArray(p.images) ? p.images.map((i: any)=>i.src).filter(Boolean) : [],
-          tags: Array.isArray(p.tags) ? p.tags.map((t: any)=>t.name).filter(Boolean) : [],
+          images: Array.isArray(p.images) ? p.images.map((i: Record<string, unknown>)=>i.src).filter(Boolean) : [],
+          tags: Array.isArray(p.tags) ? p.tags.map((t: Record<string, unknown>)=>t.name).filter(Boolean) : [],
           active: p.status !== 'draft' && p.status !== 'trash',
         };
         if(existing){
@@ -325,7 +326,7 @@ const jobProcessors = {
             orderSource: 'woo',
             status: String(o.status || 'pending'),
             mappedStatus: String(o.status || 'pending'),
-            total: o.total ? new Prisma.Decimal(o.total) : null,
+            total: o.total ? new Decimal(o.total) : null,
             currency: o.currency || 'TRY',
             customerEmail: o.billing?.email || null,
             customerPhone: o.billing?.phone || null,
@@ -349,7 +350,7 @@ const jobProcessors = {
                 sku: li.sku || null,
                 name: li.name || null,
                 qty: Number(li.quantity || 0),
-                price: li.total ? new Prisma.Decimal(li.total) : null,
+                price: li.total ? new Decimal(li.total) : null,
               }});
             }
           }
@@ -362,10 +363,10 @@ const jobProcessors = {
             tenantId: store.tenantId,
             sku: p.sku || String(p.id),
             name: p.name || null,
-            price: p.price ? new Prisma.Decimal(p.price) : null,
+            price: p.price ? new Decimal(p.price) : null,
             stock: (typeof p.stock_quantity==='number') ? p.stock_quantity : null,
-            images: Array.isArray(p.images) ? p.images.map((i: Record<string, unknown>)=>i.src as string).filter(Boolean) : [],
-            tags: Array.isArray(p.tags) ? p.tags.map((t: Record<string, unknown>)=>t.name as string).filter(Boolean) : [],
+            images: Array.isArray(p.images) ? p.images.map((i: Record<string, unknown>)=>i['src'] as string).filter(Boolean) : [],
+            tags: Array.isArray(p.tags) ? p.tags.map((t: Record<string, unknown>)=>t['name'] as string).filter(Boolean) : [],
             active: p.status !== 'draft' && p.status !== 'trash',
           };
           if(existing){
@@ -377,7 +378,7 @@ const jobProcessors = {
         await prisma.webhookEvent.update({ where: { id: evt.id }, data: { status: 'processed', processedAt: new Date(), attempts: { increment: 1 } } });
       } catch (err) {
         // Webhook event failed
-        await prisma.webhookEvent.update({ where: { id: evt.id }, data: { status: 'failed', error: String((err as any)?.message || err), attempts: { increment: 1 } } });
+        await prisma.webhookEvent.update({ where: { id: evt.id }, data: { status: 'failed', error: String((err as Record<string, unknown>)?.message || err), attempts: { increment: 1 } } });
       }
     }
     return { success: true, processed: pending.length };
@@ -393,7 +394,7 @@ const jobProcessors = {
     return { success: true, stores: stores.length };
   },
 
-  'process-request': async (job: any) => {
+  'process-request': async (job: Record<string, unknown>) => {
     const { requestId, action } = job.data;
     
     if (!requestId || !action) {
@@ -577,7 +578,7 @@ const worker = new Worker('fx-jobs', async (job) => {
     jobProcessedCounter.inc({ job_type: job.name, status: 'failure' });
     
     // Store error details for debugging
-    await storeJobError(job, lastError, maxRetries);
+    await storeJobError(job as Record<string, unknown>, lastError, maxRetries);
     
     throw lastError;
     
@@ -588,7 +589,7 @@ const worker = new Worker('fx-jobs', async (job) => {
     jobProcessedCounter.inc({ job_type: job.name, status: 'failure' });
     
     // Store error details
-    await storeJobError(job, error, 0);
+    await storeJobError(job as Record<string, unknown>, error, 0);
     
     throw error;
   }
@@ -606,7 +607,7 @@ const worker = new Worker('fx-jobs', async (job) => {
 });
 
 // Helper function to apply request changes
-async function applyRequestChanges(request: any) {
+async function applyRequestChanges(request: Record<string, unknown>) {
   const { type, payload } = request;
   
   switch (type) {
@@ -661,7 +662,7 @@ async function applyRequestChanges(request: any) {
 // Helper function to send rejection notification
 async function sendRejectionNotification(request: Record<string, unknown>) {
   // This would integrate with your notification system
-  logger.info(`Sending rejection notification for request ${request.id}`);
+  logger.info(`Sending rejection notification for request ${request['id']}`);
   // Implementation would depend on your notification service
 }
 
@@ -692,9 +693,9 @@ function isRetryableError(error: unknown) {
 async function storeJobError(job: Record<string, unknown>, error: unknown, retryCount: number) {
   try {
     const errorData = {
-      jobId: job.id,
-      jobName: job.name,
-      jobData: job.data,
+      jobId: job['id'],
+      jobName: job['name'],
+      jobData: job['data'],
       error: {
         name: error instanceof Error ? error.name : 'Unknown',
         message: error instanceof Error ? error.message : String(error),
@@ -711,14 +712,14 @@ async function storeJobError(job: Record<string, unknown>, error: unknown, retry
         entityType: 'JOB',
         changes: errorData,
         metadata: {
-          jobType: job.name,
+          jobType: job['name'],
           retryCount,
           errorType: error instanceof Error ? error.name : 'Unknown',
         },
       },
     });
     
-    logger.info(`Stored error details for job ${job.id}`);
+    logger.info(`Stored error details for job ${job['id']}`);
   } catch (dbError) {
     logger.error('Failed to store job error details:', dbError);
   }
@@ -920,7 +921,7 @@ async function start() {
   try {
     // validateEnvOnStartup();
   } catch (error) {
-    logger.error('Environment validation failed:', (error as any).message);
+    logger.error('Environment validation failed:', (error as Record<string, unknown>).message);
     process.exit(1);
   }
   

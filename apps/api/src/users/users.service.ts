@@ -62,7 +62,7 @@ export class UsersService {
     };
   }
 
-  async get(currentUser: any, id: string) {
+  async get(currentUser: Record<string, unknown>, id: string) {
     const user = await this.prisma.user.findUnique({
       where: { id },
       select: {
@@ -115,9 +115,9 @@ export class UsersService {
     const updatedUser = await this.prisma.user.update({
       where: { id },
       data: {
-        email: data.email,
-        role: data.role,
-        tenantId: data.tenantId
+        email: data.email as string,
+        role: data.role as string,
+        tenantId: data.tenantId as string
       },
       select: {
         id: true,

@@ -54,7 +54,7 @@ export class BillingService {
     await this.runTenant(tenantId, async (db) => db.billingBatchItem.delete({ where: { id: itemId } }));
     // Recalculate total
     const sum = await this.runTenant(tenantId, async (db) => db.billingBatchItem.aggregate({ where: { batchId }, _sum: { amount: true } }));
-    await this.runTenant(tenantId, async (db) => db.billingBatch.update({ where: { id: batchId }, data: { total: sum._sum.amount || new (Prisma as any).Decimal(0) } }));
+    await this.runTenant(tenantId, async (db) => db.billingBatch.update({ where: { id: batchId }, data: { total: sum._sum.amount || new (Prisma as Record<string, unknown>).Decimal(0) } }));
     return this.getBatch(tenantId, batchId);
   }
 
@@ -77,7 +77,7 @@ export class BillingService {
     const limit = Math.min(Number(query.limit) || 50, 200);
     const skip = (page - 1) * limit;
 
-    const where: any = { tenantId };
+    const where: Record<string, unknown> = { tenantId };
     
     if (query.search) {
       where.OR = [
@@ -90,11 +90,11 @@ export class BillingService {
       where.status = query['status'];
     }
 
-    if ((query as any)['dateFilter']) {
+    if ((query as Record<string, unknown>)['dateFilter']) {
       const now = new Date();
       let dateFrom: Date;
       
-      switch ((query as any)['dateFilter']) {
+      switch ((query as Record<string, unknown>)['dateFilter']) {
         case 'today':
           dateFrom = new Date(now.getFullYear(), now.getMonth(), now.getDate());
           break;
@@ -145,11 +145,11 @@ export class BillingService {
         tenantId,
         orderId: dto['orderId'],
         number: dto['number'],
-        total: new (Prisma as any).Decimal(dto['total']),
+        total: new (Prisma as Record<string, unknown>).Decimal(dto['total']),
         currency: dto['currency'] || 'USD',
         status: 'draft',
         dueDate: dto['dueDate'] ? new Date(dto['dueDate'] as string) : null,
-      } as any,
+      } as Record<string, unknown>,
     }));
   }
 
@@ -175,12 +175,12 @@ export class BillingService {
       data: {
         status: dto['status'] || undefined,
         number: dto['number'] || undefined,
-        total: dto['total'] ? new (Prisma as any).Decimal(dto['total']) : undefined,
+        total: dto['total'] ? new (Prisma as Record<string, unknown>).Decimal(dto['total']) : undefined,
         currency: dto['currency'] || undefined,
         dueDate: dto['dueDate'] ? new Date(dto['dueDate'] as string) : undefined,
         ...(dto['status'] === 'issued' && { issuedAt: new Date() }),
         ...(dto['status'] === 'paid' && { paidAt: new Date() }),
-      } as any,
+      } as Record<string, unknown>,
     }));
   }
 
@@ -199,7 +199,7 @@ export class BillingService {
     const limit = Math.min(Number(query.limit) || 50, 200);
     const skip = (page - 1) * limit;
 
-    const where: any = { tenantId };
+    const where: Record<string, unknown> = { tenantId };
     
     if (query.search) {
       where.OR = [
@@ -213,15 +213,15 @@ export class BillingService {
       where.status = query.status;
     }
     
-    if ((query as any).method) {
-      where.method = (query as any).method;
+    if ((query as Record<string, unknown>).method) {
+      where.method = (query as Record<string, unknown>).method;
     }
 
-    if ((query as any).dateFilter) {
+    if ((query as Record<string, unknown>).dateFilter) {
       const now = new Date();
       let dateFrom: Date;
       
-      switch ((query as any).dateFilter) {
+      switch ((query as Record<string, unknown>).dateFilter) {
         case 'today':
           dateFrom = new Date(now.getFullYear(), now.getMonth(), now.getDate());
           break;
@@ -290,7 +290,7 @@ export class BillingService {
         method: dto['method'] || undefined,
         transactionId: dto['transactionId'] || undefined,
         processedAt: dto['status'] === 'completed' ? new Date() : undefined,
-      } as any,
+      } as Record<string, unknown>,
     }));
   }
 
@@ -305,7 +305,7 @@ export class BillingService {
 
     return this.runTenant(tenantId, async (db) => db.payment.update({
       where: { id },
-      data: { status: 'refunded' } as any,
+      data: { status: 'refunded' } as Record<string, unknown>,
     }));
   }
 
@@ -319,7 +319,7 @@ export class BillingService {
     }
 
     const results = await this.runTenant(tenantId, async (db) => {
-      const updateData: any = {};
+      const updateData: Record<string, unknown> = {};
       
       if (updates['status'] !== undefined) updateData.status = updates['status'];
       

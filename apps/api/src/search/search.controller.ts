@@ -15,7 +15,7 @@ export class SearchController {
   @ApiQuery({ name: 'types', required: false, type: String, description: 'Comma-separated: orders,products,customers' })
   @ApiQuery({ name: 'limitPerType', required: false, type: Number })
   async query(
-    @CurrentUser() user: any,
+    @CurrentUser() user: Record<string, unknown>,
     @Query('q') q: string,
     @Query('types') types?: string,
     @Query('limitPerType') limitPerType: number = 10,

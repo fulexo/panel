@@ -52,7 +52,7 @@ export class SettingsController {
       req.user.tenantId,
       'email',
       dto,
-      (req.user as any).id
+      (req.user as Record<string, unknown>).id
     );
     return { message: 'Email settings updated successfully' };
   }
@@ -77,7 +77,7 @@ export class SettingsController {
       req.user.tenantId,
       'notification',
       dto,
-      (req.user as any).id
+      (req.user as Record<string, unknown>).id
     );
     return { message: 'Notification settings updated successfully' };
   }
@@ -100,7 +100,7 @@ export class SettingsController {
       req.user.tenantId,
       'general',
       dto,
-      (req.user as any).id
+      (req.user as Record<string, unknown>).id
     );
     return { message: 'General settings updated successfully' };
   }
@@ -109,7 +109,7 @@ export class SettingsController {
   @ApiOperation({ summary: 'Get WooCommerce settings' })
   @Roles('ADMIN')
   async getWooCommerceSettings(@Req() req: { user: { tenantId: string } }) {
-    return this.settingsService.getSettingsByCategory(req.user.tenantId, 'woocommerce' as any);
+    return this.settingsService.getSettingsByCategory(req.user.tenantId, 'woocommerce' as Record<string, unknown>);
   }
 
   @Put('woocommerce')
@@ -123,7 +123,7 @@ export class SettingsController {
       req.user.tenantId,
       'woocommerce',
       dto,
-      (req.user as any).id
+      (req.user as Record<string, unknown>).id
     );
     return { message: 'WooCommerce settings updated successfully' };
   }
@@ -132,7 +132,7 @@ export class SettingsController {
   @ApiOperation({ summary: 'Get security settings' })
   @Roles('ADMIN')
   async getSecuritySettings(@Req() req: { user: { tenantId: string } }) {
-    return this.settingsService.getSettingsByCategory(req.user.tenantId, 'security' as any);
+    return this.settingsService.getSettingsByCategory(req.user.tenantId, 'security' as Record<string, unknown>);
   }
 
   @Put('security')
@@ -146,7 +146,7 @@ export class SettingsController {
       req.user.tenantId,
       'security',
       dto,
-      (req.user as any).id
+      (req.user as Record<string, unknown>).id
     );
     return { message: 'Security settings updated successfully' };
   }
