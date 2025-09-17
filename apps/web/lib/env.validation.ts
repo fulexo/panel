@@ -12,15 +12,16 @@ class EnvironmentVariables {
   NODE_ENV: Environment = Environment.Development;
 
   @IsString()
-  @IsOptional()
-  NEXT_PUBLIC_API_BASE?: string;
+  @IsUrl()
+  NEXT_PUBLIC_API_BASE!: string;
+
+  @IsString()
+  @IsUrl()
+  NEXT_PUBLIC_APP_URL!: string;
 
   @IsString()
   @IsOptional()
-  NEXT_PUBLIC_APP_URL?: string;
-
-  @IsString()
-  @IsOptional()
+  @IsUrl()
   SHARE_BASE_URL?: string;
 
   // Add encryption key validation for consistency
@@ -42,7 +43,7 @@ export function validateEnvironment(config: Record<string, unknown>) {
   });
 
   const errors = validateSync(validatedConfig, {
-    skipMissingProperties: true,
+    skipMissingProperties: false,
   });
 
   if (errors.length > 0) {

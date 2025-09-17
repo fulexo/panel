@@ -6,6 +6,19 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
   constructor() {
     super({
       log: process.env['NODE_ENV'] === 'development' ? ['query', 'error', 'warn'] : ['error'],
+      datasources: {
+        db: {
+          url: process.env.DATABASE_URL,
+        },
+      },
+      // Connection pool settings
+      __internal: {
+        engine: {
+          connectionLimit: 20, // Maximum number of connections
+          poolTimeout: 20, // Connection timeout in seconds
+          connectionTimeout: 10, // Connection acquisition timeout
+        },
+      },
     });
   }
 

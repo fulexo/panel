@@ -297,27 +297,51 @@ export class JwtService {
   // Check if token is blacklisted
   private async isTokenBlacklisted(jti: string): Promise<boolean> {
     try {
-      // Check in database for blacklisted tokens
-      const blacklistedToken = await this.prisma.auditLog.findFirst({
-        where: {
-          action: 'TOKEN_BLACKLISTED',
-          changes: {
-            path: ['jti'],
-            equals: jti
-          }
-        }
-      });
+      // Use Redis for faster token blacklist checking
+      const Redis = require('ioredis');
+      const redis = new Redis(process.env.REDIS_URL || 'redis://valkey:6379/0');
       
-      return !!blacklistedToken;
+      const isBlacklisted = await redis.exists(`blacklist:${jti}`);
+      await redis.quit();
+      
+      return isBlacklisted === 1;
     } catch (error) {
-      // Error checking token blacklist
-      return false; // If error, allow token (fail open)
+      // Fallback to database check if Redis fails
+      try {
+        const blacklistedToken = await this.prisma.auditLog.findFirst({
+          where: {
+            action: 'TOKEN_BLACKLISTED',
+            changes: {
+              path: ['jti'],
+              equals: jti
+            }
+          }
+        });
+        
+        return !!blacklistedToken;
+      } catch (dbError) {
+        // Error checking token blacklist
+        return false; // If error, allow token (fail open)
+      }
     }
   }
 
   // Blacklist a token
   async blacklistToken(jti: string, reason: string = 'User logout') {
     try {
+      // Use Redis for fast token blacklisting
+      const Redis = require('ioredis');
+      const redis = new Redis(process.env.REDIS_URL || 'redis://valkey:6379/0');
+      
+      // Set token as blacklisted with 7 days expiry (same as refresh token)
+      await redis.setex(`blacklist:${jti}`, 7 * 24 * 60 * 60, JSON.stringify({
+        reason,
+        blacklistedAt: new Date().toISOString()
+      }));
+      
+      await redis.quit();
+      
+      // Also log to database for audit trail
       await this.prisma.auditLog.create({
         data: {
           action: 'TOKEN_BLACKLISTED',
@@ -334,7 +358,8 @@ export class JwtService {
         }
       });
     } catch (error) {
-      // Error blacklisting token
+      // Error blacklisting token - log but don't fail
+      console.error('Error blacklisting token:', error);
     }
   }
 

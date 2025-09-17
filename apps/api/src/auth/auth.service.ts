@@ -271,7 +271,7 @@ export class AuthService {
     return user;
   }
 
-  private async generateTokens(user: any) {
+  private async generateTokens(user: { id: string; email: string; role: string; tenantId: string }) {
     const payload = {
       sub: user.id,
       email: user.email,

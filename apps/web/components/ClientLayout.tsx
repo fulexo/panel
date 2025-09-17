@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 import Sidebar from './Sidebar';
 import ProtectedRoute from './ProtectedRoute';
+import ErrorBoundary from './ErrorBoundary';
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -36,8 +37,9 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
 
   // For all other pages, require authentication
   return (
-    <ProtectedRoute>
-      <div className="min-h-screen bg-background text-foreground">
+    <ErrorBoundary>
+      <ProtectedRoute>
+        <div className="min-h-screen bg-background text-foreground">
         {/* Mobile Header */}
         <div className="lg:hidden bg-card border-b border-border sticky top-0 z-40">
           <div className="mobile-container py-3 flex items-center justify-between">
@@ -110,7 +112,8 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
         <main className="transition-all duration-300 ease-in-out lg:ml-80">
           {children}
         </main>
-      </div>
-    </ProtectedRoute>
+        </div>
+      </ProtectedRoute>
+    </ErrorBoundary>
   );
 }
