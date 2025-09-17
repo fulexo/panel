@@ -29,37 +29,39 @@ export class LoggerService implements NestLoggerService {
 
   error(message: any, _trace?: string, context?: string): void {
     if (this.shouldLog(LogLevel.ERROR)) {
-      this.formatMessage('ERROR', message, context);
-      // Error logged to console
-      // Trace logged to console
+      const formattedMessage = this.formatMessage('ERROR', message, context);
+      console.error(formattedMessage);
+      if (_trace) {
+        console.error(_trace);
+      }
     }
   }
 
   warn(message: any, context?: string): void {
     if (this.shouldLog(LogLevel.WARN)) {
-      this.formatMessage('WARN', message, context);
-      // Warning logged to console
+      const formattedMessage = this.formatMessage('WARN', message, context);
+      console.warn(formattedMessage);
     }
   }
 
   log(message: any, context?: string): void {
     if (this.shouldLog(LogLevel.LOG)) {
-      this.formatMessage('INFO', message, context);
-      // Info logged to console
+      const formattedMessage = this.formatMessage('INFO', message, context);
+      console.log(formattedMessage);
     }
   }
 
   debug(message: any, context?: string): void {
     if (this.shouldLog(LogLevel.DEBUG)) {
-      this.formatMessage('DEBUG', message, context);
-      // Debug logged to console
+      const formattedMessage = this.formatMessage('DEBUG', message, context);
+      console.debug(formattedMessage);
     }
   }
 
   verbose(message: any, context?: string): void {
     if (this.shouldLog(LogLevel.VERBOSE)) {
-      this.formatMessage('VERBOSE', message, context);
-      // Info logged to console
+      const formattedMessage = this.formatMessage('VERBOSE', message, context);
+      console.log(formattedMessage);
     }
   }
 

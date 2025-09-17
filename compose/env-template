@@ -84,6 +84,15 @@ PORT=3000
 # Worker Port (default: 3002)
 WORKER_PORT=3002
 
+# Share Base URL for public order info
+SHARE_BASE_URL=http://localhost:3001
+
+# Share Token Secret for JWT signing
+SHARE_TOKEN_SECRET=your-share-token-secret-here-min-32-chars
+
+# Log Level (ERROR, WARN, LOG, DEBUG, VERBOSE)
+LOG_LEVEL=LOG
+
 # =============================================================================
 # ADMIN PASSWORDS (for seed data)
 # =============================================================================

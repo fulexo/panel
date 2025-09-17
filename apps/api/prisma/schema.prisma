@@ -45,6 +45,8 @@ model User {
   role          String
   twofaSecret   String?
   twofaEnabled  Boolean  @default(false)
+  temp2faToken  String?
+  temp2faTokenExpires DateTime?
   lastLoginAt   DateTime?
   failedAttempts Int     @default(0)
   lockedUntil   DateTime?

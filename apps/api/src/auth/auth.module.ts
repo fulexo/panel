@@ -9,6 +9,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { AuthGuard } from './auth.guard';
 import { RolesGuard } from './roles.guard';
 import { RateLimitGuard } from '../rate-limit.guard';
+import { JwtService } from '../jwt';
 
 @Module({
   controllers: [AuthController],
@@ -16,6 +17,7 @@ import { RateLimitGuard } from '../rate-limit.guard';
     AuthService,
     SessionService,
     TwoFactorService,
+    JwtService,
     PrismaService,
     AuditService,
     {

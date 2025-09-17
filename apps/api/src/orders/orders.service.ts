@@ -3,7 +3,7 @@ import { PrismaService } from '../prisma.service';
 import { CacheService } from '../cache/cache.service';
 import { AuditService } from '../audit/audit.service';
 import { CreateOrderDto, UpdateOrderDto, OrderQueryDto, CreateChargeDto } from './dto';
-import { Prisma } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
 import * as jose from 'jose';
 
 @Injectable()
@@ -14,8 +14,8 @@ export class OrdersService {
     private audit: AuditService,
   ) {}
 
-  private async runTenant<T>(tenantId: string, fn: (db: any) => Promise<T>): Promise<T> {
-    return this.prisma.withTenant(tenantId, fn as any);
+  private async runTenant<T>(tenantId: string, fn: (db: PrismaClient) => Promise<T>): Promise<T> {
+    return this.prisma.withTenant(tenantId, fn);
   }
 
   private sanitizeOrderForCustomer = (order: any) => {
@@ -362,8 +362,6 @@ export class OrdersService {
 
     return { message: 'Order deleted successfully' };
   }
-
-  
 
   async getOrderTimeline(tenantId: string, orderId: string) {
     const order = await this.findOne(tenantId, orderId);
