@@ -118,7 +118,7 @@ export class SettingsService {
   async updateSettings(
     tenantId: string,
     category: string,
-    settings: Record<string, any>,
+    settings: Record<string, unknown>,
     updatedBy?: string
   ): Promise<void> {
     const secretKeys = this.getSecretKeys(category);

@@ -94,7 +94,7 @@ export default function InboundPage(){
                   <span>{String(it['quantity'])} x {String(it['name'] || it['sku'] || '—')}</span>
                 </div>
               ))}
-              {(!s['items'] || (s['items'] as any[]).length===0) && <div className="text-gray-500">No items</div>}
+              {(!s['items'] || (s['items'] as Record<string, unknown>[]).length===0) && <div className="text-gray-500">No items</div>}
             </div>
           </div>
         ))}

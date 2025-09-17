@@ -25,7 +25,7 @@ class Logger {
     return level <= this.level;
   }
 
-  private formatMessage(level: string, message: string, meta?: any): string {
+  private formatMessage(level: string, message: string, meta?: Record<string, unknown>): string {
     const timestamp = new Date().toISOString();
     const logEntry = {
       timestamp,
@@ -37,28 +37,28 @@ class Logger {
     return JSON.stringify(logEntry);
   }
 
-  error(message: string, meta?: any): void {
+  error(message: string, meta?: Record<string, unknown>): void {
     if (this.shouldLog(LOG_LEVELS.ERROR)) {
       // eslint-disable-next-line no-console
       console.error(this.formatMessage('ERROR', message, meta));
     }
   }
 
-  warn(message: string, meta?: any): void {
+  warn(message: string, meta?: Record<string, unknown>): void {
     if (this.shouldLog(LOG_LEVELS.WARN)) {
       // eslint-disable-next-line no-console
       console.warn(this.formatMessage('WARN', message, meta));
     }
   }
 
-  info(message: string, meta?: any): void {
+  info(message: string, meta?: Record<string, unknown>): void {
     if (this.shouldLog(LOG_LEVELS.INFO)) {
       // eslint-disable-next-line no-console
       console.log(this.formatMessage('INFO', message, meta));
     }
   }
 
-  debug(message: string, meta?: any): void {
+  debug(message: string, meta?: Record<string, unknown>): void {
     if (this.shouldLog(LOG_LEVELS.DEBUG)) {
       // eslint-disable-next-line no-console
       console.log(this.formatMessage('DEBUG', message, meta));

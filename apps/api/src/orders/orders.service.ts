@@ -274,7 +274,7 @@ export class OrdersService {
         tags: dto.tags || [],
         confirmedAt: dto.confirmedAt || new Date(),
         items: {
-          create: dto.items?.map((item: any) => ({
+          create: dto.items?.map((item: Record<string, unknown>) => ({
             sku: item.sku,
             name: item.name,
             qty: item.qty,
@@ -486,7 +486,7 @@ export class OrdersService {
     return {
       totalOrders,
       totalRevenue: totalRevenue._sum.total || 0,
-      statusBreakdown: statusCounts.map((s: any) => ({
+      statusBreakdown: statusCounts.map((s: Record<string, unknown>) => ({
         status: s['status'],
         count: s['_count'],
       })),

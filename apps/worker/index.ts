@@ -276,8 +276,8 @@ const jobProcessors = {
           name: p.name || null,
           price: p.price ? new (Prisma as Record<string, unknown>).Decimal(p.price) : null,
           stock: (typeof p.stock_quantity==='number') ? p.stock_quantity : null,
-          images: Array.isArray(p.images) ? p.images.map((i: any)=>i.src).filter(Boolean) : [],
-          tags: Array.isArray(p.tags) ? p.tags.map((t: any)=>t.name).filter(Boolean) : [],
+          images: Array.isArray(p.images) ? p.images.map((i: Record<string, unknown>)=>i.src).filter(Boolean) : [],
+          tags: Array.isArray(p.tags) ? p.tags.map((t: Record<string, unknown>)=>t.name).filter(Boolean) : [],
           active: p.status !== 'draft' && p.status !== 'trash',
         };
         if(existing){
@@ -394,7 +394,7 @@ const jobProcessors = {
     return { success: true, stores: stores.length };
   },
 
-  'process-request': async (job: any) => {
+  'process-request': async (job: Record<string, unknown>) => {
     const { requestId, action } = job.data;
     
     if (!requestId || !action) {
@@ -607,7 +607,7 @@ const worker = new Worker('fx-jobs', async (job) => {
 });
 
 // Helper function to apply request changes
-async function applyRequestChanges(request: any) {
+async function applyRequestChanges(request: Record<string, unknown>) {
   const { type, payload } = request;
   
   switch (type) {

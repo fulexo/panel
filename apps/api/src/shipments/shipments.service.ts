@@ -88,7 +88,7 @@ export class ShipmentsService {
     return shipment;
   }
 
-  async create(tenantId: string, dto: any) {
+  async create(tenantId: string, dto: Record<string, unknown>) {
     // Verify order exists and belongs to tenant
     const order = await this.runTenant(tenantId, async (db) => db.order.findFirst({
       where: { id: dto.orderId, tenantId }
@@ -109,7 +109,7 @@ export class ShipmentsService {
     }));
   }
 
-  async update(tenantId: string, id: string, dto: any) {
+  async update(tenantId: string, id: string, dto: Record<string, unknown>) {
     const shipment = await this.runTenant(tenantId, async (db) => db.shipment.findFirst({
       where: { id, order: { tenantId } }
     }));
@@ -140,7 +140,7 @@ export class ShipmentsService {
     }));
   }
 
-  async bulkUpdate(tenantId: string, shipmentIds: string[], updates: any, _userId: string) {
+  async bulkUpdate(tenantId: string, shipmentIds: string[], updates: Record<string, unknown>, _userId: string) {
     if (!shipmentIds || shipmentIds.length === 0) {
       throw new BadRequestException('No shipment IDs provided');
     }

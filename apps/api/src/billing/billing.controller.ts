@@ -64,7 +64,7 @@ export class BillingController {
   async exportCsv(@CurrentUser() user: { id: string; email: string; role: string; tenantId: string }, @Param('id') id: string, @Res() res: Response) {
     const batch = await this.billing.getBatch(user.tenantId, id);
     const header = ['invoice_number','order_id','amount','currency','issued_at'];
-    const rows = batch.items.map((it: any)=> [(it['invoice'] as Record<string, unknown>)?.number||'', (it['invoice'] as Record<string, unknown>)?.orderId, it['amount'], (it['invoice'] as Record<string, unknown>)?.currency||'', (it['invoice'] as Record<string, unknown>)?.issuedAt||'']);
+    const rows = batch.items.map((it: Record<string, unknown>)=> [(it['invoice'] as Record<string, unknown>)?.number||'', (it['invoice'] as Record<string, unknown>)?.orderId, it['amount'], (it['invoice'] as Record<string, unknown>)?.currency||'', (it['invoice'] as Record<string, unknown>)?.issuedAt||'']);
     const csv = [header.join(','), ...rows.map((r: unknown[])=> r.join(','))].join('\n');
     res.setHeader('Content-Type', 'text/csv');
     res.setHeader('Content-Disposition', `attachment; filename="billing_${id}.csv"`);

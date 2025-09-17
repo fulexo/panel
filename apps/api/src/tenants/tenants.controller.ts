@@ -29,14 +29,14 @@ export class TenantsController {
   @Post(':id/impersonate')
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Impersonate tenant (admin only)' })
-  async impersonate(@CurrentUser() user: any, @Param('id') id: string) {
+  async impersonate(@CurrentUser() user: Record<string, unknown>, @Param('id') id: string) {
     return this.tenants.impersonate(user.sub || user.id, id);
   }
 
   @Post('impersonate/stop')
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Stop impersonation, revert to original tenant' })
-  async stopImpersonation(@CurrentUser() user: any) {
+  async stopImpersonation(@CurrentUser() user: Record<string, unknown>) {
     return this.tenants.stopImpersonation(user);
   }
 }

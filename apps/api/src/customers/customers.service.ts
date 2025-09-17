@@ -69,7 +69,7 @@ export class CustomersService {
     const customersWithStats = data.map((customer: Record<string, unknown>) => {
       const orders = (customer as Record<string, unknown>).orders || [];
       const totalOrders = orders.length;
-      const totalSpent = orders.reduce((sum: number, order: any) => sum + (Number(order['total']) || 0), 0);
+      const totalSpent = orders.reduce((sum: number, order: Record<string, unknown>) => sum + (Number(order['total']) || 0), 0);
       const averageOrderValue = totalOrders > 0 ? totalSpent / totalOrders : 0;
       const lastOrderDate = orders.length > 0 ? (orders[0] as Record<string, unknown>).createdAt : null;
       
@@ -117,10 +117,10 @@ export class CustomersService {
         });
         
         const totalOrders = orders.length;
-        const totalSpent = orders.reduce((sum: number, order: any) => sum + Number(order['total'] || 0), 0);
+        const totalSpent = orders.reduce((sum: number, order: Record<string, unknown>) => sum + Number(order['total'] || 0), 0);
         const averageOrderValue = totalOrders > 0 ? totalSpent / totalOrders : 0;
         const lastOrderDate = orders.length > 0 
-          ? orders.sort((a: any, b: any) => new Date(b['createdAt'] as string).getTime() - new Date(a['createdAt'] as string).getTime())[0]?.['createdAt']
+          ? orders.sort((a: Record<string, unknown>, b: Record<string, unknown>) => new Date(b['createdAt'] as string).getTime() - new Date(a['createdAt'] as string).getTime())[0]?.['createdAt']
           : null;
         
         return {

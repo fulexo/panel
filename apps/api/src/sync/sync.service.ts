@@ -252,7 +252,7 @@ export class SyncService {
     return null;
   }
 
-  private matchesRule(order: any, conditions: any): boolean {
+  private matchesRule(order: Record<string, unknown>, conditions: Record<string, unknown>): boolean {
     if (!conditions || !conditions.conditions) return false;
 
     for (const condition of conditions.conditions) {

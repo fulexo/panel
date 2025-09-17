@@ -12,7 +12,7 @@ export class SearchService {
 
     const needle = q.trim();
 
-    const tasks: Promise<any>[] = [];
+    const tasks: Promise<Record<string, unknown>[]>[] = [];
     const includeOrders = types.includes('orders');
     const includeProducts = types.includes('products');
     const includeCustomers = types.includes('customers');
