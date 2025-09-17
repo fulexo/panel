@@ -9,7 +9,7 @@ export class TwoFactorService {
   private enc: EncryptionService;
 
   constructor(private prisma: PrismaService) {
-    const key = process.env.MASTER_KEY_HEX || process.env.ENCRYPTION_KEY || ''.padEnd(64,'0');
+    const key = process.env['MASTER_KEY_HEX'] || process.env['ENCRYPTION_KEY'] || ''.padEnd(64,'0');
     this.enc = new EncryptionService(key);
   }
 
@@ -138,7 +138,7 @@ export class TwoFactorService {
     });
   }
 
-  async generateBackupCodes(userId: string): Promise<string[]> {
+  async generateBackupCodes(_userId: string): Promise<string[]> {
     const codes: string[] = [];
     for (let i = 0; i < 10; i++) {
       codes.push(speakeasy.generateSecret({ length: 8 }).base32.substring(0, 8));

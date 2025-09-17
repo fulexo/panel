@@ -75,9 +75,9 @@ export class ReturnsService {
     return notif;
   }
 
-  private async sendEmailNotification(email: string, subject: string, message: string): Promise<void> {
+  private async sendEmailNotification(_email: string, _subject: string, _message: string): Promise<void> {
     // Check if SMTP is configured
-    if (!process.env.SMTP_HOST || !process.env.SMTP_USER) {
+    if (!process.env['SMTP_HOST'] || !process.env['SMTP_USER']) {
       // SMTP not configured, skipping email notification
       return;
     }
@@ -87,9 +87,9 @@ export class ReturnsService {
     // Would send email notification
   }
 
-  private async sendSmsNotification(phone: string, message: string): Promise<void> {
+  private async sendSmsNotification(_phone: string, _message: string): Promise<void> {
     // Check if SMS provider is configured
-    if (!process.env.SMS_API_KEY) {
+    if (!process.env['SMS_API_KEY']) {
       // SMS provider not configured, skipping SMS notification
       return;
     }

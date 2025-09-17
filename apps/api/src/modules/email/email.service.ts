@@ -56,7 +56,7 @@ export class EmailService {
       const info = await transporter.sendMail(mailOptions);
       this.logger.log(`Email sent: ${info.messageId}`);
     } catch (error) {
-      this.logger.error(`Failed to send email: ${error.message}`);
+      this.logger.error(`Failed to send email: ${error instanceof Error ? error.message : 'Unknown error'}`);
       throw error;
     }
   }
@@ -93,7 +93,7 @@ export class EmailService {
     );
 
     const companyName = generalSettings.company_name || 'Fulexo';
-    const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL}/reset-password?token=${resetToken}`;
+    const resetUrl = `${process.env['NEXT_PUBLIC_APP_URL']}/reset-password?token=${resetToken}`;
 
     await this.sendEmail(tenantId, {
       to: userEmail,
@@ -150,7 +150,7 @@ export class EmailService {
       await transporter.verify();
       return true;
     } catch (error) {
-      this.logger.error(`Email connection test failed: ${error.message}`);
+      this.logger.error(`Email connection test failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
       return false;
     }
   }

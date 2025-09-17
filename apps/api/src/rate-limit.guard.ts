@@ -1,4 +1,4 @@
-import { CanActivate, ExecutionContext, Injectable, UnauthorizedException, HttpException, HttpStatus } from '@nestjs/common';
+import { CanActivate, ExecutionContext, Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import Redis from 'ioredis';
 import { RedisRateLimiter } from './ratelimit';
@@ -10,7 +10,7 @@ export class RateLimitGuard implements CanActivate {
   private redis: Redis;
 
   constructor(private reflector: Reflector) {
-    this.redis = new Redis(process.env.REDIS_URL || 'redis://valkey:6379/0');
+    this.redis = new Redis(process.env['REDIS_URL'] || 'redis://valkey:6379/0');
     this.limiter = new RedisRateLimiter(this.redis);
   }
 

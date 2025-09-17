@@ -19,7 +19,7 @@ import { PrismaService } from './prisma.service';
   exports: [JwtService],
 })
 export class JwtModule implements OnModuleInit {
-  constructor(private jwtService: JwtService) {}
+  constructor() {}
 
   async onModuleInit() {
     // JWT service is already initialized in the factory

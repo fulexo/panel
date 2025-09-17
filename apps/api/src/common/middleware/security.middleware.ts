@@ -7,7 +7,7 @@ import * as rateLimit from 'express-rate-limit';
 export class SecurityMiddleware implements NestMiddleware {
   use(req: Request, res: Response, next: NextFunction) {
     // Helmet security headers
-    helmet({
+    helmet()({
       contentSecurityPolicy: {
         directives: {
           defaultSrc: ["'self'"],
@@ -33,7 +33,7 @@ export class SecurityMiddleware implements NestMiddleware {
 
 @Injectable()
 export class RateLimitMiddleware implements NestMiddleware {
-  private limiter = rateLimit({
+  private limiter = rateLimit()({
     windowMs: 15 * 60 * 1000, // 15 minutes
     max: 100, // limit each IP to 100 requests per windowMs
     message: {
@@ -50,7 +50,7 @@ export class RateLimitMiddleware implements NestMiddleware {
 
 @Injectable()
 export class StrictRateLimitMiddleware implements NestMiddleware {
-  private limiter = rateLimit({
+  private limiter = rateLimit()({
     windowMs: 15 * 60 * 1000, // 15 minutes
     max: 5, // limit each IP to 5 requests per windowMs
     message: {

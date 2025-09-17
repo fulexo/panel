@@ -14,7 +14,7 @@ export class JobsController {
   async enqueue(@CurrentUser() user: any, @Body() body: { name: string; data?: any; }){
     const { Queue } = await import('bullmq');
     const Redis = (await import('ioredis')).default;
-    const connection = new Redis(process.env.REDIS_URL || 'redis://valkey:6379/0', { maxRetriesPerRequest: null }) as any;
+    const connection = new Redis(process.env['REDIS_URL'] || 'redis://valkey:6379/0', { maxRetriesPerRequest: null }) as any;
     const q = new Queue('fx-jobs', { connection });
     await q.add(body.name, { ...(body.data||{}), tenantId: user.tenantId });
     await q.close();

@@ -138,7 +138,7 @@ export class ShipmentsService {
     }));
   }
 
-  async bulkUpdate(tenantId: string, shipmentIds: string[], updates: any, userId: string) {
+  async bulkUpdate(tenantId: string, shipmentIds: string[], updates: any, _userId: string) {
     if (!shipmentIds || shipmentIds.length === 0) {
       throw new BadRequestException('No shipment IDs provided');
     }
@@ -184,7 +184,7 @@ export class ShipmentsService {
     };
   }
 
-  async bulkDelete(tenantId: string, shipmentIds: string[], userId: string) {
+  async bulkDelete(tenantId: string, shipmentIds: string[], _userId: string) {
     if (!shipmentIds || shipmentIds.length === 0) {
       throw new BadRequestException('No shipment IDs provided');
     }

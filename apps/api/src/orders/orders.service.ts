@@ -200,8 +200,8 @@ export class OrdersService {
             tenantId,
             email: dto.customerEmail,
             emailNormalized: dto.customerEmail.toLowerCase(),
-            name: dto.customerName,
-            phoneE164: dto.customerPhone,
+            name: dto.customerName || null,
+            phoneE164: dto.customerPhone || null,
           },
         });
       }
@@ -437,7 +437,7 @@ export class OrdersService {
     return {
       totalOrders,
       totalRevenue: totalRevenue._sum.total || 0,
-      statusBreakdown: statusCounts.map(s => ({
+      statusBreakdown: statusCounts.map((s: any) => ({
         status: s.status,
         count: s._count,
       })),
@@ -449,22 +449,22 @@ export class OrdersService {
     const order = await this.prisma.order.findFirst({ where: { id: orderId, tenantId }, select: { id: true, orderNo: true } });
     if (!order) throw new NotFoundException('Order not found');
     // Create short-lived token (24h) with order reference
-    const secret = new TextEncoder().encode(process.env.SHARE_TOKEN_SECRET || 'dev-share-secret');
+    const secret = new TextEncoder().encode(process.env['SHARE_TOKEN_SECRET'] || 'dev-share-secret');
     const token = await new jose.SignJWT({ orderId: order.id })
       .setProtectedHeader({ alg: 'HS256' })
       .setIssuedAt()
       .setExpirationTime('24h')
       .sign(secret);
     await this.audit.log({ action: 'order.share.created', userId, tenantId, entityType: 'order', entityId: orderId });
-    return { token, url: `${process.env.SHARE_BASE_URL || 'http://localhost:3001'}/order-info?token=${token}` };
+    return { token, url: `${process.env['SHARE_BASE_URL'] || 'http://localhost:3001'}/order-info?token=${token}` };
   }
 
   async getPublicInfo(token: string) {
-    const secret = new TextEncoder().encode(process.env.SHARE_TOKEN_SECRET || 'dev-share-secret');
+    const secret = new TextEncoder().encode(process.env['SHARE_TOKEN_SECRET'] || 'dev-share-secret');
     try {
       const { payload } = await jose.jwtVerify(token, secret);
       const order = await this.prisma.order.findFirst({
-        where: { id: String(payload.orderId) },
+        where: { id: String(payload['orderId']) },
         select: {
           id: true,
           orderNo: true,

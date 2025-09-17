@@ -9,7 +9,7 @@ import {
 // Email validation with domain restrictions
 @ValidatorConstraint({ name: 'isValidEmail', async: false })
 export class IsValidEmailConstraint implements ValidatorConstraintInterface {
-  validate(email: string, args: ValidationArguments) {
+  validate(email: string, _args: ValidationArguments) {
     if (!email) return false;
     
     const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
@@ -25,10 +25,10 @@ export class IsValidEmailConstraint implements ValidatorConstraintInterface {
     ];
     
     const domain = email.split('@')[1]?.toLowerCase();
-    return !disposableDomains.includes(domain);
+    return !disposableDomains.includes(domain || '');
   }
 
-  defaultMessage(args: ValidationArguments) {
+  defaultMessage(_args: ValidationArguments) {
     return 'Please provide a valid email address';
   }
 }
@@ -38,7 +38,7 @@ export function IsValidEmail(validationOptions?: ValidationOptions) {
     registerDecorator({
       target: object.constructor,
       propertyName: propertyName,
-      options: validationOptions,
+      options: validationOptions || {},
       constraints: [],
       validator: IsValidEmailConstraint,
     });
@@ -48,7 +48,7 @@ export function IsValidEmail(validationOptions?: ValidationOptions) {
 // Strong password validation
 @ValidatorConstraint({ name: 'isStrongPassword', async: false })
 export class IsStrongPasswordConstraint implements ValidatorConstraintInterface {
-  validate(password: string, args: ValidationArguments) {
+  validate(password: string, _args: ValidationArguments) {
     if (!password) return false;
     
     // At least 8 characters
@@ -80,7 +80,7 @@ export class IsStrongPasswordConstraint implements ValidatorConstraintInterface 
     return !commonPatterns.some(pattern => lowerPassword.includes(pattern));
   }
 
-  defaultMessage(args: ValidationArguments) {
+  defaultMessage(_args: ValidationArguments) {
     return 'Password must be at least 8 characters long and contain uppercase, lowercase, number, and special character';
   }
 }
@@ -90,7 +90,7 @@ export function IsStrongPassword(validationOptions?: ValidationOptions) {
     registerDecorator({
       target: object.constructor,
       propertyName: propertyName,
-      options: validationOptions,
+      options: validationOptions || {},
       constraints: [],
       validator: IsStrongPasswordConstraint,
     });
@@ -100,7 +100,7 @@ export function IsStrongPassword(validationOptions?: ValidationOptions) {
 // Phone number validation
 @ValidatorConstraint({ name: 'isValidPhone', async: false })
 export class IsValidPhoneConstraint implements ValidatorConstraintInterface {
-  validate(phone: string, args: ValidationArguments) {
+  validate(phone: string, _args: ValidationArguments) {
     if (!phone) return true; // Optional field
     
     // Remove all non-digit characters
@@ -119,7 +119,7 @@ export class IsValidPhoneConstraint implements ValidatorConstraintInterface {
     return !invalidPatterns.some(pattern => pattern.test(cleanPhone));
   }
 
-  defaultMessage(args: ValidationArguments) {
+  defaultMessage(_args: ValidationArguments) {
     return 'Please provide a valid phone number';
   }
 }
@@ -129,7 +129,7 @@ export function IsValidPhone(validationOptions?: ValidationOptions) {
     registerDecorator({
       target: object.constructor,
       propertyName: propertyName,
-      options: validationOptions,
+      options: validationOptions || {},
       constraints: [],
       validator: IsValidPhoneConstraint,
     });
@@ -139,7 +139,7 @@ export function IsValidPhone(validationOptions?: ValidationOptions) {
 // SKU validation
 @ValidatorConstraint({ name: 'isValidSku', async: false })
 export class IsValidSkuConstraint implements ValidatorConstraintInterface {
-  validate(sku: string, args: ValidationArguments) {
+  validate(sku: string, _args: ValidationArguments) {
     if (!sku) return false;
     
     // SKU should be 3-50 characters, alphanumeric and hyphens only
@@ -147,7 +147,7 @@ export class IsValidSkuConstraint implements ValidatorConstraintInterface {
     return skuRegex.test(sku);
   }
 
-  defaultMessage(args: ValidationArguments) {
+  defaultMessage(_args: ValidationArguments) {
     return 'SKU must be 3-50 characters long and contain only letters, numbers, and hyphens';
   }
 }
@@ -157,7 +157,7 @@ export function IsValidSku(validationOptions?: ValidationOptions) {
     registerDecorator({
       target: object.constructor,
       propertyName: propertyName,
-      options: validationOptions,
+      options: validationOptions || {},
       constraints: [],
       validator: IsValidSkuConstraint,
     });
@@ -167,7 +167,7 @@ export function IsValidSku(validationOptions?: ValidationOptions) {
 // Currency validation
 @ValidatorConstraint({ name: 'isValidCurrency', async: false })
 export class IsValidCurrencyConstraint implements ValidatorConstraintInterface {
-  validate(currency: string, args: ValidationArguments) {
+  validate(currency: string, _args: ValidationArguments) {
     if (!currency) return false;
     
     const validCurrencies = [
@@ -178,7 +178,7 @@ export class IsValidCurrencyConstraint implements ValidatorConstraintInterface {
     return validCurrencies.includes(currency.toUpperCase());
   }
 
-  defaultMessage(args: ValidationArguments) {
+  defaultMessage(_args: ValidationArguments) {
     return 'Please provide a valid currency code (e.g., USD, EUR, TRY)';
   }
 }
@@ -188,7 +188,7 @@ export function IsValidCurrency(validationOptions?: ValidationOptions) {
     registerDecorator({
       target: object.constructor,
       propertyName: propertyName,
-      options: validationOptions,
+      options: validationOptions || {},
       constraints: [],
       validator: IsValidCurrencyConstraint,
     });
@@ -198,7 +198,7 @@ export function IsValidCurrency(validationOptions?: ValidationOptions) {
 // URL validation
 @ValidatorConstraint({ name: 'isValidUrl', async: false })
 export class IsValidUrlConstraint implements ValidatorConstraintInterface {
-  validate(url: string, args: ValidationArguments) {
+  validate(url: string, _args: ValidationArguments) {
     if (!url) return true; // Optional field
     
     try {
@@ -209,7 +209,7 @@ export class IsValidUrlConstraint implements ValidatorConstraintInterface {
     }
   }
 
-  defaultMessage(args: ValidationArguments) {
+  defaultMessage(_args: ValidationArguments) {
     return 'Please provide a valid URL';
   }
 }
@@ -219,7 +219,7 @@ export function IsValidUrl(validationOptions?: ValidationOptions) {
     registerDecorator({
       target: object.constructor,
       propertyName: propertyName,
-      options: validationOptions,
+      options: validationOptions || {},
       constraints: [],
       validator: IsValidUrlConstraint,
     });
@@ -241,7 +241,7 @@ export class IsValidDateRangeConstraint implements ValidatorConstraintInterface 
     return startDate <= endDate;
   }
 
-  defaultMessage(args: ValidationArguments) {
+  defaultMessage(_args: ValidationArguments) {
     const [relatedPropertyName] = args.constraints;
     return `${relatedPropertyName} must be after or equal to ${args.property}`;
   }
@@ -252,7 +252,7 @@ export function IsValidDateRange(property: string, validationOptions?: Validatio
     registerDecorator({
       target: object.constructor,
       propertyName: propertyName,
-      options: validationOptions,
+      options: validationOptions || {},
       constraints: [property],
       validator: IsValidDateRangeConstraint,
     });
@@ -262,7 +262,7 @@ export function IsValidDateRange(property: string, validationOptions?: Validatio
 // Sanitize HTML input
 @ValidatorConstraint({ name: 'isSanitizedHtml', async: false })
 export class IsSanitizedHtmlConstraint implements ValidatorConstraintInterface {
-  validate(html: string, args: ValidationArguments) {
+  validate(html: string, _args: ValidationArguments) {
     if (!html) return true; // Optional field
     
     // Check for potentially dangerous HTML tags
@@ -286,7 +286,7 @@ export class IsSanitizedHtmlConstraint implements ValidatorConstraintInterface {
     return true;
   }
 
-  defaultMessage(args: ValidationArguments) {
+  defaultMessage(_args: ValidationArguments) {
     return 'HTML content contains potentially dangerous tags';
   }
 }
@@ -296,7 +296,7 @@ export function IsSanitizedHtml(validationOptions?: ValidationOptions) {
     registerDecorator({
       target: object.constructor,
       propertyName: propertyName,
-      options: validationOptions,
+      options: validationOptions || {},
       constraints: [],
       validator: IsSanitizedHtmlConstraint,
     });

@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsBoolean, IsNumber, IsEmail, IsUrl, IsIn } from 'class-validator';
+import { IsString, IsOptional, IsEmail, IsIn } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class EmailSettingsDto {
@@ -159,5 +159,5 @@ export class SecuritySettingsDto {
 export class TestConnectionDto {
   @ApiProperty({ description: 'Service to test', enum: ['email'] })
   @IsIn(['email'])
-  service: string;
+  service!: string;
 }

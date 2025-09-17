@@ -5,7 +5,7 @@ export class CreateRequestDto {
   @ApiProperty({ enum: ['STOCK_ADJUSTMENT', 'NEW_PRODUCT', 'ORDER_NOTE', 'DOCUMENT_UPLOAD', 'OTHER'] })
   @IsString()
   @IsIn(['STOCK_ADJUSTMENT', 'NEW_PRODUCT', 'ORDER_NOTE', 'DOCUMENT_UPLOAD', 'OTHER'])
-  type: string;
+  type!: string;
 
   @ApiPropertyOptional()
   @IsOptional()
@@ -27,7 +27,7 @@ export class RejectRequestDto {
 export class AddCommentDto {
   @ApiProperty()
   @IsString()
-  message: string;
+  message!: string;
 
   @ApiPropertyOptional()
   @IsOptional()

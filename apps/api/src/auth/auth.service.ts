@@ -17,7 +17,7 @@ export class AuthService {
     private sessionService: SessionService,
     private auditService: AuditService,
   ) {
-    this.redis = new Redis(process.env.REDIS_URL || 'redis://valkey:6379/0');
+    this.redis = new Redis(process.env['REDIS_URL'] || 'redis://valkey:6379/0');
   }
 
   async login(dto: LoginDto, metadata: { ipAddress?: string; userAgent?: string }) {

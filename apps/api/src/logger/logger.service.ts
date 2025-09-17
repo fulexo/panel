@@ -13,7 +13,7 @@ export class LoggerService implements NestLoggerService {
   private logLevel: LogLevel;
 
   constructor() {
-    const level = process.env.LOG_LEVEL || (process.env.NODE_ENV === 'production' ? 'LOG' : 'DEBUG');
+    const level = process.env['LOG_LEVEL'] || (process.env['NODE_ENV'] === 'production' ? 'LOG' : 'DEBUG');
     this.logLevel = LogLevel[level as keyof typeof LogLevel] || LogLevel.LOG;
   }
 
@@ -27,9 +27,9 @@ export class LoggerService implements NestLoggerService {
     return level <= this.logLevel;
   }
 
-  error(message: any, trace?: string, context?: string): void {
+  error(message: any, _trace?: string, context?: string): void {
     if (this.shouldLog(LogLevel.ERROR)) {
-      const formatted = this.formatMessage('ERROR', message, context);
+      this.formatMessage('ERROR', message, context);
       // Error logged to console
       // Trace logged to console
     }
@@ -37,28 +37,28 @@ export class LoggerService implements NestLoggerService {
 
   warn(message: any, context?: string): void {
     if (this.shouldLog(LogLevel.WARN)) {
-      const formatted = this.formatMessage('WARN', message, context);
+      this.formatMessage('WARN', message, context);
       // Warning logged to console
     }
   }
 
   log(message: any, context?: string): void {
     if (this.shouldLog(LogLevel.LOG)) {
-      const formatted = this.formatMessage('INFO', message, context);
+      this.formatMessage('INFO', message, context);
       // Info logged to console
     }
   }
 
   debug(message: any, context?: string): void {
     if (this.shouldLog(LogLevel.DEBUG)) {
-      const formatted = this.formatMessage('DEBUG', message, context);
+      this.formatMessage('DEBUG', message, context);
       // Debug logged to console
     }
   }
 
   verbose(message: any, context?: string): void {
     if (this.shouldLog(LogLevel.VERBOSE)) {
-      const formatted = this.formatMessage('VERBOSE', message, context);
+      this.formatMessage('VERBOSE', message, context);
       // Info logged to console
     }
   }

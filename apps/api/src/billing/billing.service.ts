@@ -308,7 +308,7 @@ export class BillingService {
     }));
   }
 
-  async bulkUpdateBatches(tenantId: string, batchIds: string[], updates: any, userId: string) {
+  async bulkUpdateBatches(tenantId: string, batchIds: string[], updates: any, _userId: string) {
     if (!batchIds || batchIds.length === 0) {
       throw new BadRequestException('No batch IDs provided');
     }
@@ -342,7 +342,7 @@ export class BillingService {
     };
   }
 
-  async bulkDeleteBatches(tenantId: string, batchIds: string[], userId: string) {
+  async bulkDeleteBatches(tenantId: string, batchIds: string[], _userId: string) {
     if (!batchIds || batchIds.length === 0) {
       throw new BadRequestException('No batch IDs provided');
     }

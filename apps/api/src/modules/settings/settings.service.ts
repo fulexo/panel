@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma.service';
 import { EncryptionService } from '../encryption/encryption.service';
 // import { Settings } from '@prisma/client';
@@ -103,13 +103,13 @@ export class SettingsService {
         key,
         value: encryptedValue,
         isSecret,
-        updatedBy,
+        updatedBy: updatedBy || null,
         metadata,
       },
       update: {
         value: encryptedValue,
         isSecret,
-        updatedBy,
+        updatedBy: updatedBy || null,
         metadata,
       },
     });
@@ -137,13 +137,13 @@ export class SettingsService {
               ? this.encryption.encrypt(value)
               : value,
             isSecret: secretKeys.includes(key),
-            updatedBy,
+            updatedBy: updatedBy || null,
           },
           update: {
             value: secretKeys.includes(key) && value
               ? this.encryption.encrypt(value)
               : value,
-            updatedBy,
+            updatedBy: updatedBy || null,
           },
         })
       )

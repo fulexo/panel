@@ -20,7 +20,7 @@ export class JwtService {
 
   async init() {
     // Production'da RSA key pair kullan, development'te HMAC
-    if (process.env.NODE_ENV === 'production') {
+    if (process.env['NODE_ENV'] === 'production') {
       await this.initRSAKeys();
     } else {
       await this.initHMACKey();
@@ -70,7 +70,7 @@ export class JwtService {
   }
 
   private async initHMACKey() {
-    const secret = process.env.JWT_SECRET || 'dev-secret-key-change-in-production';
+    const secret = process.env['JWT_SECRET'] || 'dev-secret-key-change-in-production';
     
     // Validate secret strength
     if (secret.length < 32) {
@@ -129,7 +129,7 @@ export class JwtService {
 
     const accessToken = await new jose.SignJWT(accessPayload as any)
       .setProtectedHeader({ 
-        alg: process.env.NODE_ENV === 'production' ? 'RS256' : 'HS256',
+        alg: process.env['NODE_ENV'] === 'production' ? 'RS256' : 'HS256',
         ...(this.keyId && { kid: this.keyId })
       })
       .setIssuedAt()
@@ -138,7 +138,7 @@ export class JwtService {
 
     const refreshToken = await new jose.SignJWT(refreshPayload as any)
       .setProtectedHeader({ 
-        alg: process.env.NODE_ENV === 'production' ? 'RS256' : 'HS256',
+        alg: process.env['NODE_ENV'] === 'production' ? 'RS256' : 'HS256',
         ...(this.keyId && { kid: this.keyId })
       })
       .setIssuedAt()
@@ -158,13 +158,13 @@ export class JwtService {
 
     try {
       const { payload } = await jose.jwtVerify(token, this.publicKey, {
-        algorithms: [process.env.NODE_ENV === 'production' ? 'RS256' : 'HS256'],
+        algorithms: [process.env['NODE_ENV'] === 'production' ? 'RS256' : 'HS256'],
         clockTolerance: 30, // 30 seconds tolerance
         maxTokenAge: '15m', // Maximum token age
       });
 
       // Additional validation
-      if (!payload.sub || !payload.email || !payload.role || !payload.tenantId) {
+      if (!payload.sub || !payload['email'] || !payload['role'] || !payload['tenantId']) {
         throw new Error('Invalid token payload');
       }
 
@@ -194,7 +194,7 @@ export class JwtService {
 
     try {
       const { payload } = await jose.jwtVerify(token, this.publicKey, {
-        algorithms: [process.env.NODE_ENV === 'production' ? 'RS256' : 'HS256']
+        algorithms: [process.env['NODE_ENV'] === 'production' ? 'RS256' : 'HS256']
       });
 
       // Refresh token'ın jti'si refresh_ ile başlamalı
@@ -225,7 +225,7 @@ export class JwtService {
   }
 
   async rotateKeys() {
-    if (process.env.NODE_ENV !== 'production') {
+    if (process.env['NODE_ENV'] !== 'production') {
       return; // Sadece production'da key rotation
     }
 
@@ -287,7 +287,7 @@ export class JwtService {
   }
 
   // Generate secure random JTI
-  private generateSecureJTI(): string {
+  private _generateSecureJTI(): string {
     const timestamp = Date.now().toString(36);
     const random = Math.random().toString(36).substring(2);
     return `jti_${timestamp}_${random}`;

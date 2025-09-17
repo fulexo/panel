@@ -48,8 +48,8 @@ export class SessionService {
         userId,
         token: tokenHash,
         fingerprint,
-        ipAddress: metadata.ipAddress,
-        userAgent: metadata.userAgent,
+        ipAddress: metadata.ipAddress || null,
+        userAgent: metadata.userAgent || null,
         expiresAt: new Date(Date.now() + 15 * 60 * 1000), // 15 dakika
       }
     });
@@ -142,8 +142,8 @@ export class SessionService {
       data: {
         token: newTokenHash,
         fingerprint: this.generateFingerprint(metadata),
-        ipAddress: metadata.ipAddress,
-        userAgent: metadata.userAgent,
+        ipAddress: metadata.ipAddress || null,
+        userAgent: metadata.userAgent || null,
         expiresAt: new Date(Date.now() + 15 * 60 * 1000), // 15 dakika
       }
     });

@@ -43,7 +43,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       switch (exception.code) {
         case 'P2002':
           message = 'A record with this data already exists';
-          details = { field: exception.meta?.target };
+          details = { field: exception.meta?.['target'] };
           break;
         case 'P2025':
           message = 'Record not found';
@@ -105,7 +105,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       timestamp: new Date().toISOString(),
       path: request.url,
       ...(details && { details }),
-      ...(process.env.NODE_ENV === 'development' && { stack: exception instanceof Error ? exception.stack : undefined }),
+      ...(process.env['NODE_ENV'] === 'development' && { stack: exception instanceof Error ? exception.stack : undefined }),
     };
 
     response.status(status).json(errorResponse);
