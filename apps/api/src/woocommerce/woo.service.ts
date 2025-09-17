@@ -74,7 +74,7 @@ export class WooService {
       const topics = [
         'order.created','order.updated','product.created','product.updated','product.deleted'
       ];
-      const results: any[] = [];
+      const results: Record<string, unknown>[] = [];
       for(const topic of topics){
         const body = {
           name: `fx-${topic}`,
@@ -93,7 +93,7 @@ export class WooService {
     });
   }
 
-  private verifySignature(payload: any, secret?: string, signature?: string){
+  private verifySignature(payload: string | Record<string, unknown>, secret?: string, signature?: string){
     if (!secret) return true; // allow if no secret configured
     if (!signature) return false;
     try{
@@ -109,7 +109,7 @@ export class WooService {
     }
   }
 
-  async handleWebhook(storeId: string, topic: string, signature: string, payload: any, rawBody?: string){
+  async handleWebhook(storeId: string, topic: string, signature: string, payload: string | Record<string, unknown>, rawBody?: string){
     const s = await this.prisma.wooStore.findFirst({ where: { id: storeId } });
     if(!s) throw new BadRequestException('Store not found');
 

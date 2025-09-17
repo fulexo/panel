@@ -189,7 +189,7 @@ export interface Return {
   reason?: string;
   notes?: string;
   refundAmount?: number;
-  items?: any;
+  items?: Record<string, unknown>;
   createdAt: string;
   updatedAt: string;
   order: Order;
@@ -295,7 +295,7 @@ export interface WooStore {
   apiVersion: string;
   webhookSecret?: string;
   active: boolean;
-  lastSync?: any;
+  lastSync?: Record<string, unknown>;
   createdAt: string;
   updatedAt: string;
   tenant: Tenant;
@@ -351,7 +351,7 @@ export interface Request {
   type: RequestType;
   status: RequestStatus;
   priority: RequestPriority;
-  payload: any;
+  payload: Record<string, unknown>;
   reviewerUserId?: string;
   reviewedAt?: string;
   appliedAt?: string;
@@ -431,7 +431,7 @@ export interface Settings {
   key: string;
   value?: string;
   isSecret: boolean;
-  metadata?: any;
+  metadata?: Record<string, unknown>;
   updatedBy?: string;
   updatedAt: string;
   createdAt: string;
@@ -446,7 +446,7 @@ export interface ApiError {
   message: string;
   timestamp: string;
   path: string;
-  details?: any;
+  details?: Record<string, unknown>;
   stack?: string;
 }
 
@@ -505,5 +505,5 @@ export interface ChangePasswordForm {
 export interface UpdateProfileForm {
   name?: string;
   email?: string;
-  notificationPreferences?: any;
+  notificationPreferences?: Record<string, unknown>;
 }

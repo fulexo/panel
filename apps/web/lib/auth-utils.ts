@@ -5,7 +5,7 @@ export class AuthUtils {
   private static readonly USER_KEY = 'user';
 
   // Secure token storage with httpOnly cookies only
-  static async setTokens(accessToken: string, refreshToken: string, user: any) {
+  static async setTokens(accessToken: string, refreshToken: string, user: Record<string, unknown>) {
     try {
       // Set httpOnly cookies via API
       const response = await fetch('/api/auth/set-tokens', {
@@ -69,7 +69,7 @@ export class AuthUtils {
   }
 
   // Get user from secure storage (sessionStorage only)
-  static getUser(): any | null {
+  static getUser(): Record<string, unknown> | null {
     if (typeof window === 'undefined') return null;
     const userStr = sessionStorage.getItem(this.USER_KEY);
     return userStr ? JSON.parse(userStr) : null;

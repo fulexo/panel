@@ -64,7 +64,7 @@ export class UpdateProfileDto {
 
   @ApiProperty({ required: false })
   @IsOptional()
-  notificationPreferences?: any;
+  notificationPreferences?: Record<string, unknown>;
 }
 
 export class ChangePasswordDto {
@@ -89,5 +89,5 @@ export class SetTokensDto {
   refreshToken!: string;
 
   @ApiProperty()
-  user!: any;
+  user!: Record<string, unknown>;
 }

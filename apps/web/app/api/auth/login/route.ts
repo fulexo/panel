@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
         const [name, value] = nameValue.split('=');
         
         if (name && value) {
-          const cookieOptions: any = {
+          const cookieOptions: Record<string, unknown> = {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             sameSite: 'strict',

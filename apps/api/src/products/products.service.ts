@@ -14,7 +14,7 @@ export class ProductsService {
   async list(tenantId: string, page = 1, limit = 50, search?: string, status?: string, category?: string, storeId?: string) {
     const take = Math.min(limit, 200);
     const skip = (page - 1) * take;
-    const where: any = { tenantId };
+    const where: Record<string, unknown> = { tenantId };
     
     if (search) {
       where.OR = [
@@ -57,7 +57,7 @@ export class ProductsService {
     return product;
   }
 
-  async create(tenantId: string, dto: any) {
+  async create(tenantId: string, dto: Record<string, unknown>) {
     // Check if SKU already exists
     const existingProduct = await this.runTenant(tenantId, async (db) => 
       db.product.findFirst({ where: { sku: dto.sku, tenantId } })
@@ -84,7 +84,7 @@ export class ProductsService {
     }));
   }
 
-  async update(tenantId: string, id: string, dto: any) {
+  async update(tenantId: string, id: string, dto: Record<string, unknown>) {
     const product = await this.runTenant(tenantId, async (db) => 
       db.product.findFirst({ where: { id, tenantId } })
     );
@@ -129,7 +129,7 @@ export class ProductsService {
     }));
   }
 
-  async bulkUpdate(tenantId: string, productIds: string[], updates: any, _userId: string) {
+  async bulkUpdate(tenantId: string, productIds: string[], updates: Record<string, unknown>, _userId: string) {
     if (!productIds || productIds.length === 0) {
       throw new BadRequestException('No product IDs provided');
     }
@@ -139,7 +139,7 @@ export class ProductsService {
     }
 
     const results = await this.runTenant(tenantId, async (db) => {
-      const updateData: any = {};
+      const updateData: Record<string, unknown> = {};
       
       if (updates.active !== undefined) updateData.active = updates.active;
       if (updates.stock !== undefined) updateData.stock = updates.stock !== null ? parseInt(updates.stock) : null;

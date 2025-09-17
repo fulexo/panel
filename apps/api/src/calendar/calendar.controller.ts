@@ -13,63 +13,63 @@ export class CalendarController {
   // Events - Simplified (only for internal use)
   @Get('events')
   @ApiOperation({ summary: 'List calendar events (internal use)' })
-  async listEvents(@CurrentUser() user: any, @Query('from') from?: string, @Query('to') to?: string) {
+  async listEvents(@CurrentUser() user: { id: string; email: string; role: string; tenantId: string }, @Query('from') from?: string, @Query('to') to?: string) {
     return this.calendar.listEvents(user.tenantId, from, to);
   }
 
   @Post('events')
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Create calendar event (admin only)' })
-  async createEvent(@CurrentUser() user: any, @Body() dto: any) {
+  async createEvent(@CurrentUser() user: { id: string; email: string; role: string; tenantId: string }, @Body() dto: Record<string, unknown>) {
     return this.calendar.createEvent(user.tenantId, dto);
   }
 
   @Put('events/:id')
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Update calendar event (admin only)' })
-  async updateEvent(@CurrentUser() user: any, @Param('id') id: string, @Body() dto: any) {
+  async updateEvent(@CurrentUser() user: { id: string; email: string; role: string; tenantId: string }, @Param('id') id: string, @Body() dto: Record<string, unknown>) {
     return this.calendar.updateEvent(user.tenantId, id, dto);
   }
 
   @Delete('events/:id')
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Delete calendar event (admin only)' })
-  async deleteEvent(@CurrentUser() user: any, @Param('id') id: string) {
+  async deleteEvent(@CurrentUser() user: { id: string; email: string; role: string; tenantId: string }, @Param('id') id: string) {
     return this.calendar.deleteEvent(user.tenantId, id);
   }
 
   // Business hours
   @Get('business-hours')
   @ApiOperation({ summary: 'Get business hours' })
-  async getBusinessHours(@CurrentUser() user: any) {
+  async getBusinessHours(@CurrentUser() user: { id: string; email: string; role: string; tenantId: string }) {
     return this.calendar.getBusinessHours(user.tenantId);
   }
 
   @Post('business-hours')
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Set business hours (admin)' })
-  async setBusinessHours(@CurrentUser() user: any, @Body() dto: any) {
+  async setBusinessHours(@CurrentUser() user: { id: string; email: string; role: string; tenantId: string }, @Body() dto: Record<string, unknown>) {
     return this.calendar.setBusinessHours(user.tenantId, dto);
   }
 
   // Holidays
   @Get('holidays')
   @ApiOperation({ summary: 'List holidays' })
-  async listHolidays(@CurrentUser() user: any) {
+  async listHolidays(@CurrentUser() user: { id: string; email: string; role: string; tenantId: string }) {
     return this.calendar.listHolidays(user.tenantId);
   }
 
   @Post('holidays')
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Add holiday (admin)' })
-  async addHoliday(@CurrentUser() user: any, @Body() dto: any) {
+  async addHoliday(@CurrentUser() user: { id: string; email: string; role: string; tenantId: string }, @Body() dto: Record<string, unknown>) {
     return this.calendar.addHoliday(user.tenantId, dto);
   }
 
   @Delete('holidays/:id')
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Remove holiday (admin)' })
-  async removeHoliday(@CurrentUser() user: any, @Param('id') id: string) {
+  async removeHoliday(@CurrentUser() user: { id: string; email: string; role: string; tenantId: string }, @Param('id') id: string) {
     return this.calendar.removeHoliday(user.tenantId, id);
   }
 

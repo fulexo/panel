@@ -15,7 +15,7 @@ export default function InboundPage(){
   const [qty, setQty] = useState('');
 
   // Token is now handled by httpOnly cookies
-  const api = (path: string, init?: any) => fetch(`/api${path}`, { headers: { 'Content-Type': 'application/json' }, ...init });
+  const api = (path: string, init?: Record<string, unknown>) => fetch(`/api${path}`, { headers: { 'Content-Type': 'application/json' }, ...init });
 
   const load = async () => {
     const r = await api('/inbound/shipments');

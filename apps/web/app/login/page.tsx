@@ -20,8 +20,8 @@ export default function LoginPage() {
 
     try {
       await login(email, password);
-    } catch (err: any) {
-      if (err.message === '2FA_REQUIRED') {
+    } catch (err: unknown) {
+      if (err instanceof Error && err.message === '2FA_REQUIRED') {
         router.push('/login/2fa');
         return;
       }

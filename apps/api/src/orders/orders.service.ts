@@ -18,7 +18,7 @@ export class OrdersService {
     return this.prisma.withTenant(tenantId, fn);
   }
 
-  private sanitizeOrderForCustomer = (order: any) => {
+  private sanitizeOrderForCustomer = (order: Record<string, unknown>) => {
     const { notes: _notes, billingAddress: _billingAddress, tags: _tags, serviceCharges: _serviceCharges, account: _account, ...rest } = order || {};
     // Suppress unused variable warnings for destructured variables that are intentionally removed
     void _notes;
@@ -119,7 +119,7 @@ export class OrdersService {
     }
 
     // Build where clause
-    const where: any = {
+    const where: Record<string, unknown> = {
       tenantId,
     };
 
@@ -376,7 +376,7 @@ export class OrdersService {
     // const auditLogs = await this.audit.getAuditLogs({ tenantId, entityType: 'order', entityId: orderId });
 
     // Build timeline
-    const timeline: any[] = [
+    const timeline: Record<string, unknown>[] = [
       {
         type: 'created',
         date: order.createdAt,
@@ -418,7 +418,7 @@ export class OrdersService {
   }
 
   async getOrderStats(tenantId: string, query: { dateFrom?: string; dateTo?: string; storeId?: string }) {
-    const where: any = {
+    const where: Record<string, unknown> = {
       tenantId,
     };
 
@@ -483,7 +483,7 @@ export class OrdersService {
     return {
       totalOrders,
       totalRevenue: totalRevenue._sum.total || 0,
-      statusBreakdown: statusCounts.map((s: any) => ({
+      statusBreakdown: statusCounts.map((s: Record<string, unknown>) => ({
         status: s.status,
         count: s._count,
       })),
@@ -608,7 +608,7 @@ export class OrdersService {
     }
 
     const results = await this.runTenant(tenantId, async (db) => {
-      const updateData: any = {};
+      const updateData: Record<string, unknown> = {};
       
       if (updates.status !== undefined) updateData.status = updates.status;
       if (updates.notes !== undefined) updateData.notes = updates.notes;

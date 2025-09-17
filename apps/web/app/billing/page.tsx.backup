@@ -56,7 +56,7 @@ export default function BillingPage() {
   const [periodTo, setPeriodTo] = useState('');
 
   // Token is now handled by httpOnly cookies
-  const api = (path: string, init?: any) => 
+  const api = (path: string, init?: Record<string, unknown>) => 
     fetch(`/api${path}`, {
       headers: { 'Content-Type': 'application/json' },
       ...init
@@ -117,8 +117,8 @@ export default function BillingPage() {
       setPeriodFrom('');
       setPeriodTo('');
       await loadBatches();
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setSaving(false);
     }
@@ -149,8 +149,8 @@ export default function BillingPage() {
       setSelectedBatch('');
       setInvoiceIds('');
       await loadBatches();
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setSaving(false);
     }
@@ -172,8 +172,8 @@ export default function BillingPage() {
 
       setSuccess('Batch issued successfully');
       await loadBatches();
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setSaving(false);
     }
@@ -195,8 +195,8 @@ export default function BillingPage() {
 
       setSuccess('Batch deleted successfully');
       await loadBatches();
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setSaving(false);
     }
@@ -244,8 +244,8 @@ export default function BillingPage() {
       setSuccess(result.message);
       setSelectedBatches([]);
       await loadBatches();
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setSaving(false);
     }
@@ -274,8 +274,8 @@ export default function BillingPage() {
       setSuccess(result.message);
       setSelectedBatches([]);
       await loadBatches();
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setSaving(false);
     }

@@ -12,13 +12,13 @@ export class PolicyService {
 
   async getVisibility(tenantId: string) {
     const pol = await this.runTenant(tenantId, async (db) => db.policy.findMany({ where: { tenantId, active: true } }));
-    const modules: any = {};
-    const actions: any = {};
-    const dataScope: any = {};
+    const modules: Record<string, unknown> = {};
+    const actions: Record<string, unknown> = {};
+    const dataScope: Record<string, unknown> = {};
     for(const p of pol){
-      Object.assign(modules, (p as any).modules || {});
-      Object.assign(actions, (p as any).actions || {});
-      Object.assign(dataScope, (p as any).dataScope || {});
+      Object.assign(modules, (p as Record<string, unknown>).modules || {});
+      Object.assign(actions, (p as Record<string, unknown>).actions || {});
+      Object.assign(dataScope, (p as Record<string, unknown>).dataScope || {});
     }
     return { modules, actions, dataScope };
   }

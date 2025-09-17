@@ -11,7 +11,7 @@ export class PolicyController {
 
   @Get('visibility')
   @ApiOperation({ summary: 'Get module/action/data scope visibility for tenant' })
-  async visibility(@CurrentUser() user: any) {
+  async visibility(@CurrentUser() user: { id: string; email: string; role: string; tenantId: string }) {
     return this.policy.getVisibility(user.tenantId);
   }
 }

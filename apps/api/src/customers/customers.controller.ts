@@ -32,7 +32,7 @@ export class CustomersController {
 
   @Get(':id')
   @ApiOperation({ summary: 'Get customer' })
-  async get(@CurrentUser() user: any, @Param('id') id: string) {
+  async get(@CurrentUser() user: { id: string; email: string; role: string; tenantId: string }, @Param('id') id: string) {
     return this.customers.get(user.tenantId, id);
   }
 
@@ -53,7 +53,7 @@ export class CustomersController {
   @Delete(':id')
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Delete customer (admin only)' })
-  async remove(@CurrentUser() user: any, @Param('id') id: string) {
+  async remove(@CurrentUser() user: { id: string; email: string; role: string; tenantId: string }, @Param('id') id: string) {
     return this.customers.remove(user.tenantId, id);
   }
 
