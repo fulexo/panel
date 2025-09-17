@@ -19,9 +19,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const checkAuth = async () => {
     try {
-      // Since tokens are now in httpOnly cookies, we need to make a request to check auth
-      // The server will automatically include the httpOnly cookies
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:3000'}/api/auth/me`, {
+      // Use the frontend API route which will forward to backend
+      const response = await fetch('/api/auth/me', {
         method: 'GET',
         credentials: 'include', // Include httpOnly cookies
         headers: {
@@ -62,6 +61,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = async (email: string, password: string) => {
     const response = await fetch('/api/auth/login', {
       method: 'POST',
+      credentials: 'include', // Include httpOnly cookies
       headers: {
         'Content-Type': 'application/json',
       },
@@ -94,7 +94,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = async () => {
     // Call backend logout to invalidate session
     try {
-      await fetch(`${process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:3000'}/api/auth/logout`, {
+      await fetch('/api/auth/logout', {
         method: 'POST',
         credentials: 'include',
         headers: {

@@ -1,10 +1,10 @@
-const { Worker, QueueEvents, Queue } = require('bullmq');
-const Redis = require('ioredis');
-const client = require('prom-client');
-const express = require('express');
-const cors = require('cors');
-const { PrismaClient, Prisma } = require('@prisma/client');
-const { validateEnvironment } = require('./env.validation');
+import { Worker, QueueEvents, Queue } from 'bullmq';
+import Redis from 'ioredis';
+import * as client from 'prom-client';
+import express from 'express';
+import cors from 'cors';
+import { PrismaClient, Prisma } from '@prisma/client';
+import { validateEnvironment } from './env.validation';
 import { logger } from './lib/logger';
 
 // Initialize Prometheus metrics
@@ -788,7 +788,7 @@ start().catch(err => {
 });
 
 // Export for testing
-module.exports = { app, worker, prisma, connection };
+export { app, worker, prisma, connection };
 
 // Process event handlers (consolidated)
 process.on('warning', (warning) => {

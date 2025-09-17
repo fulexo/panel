@@ -27,7 +27,43 @@ export class AuthController {
       ipAddress: req.ip,
       userAgent: req.headers['user-agent'],
     });
-    return result;
+    
+    // If 2FA is required, return the temp token
+    if (result.requiresTwoFactor) {
+      return {
+        requiresTwoFactor: true,
+        tempToken: result.tempToken,
+        message: '2FA verification required',
+        statusCode: 200,
+        timestamp: new Date().toISOString(),
+        path: '/api/auth/login'
+      };
+    }
+    
+    // Set httpOnly cookies for tokens
+    req.res.cookie('access_token', result.access, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 15 * 60 * 1000, // 15 minutes
+      path: '/',
+    });
+    
+    req.res.cookie('refresh_token', result.refresh, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      path: '/',
+    });
+    
+    return {
+      user: result.user,
+      message: 'Login successful',
+      statusCode: 200,
+      timestamp: new Date().toISOString(),
+      path: '/api/auth/login'
+    };
   }
 
   @Post('register')
@@ -55,14 +91,32 @@ export class AuthController {
   async logout(@CurrentUser() user: any, @Req() req: any) {
     const token = req.headers.authorization?.replace('Bearer ', '');
     await this.sessionService.revokeSession(user.id, token);
-    return { message: 'Logged out successfully' };
+    
+    // Clear httpOnly cookies
+    req.res.clearCookie('access_token', { path: '/' });
+    req.res.clearCookie('refresh_token', { path: '/' });
+    req.res.clearCookie('user', { path: '/' });
+    
+    return { 
+      message: 'Logged out successfully',
+      statusCode: 200,
+      timestamp: new Date().toISOString(),
+      path: '/api/auth/logout'
+    };
   }
 
   @Get('me')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get current user info' })
   async me(@CurrentUser() user: { id: string; email: string; role: string; tenantId: string }) {
-    return this.authService.getUserInfo(user.id);
+    const userInfo = await this.authService.getUserInfo(user.id);
+    return {
+      data: userInfo,
+      message: 'User info retrieved successfully',
+      statusCode: 200,
+      timestamp: new Date().toISOString(),
+      path: '/api/auth/me'
+    };
   }
 
   @Get('sessions')

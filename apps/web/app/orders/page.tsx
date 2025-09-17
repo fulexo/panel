@@ -55,10 +55,10 @@ export default function OrdersPage() {
   const [stores, setStores] = useState<any[]>([]);
   const [customers, setCustomers] = useState<any[]>([]);
 
-  const token = () => localStorage.getItem('access_token');
   const api = (path: string, init?: any) => 
     fetch(`/api${path}`, {
-      headers: { Authorization: `Bearer ${token()}`, 'Content-Type': 'application/json' },
+      credentials: 'include', // Include httpOnly cookies
+      headers: { 'Content-Type': 'application/json' },
       ...init
     });
 
