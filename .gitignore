@@ -11,13 +11,6 @@ yarn-error.log*
 /apps/**/.next/
 /apps/**/.turbo/
 
-# Env
-compose/.env
-.env
-.env.*
-!.env.example
-!compose/.env.example
-
 # Docker
 **/.DS_Store
 **/.idea/
