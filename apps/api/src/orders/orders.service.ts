@@ -275,11 +275,11 @@ export class OrdersService {
         tags: dto.tags || [],
         confirmedAt: dto.confirmedAt || new Date(),
         items: {
-          create: dto.items?.map((item: any) => ({
-            sku: item.sku,
-            name: item.name,
-            qty: item.qty,
-            price: item.price,
+          create: dto.items?.map((item: Record<string, unknown>) => ({
+            sku: item.sku as string,
+            name: item.name as string,
+            qty: item.qty as number,
+            price: item.price as number,
           })) || [],
         },
       },
@@ -383,13 +383,13 @@ export class OrdersService {
     const timeline: Record<string, unknown>[] = [
       {
         type: 'created',
-        date: (order as any).createdAt,
+        date: (order as Record<string, unknown>).createdAt as Date,
         description: 'Order created',
       },
     ];
 
     // Add shipment events
-    for (const shipment of (order as any).shipments || []) {
+    for (const shipment of ((order as Record<string, unknown>).shipments as Record<string, unknown>[]) || []) {
       if (shipment.shippedAt) {
         timeline.push({
           type: 'shipped',
@@ -429,10 +429,10 @@ export class OrdersService {
     if (query.dateFrom || query.dateTo) {
       where.confirmedAt = {};
       if (query.dateFrom) {
-        (where as any).confirmedAt = { gte: new Date(query.dateFrom) };
+        (where as Record<string, unknown>).confirmedAt = { gte: new Date(query.dateFrom) };
       }
       if (query.dateTo) {
-        (where as any).confirmedAt = { ...(where as any).confirmedAt, lte: new Date(query.dateTo) };
+        (where as Record<string, unknown>).confirmedAt = { ...((where as Record<string, unknown>).confirmedAt as Record<string, unknown>), lte: new Date(query.dateTo) };
       }
     }
 

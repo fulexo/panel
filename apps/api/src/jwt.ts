@@ -1,6 +1,7 @@
 import * as jose from 'jose';
 import { PrismaService } from './prisma.service';
 import { Logger } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 
 export interface JWTPayload {
   sub: string;
@@ -70,7 +71,7 @@ export class JwtService {
           data: {
             kid,
             alg: 'RS256',
-            publicJwk: publicJwk as any,
+            publicJwk: publicJwk as Prisma.InputJsonValue,
             privatePem,
             active: true,
             expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000) // 1 yıl
@@ -191,7 +192,7 @@ export class JwtService {
       jti: `refresh_${jti}`
     };
 
-    const accessToken = await new jose.SignJWT(accessPayload as any)
+    const accessToken = await new jose.SignJWT(accessPayload as unknown as jose.JWTPayload)
       .setProtectedHeader({ 
         alg: process.env['NODE_ENV'] === 'production' ? 'RS256' : 'HS256',
         ...(this.keyId && { kid: this.keyId })
@@ -200,7 +201,7 @@ export class JwtService {
       .setExpirationTime('15m')
       .sign(this.privateKey);
 
-    const refreshToken = await new jose.SignJWT(refreshPayload as any)
+    const refreshToken = await new jose.SignJWT(refreshPayload as unknown as jose.JWTPayload)
       .setProtectedHeader({ 
         alg: process.env['NODE_ENV'] === 'production' ? 'RS256' : 'HS256',
         ...(this.keyId && { kid: this.keyId })

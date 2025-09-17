@@ -244,7 +244,7 @@ export class SyncService {
     });
 
     for (const rule of rules) {
-      if (this.matchesRule(remoteOrder as any, rule.conditionsJson as any)) {
+      if (this.matchesRule(remoteOrder as Record<string, unknown>, rule.conditionsJson as Record<string, unknown>)) {
         return rule.tenantId;
       }
     }
@@ -255,8 +255,8 @@ export class SyncService {
   private matchesRule(order: Record<string, unknown>, conditions: Record<string, unknown>): boolean {
     if (!conditions || !conditions.conditions) return false;
 
-    for (const condition of (conditions.conditions as any) || []) {
-      const fieldValue = this.getFieldValue(order, condition.field);
+    for (const condition of ((conditions.conditions as Record<string, unknown>[]) || [])) {
+      const fieldValue = this.getFieldValue(order, condition.field as string);
       
       switch (condition.op) {
         case 'equals':
@@ -266,10 +266,10 @@ export class SyncService {
           if (!Array.isArray(condition.value) || !condition.value.includes(fieldValue)) return false;
           break;
         case 'contains':
-          if (!String(fieldValue).includes(condition.value)) return false;
+          if (!String(fieldValue).includes(condition.value as string)) return false;
           break;
         case 'startsWith':
-          if (!String(fieldValue).startsWith(condition.value)) return false;
+          if (!String(fieldValue).startsWith(condition.value as string)) return false;
           break;
         default:
           return false;

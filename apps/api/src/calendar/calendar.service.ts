@@ -87,17 +87,23 @@ export class CalendarService {
     return { hours: rows };
   }
 
-  async setBusinessHours(tenantId: string, dto: { hours: Array<{ weekday: number; startTime: string; endTime: string }> }) {
-    const hours = dto.hours || [];
+  async setBusinessHours(tenantId: string, dto: { days: Array<{ day: string; startTime?: string; endTime?: string; isWorkingDay?: boolean }> }) {
+    const days = dto.days || [];
     // Upsert per weekday
-    for (const h of hours) {
+    for (const d of days) {
+      const weekday = this.getWeekdayNumber(d.day);
       await this.runTenant(tenantId, async (db) => db.businessHours.upsert({
-        where: { tenantId_weekday: { tenantId, weekday: h.weekday } },
-        create: { tenantId, weekday: h.weekday, startTime: h.startTime, endTime: h.endTime },
-        update: { startTime: h.startTime, endTime: h.endTime },
+        where: { tenantId_weekday: { tenantId, weekday } },
+        create: { tenantId, weekday, startTime: d.startTime || '09:00', endTime: d.endTime || '17:00' },
+        update: { startTime: d.startTime, endTime: d.endTime },
       }));
     }
     return this.getBusinessHours(tenantId);
+  }
+
+  private getWeekdayNumber(day: string): number {
+    const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    return days.indexOf(day.toLowerCase());
   }
 
   async listHolidays(tenantId: string) {

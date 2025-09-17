@@ -15,7 +15,7 @@ import Redis from 'ioredis';
 import * as client from 'prom-client';
 import express from 'express';
 import cors from 'cors';
-import { PrismaClient, Prisma } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import { Decimal } from 'decimal.js';
 // import { validateEnvOnStartup } from './env.validation.js';
 import { logger } from './lib/logger';
@@ -78,7 +78,7 @@ const jobProcessors = {
       logger.info(`Order sync completed for account: ${accountId}`);
       return { success: true, accountId };
     } catch (error) {
-      logger.error(`Order sync failed for account ${(job.data as any)?.['accountId']}:`, error);
+      logger.error(`Order sync failed for account ${(job['data'] as Record<string, unknown>)?.['accountId']}:`, { error });
       throw error;
     }
   },
@@ -98,7 +98,7 @@ const jobProcessors = {
       logger.info(`Shipment sync completed for account: ${accountId}`);
       return { success: true, accountId };
     } catch (error) {
-      logger.error(`Shipment sync failed for account ${(job.data as any)?.['accountId']}:`, error);
+      logger.error(`Shipment sync failed for account ${(job['data'] as Record<string, unknown>)?.['accountId']}:`, { error });
       throw error;
     }
   },
@@ -118,7 +118,7 @@ const jobProcessors = {
       logger.info(`Return sync completed for account: ${accountId}`);
       return { success: true, accountId };
     } catch (error) {
-      logger.error(`Return sync failed for account ${(job.data as any)?.['accountId']}:`, error);
+      logger.error(`Return sync failed for account ${(job['data'] as Record<string, unknown>)?.['accountId']}:`, { error });
       throw error;
     }
   },
@@ -138,7 +138,7 @@ const jobProcessors = {
       logger.info(`Invoice sync completed for account: ${accountId}`);
       return { success: true, accountId };
     } catch (error) {
-      logger.error(`Invoice sync failed for account ${(job.data as any)?.['accountId']}:`, error);
+      logger.error(`Invoice sync failed for account ${(job['data'] as Record<string, unknown>)?.['accountId']}:`, { error });
       throw error;
     }
   },
@@ -274,10 +274,10 @@ const jobProcessors = {
           tenantId: store.tenantId,
           sku: p.sku || String(p.id),
           name: p.name || null,
-          price: p.price ? new Prisma.Decimal(p.price) : null,
+          price: p.price ? new PrismaClient.Decimal(p.price) : null,
           stock: (typeof p.stock_quantity==='number') ? p.stock_quantity : null,
-          images: Array.isArray(p.images) ? p.images.map((i: any)=>i.src).filter(Boolean) : [],
-          tags: Array.isArray(p.tags) ? p.tags.map((t: any)=>t.name).filter(Boolean) : [],
+          images: Array.isArray(p.images) ? p.images.map((i: Record<string, unknown>)=>i['src']).filter(Boolean) : [],
+          tags: Array.isArray(p.tags) ? p.tags.map((t: Record<string, unknown>)=>t['name']).filter(Boolean) : [],
           active: p.status !== 'draft' && p.status !== 'trash',
         };
         if(existing){
@@ -378,7 +378,7 @@ const jobProcessors = {
         await prisma.webhookEvent.update({ where: { id: evt.id }, data: { status: 'processed', processedAt: new Date(), attempts: { increment: 1 } } });
       } catch (err) {
         // Webhook event failed
-        await prisma.webhookEvent.update({ where: { id: evt.id }, data: { status: 'failed', error: String((err as any)?.message || err), attempts: { increment: 1 } } });
+        await prisma.webhookEvent.update({ where: { id: evt.id }, data: { status: 'failed', error: String((err as Error)?.message || err), attempts: { increment: 1 } } });
       }
     }
     return { success: true, processed: pending.length };
@@ -395,7 +395,7 @@ const jobProcessors = {
   },
 
   'process-request': async (job: Record<string, unknown>) => {
-    const { requestId, action } = job.data as any;
+    const { requestId, action } = job['data'] as Record<string, unknown>;
     
     if (!requestId || !action) {
       throw new Error('Request ID and action are required');
@@ -419,7 +419,7 @@ const jobProcessors = {
           data: { 
             status: 'APPROVED',
             reviewedAt: new Date(),
-            reviewerUserId: (job.data as any).reviewerUserId
+            reviewerUserId: (job['data'] as Record<string, unknown>)['reviewerUserId']
           }
         });
         
@@ -433,7 +433,7 @@ const jobProcessors = {
           data: { 
             status: 'REJECTED',
             reviewedAt: new Date(),
-            reviewerUserId: (job.data as any).reviewerUserId
+            reviewerUserId: (job['data'] as Record<string, unknown>)['reviewerUserId']
           }
         });
         
@@ -480,7 +480,7 @@ const jobProcessors = {
       logger.info(`Cache cleanup completed: ${cleaned} keys processed`);
       return { success: true, cleaned };
     } catch (error) {
-      logger.error('Cache cleanup failed:', error as any);
+      logger.error('Cache cleanup failed:', { error });
       throw error;
     }
   },
@@ -557,7 +557,7 @@ const worker = new Worker('fx-jobs', async (job) => {
         
       } catch (error) {
         lastError = error;
-        logger.error(`Job ${job.name} failed on attempt ${attempt}:`, error instanceof Error ? error.message : String(error));
+        logger.error(`Job ${job.name} failed on attempt ${attempt}:`, { error: error instanceof Error ? error.message : String(error) });
         
         // Check if this is a retryable error
         if (isRetryableError(error) && attempt < maxRetries) {
@@ -572,7 +572,7 @@ const worker = new Worker('fx-jobs', async (job) => {
     }
     
     // All retries failed
-    logger.error(`Job ${job.name} failed after ${maxRetries} attempts:`, lastError as any);
+    logger.error(`Job ${job.name} failed after ${maxRetries} attempts:`, { error: lastError });
     
     // Record failure metrics
     jobProcessedCounter.inc({ job_type: job.name, status: 'failure' });
@@ -583,7 +583,7 @@ const worker = new Worker('fx-jobs', async (job) => {
     throw lastError;
     
   } catch (error) {
-    logger.error(`Job ${job.name} failed with unhandled error:`, error as any);
+    logger.error(`Job ${job.name} failed with unhandled error:`, { error });
     
     // Record failure metric
     jobProcessedCounter.inc({ job_type: job.name, status: 'failure' });
@@ -612,43 +612,43 @@ async function applyRequestChanges(request: Record<string, unknown>) {
   
   switch (type) {
     case 'STOCK_ADJUSTMENT':
-      if ((payload as any).productId && (payload as any).quantity) {
+      if ((payload as Record<string, unknown>)['productId'] && (payload as Record<string, unknown>)['quantity']) {
         await prisma.stockMovement.create({
           data: {
-            productId: (payload as any).productId,
+            productId: (payload as Record<string, unknown>)['productId'] as string,
             type: 'ADJUSTMENT',
-            quantity: (payload as any).quantity,
-            relatedId: (request as any).id
+            quantity: (payload as Record<string, unknown>)['quantity'] as number,
+            relatedId: (request as Record<string, unknown>)['id'] as string
           }
         });
         
         // Update product stock
         await prisma.product.update({
-          where: { id: (payload as any).productId },
+          where: { id: (payload as Record<string, unknown>)['productId'] as string },
           data: {
-            stock: { increment: (payload as any).quantity }
+            stock: { increment: (payload as Record<string, unknown>)['quantity'] as number }
           }
         });
       }
       break;
       
     case 'NEW_PRODUCT':
-      if ((payload as any).productData) {
+      if ((payload as Record<string, unknown>)['productData']) {
         await prisma.product.create({
           data: {
-            ...(payload as any).productData,
-            tenantId: (request as any).tenantId
+            ...(payload as Record<string, unknown>)['productData'] as Record<string, unknown>,
+            tenantId: (request as Record<string, unknown>)['tenantId'] as string
           }
         });
       }
       break;
       
     case 'ORDER_NOTE':
-      if ((payload as any).orderId && (payload as any).note) {
+      if ((payload as Record<string, unknown>)['orderId'] && (payload as Record<string, unknown>)['note']) {
         await prisma.order.update({
-          where: { id: (payload as any).orderId },
+          where: { id: (payload as Record<string, unknown>)['orderId'] as string },
           data: {
-            notes: (payload as any).note
+            notes: (payload as Record<string, unknown>)['note'] as string
           }
         });
       }
@@ -721,7 +721,7 @@ async function storeJobError(job: Record<string, unknown>, error: unknown, retry
     
     logger.info(`Stored error details for job ${job['id']}`);
   } catch (dbError) {
-    logger.error('Failed to store job error details:', dbError as any);
+    logger.error('Failed to store job error details:', { error: dbError });
   }
 }
 
@@ -802,7 +802,7 @@ worker.on('completed', (job) => {
 });
 
 worker.on('failed', (job, err) => {
-  logger.error(`Job ${job?.id} has failed:`, err as any);
+  logger.error(`Job ${job?.id} has failed:`, { error: err });
 });
 
 // Health check and metrics server
@@ -822,7 +822,7 @@ app.get('/health', async (_req, res) => {
       await prisma.$queryRaw`SELECT 1`;
       dbHealthy = true;
     } catch (error) {
-      logger.error('Database health check failed:', error as any);
+      logger.error('Database health check failed:', { error });
     }
     
     // Check Redis connection
@@ -831,7 +831,7 @@ app.get('/health', async (_req, res) => {
       await connection.ping();
       redisHealthy = true;
     } catch (error) {
-      logger.error('Redis health check failed:', error as any);
+      logger.error('Redis health check failed:', { error });
     }
     
     const overallHealthy = isHealthy && dbHealthy && redisHealthy;
@@ -860,7 +860,7 @@ app.get('/health', async (_req, res) => {
       });
     }
   } catch (error) {
-    logger.error('Health check failed:', error as any);
+    logger.error('Health check failed:', { error });
     res.status(503).json({ 
       status: 'unhealthy', 
       error: error instanceof Error ? error.message : 'Unknown error',
@@ -906,12 +906,12 @@ process.on('SIGINT', async () => {
 
 // Handle uncaught exceptions
 process.on('uncaughtException', (error) => {
-  logger.error('Uncaught Exception:', error as any);
+  logger.error('Uncaught Exception:', { error });
   process.exit(1);
 });
 
 process.on('unhandledRejection', (reason, _promise) => {
-  logger.error('Unhandled Rejection:', reason as any);
+  logger.error('Unhandled Rejection:', { reason });
   process.exit(1);
 });
 
@@ -921,7 +921,7 @@ async function start() {
   try {
     // validateEnvOnStartup();
   } catch (error) {
-    logger.error('Environment validation failed:', (error as any).message);
+    logger.error('Environment validation failed:', { error: (error as Error).message });
     process.exit(1);
   }
   
@@ -937,7 +937,7 @@ async function start() {
     }
     await q.close();
   } catch (e) {
-    logger.error('Failed to schedule Woo periodic syncs:', e as any);
+    logger.error('Failed to schedule Woo periodic syncs:', { error: e });
   }
   logger.info('Worker ready and processing jobs');
 }
@@ -952,7 +952,7 @@ export { app, worker, prisma, connection };
 
 // Process event handlers (consolidated)
 process.on('warning', (warning) => {
-  logger.warn('Process warning:', warning as any);
+  logger.warn('Process warning:', { warning });
 });
 
 process.on('exit', (code) => {
@@ -968,11 +968,11 @@ process.on('disconnect', () => {
 });
 
 process.on('message', (message) => {
-  logger.info('Process received message:', message as any);
+  logger.info('Process received message:', { message });
 });
 
 process.on('rejectionHandled', (promise) => {
-  logger.info('Promise rejection handled:', promise as any);
+  logger.info('Promise rejection handled:', { promise });
 });
 
 process.on('multipleResolves', (type, promise, reason) => {
@@ -980,12 +980,12 @@ process.on('multipleResolves', (type, promise, reason) => {
 });
 
 process.on('uncaughtException', (error) => {
-  logger.error('Uncaught Exception:', error as any);
+  logger.error('Uncaught Exception:', { error });
   process.exit(1);
 });
 
 process.on('unhandledRejection', (reason, _promise) => {
-  logger.error('Unhandled Rejection:', reason as any);
+  logger.error('Unhandled Rejection:', { reason });
   process.exit(1);
 });
 

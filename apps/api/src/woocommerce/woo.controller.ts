@@ -4,6 +4,7 @@ import { WooService } from './woo.service';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Public } from '../auth/decorators/public.decorator';
 import { AuthenticatedUser } from '../auth/types/user.types';
+import { AddStoreDto } from './dto/woo.dto';
 
 @ApiTags('woo')
 @ApiBearerAuth()
@@ -19,8 +20,13 @@ export class WooController {
 
   @Post('stores')
   @ApiOperation({ summary: 'Add a Woo store' })
-  async addStore(@CurrentUser() user: AuthenticatedUser, @Body() dto: any){
-    return this.woo.addStore(user.tenantId, dto);
+  async addStore(@CurrentUser() user: AuthenticatedUser, @Body() dto: AddStoreDto){
+    return this.woo.addStore(user.tenantId, {
+      name: dto.name,
+      baseUrl: dto.baseUrl || dto.url,
+      consumerKey: dto.consumerKey,
+      consumerSecret: dto.consumerSecret,
+    });
   }
 
   @Delete('stores/:id')
@@ -45,11 +51,12 @@ export class WooController {
   @Post('webhooks/:id')
   @HttpCode(202)
   @ApiOperation({ summary: 'Woo webhook receiver (public)' })
-  async webhook(@Param('id') storeId: string, @Req() req: any, @Body() body: Record<string, unknown>){
-    const topic = req.headers['x-wc-webhook-topic'] || req.headers['X-WC-Webhook-Topic'] || 'unknown';
-    const signature = req.headers['x-wc-webhook-signature'] || req.headers['X-WC-Webhook-Signature'] || '';
+  async webhook(@Param('id') storeId: string, @Req() req: Record<string, unknown>, @Body() body: Record<string, unknown>){
+    const headers = req.headers as Record<string, unknown>;
+    const topic = headers['x-wc-webhook-topic'] || headers['X-WC-Webhook-Topic'] || 'unknown';
+    const signature = headers['x-wc-webhook-signature'] || headers['X-WC-Webhook-Signature'] || '';
     // Get raw body for signature verification
-    const rawBody = req.rawBody || JSON.stringify(body);
+    const rawBody = (req.rawBody as string) || JSON.stringify(body);
     await this.woo.handleWebhook(storeId, String(topic), String(signature), body, rawBody);
     return { ok: true };
   }

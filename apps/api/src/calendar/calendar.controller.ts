@@ -4,6 +4,7 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { CalendarService } from './calendar.service';
 import { AuthenticatedUser } from '../auth/types/user.types';
+import { CreateEventDto, UpdateEventDto, BusinessHoursDto, HolidayDto } from './dto/calendar.dto';
 
 @ApiTags('calendar')
 @ApiBearerAuth()
@@ -21,14 +22,20 @@ export class CalendarController {
   @Post('events')
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Create calendar event (admin only)' })
-  async createEvent(@CurrentUser() user: AuthenticatedUser, @Body() dto: any) {
-    return this.calendar.createEvent(user.tenantId, dto);
+  async createEvent(@CurrentUser() user: AuthenticatedUser, @Body() dto: CreateEventDto) {
+    return this.calendar.createEvent(user.tenantId, {
+      title: dto.title,
+      description: dto.description,
+      type: dto.type,
+      startAt: dto.startDate,
+      endAt: dto.endDate || dto.startDate,
+    });
   }
 
   @Put('events/:id')
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Update calendar event (admin only)' })
-  async updateEvent(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string, @Body() dto: any) {
+  async updateEvent(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string, @Body() dto: UpdateEventDto) {
     return this.calendar.updateEvent(user.tenantId, id, dto);
   }
 
@@ -49,7 +56,7 @@ export class CalendarController {
   @Post('business-hours')
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Set business hours (admin)' })
-  async setBusinessHours(@CurrentUser() user: AuthenticatedUser, @Body() dto: any) {
+  async setBusinessHours(@CurrentUser() user: AuthenticatedUser, @Body() dto: BusinessHoursDto) {
     return this.calendar.setBusinessHours(user.tenantId, dto);
   }
 
@@ -63,7 +70,7 @@ export class CalendarController {
   @Post('holidays')
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Add holiday (admin)' })
-  async addHoliday(@CurrentUser() user: AuthenticatedUser, @Body() dto: any) {
+  async addHoliday(@CurrentUser() user: AuthenticatedUser, @Body() dto: HolidayDto) {
     return this.calendar.addHoliday(user.tenantId, dto);
   }
 
