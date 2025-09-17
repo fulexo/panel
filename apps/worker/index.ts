@@ -1,3 +1,15 @@
+/**
+ * @fileoverview Fulexo Worker Service
+ * @description Background job processor for Fulexo platform that handles:
+ * - WooCommerce data synchronization
+ * - Order, product, and shipment processing
+ * - Webhook event processing
+ * - Cache cleanup and maintenance tasks
+ * - Report generation and email notifications
+ * @author Fulexo Team
+ * @version 1.0.0
+ */
+
 import { Worker, QueueEvents, Queue } from 'bullmq';
 import Redis from 'ioredis';
 import * as client from 'prom-client';
@@ -8,7 +20,10 @@ import { validateEnvironment, validateEnvOnStartup } from './env.validation.js';
 import { logger } from './lib/logger';
 import fetch from 'node-fetch';
 
-// Initialize Prometheus metrics
+/**
+ * Initialize Prometheus metrics collection
+ * Collects default Node.js metrics (memory, CPU, etc.)
+ */
 client.collectDefaultMetrics();
 
 const jobProcessedCounter = new client.Counter({

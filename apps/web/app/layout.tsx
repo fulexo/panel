@@ -1,3 +1,11 @@
+/**
+ * @fileoverview Root Layout Component for Fulexo Web Application
+ * @description This is the root layout component that wraps all pages in the application.
+ * It provides global providers, theme configuration, and error boundaries.
+ * @author Fulexo Team
+ * @version 1.0.0
+ */
+
 import type { Metadata } from 'next';
 import './globals.css';
 import { AuthProvider } from '@/components/AuthProvider';
@@ -8,6 +16,10 @@ import { NotificationContainer } from '@/contexts/AppContext';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { QueryProvider } from '@/components/QueryProvider';
 
+/**
+ * Application metadata configuration
+ * Defines SEO and browser behavior settings
+ */
 export const metadata: Metadata = {
   title: 'Fulexo Platform',
   description: 'Multi-tenant e-commerce management platform',

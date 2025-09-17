@@ -1,3 +1,11 @@
+/**
+ * @fileoverview Main application bootstrap file for Fulexo API
+ * @description This file initializes the NestJS application with all necessary middleware,
+ * security configurations, CORS settings, and Swagger documentation.
+ * @author Fulexo Team
+ * @version 1.0.0
+ */
+
 import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
@@ -11,6 +19,30 @@ import { GlobalExceptionFilter } from './common/filters/global-exception.filter'
 import { AppModule } from './app.module';
 import { Request, Response, NextFunction } from 'express';
 
+/**
+ * Bootstrap function to initialize and configure the NestJS application
+ * 
+ * This function:
+ * 1. Validates environment variables
+ * 2. Creates the NestJS application instance
+ * 3. Configures global middleware (validation, CORS, security headers)
+ * 4. Sets up Swagger documentation
+ * 5. Configures health check and metrics endpoints
+ * 6. Starts the application server
+ * 
+ * @async
+ * @function bootstrap
+ * @returns {Promise<void>} Promise that resolves when the application is ready
+ * 
+ * @example
+ * ```typescript
+ * // The application will be available at:
+ * // - API: http://localhost:3000/api
+ * // - Docs: http://localhost:3000/api/docs
+ * // - Health: http://localhost:3000/health
+ * // - Metrics: http://localhost:3000/metrics
+ * ```
+ */
 async function bootstrap() {
   // Validate environment variables
   validateEnvOnStartup();
