@@ -70,7 +70,7 @@ export default function Sidebar({ isOpen, onClose, isDesktopCollapsed = false, o
     return items.map((item) => {
       if (item.roles && !item.roles.includes(user?.role)) return null;
       return (
-        <a
+        <Link
           key={item.href}
           href={item.href}
           className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors group ${
@@ -83,7 +83,7 @@ export default function Sidebar({ isOpen, onClose, isDesktopCollapsed = false, o
         >
           <span className="text-lg group-hover:scale-110 transition-transform">{item.icon}</span>
           {!isDesktopCollapsed && <span className="font-medium">{item.label}</span>}
-        </a>
+        </Link>
       );
     });
   };

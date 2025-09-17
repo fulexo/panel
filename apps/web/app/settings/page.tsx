@@ -69,14 +69,6 @@ export default function SettingsPage() {
     sync_customers: 'true',
   });
 
-  const [securitySettings, setSecuritySettings] = useState({
-    session_timeout: '30',
-    max_login_attempts: '5',
-    password_min_length: '8',
-    require_2fa: 'false',
-    auto_logout: 'true',
-  });
-
   const tabs = [
     { id: 'general', name: 'General', icon: '⚙️' },
     { id: 'email', name: 'Email', icon: '📧' },

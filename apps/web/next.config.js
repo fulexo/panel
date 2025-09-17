@@ -17,6 +17,11 @@ const nextConfig = {
   compress: true,
   poweredByHeader: false,
   generateEtags: false,
+  i18n: {
+    locales: ['en', 'tr'],
+    defaultLocale: 'en',
+    localeDetection: true,
+  },
   
   // Security headers
   async headers() {
