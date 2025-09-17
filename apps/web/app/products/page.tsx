@@ -407,10 +407,10 @@ export default function ProductsPage() {
   };
 
   const formatStock = (stock?: number) => {
-    if (stock === undefined || stock === null) return 'N/A';
-    if (stock > 10) return { text: `${stock} units`, color: 'text-green-500' };
-    if (stock > 0) return { text: `${stock} units`, color: 'text-yellow-500' };
-    return { text: 'Out of stock', color: 'text-red-500' };
+    if (stock === undefined || stock === null) return { text: 'N/A', color: 'badge-default' };
+    if (stock > 10) return { text: `${stock} units`, color: 'badge-success' };
+    if (stock > 0) return { text: `${stock} units`, color: 'badge-warning' };
+    return { text: 'Out of stock', color: 'badge-error' };
   };
 
   if (loading) {
@@ -431,18 +431,18 @@ export default function ProductsPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 animate-fade-in">
           <div>
-            <h1 className="mobile-heading text-foreground">Product Management</h1>
-            <p className="text-muted-foreground mobile-text">
+            <h1 className="h1 text-primary">Product Management</h1>
+            <p className="text-secondary mobile-text">
               Manage your product inventory ({totalProducts} products)
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-sm text-muted-foreground">
+            <span className="text-sm text-muted">
               {totalProducts} products total
             </span>
             <button
               onClick={() => setShowCreateModal(true)}
-              className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors btn-animate"
+              className="btn btn-primary btn-md btn-animate"
             >
               + Add Product
             </button>
@@ -451,7 +451,7 @@ export default function ProductsPage() {
 
         {/* Messages */}
         {error && (
-          <div className="bg-destructive/10 border border-destructive text-destructive px-4 py-3 rounded-lg animate-slide-down">
+          <div className="alert alert-error animate-slide-down">
             <div className="flex items-center gap-2">
               <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -462,7 +462,7 @@ export default function ProductsPage() {
         )}
 
         {success && (
-          <div className="bg-green-500/10 border border-green-500 text-green-500 px-4 py-3 rounded-lg animate-slide-down">
+          <div className="alert alert-success animate-slide-down">
             <div className="flex items-center gap-2">
               <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
@@ -473,7 +473,7 @@ export default function ProductsPage() {
         )}
 
         {/* Search and Filters */}
-        <div className="bg-card p-4 rounded-lg border border-border animate-slide-up">
+        <div className="card p-4 animate-slide-up">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
             {/* Search */}
             <div className="lg:col-span-2">

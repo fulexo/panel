@@ -274,18 +274,18 @@ export default function ProfilePage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 animate-fade-in">
           <div>
-            <h1 className="mobile-heading text-foreground">Profile Settings</h1>
-            <p className="text-muted-foreground mobile-text">
+            <h1 className="h1 text-primary">Profile Settings</h1>
+            <p className="text-secondary mobile-text">
               Manage your account settings and preferences
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-sm text-muted-foreground">
+            <span className="text-sm text-muted">
               {userData?.email}
             </span>
             <button
               onClick={handleLogout}
-              className="px-4 py-2 bg-destructive/10 text-destructive rounded-lg hover:bg-destructive/20 transition-colors btn-animate"
+              className="btn btn-destructive btn-md btn-animate"
             >
               Logout
             </button>
@@ -294,7 +294,7 @@ export default function ProfilePage() {
 
         {/* Messages */}
         {error && (
-          <div className="bg-destructive/10 border border-destructive text-destructive px-4 py-3 rounded-lg animate-slide-down">
+          <div className="alert alert-error animate-slide-down">
             <div className="flex items-center gap-2">
               <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -305,7 +305,7 @@ export default function ProfilePage() {
         )}
 
         {success && (
-          <div className="bg-green-500/10 border border-green-500 text-green-500 px-4 py-3 rounded-lg animate-slide-down">
+          <div className="alert alert-success animate-slide-down">
             <div className="flex items-center gap-2">
               <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
@@ -316,7 +316,7 @@ export default function ProfilePage() {
         )}
 
         {/* Tabs */}
-        <div className="bg-card p-1 rounded-lg border border-border animate-slide-up">
+        <div className="card p-1 animate-slide-up">
           <div className="flex flex-wrap gap-1">
             {tabs.map((tab) => (
               <button

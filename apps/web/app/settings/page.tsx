@@ -220,15 +220,15 @@ export default function SettingsPage() {
       <main className="mobile-container py-6 space-y-6">
         {/* Header */}
         <div className="animate-fade-in">
-          <h1 className="mobile-heading text-foreground">Settings</h1>
-          <p className="text-muted-foreground mobile-text">
+          <h1 className="h1 text-primary">Settings</h1>
+          <p className="text-secondary mobile-text">
             Configure your application settings and preferences
           </p>
         </div>
 
         {/* Messages */}
         {error && (
-          <div className="bg-destructive/10 border border-destructive text-destructive px-4 py-3 rounded-lg animate-slide-down">
+          <div className="alert alert-error animate-slide-down">
             <div className="flex items-center gap-2">
               <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -239,7 +239,7 @@ export default function SettingsPage() {
         )}
 
         {success && (
-          <div className="bg-green-500/10 border border-green-500 text-green-500 px-4 py-3 rounded-lg animate-slide-down">
+          <div className="alert alert-success animate-slide-down">
             <div className="flex items-center gap-2">
               <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
@@ -250,7 +250,7 @@ export default function SettingsPage() {
         )}
 
         {/* Tabs */}
-        <div className="bg-card rounded-lg border border-border animate-slide-up">
+        <div className="card animate-slide-up">
           <div className="flex flex-wrap border-b border-border">
             {tabs.map((tab) => (
               <button
@@ -273,17 +273,17 @@ export default function SettingsPage() {
             {activeTab === 'general' && (
               <div className="space-y-6 animate-fade-in">
                 <div>
-                  <h3 className="text-lg font-semibold text-foreground mb-2">General Settings</h3>
-                  <p className="text-sm text-muted-foreground">Basic application configuration</p>
+                  <h3 className="h4 text-primary mb-2">General Settings</h3>
+                  <p className="text-sm text-muted">Basic application configuration</p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">Company Name</label>
+                    <label className="form-label">Company Name</label>
                     <input
                       value={generalSettings.company_name}
                       onChange={(e) => setGeneralSettings(prev => ({ ...prev, company_name: e.target.value }))}
-                      className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
+                      className="form-input"
                       placeholder="Your Company Name"
                     />
                   </div>
@@ -293,7 +293,7 @@ export default function SettingsPage() {
                       type="email"
                       value={generalSettings.support_email}
                       onChange={(e) => setGeneralSettings(prev => ({ ...prev, support_email: e.target.value }))}
-                      className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
+                      className="form-input"
                       placeholder="support@company.com"
                     />
                   </div>
@@ -302,7 +302,7 @@ export default function SettingsPage() {
                     <select
                       value={generalSettings.timezone}
                       onChange={(e) => setGeneralSettings(prev => ({ ...prev, timezone: e.target.value }))}
-                      className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
+                      className="form-input"
                     >
                       <option value="Europe/Istanbul">Europe/Istanbul</option>
                       <option value="Europe/London">Europe/London</option>
@@ -315,7 +315,7 @@ export default function SettingsPage() {
                     <select
                       value={generalSettings.date_format}
                       onChange={(e) => setGeneralSettings(prev => ({ ...prev, date_format: e.target.value }))}
-                      className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
+                      className="form-input"
                     >
                       <option value="DD/MM/YYYY">DD/MM/YYYY</option>
                       <option value="MM/DD/YYYY">MM/DD/YYYY</option>
@@ -327,7 +327,7 @@ export default function SettingsPage() {
                     <select
                       value={generalSettings.currency}
                       onChange={(e) => setGeneralSettings(prev => ({ ...prev, currency: e.target.value }))}
-                      className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
+                      className="form-input"
                     >
                       <option value="TRY">TRY - Turkish Lira</option>
                       <option value="USD">USD - US Dollar</option>
@@ -372,7 +372,7 @@ export default function SettingsPage() {
                     <input
                       value={emailSettings.smtp_host}
                       onChange={(e) => setEmailSettings(prev => ({ ...prev, smtp_host: e.target.value }))}
-                      className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
+                      className="form-input"
                       placeholder="smtp.gmail.com"
                     />
                   </div>
@@ -382,7 +382,7 @@ export default function SettingsPage() {
                       type="number"
                       value={emailSettings.smtp_port}
                       onChange={(e) => setEmailSettings(prev => ({ ...prev, smtp_port: e.target.value }))}
-                      className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
+                      className="form-input"
                       placeholder="587"
                     />
                   </div>
@@ -391,7 +391,7 @@ export default function SettingsPage() {
                     <input
                       value={emailSettings.smtp_user}
                       onChange={(e) => setEmailSettings(prev => ({ ...prev, smtp_user: e.target.value }))}
-                      className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
+                      className="form-input"
                       placeholder="your-email@gmail.com"
                     />
                   </div>
@@ -401,7 +401,7 @@ export default function SettingsPage() {
                       type="password"
                       value={emailSettings.smtp_pass}
                       onChange={(e) => setEmailSettings(prev => ({ ...prev, smtp_pass: e.target.value }))}
-                      className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
+                      className="form-input"
                       placeholder="••••••••"
                     />
                   </div>
@@ -411,7 +411,7 @@ export default function SettingsPage() {
                       type="email"
                       value={emailSettings.smtp_from}
                       onChange={(e) => setEmailSettings(prev => ({ ...prev, smtp_from: e.target.value }))}
-                      className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
+                      className="form-input"
                       placeholder="noreply@company.com"
                     />
                   </div>
@@ -420,7 +420,7 @@ export default function SettingsPage() {
                     <select
                       value={emailSettings.smtp_secure}
                       onChange={(e) => setEmailSettings(prev => ({ ...prev, smtp_secure: e.target.value }))}
-                      className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
+                      className="form-input"
                     >
                       <option value="true">Yes</option>
                       <option value="false">No</option>
@@ -535,7 +535,7 @@ export default function SettingsPage() {
                           type="number"
                           value={securitySettings.session_timeout}
                           onChange={(e) => setSecuritySettings(prev => ({ ...prev, session_timeout: e.target.value }))}
-                          className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
+                          className="form-input"
                           min="5"
                           max="480"
                         />
@@ -547,7 +547,7 @@ export default function SettingsPage() {
                           type="number"
                           value={securitySettings.max_login_attempts}
                           onChange={(e) => setSecuritySettings(prev => ({ ...prev, max_login_attempts: e.target.value }))}
-                          className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
+                          className="form-input"
                           min="3"
                           max="10"
                         />
@@ -566,7 +566,7 @@ export default function SettingsPage() {
                           type="number"
                           value={securitySettings.password_min_length}
                           onChange={(e) => setSecuritySettings(prev => ({ ...prev, password_min_length: e.target.value }))}
-                          className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
+                          className="form-input"
                           min="6"
                           max="32"
                         />
@@ -643,7 +643,7 @@ export default function SettingsPage() {
                         <select
                           value={woocommerceSettings.default_woo_version}
                           onChange={(e) => setWooCommerceSettings(prev => ({ ...prev, default_woo_version: e.target.value }))}
-                          className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
+                          className="form-input"
                         >
                           <option value="v3">v3 (Recommended)</option>
                           <option value="v2">v2</option>
@@ -656,7 +656,7 @@ export default function SettingsPage() {
                           type="number"
                           value={woocommerceSettings.webhook_timeout}
                           onChange={(e) => setWooCommerceSettings(prev => ({ ...prev, webhook_timeout: e.target.value }))}
-                          className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
+                          className="form-input"
                           min="5"
                           max="300"
                         />
@@ -667,7 +667,7 @@ export default function SettingsPage() {
                           type="number"
                           value={woocommerceSettings.retry_attempts}
                           onChange={(e) => setWooCommerceSettings(prev => ({ ...prev, retry_attempts: e.target.value }))}
-                          className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
+                          className="form-input"
                           min="1"
                           max="10"
                         />
@@ -685,7 +685,7 @@ export default function SettingsPage() {
                           type="number"
                           value={woocommerceSettings.sync_interval}
                           onChange={(e) => setWooCommerceSettings(prev => ({ ...prev, sync_interval: e.target.value }))}
-                          className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground"
+                          className="form-input"
                           min="5"
                           max="1440"
                         />
