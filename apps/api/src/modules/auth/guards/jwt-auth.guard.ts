@@ -13,7 +13,7 @@ export class JwtAuthGuard implements CanActivate {
     // Basit token kontrolü (production'da JWT doğrulaması yapılmalı)
     try {
       // Şimdilik basit bir kontrol
-      request.user = { id: 1, email: 'admin@example.com', role: 'ADMIN' }
+      request.user = { id: 1, email: 'fulexo@fulexo.com', role: 'ADMIN' }
       return true
     } catch {
       throw new UnauthorizedException()
