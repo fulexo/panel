@@ -73,7 +73,6 @@ import { MonitoringModule } from './monitoring/monitoring.module';
     CacheModule,
     AuditModule,
     MonitoringModule,
-    JwtModule,
   ],
   providers: [
     PrismaService,

@@ -35,6 +35,15 @@ class EnvironmentVariables {
   @IsOptional()
   @MinLength(64)
   JWT_SECRET?: string;
+
+  // Add additional environment variables
+  @IsString()
+  @IsOptional()
+  FRONTEND_URL?: string;
+
+  @IsString()
+  @IsOptional()
+  WEB_URL?: string;
 }
 
 export function validateEnvironment(config: Record<string, unknown>) {

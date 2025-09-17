@@ -1,48 +1,40 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
+
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:3000';
 
 export async function POST(request: NextRequest) {
   try {
-    const { accessToken, refreshToken, user } = await request.json();
+    const body = await request.json();
+    
+    const response = await fetch(`${API_BASE}/api/auth/set-tokens`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    });
 
-    if (!accessToken || !refreshToken) {
-      return NextResponse.json(
-        { error: 'Missing tokens' },
-        { status: 400 }
-      );
+    const data = await response.json();
+    
+    if (!response.ok) {
+      return NextResponse.json(data, { status: response.status });
     }
 
-    const cookieStore = cookies();
-
-    // Set httpOnly cookies
-    cookieStore.set('access_token', accessToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 15 * 60, // 15 minutes
-      path: '/',
-    });
-
-    cookieStore.set('refresh_token', refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60, // 7 days
-      path: '/',
-    });
-
-    cookieStore.set('user', JSON.stringify(user), {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 15 * 60, // 15 minutes
-      path: '/',
-    });
-
-    return NextResponse.json({ success: true });
+    // Forward the response with proper headers
+    const nextResponse = NextResponse.json(data, { status: response.status });
+    
+    // Copy Set-Cookie headers from backend
+    const setCookieHeaders = response.headers.getSetCookie();
+    if (setCookieHeaders && setCookieHeaders.length > 0) {
+      setCookieHeaders.forEach(cookie => {
+        nextResponse.headers.append('Set-Cookie', cookie);
+      });
+    }
+    
+    return nextResponse;
   } catch (error) {
     return NextResponse.json(
-      { error: 'Failed to set tokens' },
+      { error: 'Internal Server Error' },
       { status: 500 }
     );
   }

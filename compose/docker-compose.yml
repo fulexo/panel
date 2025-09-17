@@ -60,8 +60,11 @@ services:
       S3_BUCKET: ${S3_BUCKET}
       JWT_SECRET: ${JWT_SECRET}
       ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+      MASTER_KEY_HEX: ${MASTER_KEY_HEX}
       DOMAIN_API: ${DOMAIN_API}
       DOMAIN_APP: ${DOMAIN_APP}
+      FRONTEND_URL: ${FRONTEND_URL}
+      WEB_URL: ${WEB_URL}
       NODE_ENV: ${NODE_ENV}
     depends_on: [postgres, valkey, minio]
     restart: unless-stopped
@@ -77,6 +80,9 @@ services:
       NODE_ENV: ${NODE_ENV}
       NEXT_PUBLIC_API_BASE: ${NEXT_PUBLIC_API_BASE}
       NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL}
+      FRONTEND_URL: ${FRONTEND_URL}
+      WEB_URL: ${WEB_URL}
+      SHARE_BASE_URL: ${SHARE_BASE_URL}
     depends_on: [api]
     restart: unless-stopped
 

@@ -442,6 +442,7 @@ export interface Settings {
 export interface ApiError {
   statusCode: number;
   error: string;
+  errorCode?: string;
   message: string;
   timestamp: string;
   path: string;

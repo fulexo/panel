@@ -80,6 +80,20 @@ class EnvironmentVariables {
   @IsString()
   @IsOptional()
   SMTP_FROM?: string;
+
+  // Frontend URLs
+  @IsString()
+  @IsOptional()
+  FRONTEND_URL?: string;
+
+  @IsString()
+  @IsOptional()
+  WEB_URL?: string;
+
+  // Additional security
+  @IsString()
+  @IsOptional()
+  MASTER_KEY_HEX?: string;
 }
 
 export function validateEnvironment(config: Record<string, unknown>) {

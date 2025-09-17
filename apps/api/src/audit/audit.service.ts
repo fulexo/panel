@@ -1,14 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 
-interface AuditLogData {
+export interface AuditLogData {
   action: string;
-  userId?: string;
-  tenantId?: string;
   entityType?: string;
   entityId?: string;
   changes?: any;
   metadata?: any;
+  userId?: string;
+  tenantId?: string;
   ipAddress?: string;
   userAgent?: string;
 }
@@ -22,63 +22,57 @@ export class AuditService {
       await this.prisma.auditLog.create({
         data: {
           action: data.action,
-          userId: data.userId,
-          tenantId: data.tenantId,
           entityType: data.entityType,
           entityId: data.entityId,
-          changes: data.changes || {},
-          metadata: data.metadata || {},
+          changes: data.changes,
+          metadata: data.metadata,
+          userId: data.userId,
+          tenantId: data.tenantId,
           ipAddress: data.ipAddress,
           userAgent: data.userAgent,
         },
       });
     } catch (error) {
-      // Log to console if database write fails
-      console.error('Failed to write audit log:', error);
+      // Silent fail for audit logging to prevent breaking the main flow
+      console.error('Audit logging failed:', error);
     }
   }
 
-  async getAuditLogs(filters: {
-    tenantId?: string;
+  async getAuditLogs(tenantId: string, filters?: {
     userId?: string;
     action?: string;
     entityType?: string;
-    entityId?: string;
-    startDate?: Date;
-    endDate?: Date;
+    dateFrom?: Date;
+    dateTo?: Date;
+    page?: number;
     limit?: number;
-    offset?: number;
   }) {
-    const where: any = {};
-
-    if (filters.tenantId) where.tenantId = filters.tenantId;
-    if (filters.userId) where.userId = filters.userId;
-    if (filters.action) where.action = filters.action;
-    if (filters.entityType) where.entityType = filters.entityType;
-    if (filters.entityId) where.entityId = filters.entityId;
-
-    if (filters.startDate || filters.endDate) {
+    const where: any = { tenantId };
+    
+    if (filters?.userId) where.userId = filters.userId;
+    if (filters?.action) where.action = filters.action;
+    if (filters?.entityType) where.entityType = filters.entityType;
+    if (filters?.dateFrom || filters?.dateTo) {
       where.createdAt = {};
-      if (filters.startDate) where.createdAt.gte = filters.startDate;
-      if (filters.endDate) where.createdAt.lte = filters.endDate;
+      if (filters.dateFrom) where.createdAt.gte = filters.dateFrom;
+      if (filters.dateTo) where.createdAt.lte = filters.dateTo;
     }
+
+    const page = filters?.page || 1;
+    const limit = filters?.limit || 50;
+    const skip = (page - 1) * limit;
 
     const [logs, total] = await Promise.all([
       this.prisma.auditLog.findMany({
         where,
         orderBy: { createdAt: 'desc' },
-        take: filters.limit || 50,
-        skip: filters.offset || 0,
+        skip,
+        take: limit,
         include: {
           user: {
             select: {
               id: true,
               email: true,
-            },
-          },
-          tenant: {
-            select: {
-              id: true,
               name: true,
             },
           },
@@ -89,22 +83,14 @@ export class AuditService {
 
     return {
       logs,
-      total,
-      limit: filters.limit || 50,
-      offset: filters.offset || 0,
-    };
-  }
-
-  async cleanOldLogs(daysToKeep: number = 90) {
-    const cutoffDate = new Date();
-    cutoffDate.setDate(cutoffDate.getDate() - daysToKeep);
-
-    const result = await this.prisma.auditLog.deleteMany({
-      where: {
-        createdAt: { lt: cutoffDate },
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+        hasNext: page * limit < total,
+        hasPrev: page > 1,
       },
-    });
-
-    return result.count;
+    };
   }
 }

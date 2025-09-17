@@ -15,15 +15,29 @@ export class JwtService {
   private privateKey: CryptoKey | null = null;
   private publicKey: CryptoKey | null = null;
   private keyId: string | null = null;
+  private initialized: boolean = false;
 
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) {
+    // Initialize immediately
+    this.init().catch(error => {
+      console.error('JWT Service initialization failed:', error);
+    });
+  }
 
   async init() {
-    // Production'da RSA key pair kullan, development'te HMAC
-    if (process.env['NODE_ENV'] === 'production') {
-      await this.initRSAKeys();
-    } else {
-      await this.initHMACKey();
+    if (this.initialized) return;
+    
+    try {
+      // Production'da RSA key pair kullan, development'te HMAC
+      if (process.env['NODE_ENV'] === 'production') {
+        await this.initRSAKeys();
+      } else {
+        await this.initHMACKey();
+      }
+      this.initialized = true;
+    } catch (error) {
+      console.error('JWT Service initialization failed:', error);
+      throw error;
     }
   }
 
@@ -145,8 +159,11 @@ export class JwtService {
   }
 
   async issueTokens(userId: string, email: string, role: string, tenantId: string) {
-    if (!this.privateKey) {
-      throw new Error('JWT service not initialized');
+    if (!this.initialized || !this.privateKey) {
+      await this.init();
+      if (!this.privateKey) {
+        throw new Error('JWT service not initialized');
+      }
     }
 
     const now = Math.floor(Date.now() / 1000);
@@ -197,8 +214,11 @@ export class JwtService {
   }
 
   async verifyAccessToken(token: string): Promise<JWTPayload> {
-    if (!this.publicKey) {
-      throw new Error('JWT service not initialized');
+    if (!this.initialized || !this.publicKey) {
+      await this.init();
+      if (!this.publicKey) {
+        throw new Error('JWT service not initialized');
+      }
     }
 
     try {
@@ -233,8 +253,11 @@ export class JwtService {
   }
 
   async verifyRefreshToken(token: string): Promise<JWTPayload> {
-    if (!this.publicKey) {
-      throw new Error('JWT service not initialized');
+    if (!this.initialized || !this.publicKey) {
+      await this.init();
+      if (!this.publicKey) {
+        throw new Error('JWT service not initialized');
+      }
     }
 
     try {

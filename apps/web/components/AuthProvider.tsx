@@ -59,36 +59,54 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const login = async (email: string, password: string) => {
-    const response = await fetch('/api/auth/login', {
-      method: 'POST',
-      credentials: 'include', // Include httpOnly cookies
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ email, password }),
-    });
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        credentials: 'include', // Include httpOnly cookies
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Login failed');
-    }
-
-    const data = await response.json();
-    
-    if (data.requiresTwoFactor) {
-      // tempToken'ı güvenli şekilde sakla
-      if (data.tempToken) {
-        if (typeof window !== 'undefined') {
-          sessionStorage.setItem('temp_2fa_token', data.tempToken);
-        }
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || errorData.error || 'Login failed');
       }
-      throw new Error('2FA_REQUIRED');
-    }
 
-    // Tokens are now set as httpOnly cookies by the server
-    // We just need to set the user data locally
-    setUser(data.data);
-    router.push('/dashboard');
+      const data = await response.json();
+      
+      if (data.requiresTwoFactor) {
+        // tempToken'ı güvenli şekilde sakla
+        if (data.tempToken) {
+          if (typeof window !== 'undefined') {
+            sessionStorage.setItem('temp_2fa_token', data.tempToken);
+          }
+        }
+        throw new Error('2FA_REQUIRED');
+      }
+
+      // Tokens are now set as httpOnly cookies by the server
+      // We just need to set the user data locally
+      setUser(data.data);
+      router.push('/dashboard');
+    } catch (error) {
+      // Log error to monitoring service
+      if (typeof window !== 'undefined') {
+        fetch('/api/errors', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'login_error',
+            message: error instanceof Error ? error.message : 'Unknown error',
+            stack: error instanceof Error ? error.stack : undefined,
+            timestamp: new Date().toISOString(),
+            url: window.location.href,
+          }),
+        }).catch(() => {}); // Silent fail for error logging
+      }
+      throw error;
+    }
   };
 
   const logout = async () => {

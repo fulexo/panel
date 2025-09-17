@@ -5,7 +5,7 @@ import { SessionService } from './session.service';
 import { TwoFactorService } from './twofactor.service';
 import { Public } from './decorators/public.decorator';
 import { CurrentUser } from './decorators/current-user.decorator';
-import { LoginDto, RegisterDto, Verify2FADto, RefreshTokenDto } from './dto';
+import { LoginDto, RegisterDto, Verify2FADto, RefreshTokenDto, UpdateProfileDto, ChangePasswordDto, SetTokensDto } from './dto';
 import { RateLimit } from '../rate-limit.decorator';
 
 @ApiTags('auth')
@@ -226,15 +226,63 @@ export class AuthController {
   @Put('profile')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update user profile' })
-  async updateProfile(@CurrentUser() user: any, @Body() dto: any) {
+  async updateProfile(@CurrentUser() user: any, @Body() dto: UpdateProfileDto) {
     return this.authService.updateUserProfile(user.id, dto);
   }
 
   @Put('change-password')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Change user password' })
-  async changePassword(@CurrentUser() user: any, @Body() dto: { currentPassword: string; newPassword: string }) {
+  async changePassword(@CurrentUser() user: any, @Body() dto: ChangePasswordDto) {
     return this.authService.changePassword(user.id, dto.currentPassword, dto.newPassword);
+  }
+
+  @Public()
+  @Post('set-tokens')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Set tokens as httpOnly cookies' })
+  async setTokens(@Body() dto: SetTokensDto, @Req() req: any) {
+    // Set httpOnly cookies for tokens
+    req.res.cookie('access_token', dto.accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 15 * 60 * 1000, // 15 minutes
+      path: '/',
+    });
+    
+    req.res.cookie('refresh_token', dto.refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      path: '/',
+    });
+
+    return {
+      message: 'Tokens set successfully',
+      statusCode: 200,
+      timestamp: new Date().toISOString(),
+      path: '/api/auth/set-tokens'
+    };
+  }
+
+  @Public()
+  @Post('clear-tokens')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Clear httpOnly cookies' })
+  async clearTokens(@Req() req: any) {
+    // Clear httpOnly cookies
+    req.res.clearCookie('access_token', { path: '/' });
+    req.res.clearCookie('refresh_token', { path: '/' });
+    req.res.clearCookie('user', { path: '/' });
+
+    return {
+      message: 'Tokens cleared successfully',
+      statusCode: 200,
+      timestamp: new Date().toISOString(),
+      path: '/api/auth/clear-tokens'
+    };
   }
 
 }
