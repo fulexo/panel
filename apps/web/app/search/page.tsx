@@ -34,6 +34,8 @@ export default function SearchPage(){
   }, []);
 
   return (
+  <ProtectedRoute>
+    
     <div className="min-h-screen bg-gray-900 text-white p-8">
       <h1 className="text-2xl font-bold mb-4">Search</h1>
       <div className="mb-6 flex gap-2">
@@ -84,6 +86,8 @@ export default function SearchPage(){
         </div>
       )}
     </div>
+  </ProtectedRoute>
+);
   );
 }
 

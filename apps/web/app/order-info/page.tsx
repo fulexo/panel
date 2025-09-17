@@ -22,6 +22,8 @@ export default function OrderInfoPublic(){
   }, [token]);
 
   return (
+  <ProtectedRoute>
+    
     <div className="min-h-screen bg-gray-900 text-white p-8">
       <h1 className="text-2xl font-bold mb-4">Order Information</h1>
       {error && <div className="text-red-400">{error}</div>}
@@ -44,6 +46,8 @@ export default function OrderInfoPublic(){
         </div>
       )}
     </div>
+  </ProtectedRoute>
+);
   );
 }
 

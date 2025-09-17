@@ -267,6 +267,8 @@ export default function StoresPage() {
 
   if (loading) {
     return (
+  <ProtectedRoute>
+    
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <div className="spinner"></div>
@@ -572,5 +574,7 @@ export default function StoresPage() {
         )}
       </main>
     </div>
+  </ProtectedRoute>
+);
   );
 }

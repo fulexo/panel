@@ -47,6 +47,8 @@ export default function InboundPage(){
   if(loading) return <div className="min-h-screen bg-gray-900 text-white p-8">Loading...</div>;
 
   return (
+  <ProtectedRoute>
+    
     <div className="min-h-screen bg-gray-900 text-white p-8">
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-2xl font-bold">Inbound Shipments</h1>
@@ -100,6 +102,8 @@ export default function InboundPage(){
         {items.length===0 && <div className="text-gray-500">No inbound shipments</div>}
       </div>
     </div>
+  </ProtectedRoute>
+);
   );
 }
 

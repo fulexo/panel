@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../components/AuthProvider";
+import ProtectedRoute from "../../components/ProtectedRoute";
 
 interface Product {
   id: string;
@@ -427,8 +428,9 @@ export default function ProductsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <main className="mobile-container py-6 space-y-6">
+    <ProtectedRoute>
+      <div className="min-h-screen bg-background">
+        <main className="mobile-container py-6 space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 animate-fade-in">
           <div>
@@ -923,6 +925,7 @@ export default function ProductsPage() {
           </div>
         )}
       </main>
-    </div>
+      </div>
+    </ProtectedRoute>
   );
 }
