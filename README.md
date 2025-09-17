@@ -15,7 +15,7 @@ Fulexo is a comprehensive self-hosted platform for managing multiple WooCommerce
 
 ## 📋 Prerequisites
 
-- Docker Engine 26+ and Docker Compose v2
+- Docker Engine 24+ and Docker Compose v2
 - Node.js 20+ (for development)
 - PostgreSQL 16+ (via Docker)
 - 4GB RAM minimum, 8GB recommended
@@ -40,24 +40,20 @@ chmod +x scripts/quick-install.sh
 ./scripts/quick-install.sh
 ```
 
-**Artık hiçbir domain sormayacak!** Script otomatik olarak:
-- **API Domain**: `api.fulexo.com`
-- **Panel Domain**: `panel.fulexo.com`
-- **Admin Email**: `fulexo@fulexo.com`
+Script otomatik olarak:
+- Domain bilgilerini sorar
+- SSL sertifikalarını kurar
+- Veritabanını yapılandırır
+- Admin kullanıcısını oluşturur
 
 ### 4. Kurulum Tamamlandı! 🎉
-- **Panel**: `https://panel.fulexo.com`
-- **API**: `https://api.fulexo.com`
-- **API Docs**: `https://api.fulexo.com/docs`
-- **Admin**: `fulexo@fulexo.com` / `Adem_123*`
+- **Panel**: `https://your-domain.com`
+- **API**: `https://api.your-domain.com`
+- **API Docs**: `https://api.your-domain.com/docs`
 
 ## 🔑 Default Credentials
 
-After running the installation script, you can login with:
-
-| Role | Email | Password |
-|------|-------|----------|
-| Admin | fulexo@fulexo.com | Adem_123* |
+After running the installation script, you can login with the credentials you provided during setup. The script will create an admin user with your specified email and password.
 
 ## 🏗️ Architecture
 
@@ -192,7 +188,7 @@ npm run test         # Run tests
 
 The API documentation is automatically generated using Swagger/OpenAPI and is available at:
 - Development: http://localhost:3000/docs
-- Production: https://api.fulexo.com/docs
+- Production: https://your-api-domain.com/docs
 
 ### Main Endpoints
 
@@ -223,7 +219,7 @@ The API documentation is automatically generated using Swagger/OpenAPI and is av
 sudo snap install --classic certbot
 
 # Generate certificates
-sudo certbot --nginx -d api.fulexo.com -d panel.fulexo.com
+sudo certbot --nginx -d your-api-domain.com -d your-panel-domain.com
 ```
 
 ### Environment Variables
@@ -273,8 +269,8 @@ docker compose logs api | grep auth
 
 ## 📚 Additional Resources
 
-- [Security Guidelines](plan/Security-Guidelines.md)
-- [API Blueprint](plan/Fulexo-Platform-Blueprint.md)
+- [Scripts Documentation](scripts/README.md)
+- [Docker Compose Configuration](compose/docker-compose.yml)
 
 ## 🤝 Contributing
 
@@ -295,4 +291,4 @@ For support and questions:
 
 **Version**: 1.0.0  
 **Last Updated**: January 2025  
-**Status**: Development Phase
+**Status**: Production Ready
