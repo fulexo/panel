@@ -3,6 +3,7 @@ import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { WooService } from './woo.service';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Public } from '../auth/decorators/public.decorator';
+import { AuthenticatedUser } from '../auth/types/user.types';
 
 @ApiTags('woo')
 @ApiBearerAuth()
@@ -12,31 +13,31 @@ export class WooController {
 
   @Get('stores')
   @ApiOperation({ summary: 'List Woo stores for tenant' })
-  async listStores(@CurrentUser() user: Record<string, unknown>){
+  async listStores(@CurrentUser() user: AuthenticatedUser){
     return this.woo.listStores(user.tenantId);
   }
 
   @Post('stores')
   @ApiOperation({ summary: 'Add a Woo store' })
-  async addStore(@CurrentUser() user: Record<string, unknown>, @Body() dto: Record<string, unknown>){
+  async addStore(@CurrentUser() user: AuthenticatedUser, @Body() dto: any){
     return this.woo.addStore(user.tenantId, dto);
   }
 
   @Delete('stores/:id')
   @ApiOperation({ summary: 'Remove a Woo store' })
-  async removeStore(@CurrentUser() user: Record<string, unknown>, @Param('id') id: string){
+  async removeStore(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string){
     return this.woo.removeStore(user.tenantId, id);
   }
 
   @Post('stores/:id/test')
   @ApiOperation({ summary: 'Test Woo store connection' })
-  async test(@CurrentUser() user: Record<string, unknown>, @Param('id') id: string){
+  async test(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string){
     return this.woo.testConnection(user.tenantId, id);
   }
 
   @Post('stores/:id/register-webhooks')
   @ApiOperation({ summary: 'Register Woo webhooks for store' })
-  async registerWebhooks(@CurrentUser() user: Record<string, unknown>, @Param('id') id: string){
+  async registerWebhooks(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string){
     return this.woo.registerWebhooks(user.tenantId, id);
   }
 
@@ -44,7 +45,7 @@ export class WooController {
   @Post('webhooks/:id')
   @HttpCode(202)
   @ApiOperation({ summary: 'Woo webhook receiver (public)' })
-  async webhook(@Param('id') storeId: string, @Req() req: Record<string, unknown>, @Body() body: Record<string, unknown>){
+  async webhook(@Param('id') storeId: string, @Req() req: any, @Body() body: Record<string, unknown>){
     const topic = req.headers['x-wc-webhook-topic'] || req.headers['X-WC-Webhook-Topic'] || 'unknown';
     const signature = req.headers['x-wc-webhook-signature'] || req.headers['X-WC-Webhook-Signature'] || '';
     // Get raw body for signature verification

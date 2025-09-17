@@ -3,6 +3,7 @@ import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger'
 import { TenantsService } from './tenants.service';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { AuthenticatedUser } from '../auth/types/user.types';
 
 @ApiTags('tenants')
 @ApiBearerAuth()
@@ -29,14 +30,14 @@ export class TenantsController {
   @Post(':id/impersonate')
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Impersonate tenant (admin only)' })
-  async impersonate(@CurrentUser() user: Record<string, unknown>, @Param('id') id: string) {
+  async impersonate(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string) {
     return this.tenants.impersonate(user.sub || user.id, id);
   }
 
   @Post('impersonate/stop')
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Stop impersonation, revert to original tenant' })
-  async stopImpersonation(@CurrentUser() user: Record<string, unknown>) {
-    return this.tenants.stopImpersonation(user);
+  async stopImpersonation(@CurrentUser() user: AuthenticatedUser) {
+    return this.tenants.stopImpersonation(user as any);
   }
 }

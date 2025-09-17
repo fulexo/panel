@@ -8,6 +8,7 @@ import { OrderQueryDto } from './dto/order-query.dto';
 import { CreateChargeDto } from './dto/create-charge.dto';
 import { Prisma, PrismaClient } from '@prisma/client';
 import * as jose from 'jose';
+import { toPrismaJsonValue } from '../common/utils/prisma-json.util';
 
 @Injectable()
 export class OrdersService {
@@ -200,7 +201,7 @@ export class OrdersService {
         tenantId,
       },
       include: this.getOrderIncludes(role),
-    }) as Record<string, unknown>);
+    }));
 
     if (!order) {
       throw new NotFoundException('Order not found');
@@ -267,14 +268,14 @@ export class OrdersService {
         currency: dto.currency || 'TRY',
         customerEmail: dto.customerEmail,
         customerPhone: dto.customerPhone,
-        shippingAddress: dto.shippingAddress || {} as Record<string, unknown>,
-        billingAddress: dto.billingAddress || {} as Record<string, unknown>,
+        shippingAddress: toPrismaJsonValue(dto.shippingAddress || {}),
+        billingAddress: toPrismaJsonValue(dto.billingAddress || {}),
         paymentMethod: dto.paymentMethod,
         notes: dto.notes,
         tags: dto.tags || [],
         confirmedAt: dto.confirmedAt || new Date(),
         items: {
-          create: dto.items?.map((item: Record<string, unknown>) => ({
+          create: dto.items?.map((item: any) => ({
             sku: item.sku,
             name: item.name,
             qty: item.qty,
@@ -320,8 +321,8 @@ export class OrdersService {
         status: dto.status || undefined,
         notes: dto.notes || undefined,
         tags: dto.tags || undefined,
-        shippingAddress: dto.shippingAddress as Record<string, unknown>,
-        billingAddress: dto.billingAddress as Record<string, unknown>,
+        shippingAddress: dto.shippingAddress ? toPrismaJsonValue(dto.shippingAddress) : undefined,
+        billingAddress: dto.billingAddress ? toPrismaJsonValue(dto.billingAddress) : undefined,
         updatedAt: new Date(),
       },
     }));
@@ -382,13 +383,13 @@ export class OrdersService {
     const timeline: Record<string, unknown>[] = [
       {
         type: 'created',
-        date: order.createdAt,
+        date: (order as any).createdAt,
         description: 'Order created',
       },
     ];
 
     // Add shipment events
-    for (const shipment of order.shipments || []) {
+    for (const shipment of (order as any).shipments || []) {
       if (shipment.shippedAt) {
         timeline.push({
           type: 'shipped',
@@ -428,10 +429,10 @@ export class OrdersService {
     if (query.dateFrom || query.dateTo) {
       where.confirmedAt = {};
       if (query.dateFrom) {
-        where.confirmedAt.gte = new Date(query.dateFrom);
+        (where as any).confirmedAt = { gte: new Date(query.dateFrom) };
       }
       if (query.dateTo) {
-        where.confirmedAt.lte = new Date(query.dateTo);
+        (where as any).confirmedAt = { ...(where as any).confirmedAt, lte: new Date(query.dateTo) };
       }
     }
 
@@ -580,12 +581,12 @@ export class OrdersService {
       data: {
         orderId,
         type: dto['type'] || 'service',
-        amount: new (Prisma as Record<string, unknown>).Decimal(dto.amount),
+        amount: new Prisma.Decimal(dto.amount),
         currency: dto.currency || order.currency || 'TRY',
         notes: dto['notes'] || null,
       },
     }));
-    await this.audit.log({ action: 'order.charge.added', userId, tenantId, entityType: 'order', entityId: orderId, changes: dto as Record<string, unknown> });
+    await this.audit.log({ action: 'order.charge.added', userId, tenantId, entityType: 'order', entityId: orderId, changes: dto as any });
     await this.cache.invalidateOrderCache(tenantId, orderId);
     return charge;
   }

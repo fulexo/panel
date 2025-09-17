@@ -86,8 +86,8 @@ export class BillingController {
       doc.fontSize(18).text('Billing Summary', { underline: true });
       doc.moveDown();
       doc.fontSize(12).text(`Batch ID: ${batch.id}`);
-      if(batch.periodFrom) doc.text(`Period From: ${new Date(batch.periodFrom as Record<string, unknown>).toLocaleString()}`);
-      if(batch.periodTo) doc.text(`Period To: ${new Date(batch.periodTo as Record<string, unknown>).toLocaleString()}`);
+      if(batch.periodFrom) doc.text(`Period From: ${new Date(batch.periodFrom).toLocaleString()}`);
+      if(batch.periodTo) doc.text(`Period To: ${new Date(batch.periodTo).toLocaleString()}`);
       doc.text(`Status: ${batch.status}`);
       doc.text(`Total: ${batch.total || 0}`);
       doc.moveDown();

@@ -4,6 +4,7 @@ import { PrismaClient } from '@prisma/client';
 import { Prisma } from '@prisma/client';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
+import { toPrismaJsonValue } from '../common/utils/prisma-json.util';
 // import { ProductQueryDto } from './dto/product-query.dto';
 
 @Injectable()
@@ -71,19 +72,21 @@ export class ProductsService {
 
     return this.runTenant(tenantId, async (db) => db.product.create({
       data: {
-        tenantId,
+        tenant: {
+          connect: { id: tenantId }
+        },
         sku: dto.sku,
         name: dto.name,
         description: dto.description,
-        price: dto.price !== undefined && dto.price !== null ? new (Prisma as Record<string, unknown>).Decimal(dto.price) : null,
+        price: dto.price !== undefined && dto.price !== null ? new Prisma.Decimal(dto.price) : null,
         stock: dto.stock !== undefined && dto.stock !== null ? parseInt(dto.stock) : null,
-        weight: dto.weight !== undefined && dto.weight !== null ? new (Prisma as Record<string, unknown>).Decimal(dto.weight) : null,
-        dimensions: dto.dimensions,
+        weight: dto.weight !== undefined && dto.weight !== null ? new Prisma.Decimal(dto.weight) : null,
+        dimensions: dto.dimensions ? toPrismaJsonValue(dto.dimensions) : undefined,
         images: dto.images || [],
         tags: dto.tags || [],
         active: dto.active !== undefined ? dto.active : true,
         categoryId: dto.categoryId,
-      } as Record<string, unknown>,
+      },
     }));
   }
 
@@ -109,9 +112,9 @@ export class ProductsService {
         ...(dto.sku !== undefined && { sku: dto.sku }),
         ...(dto.name !== undefined && { name: dto.name }),
         ...(dto.description !== undefined && { description: dto.description }),
-        ...(dto.price !== undefined && { price: dto.price !== null ? new (Prisma as Record<string, unknown>).Decimal(dto.price) : null }),
+        ...(dto.price !== undefined && { price: dto.price !== null ? new Prisma.Decimal(dto.price) : null }),
         ...(dto.stock !== undefined && { stock: dto.stock !== null ? parseInt(dto.stock) : null }),
-        ...(dto.weight !== undefined && { weight: dto.weight !== null ? new (Prisma as Record<string, unknown>).Decimal(dto.weight) : null }),
+        ...(dto.weight !== undefined && { weight: dto.weight !== null ? new Prisma.Decimal(dto.weight) : null }),
         ...(dto.dimensions !== undefined && { dimensions: dto.dimensions }),
         ...(dto.images !== undefined && { images: dto.images }),
         ...(dto.tags !== undefined && { tags: dto.tags }),
@@ -146,7 +149,7 @@ export class ProductsService {
       
       if (updates.active !== undefined) updateData.active = updates.active;
       if (updates.stock !== undefined) updateData.stock = updates.stock !== null ? parseInt(updates.stock) : null;
-      if (updates.price !== undefined) updateData.price = updates.price !== null ? new (Prisma as Record<string, unknown>).Decimal(updates.price) : null;
+      if (updates.price !== undefined) updateData.price = updates.price !== null ? new Prisma.Decimal(updates.price) : null;
       if (updates.tags !== undefined) updateData.tags = updates.tags;
       
       updateData.updatedAt = new Date();

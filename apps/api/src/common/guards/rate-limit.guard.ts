@@ -7,7 +7,7 @@ export class CustomRateLimitGuard extends ThrottlerGuard {
   private readonly logger = new Logger(CustomRateLimitGuard.name);
 
   constructor() {
-    super({} as ThrottlerModuleOptions, {} as Record<string, unknown>, {} as Record<string, unknown>);
+    super({} as ThrottlerModuleOptions, {} as any, {} as any);
   }
 
   protected override async handleRequest(

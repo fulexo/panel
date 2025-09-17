@@ -59,7 +59,7 @@ export class SettingsService {
       result[setting['key'] as string] = setting['value'];
     });
     
-    return result;
+    return result as any;
   }
 
   async getSetting(
@@ -104,13 +104,13 @@ export class SettingsService {
         value: encryptedValue,
         isSecret,
         updatedBy: updatedBy || null,
-        metadata: metadata as Record<string, unknown>,
+        metadata: metadata as any,
       },
       update: {
         value: encryptedValue,
         isSecret,
         updatedBy: updatedBy || null,
-        metadata: metadata as Record<string, unknown>,
+        metadata: metadata as any,
       },
     });
   }
@@ -134,15 +134,15 @@ export class SettingsService {
             category,
             key,
             value: secretKeys.includes(key) && value
-              ? this.encryption.encrypt(value)
-              : value,
+              ? this.encryption.encrypt(value as string)
+              : value as string,
             isSecret: secretKeys.includes(key),
             updatedBy: updatedBy || null,
           },
           update: {
             value: secretKeys.includes(key) && value
-              ? this.encryption.encrypt(value)
-              : value,
+              ? this.encryption.encrypt(value as string)
+              : value as string,
             updatedBy: updatedBy || null,
           },
         })

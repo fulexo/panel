@@ -233,7 +233,7 @@ export class LoggingService implements LoggerService {
     });
 
     const level = severity === 'critical' ? 'fatal' : severity === 'high' ? 'error' : 'warn';
-    (this as Record<string, unknown>)[level](`Security event: ${event}`, 'Security', {
+    (this as any)[level](`Security event: ${event}`, 'Security', {
       event,
       severity,
       ...metadata,
