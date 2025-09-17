@@ -13,7 +13,7 @@ export function middleware(request: NextRequest) {
     if (userCookie?.value) {
       user = JSON.parse(userCookie.value);
     }
-  } catch (error) {
+  } catch {
     // Invalid user cookie, clear it
   }
 

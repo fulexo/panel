@@ -46,7 +46,7 @@ export class InputSanitizationService {
   sanitizePhone(phone: string): string {
     if (!phone) return phone;
     
-    return phone.replace(/[^\d+\-\(\)\s]/g, ''); // Keep only digits, +, -, (, ), and spaces
+    return phone.replace(/[^\d+\-()\s]/g, ''); // Keep only digits, +, -, (, ), and spaces
   }
 
   // Sanitize SKU
@@ -55,7 +55,7 @@ export class InputSanitizationService {
     
     return sku
       .toUpperCase()
-      .replace(/[^A-Z0-9\-]/g, '') // Keep only letters, numbers, and hyphens
+      .replace(/[^A-Z0-9-]/g, '') // Keep only letters, numbers, and hyphens
       .substring(0, 50); // Limit length
   }
 

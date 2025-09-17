@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
       requiresTwoFactor: data.data?.requiresTwoFactor,
       tempToken: data.data?.tempToken,
     });
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

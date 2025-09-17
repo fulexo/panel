@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
       success: data.success,
       message: data.message || 'Logged out successfully',
     });
-  } catch (error) {
+  } catch {
     // Even if there's an error, clear cookies
     const cookieStore = cookies();
     cookieStore.delete('access_token');

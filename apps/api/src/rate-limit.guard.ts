@@ -54,7 +54,9 @@ export class RateLimitGuard implements CanActivate {
             res.setHeader('X-RateLimit-Limit', effectivePoints.toString());
             res.setHeader('X-RateLimit-Remaining', '0');
             res.setHeader('X-RateLimit-Reset', new Date(Date.now() + Number(rl.retryAfterMs)).toISOString());
-          } catch {}
+          } catch {
+            // Ignore header setting errors
+          }
         }
         
         // Log rate limit violations for security monitoring
@@ -76,7 +78,9 @@ export class RateLimitGuard implements CanActivate {
         res.setHeader('X-RateLimit-Limit', effectivePoints.toString());
         res.setHeader('X-RateLimit-Remaining', rl.remaining?.toString() || '0');
         res.setHeader('X-RateLimit-Reset', new Date(Date.now() + opts.duration).toISOString());
-      } catch {}
+      } catch {
+        // Ignore header setting errors
+      }
       
       return true;
     } catch {

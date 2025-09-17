@@ -1,5 +1,9 @@
 // Jest setup file
-require('dotenv').config({ path: '.env.test' });
+const dotenv = require('dotenv');
+dotenv.config({ path: '.env.test' });
+
+// Import jest-dom for additional matchers
+require('@testing-library/jest-dom');
 
 // Global test setup
 beforeAll(() => {

@@ -19,7 +19,13 @@ export class OrdersService {
   }
 
   private sanitizeOrderForCustomer = (order: any) => {
-    const { notes, billingAddress, tags, serviceCharges, account, ...rest } = order || {};
+    const { notes: _notes, billingAddress: _billingAddress, tags: _tags, serviceCharges: _serviceCharges, account: _account, ...rest } = order || {};
+    // Suppress unused variable warnings for destructured variables that are intentionally removed
+    void _notes;
+    void _billingAddress;
+    void _tags;
+    void _serviceCharges;
+    void _account;
     return rest;
   };
 

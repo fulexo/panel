@@ -87,7 +87,7 @@ async function handleRequest(
         if (body) {
           requestOptions.body = body;
         }
-      } catch (error) {
+      } catch {
         // Ignore body parsing errors
       }
     }
@@ -214,7 +214,7 @@ async function handleRequest(
       });
     }
 
-  } catch (error) {
+  } catch {
     // API Proxy Error occurred
     return NextResponse.json(
       { error: 'Internal Server Error' },

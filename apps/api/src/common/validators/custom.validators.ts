@@ -64,7 +64,7 @@ export class IsStrongPasswordConstraint implements ValidatorConstraintInterface 
     if (!/\d/.test(password)) return false;
     
     // At least one special character
-    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) return false;
+    if (!/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password)) return false;
     
     // No common patterns
     const commonPatterns = [
@@ -143,7 +143,7 @@ export class IsValidSkuConstraint implements ValidatorConstraintInterface {
     if (!sku) return false;
     
     // SKU should be 3-50 characters, alphanumeric and hyphens only
-    const skuRegex = /^[A-Za-z0-9\-]{3,50}$/;
+    const skuRegex = /^[A-Za-z0-9-]{3,50}$/;
     return skuRegex.test(sku);
   }
 

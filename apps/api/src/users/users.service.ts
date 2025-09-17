@@ -9,7 +9,7 @@ export class UsersService {
   async list(currentUser: any, page: number, limit: number, search?: string) {
     const offset = (page - 1) * limit;
     
-    let whereClause: any = {};
+    const whereClause: any = {};
     
     // Role-based filtering
     if (currentUser.role === 'CUSTOMER') {
