@@ -188,7 +188,7 @@ npm run test         # Run tests
 
 The API documentation is automatically generated using Swagger/OpenAPI and is available at:
 - Development: http://localhost:3000/docs
-- Production: https://api.fulexo.com/docs
+- Production: https://your-api-domain.com/docs
 
 ### Main Endpoints
 
@@ -219,7 +219,7 @@ The API documentation is automatically generated using Swagger/OpenAPI and is av
 sudo snap install --classic certbot
 
 # Generate certificates
-sudo certbot --nginx -d api.fulexo.com -d panel.fulexo.com
+sudo certbot --nginx -d your-api-domain.com -d your-panel-domain.com
 ```
 
 ### Environment Variables

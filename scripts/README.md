@@ -44,6 +44,19 @@ chmod +x scripts/complete-setup.sh
 ./scripts/complete-setup.sh
 ```
 
+#### `install-fulexo-complete.sh`
+**Tam otomatik kurulum script'i**
+- Tüm kurulumu otomatik yapar
+- Domain bilgilerini otomatik ayarlar
+- SSL sertifikalarını kurar
+- Veritabanını yapılandırır
+- Admin kullanıcısını oluşturur
+
+```bash
+chmod +x scripts/install-fulexo-complete.sh
+./scripts/install-fulexo-complete.sh
+```
+
 ### 🔧 Yönetim Script'leri
 
 #### `health-check.sh`
