@@ -1,226 +1,205 @@
 #!/bin/bash
 
-# Fulexo Platform - Health Check Script'i
-# Bu script platform sağlığını kontrol eder
+# Health Check Script
+# Usage: ./scripts/health-check.sh [--verbose]
 
-set -euo pipefail
+set -e
 
-# Color codes
+# Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
-NC='\033[0m'
+NC='\033[0m' # No Color
 
-# Functions
-print_status() { echo -e "${GREEN}[✓]${NC} $1"; }
-print_error() { echo -e "${RED}[✗]${NC} $1"; }
-print_warning() { echo -e "${YELLOW}[!]${NC} $1"; }
-print_info() { echo -e "${BLUE}[i]${NC} $1"; }
+VERBOSE=${1:-false}
+HEALTH_CHECK_TIMEOUT=30
+MAX_RETRIES=3
 
-FULEXO_DIR="/opt/fulexo"
-ENV_FILE="/etc/fulexo/fulexo.env"
+log() {
+    echo -e "${BLUE}[$(date +'%Y-%m-%d %H:%M:%S')]${NC} $1"
+}
 
-echo ""
-echo "🏥 Fulexo Platform - Health Check"
-echo "================================="
-echo ""
+success() {
+    echo -e "${GREEN}[SUCCESS]${NC} $1"
+}
 
-# 1. Systemd servis durumu
-print_info "1/8 - Systemd servis durumu kontrol ediliyor..."
-if systemctl is-active --quiet fulexo; then
-    print_status "Fulexo servisi çalışıyor ✓"
-else
-    print_error "Fulexo servisi çalışmıyor ✗"
-fi
+error() {
+    echo -e "${RED}[ERROR]${NC} $1"
+}
 
-# 2. Docker container durumu
-print_info "2/8 - Docker container durumu kontrol ediliyor..."
-RUNNING_CONTAINERS=$(docker ps --filter "name=compose-" --format "{{.Names}}" | wc -l)
-EXPECTED_CONTAINERS=12
+warning() {
+    echo -e "${YELLOW}[WARNING]${NC} $1"
+}
 
-if [ $RUNNING_CONTAINERS -eq $EXPECTED_CONTAINERS ]; then
-    print_status "Tüm container'lar çalışıyor ($RUNNING_CONTAINERS/$EXPECTED_CONTAINERS) ✓"
-else
-    print_warning "Bazı container'lar çalışmıyor ($RUNNING_CONTAINERS/$EXPECTED_CONTAINERS) ⚠"
-fi
-
-# Container listesi
-print_info "Çalışan container'lar:"
-docker ps --filter "name=compose-" --format "  {{.Names}} - {{.Status}}"
-
-# 3. Database bağlantısı
-print_info "3/8 - Database bağlantısı kontrol ediliyor..."
-if docker exec compose-postgres-1 pg_isready -U fulexo_user -d fulexo >/dev/null 2>&1; then
-    print_status "Database bağlantısı başarılı ✓"
-else
-    print_error "Database bağlantısı başarısız ✗"
-fi
-
-# 4. Redis bağlantısı
-print_info "4/8 - Redis bağlantısı kontrol ediliyor..."
-if docker exec compose-valkey-1 valkey-cli ping >/dev/null 2>&1; then
-    print_status "Redis bağlantısı başarılı ✓"
-else
-    print_error "Redis bağlantısı başarısız ✗"
-fi
-
-# 5. MinIO bağlantısı
-print_info "5/8 - MinIO bağlantısı kontrol ediliyor..."
-if docker exec compose-minio-1 mc admin info >/dev/null 2>&1; then
-    print_status "MinIO bağlantısı başarılı ✓"
-else
-    print_error "MinIO bağlantısı başarısız ✗"
-fi
-
-# 6. API health check
-print_info "6/8 - API health check yapılıyor..."
-if [ -f "$ENV_FILE" ]; then
-    DOMAIN_API=$(grep "^DOMAIN_API=" "$ENV_FILE" | cut -d'=' -f2)
+# Check if service is healthy
+check_service() {
+    local service_name=$1
+    local url=$2
+    local expected_status=${3:-200}
+    local retry_count=0
     
-    # Eğer environment dosyasında yoksa varsayılan değeri kullan
-    if [ -z "$DOMAIN_API" ]; then
-        DOMAIN_API="api.fulexo.com"
-    fi
-    
-    if curl -s -k "https://$DOMAIN_API/health" | grep -q "ok"; then
-        print_status "API health check başarılı ✓"
-    else
-        print_error "API health check başarısız ✗"
-    fi
-else
-    print_warning "Environment dosyası bulunamadı, API test atlanıyor"
-fi
-
-# 7. Web servis kontrolü
-print_info "7/8 - Web servis kontrol ediliyor..."
-if [ -f "$ENV_FILE" ]; then
-    DOMAIN_APP=$(grep "^DOMAIN_APP=" "$ENV_FILE" | cut -d'=' -f2)
-    
-    # Eğer environment dosyasında yoksa varsayılan değeri kullan
-    if [ -z "$DOMAIN_APP" ]; then
-        DOMAIN_APP="panel.fulexo.com"
-    fi
-    
-    if curl -s -k "https://$DOMAIN_APP" | grep -q "html\|<!DOCTYPE"; then
-        print_status "Web servis çalışıyor ✓"
-    else
-        print_error "Web servis çalışmıyor ✗"
-    fi
-else
-    print_warning "Environment dosyası bulunamadı, Web test atlanıyor"
-fi
-
-# 8. Disk kullanımı
-print_info "8/8 - Disk kullanımı kontrol ediliyor..."
-DISK_USAGE=$(df -h / | awk 'NR==2 {print $5}' | sed 's/%//')
-if [ $DISK_USAGE -lt 80 ]; then
-    print_status "Disk kullanımı normal ($DISK_USAGE%) ✓"
-else
-    print_warning "Disk kullanımı yüksek ($DISK_USAGE%) ⚠"
-fi
-
-# Memory kullanımı
-MEMORY_USAGE=$(free | awk 'NR==2{printf "%.0f", $3*100/$2}')
-if [ $MEMORY_USAGE -lt 80 ]; then
-    print_status "Memory kullanımı normal ($MEMORY_USAGE%) ✓"
-else
-    print_warning "Memory kullanımı yüksek ($MEMORY_USAGE%) ⚠"
-fi
-
-# SSL sertifika kontrolü
-print_info "SSL sertifika kontrol ediliyor..."
-if [ -f "$ENV_FILE" ]; then
-    DOMAIN_API=$(grep "^DOMAIN_API=" "$ENV_FILE" | cut -d'=' -f2)
-    DOMAIN_APP=$(grep "^DOMAIN_APP=" "$ENV_FILE" | cut -d'=' -f2)
-    
-    # Eğer environment dosyasında yoksa varsayılan değerleri kullan
-    if [ -z "$DOMAIN_API" ]; then
-        DOMAIN_API="api.fulexo.com"
-    fi
-    
-    if [ -z "$DOMAIN_APP" ]; then
-        DOMAIN_APP="panel.fulexo.com"
-    fi
-    
-    # API SSL kontrolü
-    if [ -f "/etc/letsencrypt/live/$DOMAIN_API/fullchain.pem" ]; then
-        API_DAYS=$(openssl x509 -in "/etc/letsencrypt/live/$DOMAIN_API/fullchain.pem" -noout -dates | grep notAfter | cut -d= -f2 | xargs -I {} date -d {} +%s)
-        API_DAYS_LEFT=$(( (API_DAYS - $(date +%s)) / 86400 ))
-        
-        if [ $API_DAYS_LEFT -gt 30 ]; then
-            print_status "API SSL sertifikası geçerli ($API_DAYS_LEFT gün kaldı) ✓"
-        else
-            print_warning "API SSL sertifikası yakında sona erecek ($API_DAYS_LEFT gün kaldı) ⚠"
+    while [ $retry_count -lt $MAX_RETRIES ]; do
+        if [ "$VERBOSE" = "--verbose" ]; then
+            log "Checking $service_name... (attempt $((retry_count + 1))/$MAX_RETRIES)"
         fi
-    else
-        print_error "API SSL sertifikası bulunamadı ✗"
-    fi
-    
-    # Panel SSL kontrolü
-    if [ -f "/etc/letsencrypt/live/$DOMAIN_APP/fullchain.pem" ]; then
-        APP_DAYS=$(openssl x509 -in "/etc/letsencrypt/live/$DOMAIN_APP/fullchain.pem" -noout -dates | grep notAfter | cut -d= -f2 | xargs -I {} date -d {} +%s)
-        APP_DAYS_LEFT=$(( (APP_DAYS - $(date +%s)) / 86400 ))
         
-        if [ $APP_DAYS_LEFT -gt 30 ]; then
-            print_status "Panel SSL sertifikası geçerli ($APP_DAYS_LEFT gün kaldı) ✓"
+        local status_code=$(curl -s -o /dev/null -w "%{http_code}" --max-time $HEALTH_CHECK_TIMEOUT "$url" || echo "000")
+        
+        if [ "$status_code" = "$expected_status" ]; then
+            success "$service_name is healthy (HTTP $status_code)"
+            return 0
         else
-            print_warning "Panel SSL sertifikası yakında sona erecek ($APP_DAYS_LEFT gün kaldı) ⚠"
+            warning "$service_name returned HTTP $status_code (expected $expected_status)"
+            retry_count=$((retry_count + 1))
+            sleep 5
         fi
+    done
+    
+    error "$service_name health check failed after $MAX_RETRIES attempts"
+    return 1
+}
+
+# Check Docker containers
+check_containers() {
+    log "Checking Docker containers..."
+    
+    local containers=("fulexo-api" "fulexo-web" "fulexo-postgres" "fulexo-redis" "fulexo-worker")
+    local all_healthy=true
+    
+    for container in "${containers[@]}"; do
+        if docker ps --format "table {{.Names}}" | grep -q "^$container$"; then
+            local status=$(docker inspect --format='{{.State.Status}}' "$container")
+            if [ "$status" = "running" ]; then
+                success "Container $container is running"
+            else
+                error "Container $container is not running (status: $status)"
+                all_healthy=false
+            fi
+        else
+            error "Container $container is not found"
+            all_healthy=false
+        fi
+    done
+    
+    if [ "$all_healthy" = false ]; then
+        return 1
+    fi
+    
+    return 0
+}
+
+# Check database connectivity
+check_database() {
+    log "Checking database connectivity..."
+    
+    local db_check=$(docker exec fulexo-postgres psql -U postgres -d fulexo -c "SELECT 1;" 2>/dev/null | grep -c "1 row" || echo "0")
+    
+    if [ "$db_check" = "1" ]; then
+        success "Database is accessible"
+        return 0
     else
-        print_error "Panel SSL sertifikası bulunamadı ✗"
+        error "Database is not accessible"
+        return 1
     fi
-fi
+}
 
-# Sonuç özeti
-echo ""
-echo "📊 HEALTH CHECK SONUCU"
-echo "======================"
-echo ""
-
-# Başarılı testler
-SUCCESS_COUNT=0
-TOTAL_TESTS=8
-
-# Test sonuçlarını say
-if systemctl is-active --quiet fulexo; then ((SUCCESS_COUNT++)); fi
-if [ $RUNNING_CONTAINERS -eq $EXPECTED_CONTAINERS ]; then ((SUCCESS_COUNT++)); fi
-if docker exec compose-postgres-1 pg_isready -U fulexo_user -d fulexo >/dev/null 2>&1; then ((SUCCESS_COUNT++)); fi
-if docker exec compose-valkey-1 valkey-cli ping >/dev/null 2>&1; then ((SUCCESS_COUNT++)); fi
-if docker exec compose-minio-1 mc admin info >/dev/null 2>&1; then ((SUCCESS_COUNT++)); fi
-
-if [ $SUCCESS_COUNT -eq $TOTAL_TESTS ]; then
-    print_status "Tüm testler başarılı ($SUCCESS_COUNT/$TOTAL_TESTS) ✓"
-    echo ""
-    echo "🎉 Platform sağlıklı çalışıyor!"
-else
-    print_warning "Bazı testler başarısız ($SUCCESS_COUNT/$TOTAL_TESTS) ⚠"
-    echo ""
-    echo "🔧 Sorun giderme için:"
-    echo "   - Logları kontrol edin: docker logs -f compose-api-1"
-    echo "   - Servis durumunu kontrol edin: sudo systemctl status fulexo"
-    echo "   - Container'ları yeniden başlatın: sudo systemctl restart fulexo"
-fi
-
-echo ""
-echo "📋 Platform Bilgileri:"
-if [ -f "$ENV_FILE" ]; then
-    DOMAIN_API=$(grep "^DOMAIN_API=" "$ENV_FILE" | cut -d'=' -f2)
-    DOMAIN_APP=$(grep "^DOMAIN_APP=" "$ENV_FILE" | cut -d'=' -f2)
+# Check Redis connectivity
+check_redis() {
+    log "Checking Redis connectivity..."
     
-    # Eğer environment dosyasında yoksa varsayılan değerleri kullan
-    if [ -z "$DOMAIN_API" ]; then
-        DOMAIN_API="api.fulexo.com"
+    local redis_check=$(docker exec fulexo-redis redis-cli ping 2>/dev/null | grep -c "PONG" || echo "0")
+    
+    if [ "$redis_check" = "1" ]; then
+        success "Redis is accessible"
+        return 0
+    else
+        error "Redis is not accessible"
+        return 1
+    fi
+}
+
+# Check API endpoints
+check_api() {
+    log "Checking API endpoints..."
+    
+    # Check API health endpoint
+    check_service "API Health" "http://localhost:3000/api/health" 200
+    
+    # Check API auth endpoint
+    check_service "API Auth" "http://localhost:3000/api/auth/me" 401  # Should return 401 without auth
+    
+    return $?
+}
+
+# Check frontend
+check_frontend() {
+    log "Checking frontend..."
+    
+    check_service "Frontend" "http://localhost:3001" 200
+    
+    return $?
+}
+
+# Check worker service
+check_worker() {
+    log "Checking worker service..."
+    
+    # Check if worker container is running
+    if docker ps --format "table {{.Names}}" | grep -q "^fulexo-worker$"; then
+        success "Worker service is running"
+        return 0
+    else
+        error "Worker service is not running"
+        return 1
+    fi
+}
+
+# Main health check
+main() {
+    log "Starting comprehensive health check..."
+    
+    local overall_status=0
+    
+    # Check containers
+    if ! check_containers; then
+        overall_status=1
     fi
     
-    if [ -z "$DOMAIN_APP" ]; then
-        DOMAIN_APP="panel.fulexo.com"
+    # Check database
+    if ! check_database; then
+        overall_status=1
     fi
     
-    echo "   - Panel: https://$DOMAIN_APP"
-    echo "   - API: https://$DOMAIN_API"
-    echo "   - API Docs: https://$DOMAIN_API/docs"
-fi
+    # Check Redis
+    if ! check_redis; then
+        overall_status=1
+    fi
+    
+    # Check API
+    if ! check_api; then
+        overall_status=1
+    fi
+    
+    # Check frontend
+    if ! check_frontend; then
+        overall_status=1
+    fi
+    
+    # Check worker
+    if ! check_worker; then
+        overall_status=1
+    fi
+    
+    # Overall status
+    if [ $overall_status -eq 0 ]; then
+        success "All health checks passed! System is healthy."
+    else
+        error "Some health checks failed. Please check the logs above."
+    fi
+    
+    return $overall_status
+}
 
-echo "   - Admin: fulexo@fulexo.com / Adem_123*"
-echo ""
+# Run main function
+main

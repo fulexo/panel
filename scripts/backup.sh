@@ -1,110 +1,123 @@
 #!/bin/bash
 
-# Fulexo Platform - Otomatik Backup Script'i
-# Bu script günlük backup işlemlerini yapar
+# Backup Script
+# Usage: ./scripts/backup.sh [--full] [--database-only] [--code-only]
 
-set -euo pipefail
+set -e
 
-# Color codes
+# Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
-NC='\033[0m'
+NC='\033[0m' # No Color
 
-# Functions
-print_status() { echo -e "${GREEN}[✓]${NC} $1"; }
-print_error() { echo -e "${RED}[✗]${NC} $1"; }
-print_warning() { echo -e "${YELLOW}[!]${NC} $1"; }
-print_info() { echo -e "${BLUE}[i]${NC} $1"; }
+# Default values
+BACKUP_TYPE=${1:-full}
+BACKUP_DIR="/var/backups/fulexo"
+TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
+BACKUP_NAME="fulexo_backup_${TIMESTAMP}"
 
-FULEXO_DIR="/opt/fulexo"
-BACKUP_SCRIPT="$FULEXO_DIR/scripts/backup-restore.sh"
-LOG_FILE="/var/log/fulexo-backup.log"
-
-# Log function
 log() {
-    echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" >> "$LOG_FILE"
+    echo -e "${BLUE}[$(date +'%Y-%m-%d %H:%M:%S')]${NC} $1"
 }
 
-# Main backup function
-main() {
-    log "Starting automatic backup process"
-    
-    # Check if backup script exists
-    if [ ! -f "$BACKUP_SCRIPT" ]; then
-        print_error "Backup script not found: $BACKUP_SCRIPT"
-        log "ERROR: Backup script not found"
-        exit 1
-    fi
-    
-    # Make backup script executable
-    chmod +x "$BACKUP_SCRIPT"
-    
-    # Run backup
-    print_info "Starting backup process..."
-    log "Running backup script"
-    
-    if "$BACKUP_SCRIPT" backup; then
-        print_status "Backup completed successfully"
-        log "Backup completed successfully"
-        
-        # Send success notification
-        send_notification "success" "Backup completed successfully"
-        
-    else
-        print_error "Backup failed"
-        log "ERROR: Backup failed"
-        
-        # Send failure notification
-        send_notification "failure" "Backup failed - check logs"
-        
-        exit 1
-    fi
-    
-    # Cleanup old logs (keep last 30 days)
-    find /var/log -name "fulexo-backup.log*" -mtime +30 -delete 2>/dev/null || true
-    
-    log "Automatic backup process completed"
+success() {
+    echo -e "${GREEN}[SUCCESS]${NC} $1"
 }
 
-# Send notification function
-send_notification() {
-    local status="$1"
-    local message="$2"
-    
-    # Log to system log
-    logger -t fulexo-backup "$message"
-    
-    # Send email if configured
-    local admin_email="admin@fulexo.com"
-    if [ -f "/etc/fulexo/fulexo.env" ]; then
-        admin_email=$(grep "^ADMIN_EMAIL=" "/etc/fulexo/fulexo.env" 2>/dev/null | cut -d'=' -f2 || echo "admin@fulexo.com")
-    fi
-    
-    if command -v mail >/dev/null 2>&1; then
-        local subject="Fulexo Backup $status - $(date '+%Y-%m-%d %H:%M:%S')"
-        local body="Status: $status\nMessage: $message\nTime: $(date)\nHost: $(hostname)"
-        
-        echo -e "$body" | mail -s "$subject" "$admin_email" 2>/dev/null || true
-    fi
-    
-    # Send to webhook if configured
-    local webhook_url=$(grep "^BACKUP_WEBHOOK_URL=" "/etc/fulexo/fulexo.env" 2>/dev/null | cut -d'=' -f2 || echo "")
-    if [ -n "$webhook_url" ] && command -v curl >/dev/null 2>&1; then
-        local payload="{\"status\":\"$status\",\"message\":\"$message\",\"timestamp\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"hostname\":\"$(hostname)\"}"
-        curl -X POST -H "Content-Type: application/json" -d "$payload" "$webhook_url" 2>/dev/null || true
-    fi
+error() {
+    echo -e "${RED}[ERROR]${NC} $1"
+    exit 1
 }
 
-# Check if running as root
-if [[ $EUID -ne 0 ]]; then
-   print_error "This script must be run as root"
-   exit 1
+warning() {
+    echo -e "${YELLOW}[WARNING]${NC} $1"
+}
+
+# Create backup directory
+mkdir -p "$BACKUP_DIR"
+
+log "Starting backup process - Type: $BACKUP_TYPE"
+
+# Full backup
+if [ "$BACKUP_TYPE" = "--full" ] || [ "$BACKUP_TYPE" = "full" ]; then
+    log "Creating full backup..."
+    
+    # Create backup directory
+    mkdir -p "$BACKUP_DIR/$BACKUP_NAME"
+    
+    # Backup code
+    log "Backing up code..."
+    tar -czf "$BACKUP_DIR/$BACKUP_NAME/code.tar.gz" \
+        --exclude=node_modules \
+        --exclude=.next \
+        --exclude=dist \
+        --exclude=.git \
+        --exclude=*.log \
+        .
+    success "Code backed up"
+    
+    # Backup database
+    log "Backing up database..."
+    docker exec fulexo-postgres pg_dump -U postgres -d fulexo > "$BACKUP_DIR/$BACKUP_NAME/database.sql"
+    success "Database backed up"
+    
+    # Backup Redis data
+    log "Backing up Redis data..."
+    docker exec fulexo-redis redis-cli --rdb /data/dump.rdb
+    docker cp fulexo-redis:/data/dump.rdb "$BACKUP_DIR/$BACKUP_NAME/redis.rdb"
+    success "Redis data backed up"
+    
+    # Backup environment files
+    log "Backing up environment files..."
+    cp .env "$BACKUP_DIR/$BACKUP_NAME/.env" 2>/dev/null || warning "No .env file found"
+    cp docker-compose.prod.yml "$BACKUP_DIR/$BACKUP_NAME/" 2>/dev/null || warning "No docker-compose.prod.yml found"
+    success "Environment files backed up"
+    
+    # Create backup info file
+    cat > "$BACKUP_DIR/$BACKUP_NAME/backup_info.txt" << EOF
+Backup Date: $(date)
+Backup Type: Full
+Git Commit: $(git rev-parse HEAD 2>/dev/null || echo "Unknown")
+Git Branch: $(git branch --show-current 2>/dev/null || echo "Unknown")
+Docker Images: $(docker images --format "table {{.Repository}}:{{.Tag}}" | grep fulexo)
+EOF
+    
+    success "Full backup completed: $BACKUP_NAME"
 fi
 
-# Create log file if it doesn't exist
-touch "$LOG_FILE"
+# Database only backup
+if [ "$BACKUP_TYPE" = "--database-only" ]; then
+    log "Creating database-only backup..."
+    
+    mkdir -p "$BACKUP_DIR/$BACKUP_NAME"
+    
+    docker exec fulexo-postgres pg_dump -U postgres -d fulexo > "$BACKUP_DIR/$BACKUP_NAME/database.sql"
+    success "Database backup completed: $BACKUP_NAME"
+fi
 
-# Run main function
-main "$@"
+# Code only backup
+if [ "$BACKUP_TYPE" = "--code-only" ]; then
+    log "Creating code-only backup..."
+    
+    mkdir -p "$BACKUP_DIR/$BACKUP_NAME"
+    
+    tar -czf "$BACKUP_DIR/$BACKUP_NAME/code.tar.gz" \
+        --exclude=node_modules \
+        --exclude=.next \
+        --exclude=dist \
+        --exclude=.git \
+        --exclude=*.log \
+        .
+    success "Code backup completed: $BACKUP_NAME"
+fi
+
+# Clean up old backups (keep last 10)
+log "Cleaning up old backups..."
+cd "$BACKUP_DIR"
+ls -t | tail -n +11 | xargs -r rm -rf
+success "Old backups cleaned up"
+
+log "Backup process completed successfully!"
+success "Backup location: $BACKUP_DIR/$BACKUP_NAME"
