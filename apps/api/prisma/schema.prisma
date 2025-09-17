@@ -54,7 +54,7 @@ model User {
   notificationPreferences Json?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
-  tenant        Tenant   @relation(fields: [tenantId], references: [id])
+  tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   sessions      Session[]
   auditLogs     AuditLog[]
   requests      Request[]
@@ -65,10 +65,15 @@ model User {
   @@index([tenantId, isActive])
   @@index([tenantId, lastLoginAt])
   @@index([tenantId, createdAt])
+  @@index([tenantId, email])
+  @@index([tenantId, role, isActive])
   @@index([role])
   @@index([isActive])
   @@index([lastLoginAt])
   @@index([createdAt])
+  @@index([email])
+  @@index([failedAttempts])
+  @@index([lockedUntil])
 }
 
 model Session {
@@ -88,6 +93,8 @@ model Session {
   @@index([createdAt])
   @@index([ipAddress])
   @@index([userId, expiresAt])
+  @@index([fingerprint])
+  @@index([expiresAt, createdAt])
 }
 
 
@@ -200,9 +207,9 @@ model Order {
   confirmedAt    DateTime?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
-  tenant         Tenant   @relation(fields: [tenantId], references: [id])
-  customer       Customer? @relation(fields: [customerId], references: [id])
-  store          WooStore? @relation(fields: [storeId], references: [id])
+  tenant         Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customer       Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  store          WooStore? @relation(fields: [storeId], references: [id], onDelete: SetNull)
   
   items          OrderItem[]
   shipments      Shipment[]
@@ -224,8 +231,12 @@ model Order {
   @@index([tenantId, orderSource])
   @@index([tenantId, status, total])
   @@index([tenantId, createdAt, status])
+  @@index([tenantId, customerId])
+  @@index([tenantId, status, total, createdAt])
   @@index([createdAt])
   @@index([confirmedAt])
+  @@index([externalOrderNo])
+  @@index([orderSource])
 }
 
 model OrderItem {
@@ -240,6 +251,9 @@ model OrderItem {
   @@index([orderId])
   @@index([sku])
   @@index([orderId, sku])
+  @@index([name])
+  @@index([qty])
+  @@index([price])
 }
 
 model Shipment {
@@ -258,14 +272,19 @@ model Shipment {
   deliveredAt DateTime?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  order       Order    @relation(fields: [orderId], references: [id])
-  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   
   @@index([trackingNo])
   @@index([orderId])
   @@index([tenantId, status])
   @@index([tenantId, carrier])
   @@index([tenantId, createdAt])
+  @@index([tenantId, status, createdAt])
+  @@index([carrier])
+  @@index([status])
+  @@index([shippedAt])
+  @@index([deliveredAt])
 }
 
 model Product {
@@ -284,8 +303,8 @@ model Product {
   active      Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  tenant      Tenant   @relation(fields: [tenantId], references: [id])
-  store       WooStore? @relation(fields: [storeId], references: [id])
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  store       WooStore? @relation(fields: [storeId], references: [id], onDelete: SetNull)
   inboundItems InboundItem[]
   stockMovements StockMovement[]
 
@@ -297,6 +316,10 @@ model Product {
   @@index([tenantId, price])
   @@index([tenantId, stock])
   @@index([tenantId, tags])
+  @@index([tenantId, active, stock])
+  @@index([tenantId, active, price])
+  @@index([sku])
+  @@index([active])
   @@index([createdAt])
   @@index([updatedAt])
 }
@@ -317,8 +340,8 @@ model Invoice {
   paidAt     DateTime?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
-  tenant     Tenant   @relation(fields: [tenantId], references: [id])
-  order      Order    @relation(fields: [orderId], references: [id])
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   billingItems BillingBatchItem[]
   payments   Payment[]
   
@@ -331,9 +354,13 @@ model Invoice {
   @@index([tenantId, issuedAt])
   @@index([tenantId, dueDate])
   @@index([tenantId, paidAt])
+  @@index([tenantId, status, createdAt])
+  @@index([tenantId, status, dueDate])
   @@index([createdAt])
   @@index([issuedAt])
   @@index([dueDate])
+  @@index([paidAt])
+  @@index([series])
 }
 
 model Payment {
@@ -348,14 +375,18 @@ model Payment {
   processedAt   DateTime?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
-  tenant        Tenant   @relation(fields: [tenantId], references: [id])
-  invoice       Invoice  @relation(fields: [invoiceId], references: [id])
+  tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  invoice       Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
   
   @@index([tenantId])
   @@index([invoiceId])
   @@index([status])
   @@index([method])
   @@index([transactionId])
+  @@index([tenantId, status])
+  @@index([tenantId, method])
+  @@index([tenantId, status, createdAt])
+  @@index([processedAt])
 }
 
 model Return {
@@ -370,14 +401,17 @@ model Return {
   items       Json?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  order       Order    @relation(fields: [orderId], references: [id])
-  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   photos      ReturnPhoto[]
   notifications ReturnNotification[]
   
   @@index([orderId])
   @@index([tenantId, status])
   @@index([tenantId, createdAt])
+  @@index([tenantId, status, createdAt])
+  @@index([status])
+  @@index([refundAmount])
 }
 
 model ReturnPhoto {
@@ -389,6 +423,7 @@ model ReturnPhoto {
   return    Return   @relation(fields: [returnId], references: [id], onDelete: Cascade)
 
   @@index([returnId])
+  @@index([createdAt])
 }
 
 model ReturnNotification {
@@ -401,6 +436,8 @@ model ReturnNotification {
   return    Return   @relation(fields: [returnId], references: [id], onDelete: Cascade)
 
   @@index([returnId])
+  @@index([channel])
+  @@index([sentAt])
 }
 
 // Order service charges (admin-set line items for billing)
@@ -415,6 +452,9 @@ model OrderServiceCharge {
   order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   @@index([orderId])
+  @@index([type])
+  @@index([amount])
+  @@index([createdAt])
 }
 
 // Business hours per tenant
@@ -426,9 +466,11 @@ model BusinessHours {
   endTime   String   // HH:mm
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@unique([tenantId, weekday])
+  @@index([tenantId])
+  @@index([weekday])
 }
 
 // Holidays per tenant
@@ -438,10 +480,12 @@ model Holiday {
   date      DateTime
   name      String
   createdAt DateTime @default(now())
-  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@unique([tenantId, date])
   @@index([tenantId, date])
+  @@index([date])
+  @@index([name])
 }
 
 // Calendar events (admin editable, customer read-only)
@@ -455,9 +499,13 @@ model CalendarEvent {
   endAt     DateTime
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([tenantId, startAt])
+  @@index([tenantId, type])
+  @@index([startAt])
+  @@index([endAt])
+  @@index([type])
 }
 
 // OAuth credentials (e.g., Google Calendar) - encrypted payload stored as JSON
@@ -469,9 +517,12 @@ model OAuthCredential {
   keyVersion Int      @default(1)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
-  tenant     Tenant   @relation(fields: [tenantId], references: [id])
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@unique([tenantId, provider])
+  @@index([tenantId])
+  @@index([provider])
+  @@index([keyVersion])
 }
 
 // WooCommerce store connection per tenant
@@ -494,6 +545,10 @@ model WooStore {
   customers      Customer[]
 
   @@index([tenantId, active])
+  @@index([tenantId, active, createdAt])
+  @@index([active])
+  @@index([baseUrl])
+  @@index([createdAt])
 }
 
 // Billing batch for semi-manual invoicing
@@ -505,10 +560,14 @@ model BillingBatch {
   status     String   @default("created") // created, issued, archived
   total      Decimal? @db.Decimal(14,2)
   createdAt  DateTime @default(now())
-  tenant     Tenant   @relation(fields: [tenantId], references: [id])
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   items      BillingBatchItem[]
 
   @@index([tenantId, createdAt])
+  @@index([tenantId, status])
+  @@index([status])
+  @@index([periodFrom])
+  @@index([periodTo])
 }
 
 model BillingBatchItem {
@@ -522,6 +581,8 @@ model BillingBatchItem {
 
   @@index([batchId])
   @@index([invoiceId])
+  @@index([amount])
+  @@index([createdAt])
 }
 
 // Inbound shipments for warehouse receiving
@@ -532,10 +593,13 @@ model InboundShipment {
   status    String   @default("created") // created, received, cancelled
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   items     InboundItem[]
 
   @@index([tenantId, createdAt])
+  @@index([tenantId, status])
+  @@index([status])
+  @@index([reference])
 }
 
 model InboundItem {
@@ -547,10 +611,13 @@ model InboundItem {
   quantity  Int
   createdAt DateTime @default(now())
   inbound   InboundShipment @relation(fields: [inboundId], references: [id], onDelete: Cascade)
-  product   Product? @relation(fields: [productId], references: [id])
+  product   Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
 
   @@index([inboundId])
   @@index([productId])
+  @@index([sku])
+  @@index([quantity])
+  @@index([createdAt])
 }
 
 model StockMovement {
@@ -563,6 +630,10 @@ model StockMovement {
   product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@index([productId, createdAt])
+  @@index([productId, type])
+  @@index([type])
+  @@index([quantity])
+  @@index([relatedId])
 }
 
 // Requests & Approvals System
@@ -580,13 +651,21 @@ model Request {
   appliedAt    DateTime?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
-  tenant       Tenant   @relation(fields: [tenantId], references: [id])
-  creator      User     @relation(fields: [createdBy], references: [id])
+  tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  creator      User     @relation(fields: [createdBy], references: [id], onDelete: Cascade)
   comments     RequestComment[]
   attachments  RequestAttachment[]
   
   @@index([tenantId, status, createdAt])
+  @@index([tenantId, type])
+  @@index([tenantId, priority])
   @@index([createdBy])
+  @@index([type])
+  @@index([status])
+  @@index([priority])
+  @@index([reviewerUserId])
+  @@index([reviewedAt])
+  @@index([appliedAt])
 }
 
 model RequestComment {
@@ -597,9 +676,12 @@ model RequestComment {
   isInternal Boolean @default(false)
   createdAt DateTime @default(now())
   request   Request  @relation(fields: [requestId], references: [id], onDelete: Cascade)
-  author    User     @relation(fields: [authorId], references: [id])
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
   
   @@index([requestId])
+  @@index([authorId])
+  @@index([isInternal])
+  @@index([createdAt])
 }
 
 model RequestAttachment {
@@ -613,6 +695,10 @@ model RequestAttachment {
   request   Request  @relation(fields: [requestId], references: [id], onDelete: Cascade)
   
   @@index([requestId])
+  @@index([fileName])
+  @@index([mimeType])
+  @@index([fileSize])
+  @@index([createdAt])
 }
 
 // Audit Log
@@ -628,12 +714,17 @@ model AuditLog {
   ipAddress   String?
   userAgent   String?
   createdAt   DateTime @default(now())
-  tenant      Tenant?  @relation(fields: [tenantId], references: [id])
-  user        User?    @relation(fields: [userId], references: [id])
+  tenant      Tenant?  @relation(fields: [tenantId], references: [id], onDelete: SetNull)
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
   
   @@index([tenantId, createdAt])
   @@index([userId, createdAt])
   @@index([action, createdAt])
+  @@index([tenantId, action])
+  @@index([entityType])
+  @@index([entityId])
+  @@index([ipAddress])
+  @@index([action, entityType])
 }
 
 // Sync State
@@ -650,6 +741,10 @@ model SyncState {
   
   @@unique([accountId, entityType])
   @@index([status])
+  @@index([accountId])
+  @@index([entityType])
+  @@index([lastSyncAt])
+  @@index([status, lastSyncAt])
 }
 
 // Ingested webhook events
@@ -668,6 +763,14 @@ model WebhookEvent {
   processedAt DateTime?
 
   @@index([tenantId, storeId, topic, status])
+  @@index([tenantId, status])
+  @@index([storeId, status])
+  @@index([provider])
+  @@index([topic])
+  @@index([status])
+  @@index([attempts])
+  @@index([createdAt])
+  @@index([processedAt])
 }
 
 // JWT Keys for RS256 (persistence and rotation)
@@ -683,6 +786,10 @@ model JwtKey {
   expiresAt  DateTime?
 
   @@index([active, createdAt])
+  @@index([active])
+  @@index([alg])
+  @@index([expiresAt])
+  @@index([rotatedAt])
 }
 
 model Settings {
@@ -700,6 +807,11 @@ model Settings {
 
   @@unique([tenantId, category, key])
   @@index([tenantId, category])
+  @@index([category])
+  @@index([key])
+  @@index([isSecret])
+  @@index([updatedBy])
+  @@index([updatedAt])
 }
 
 // Order number sequence per tenant
@@ -708,5 +820,6 @@ model OrderNoSeq {
   value    Int    @default(1)
   updatedAt DateTime @updatedAt
 
+  @@index([value])
   @@map("_OrderNoSeq")
 }

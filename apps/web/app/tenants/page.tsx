@@ -52,11 +52,6 @@ export default function TenantsPage() {
     try {
       setLoading(true);
       setError(null);
-      const t = null;
-      if (!t) { 
-        router.push('/login'); 
-        return; 
-      }
       
       const params = new URLSearchParams({
         page: currentPage.toString(),

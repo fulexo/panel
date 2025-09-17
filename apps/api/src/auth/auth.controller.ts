@@ -1,4 +1,5 @@
 import { Controller, Post, Body, Get, Req, HttpCode, HttpStatus, BadRequestException, UnauthorizedException, Put } from '@nestjs/common';
+import { Request } from 'express';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { SessionService } from './session.service';
@@ -7,6 +8,7 @@ import { Public } from './decorators/public.decorator';
 import { CurrentUser } from './decorators/current-user.decorator';
 import { LoginDto, RegisterDto, Verify2FADto, RefreshTokenDto, UpdateProfileDto, ChangePasswordDto, SetTokensDto } from './dto';
 import { RateLimit } from '../rate-limit.decorator';
+import { ResponseUtil } from '../common/utils/response.util';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -22,7 +24,7 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'User login' })
   @RateLimit({ points: 5, duration: 60_000, scope: 'ip' })
-  async login(@Body() dto: LoginDto, @Req() req: any) {
+  async login(@Body() dto: LoginDto, @Req() req: Request) {
     const result = await this.authService.login(dto, {
       ipAddress: req.ip,
       userAgent: req.headers['user-agent'],
@@ -30,14 +32,15 @@ export class AuthController {
     
     // If 2FA is required, return the temp token
     if (result.requiresTwoFactor) {
-      return {
-        requiresTwoFactor: true,
-        tempToken: result.tempToken,
-        message: '2FA verification required',
-        statusCode: 200,
-        timestamp: new Date().toISOString(),
-        path: '/api/auth/login'
-      };
+      return ResponseUtil.success(
+        {
+          requiresTwoFactor: true,
+          tempToken: result.tempToken,
+        },
+        '2FA verification required',
+        200,
+        '/api/auth/login'
+      );
     }
     
     // Set httpOnly cookies for tokens
@@ -57,23 +60,23 @@ export class AuthController {
       path: '/',
     });
     
-    return {
-      data: result.user,
-      message: 'Login successful',
-      statusCode: 200,
-      timestamp: new Date().toISOString(),
-      path: '/api/auth/login'
-    };
+    return ResponseUtil.success(
+      result.user,
+      'Login successful',
+      200,
+      '/api/auth/login'
+    );
   }
 
   @Post('register')
   @ApiOperation({ summary: 'Register new user (admin only)' })
-  async register(@CurrentUser() user: any, @Body() dto: RegisterDto) {
+  async register(@CurrentUser() user: { id: string; role: string }, @Body() dto: RegisterDto) {
     // Allow only platform admins or staff to register new users
     if (!user || user.role !== 'ADMIN') {
       throw new UnauthorizedException('Not allowed');
     }
-    return this.authService.register(dto);
+    const result = await this.authService.register(dto);
+    return ResponseUtil.created(result, 'User registered successfully', '/api/auth/register');
   }
 
   @Public()
@@ -81,14 +84,15 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Refresh access token' })
   async refresh(@Body() dto: RefreshTokenDto) {
-    return this.authService.refreshToken(dto.refreshToken);
+    const result = await this.authService.refreshToken(dto.refreshToken);
+    return ResponseUtil.success(result, 'Token refreshed successfully', 200, '/api/auth/refresh');
   }
 
   @Post('logout')
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'User logout' })
-  async logout(@CurrentUser() user: any, @Req() req: any) {
+  async logout(@CurrentUser() user: { id: string }, @Req() req: Request) {
     const token = req.headers.authorization?.replace('Bearer ', '');
     await this.sessionService.revokeSession(user.id, token);
     
@@ -97,12 +101,7 @@ export class AuthController {
     req.res.clearCookie('refresh_token', { path: '/' });
     req.res.clearCookie('user', { path: '/' });
     
-    return { 
-      message: 'Logged out successfully',
-      statusCode: 200,
-      timestamp: new Date().toISOString(),
-      path: '/api/auth/logout'
-    };
+    return ResponseUtil.success(null, 'Logged out successfully', 200, '/api/auth/logout');
   }
 
   @Get('me')
@@ -110,13 +109,7 @@ export class AuthController {
   @ApiOperation({ summary: 'Get current user info' })
   async me(@CurrentUser() user: { id: string; email: string; role: string; tenantId: string }) {
     const userInfo = await this.authService.getUserInfo(user.id);
-    return {
-      data: userInfo,
-      message: 'User info retrieved successfully',
-      statusCode: 200,
-      timestamp: new Date().toISOString(),
-      path: '/api/auth/me'
-    };
+    return ResponseUtil.success(userInfo, 'User info retrieved successfully', 200, '/api/auth/me');
   }
 
   @Get('sessions')
@@ -226,14 +219,14 @@ export class AuthController {
   @Put('profile')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update user profile' })
-  async updateProfile(@CurrentUser() user: any, @Body() dto: UpdateProfileDto) {
+  async updateProfile(@CurrentUser() user: { id: string; tenantId: string }, @Body() dto: UpdateProfileDto) {
     return this.authService.updateUserProfile(user.id, dto);
   }
 
   @Put('change-password')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Change user password' })
-  async changePassword(@CurrentUser() user: any, @Body() dto: ChangePasswordDto) {
+  async changePassword(@CurrentUser() user: { id: string }, @Body() dto: ChangePasswordDto) {
     return this.authService.changePassword(user.id, dto.currentPassword, dto.newPassword);
   }
 
@@ -241,7 +234,7 @@ export class AuthController {
   @Post('set-tokens')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Set tokens as httpOnly cookies' })
-  async setTokens(@Body() dto: SetTokensDto, @Req() req: any) {
+  async setTokens(@Body() dto: SetTokensDto, @Req() req: Request) {
     // Set httpOnly cookies for tokens
     req.res.cookie('access_token', dto.accessToken, {
       httpOnly: true,

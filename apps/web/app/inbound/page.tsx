@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import ProtectedRoute from "@/components/ProtectedRoute";
 
 export default function InboundPage(){
   const router = useRouter();
@@ -17,7 +18,6 @@ export default function InboundPage(){
   const api = (path: string, init?: any) => fetch(`/api${path}`, { headers: { 'Content-Type': 'application/json' }, ...init });
 
   const load = async () => {
-    const t = null; if(!t){ router.push('/login'); return; }
     const r = await api('/inbound/shipments');
     if(!r.ok){ if(r.status===401) router.push('/login'); return; }
     const data = await r.json();

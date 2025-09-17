@@ -4,7 +4,7 @@ import * as client from 'prom-client';
 import express from 'express';
 import cors from 'cors';
 import { PrismaClient, Prisma } from '@prisma/client';
-import { validateEnvironment } from './env.validation';
+import { validateEnvironment, validateEnvOnStartup } from './env.validation.js';
 import { logger } from './lib/logger';
 import fetch from 'node-fetch';
 
@@ -340,37 +340,83 @@ const jobProcessors = {
 
   'process-request': async (job) => {
     const { requestId, action } = job.data;
-    // Processing request with action
+    
+    if (!requestId || !action) {
+      throw new Error('Request ID and action are required');
+    }
+    
+    // Get the request from database
+    const request = await prisma.request.findUnique({
+      where: { id: requestId },
+      include: { creator: true, tenant: true }
+    });
+    
+    if (!request) {
+      throw new Error(`Request ${requestId} not found`);
+    }
     
     // Process the request based on action
     switch (action) {
       case 'approve':
-        // Apply approved changes
+        await prisma.request.update({
+          where: { id: requestId },
+          data: { 
+            status: 'APPROVED',
+            reviewedAt: new Date(),
+            reviewerUserId: job.data.reviewerUserId
+          }
+        });
+        
+        // Apply approved changes based on request type
+        await applyRequestChanges(request);
         break;
+        
       case 'reject':
-        // Handle rejection
+        await prisma.request.update({
+          where: { id: requestId },
+          data: { 
+            status: 'REJECTED',
+            reviewedAt: new Date(),
+            reviewerUserId: job.data.reviewerUserId
+          }
+        });
+        
+        // Send rejection notification
+        await sendRejectionNotification(request);
         break;
+        
+      case 'apply':
+        await prisma.request.update({
+          where: { id: requestId },
+          data: { 
+            status: 'APPLIED',
+            appliedAt: new Date()
+          }
+        });
+        break;
+        
+      default:
+        throw new Error(`Unknown action: ${action}`);
     }
     
+    logger.info(`Request ${requestId} processed with action: ${action}`);
     return { success: true, requestId, action };
   },
 
   'cleanup-cache': async (job) => {
     // Running cache cleanup
     
-    // Clean expired cache entries
-    const redis = new Redis(process.env.REDIS_URL || 'redis://valkey:6379/0');
-    
+    // Use existing connection instead of creating new one
     try {
       // Get all cache keys
-      const keys = await redis.keys('cache:*');
+      const keys = await connection.keys('cache:*');
       let cleaned = 0;
       
       for (const key of keys) {
-        const ttl = await redis.ttl(key);
+        const ttl = await connection.ttl(key);
         if (ttl === -1) {
           // No expiry set, clean if older than 1 hour
-          await redis.expire(key, 3600);
+          await connection.expire(key, 3600);
           cleaned++;
         }
       }
@@ -380,9 +426,6 @@ const jobProcessors = {
     } catch (error) {
       logger.error('Cache cleanup failed:', error);
       throw error;
-    } finally {
-      // Always close Redis connection
-      await redis.quit();
     }
   },
 
@@ -506,6 +549,66 @@ const worker = new Worker('fx-jobs', async (job) => {
   stalledInterval: 30 * 1000, // Check for stalled jobs every 30 seconds
   maxStalledCount: 1, // Max number of times a job can be stalled
 });
+
+// Helper function to apply request changes
+async function applyRequestChanges(request) {
+  const { type, payload } = request;
+  
+  switch (type) {
+    case 'STOCK_ADJUSTMENT':
+      if (payload.productId && payload.quantity) {
+        await prisma.stockMovement.create({
+          data: {
+            productId: payload.productId,
+            type: 'ADJUSTMENT',
+            quantity: payload.quantity,
+            relatedId: request.id
+          }
+        });
+        
+        // Update product stock
+        await prisma.product.update({
+          where: { id: payload.productId },
+          data: {
+            stock: { increment: payload.quantity }
+          }
+        });
+      }
+      break;
+      
+    case 'NEW_PRODUCT':
+      if (payload.productData) {
+        await prisma.product.create({
+          data: {
+            ...payload.productData,
+            tenantId: request.tenantId
+          }
+        });
+      }
+      break;
+      
+    case 'ORDER_NOTE':
+      if (payload.orderId && payload.note) {
+        await prisma.order.update({
+          where: { id: payload.orderId },
+          data: {
+            notes: payload.note
+          }
+        });
+      }
+      break;
+      
+    default:
+      logger.warn(`Unknown request type: ${type}`);
+  }
+}
+
+// Helper function to send rejection notification
+async function sendRejectionNotification(request) {
+  // This would integrate with your notification system
+  logger.info(`Sending rejection notification for request ${request.id}`);
+  // Implementation would depend on your notification service
+}
 
 // Helper function to determine if an error is retryable
 function isRetryableError(error) {
@@ -760,7 +863,7 @@ process.on('unhandledRejection', (reason, promise) => {
 async function start() {
   // Validate environment variables first
   try {
-    validateEnvironment();
+    validateEnvOnStartup();
   } catch (error) {
     logger.error('Environment validation failed:', error.message);
     process.exit(1);

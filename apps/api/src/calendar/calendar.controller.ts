@@ -10,38 +10,30 @@ import { CalendarService } from './calendar.service';
 export class CalendarController {
   constructor(private readonly calendar: CalendarService) {}
 
-  // Events
+  // Events - Simplified (only for internal use)
   @Get('events')
-  @ApiOperation({ summary: 'List calendar events (public for tenant)' })
+  @ApiOperation({ summary: 'List calendar events (internal use)' })
   async listEvents(@CurrentUser() user: any, @Query('from') from?: string, @Query('to') to?: string) {
     return this.calendar.listEvents(user.tenantId, from, to);
   }
 
-  @Get('ics')
-  @ApiOperation({ summary: 'ICS feed for tenant events' })
-  async ics(@CurrentUser() user: any, @Res() res: any) {
-    const ics = await this.calendar.generateIcs(user.tenantId);
-    res.setHeader('Content-Type', 'text/calendar; charset=utf-8');
-    res.send(ics);
-  }
-
   @Post('events')
   @Roles('ADMIN')
-  @ApiOperation({ summary: 'Create calendar event (admin)' })
+  @ApiOperation({ summary: 'Create calendar event (admin only)' })
   async createEvent(@CurrentUser() user: any, @Body() dto: any) {
     return this.calendar.createEvent(user.tenantId, dto);
   }
 
   @Put('events/:id')
   @Roles('ADMIN')
-  @ApiOperation({ summary: 'Update calendar event (admin)' })
+  @ApiOperation({ summary: 'Update calendar event (admin only)' })
   async updateEvent(@CurrentUser() user: any, @Param('id') id: string, @Body() dto: any) {
     return this.calendar.updateEvent(user.tenantId, id, dto);
   }
 
   @Delete('events/:id')
   @Roles('ADMIN')
-  @ApiOperation({ summary: 'Delete calendar event (admin)' })
+  @ApiOperation({ summary: 'Delete calendar event (admin only)' })
   async deleteEvent(@CurrentUser() user: any, @Param('id') id: string) {
     return this.calendar.deleteEvent(user.tenantId, id);
   }
@@ -81,12 +73,6 @@ export class CalendarController {
     return this.calendar.removeHoliday(user.tenantId, id);
   }
 
-  // OAuth credential storage (Google Calendar)
-  @Post('oauth/google')
-  @Roles('ADMIN')
-  @ApiOperation({ summary: 'Save Google Calendar OAuth credentials (encrypted)' })
-  async saveGoogleOAuth(@CurrentUser() user: any, @Body() dto: { credentialsJson: any }) {
-    return this.calendar.saveOAuth(user.tenantId, 'google_calendar', dto.credentialsJson);
-  }
+  // OAuth credential storage (removed - not needed for simple calendar)
 }
 

@@ -85,6 +85,8 @@ services:
       SHARE_BASE_URL: ${SHARE_BASE_URL}
     depends_on: [api]
     restart: unless-stopped
+    ports:
+      - "3001:3000"
 
   worker:
     build:
