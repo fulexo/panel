@@ -1,0 +1,74 @@
+{
+  "name": "fulexo-platform",
+  "version": "1.0.0",
+  "description": "Fulexo Platform - Multi-tenant WooCommerce Management",
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:ci": "jest --ci --coverage --watchAll=false",
+    "lint": "eslint . --ext .ts,.tsx,.js,.jsx",
+    "lint:fix": "eslint . --ext .ts,.tsx,.js,.jsx --fix",
+    "type-check": "tsc --noEmit",
+    "type-check:web": "cd apps/web && tsc --noEmit",
+    "type-check:api": "cd apps/api && tsc --noEmit",
+    "type-check:worker": "cd apps/worker && tsc --noEmit",
+    "build": "npm run build:web && npm run build:api && npm run build:worker",
+    "build:web": "cd apps/web && npm run build",
+    "build:api": "cd apps/api && npm run build",
+    "build:worker": "cd apps/worker && npm run build",
+    "dev": "concurrently \"npm run dev:web\" \"npm run dev:api\" \"npm run dev:worker\"",
+    "dev:web": "cd apps/web && npm run dev",
+    "dev:api": "cd apps/api && npm run dev",
+    "dev:worker": "cd apps/worker && npm run dev",
+    "install:all": "npm install && cd apps/web && npm install && cd ../api && npm install && cd ../worker && npm install",
+    "clean": "rm -rf node_modules apps/*/node_modules apps/*/dist apps/*/.next",
+    "security:audit": "npm audit --audit-level moderate",
+    "security:check": "npm audit --audit-level high"
+  },
+  "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.44.0",
+    "@typescript-eslint/parser": "^8.44.0",
+    "concurrently": "^8.2.2",
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-import": "^2.29.1",
+    "eslint-plugin-jsx-a11y": "^6.8.0",
+    "eslint-plugin-react": "^7.34.0",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "jest": "^30.1.3",
+    "jest-environment-jsdom": "^30.1.2",
+    "prettier": "^3.2.5",
+    "ts-jest": "^29.4.2",
+    "typescript": "^5.9.2"
+  },
+  "jest": {
+    "projects": [
+      "<rootDir>/apps/web/jest.config.js",
+      "<rootDir>/apps/api/jest.config.js",
+      "<rootDir>/apps/worker/jest.config.js"
+    ],
+    "collectCoverageFrom": [
+      "apps/*/src/**/*.{ts,tsx}",
+      "apps/*/app/**/*.{ts,tsx}",
+      "!apps/*/src/**/*.d.ts",
+      "!apps/*/src/**/*.test.{ts,tsx}",
+      "!apps/*/src/**/*.spec.{ts,tsx}"
+    ],
+    "coverageDirectory": "coverage",
+    "coverageReporters": ["text", "lcov", "html"],
+    "coverageThreshold": {
+      "global": {
+        "branches": 80,
+        "functions": 80,
+        "lines": 80,
+        "statements": 80
+      }
+    }
+  }
+}
