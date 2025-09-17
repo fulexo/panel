@@ -8,22 +8,26 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 interface BillingBatch {
   id: string;
   status: 'created' | 'issued' | 'paid' | 'cancelled';
-  total: number;
-  periodFrom?: string;
-  periodTo?: string;
+  totalAmount: number;
+  invoiceCount: number;
   createdAt: string;
-  updatedAt: string;
-  items: Array<{
-    id: string;
-    amount: number;
-    invoice: {
-      id: string;
-      number?: string;
-      orderId: string;
-      currency?: string;
-      issuedAt?: string;
-    };
-  }>;
+  issuedAt?: string;
+  paidAt?: string;
+  cancelledAt?: string;
+  notes?: string;
+  invoices: BillingInvoice[];
+}
+
+interface BillingInvoice {
+  id: string;
+  invoiceNumber: string;
+  amount: number;
+  status: 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled';
+  dueDate: string;
+  customerName: string;
+  customerEmail: string;
+  createdAt: string;
+  paidAt?: string;
 }
 
 export default function BatchDetailPage() {
@@ -32,165 +36,77 @@ export default function BatchDetailPage() {
   const { user } = useAuth();
   const [batch, setBatch] = useState<BillingBatch | null>(null);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('overview');
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [invoiceIds, setInvoiceIds] = useState('');
 
-  // Token is now handled by httpOnly cookies
-  const api = (path: string, init?: any) => 
-    fetch(`/api${path}`, {
-      headers: { 'Content-Type': 'application/json' },
-      ...init
-    });
+  useEffect(() => {
+    if (params.id) {
+      fetchBatchDetails(params.id as string);
+    }
+  }, [params.id]);
 
-  const loadBatch = async () => {
+  const fetchBatchDetails = async (batchId: string) => {
     try {
       setLoading(true);
-      setError(null);
-      const r = await api(`/billing/batches/${params.id}`);
-      if (r.ok) {
-        const data = await r.json();
-        setBatch(data);
-      } else if (r.status === 401) {
-        router.push('/login');
-      } else {
-        throw new Error('Failed to load batch');
+      const response = await fetch(`/api/billing/batches/${batchId}`);
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch batch details');
       }
+      
+      const data = await response.json();
+      setBatch(data.batch);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load batch');
+      setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setLoading(false);
     }
   };
 
-  const addInvoices = async () => {
-    const ids = invoiceIds.split(',').map(s => s.trim()).filter(Boolean);
-    if (ids.length === 0) return;
-
+  const handleStatusChange = async (newStatus: string) => {
+    if (!batch) return;
+    
     try {
-      setSaving(true);
-      setError(null);
-      
-      const r = await api(`/billing/batches/${params.id}/add-invoices`, {
-        method: 'POST',
-        body: JSON.stringify({ invoiceIds: ids })
+      const response = await fetch(`/api/billing/batches/${batch.id}/status`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: newStatus }),
       });
-
-      if (!r.ok) {
-        const errorData = await r.json();
-        throw new Error(errorData.message || 'Failed to add invoices');
+      
+      if (!response.ok) {
+        throw new Error('Failed to update batch status');
       }
-
-      setSuccess(`${ids.length} invoices added successfully`);
-      setShowAddModal(false);
-      setInvoiceIds('');
-      await loadBatch();
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setSaving(false);
+      
+      const data = await response.json();
+      setBatch(data.batch);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
     }
   };
 
-  const removeItem = async (itemId: string) => {
-    if (!confirm('Bu faturayı batch\'ten çıkarmak istediğinizden emin misiniz?')) return;
+  const handleExport = async () => {
+    if (!batch) return;
     
     try {
-      setSaving(true);
-      setError(null);
+      const response = await fetch(`/api/billing/batches/${batch.id}/export`);
       
-      const r = await api(`/billing/batches/${params.id}/items/${itemId}`, { method: 'DELETE' });
-      
-      if (!r.ok) {
-        const errorData = await r.json();
-        throw new Error(errorData.message || 'Failed to remove item');
+      if (!response.ok) {
+        throw new Error('Failed to export batch');
       }
-
-      setSuccess('Invoice removed successfully');
-      await loadBatch();
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const issueBatch = async () => {
-    if (!confirm('Bu batch\'i yayınlamak istediğinizden emin misiniz?')) return;
-    
-    try {
-      setSaving(true);
-      setError(null);
       
-      const r = await api(`/billing/batches/${params.id}/issue`, { method: 'POST' });
-      
-      if (!r.ok) {
-        const errorData = await r.json();
-        throw new Error(errorData.message || 'Failed to issue batch');
-      }
-
-      setSuccess('Batch issued successfully');
-      await loadBatch();
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const deleteBatch = async () => {
-    if (!confirm('Bu batch\'i silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.')) return;
-    
-    try {
-      setSaving(true);
-      setError(null);
-      
-      const r = await api(`/billing/batches/${params.id}`, { method: 'DELETE' });
-      
-      if (r.ok) {
-        setSuccess('Batch deleted successfully. Redirecting...');
-        setTimeout(() => {
-          router.push('/billing');
-        }, 1500);
-      } else {
-        const errorData = await r.json();
-        throw new Error(errorData.message || 'Failed to delete batch');
-      }
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  useEffect(() => {
-    if (user) {
-      loadBatch();
-    } else {
-      router.push('/login');
-    }
-  }, [user, params.id]);
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'created': return 'bg-blue-500/10 text-blue-500 border-blue-500/20';
-      case 'issued': return 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20';
-      case 'paid': return 'bg-green-500/10 text-green-500 border-green-500/20';
-      case 'cancelled': return 'bg-red-500/10 text-red-500 border-red-500/20';
-      default: return 'bg-gray-500/10 text-gray-500 border-gray-500/20';
-    }
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'created': return '📝';
-      case 'issued': return '📤';
-      case 'paid': return '✅';
-      case 'cancelled': return '❌';
-      default: return '❓';
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `batch-${batch.id}-export.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
     }
   };
 
@@ -203,13 +119,14 @@ export default function BatchDetailPage() {
 
   if (loading) {
     return (
-    <ProtectedRoute>
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="spinner"></div>
-          <div className="text-lg text-foreground">Loading batch details...</div>
+      <ProtectedRoute>
+        <div className="min-h-screen bg-background flex items-center justify-center">
+          <div className="flex flex-col items-center gap-4">
+            <div className="spinner"></div>
+            <div className="text-lg text-foreground">Loading batch details...</div>
+          </div>
         </div>
-      </div>
+      </ProtectedRoute>
     );
   }
 
@@ -217,12 +134,12 @@ export default function BatchDetailPage() {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <div className="text-6xl mb-4">💰</div>
+          <div className="text-6xl mb-4">📄</div>
           <h2 className="text-2xl font-bold text-foreground mb-2">Batch Not Found</h2>
-          <p className="text-muted-foreground mb-4">The batch you're looking for doesn't exist.</p>
+          <p className="text-muted-foreground mb-4">The requested batch could not be found.</p>
           <button
             onClick={() => router.push('/billing')}
-            className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors btn-animate"
+            className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
           >
             Back to Billing
           </button>
@@ -242,336 +159,282 @@ export default function BatchDetailPage() {
       <main className="mobile-container py-6 space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 animate-fade-in">
-          <div className="flex items-center gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">Batch Details</h1>
+            <p className="text-muted-foreground mt-1">Batch ID: {batch.id}</p>
+          </div>
+          <div className="flex items-center gap-3">
             <button
               onClick={() => router.push('/billing')}
-              className="p-2 rounded-lg hover:bg-accent transition-colors"
+              className="px-4 py-2 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/90 transition-colors"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
-              </svg>
+              Back to Billing
             </button>
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-accent rounded-lg flex items-center justify-center">
-                <span className="text-2xl">{getStatusIcon(batch.status)}</span>
-              </div>
-              <div>
-                <h1 className="mobile-heading text-foreground">
-                  Batch {batch.id.slice(0, 8)}...
-                </h1>
-                <p className="text-muted-foreground mobile-text">
-                  {formatCurrency(batch.total)} • {batch.items.length} invoices
-                </p>
-              </div>
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-3">
-            <span className={`px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(batch.status)}`}>
-              {batch.status.toUpperCase()}
-            </span>
-            <div className="flex items-center gap-2">
-              {batch.status === 'created' && (
-                <button
-                  onClick={() => setShowAddModal(true)}
-                  className="px-4 py-2 bg-accent text-accent-foreground rounded-lg hover:bg-accent/80 transition-colors btn-animate"
-                >
-                  Add Invoices
-                </button>
-              )}
-              {batch.status === 'created' && (
-                <button
-                  onClick={issueBatch}
-                  disabled={saving}
-                  className="px-4 py-2 bg-green-500/10 text-green-500 rounded-lg hover:bg-green-500/20 transition-colors disabled:opacity-50 btn-animate"
-                >
-                  Issue Batch
-                </button>
-              )}
-              <button
-                onClick={deleteBatch}
-                disabled={saving}
-                className="px-4 py-2 bg-destructive/10 text-destructive rounded-lg hover:bg-destructive/20 transition-colors disabled:opacity-50 btn-animate"
-              >
-                Delete
-              </button>
-            </div>
+            <button
+              onClick={handleExport}
+              className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+            >
+              Export Batch
+            </button>
           </div>
         </div>
 
-        {/* Messages */}
-        {error && (
-          <div className="bg-destructive/10 border border-destructive text-destructive px-4 py-3 rounded-lg animate-slide-down">
-            <div className="flex items-center gap-2">
-              <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <span className="text-sm font-medium">{error}</span>
-            </div>
+        {/* Status Badge */}
+        <div className="flex items-center gap-4 animate-fade-in">
+          <div className={`badge badge-lg ${
+            batch.status === 'paid' ? 'badge-success' :
+            batch.status === 'issued' ? 'badge-warning' :
+            batch.status === 'cancelled' ? 'badge-error' :
+            'badge-info'
+          }`}>
+            {batch.status.charAt(0).toUpperCase() + batch.status.slice(1)}
           </div>
-        )}
-
-        {success && (
-          <div className="bg-green-500/10 border border-green-500 text-green-500 px-4 py-3 rounded-lg animate-slide-down">
-            <div className="flex items-center gap-2">
-              <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-              </svg>
-              <span className="text-sm font-medium">{success}</span>
-            </div>
+          <div className="text-sm text-muted-foreground">
+            Created: {new Date(batch.createdAt).toLocaleDateString()}
           </div>
-        )}
+        </div>
 
         {/* Tabs */}
-        <div className="bg-card rounded-lg border border-border animate-slide-up">
-          <div className="flex flex-wrap border-b border-border">
+        <div className="border-b border-border">
+          <nav className="flex space-x-8">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors ${
+                className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
                   activeTab === tab.id
-                    ? 'text-primary border-b-2 border-primary bg-primary/5'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                    ? 'border-primary text-primary'
+                    : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
                 }`}
               >
-                <span className="text-lg">{tab.icon}</span>
+                <span className="mr-2">{tab.icon}</span>
                 {tab.name}
               </button>
             ))}
-          </div>
-
-          <div className="p-6">
-            {/* Overview Tab */}
-            {activeTab === 'overview' && (
-              <div className="space-y-6 animate-fade-in">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {/* Basic Info */}
-                  <div className="bg-accent/20 p-4 rounded-lg">
-                    <h3 className="font-semibold text-foreground mb-3">Batch Information</h3>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">ID:</span>
-                        <span className="text-foreground font-mono">{batch.id}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Status:</span>
-                        <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(batch.status)}`}>
-                          {batch.status.toUpperCase()}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Total:</span>
-                        <span className="text-foreground font-bold">{formatCurrency(batch.total)}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Items:</span>
-                        <span className="text-foreground">{batch.items.length}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Period Info */}
-                  <div className="bg-accent/20 p-4 rounded-lg">
-                    <h3 className="font-semibold text-foreground mb-3">Period</h3>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">From:</span>
-                        <span className="text-foreground">
-                          {batch.periodFrom ? new Date(batch.periodFrom).toLocaleDateString() : 'Not set'}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">To:</span>
-                        <span className="text-foreground">
-                          {batch.periodTo ? new Date(batch.periodTo).toLocaleDateString() : 'Not set'}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Timeline */}
-                  <div className="bg-accent/20 p-4 rounded-lg">
-                    <h3 className="font-semibold text-foreground mb-3">Timeline</h3>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Created:</span>
-                        <span className="text-foreground">
-                          {new Date(batch.createdAt).toLocaleDateString()}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Updated:</span>
-                        <span className="text-foreground">
-                          {new Date(batch.updatedAt).toLocaleDateString()}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Invoices Tab */}
-            {activeTab === 'invoices' && (
-              <div className="space-y-6 animate-fade-in">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold text-foreground">Batch Invoices</h3>
-                  {batch.status === 'created' && (
-                    <button
-                      onClick={() => setShowAddModal(true)}
-                      className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors btn-animate"
-                    >
-                      Add Invoices
-                    </button>
-                  )}
-                </div>
-                
-                {batch.items.length === 0 ? (
-                  <div className="bg-accent/20 p-8 rounded-lg text-center">
-                    <div className="text-4xl mb-4">📄</div>
-                    <h4 className="text-lg font-semibold text-foreground mb-2">No invoices in this batch</h4>
-                    <p className="text-muted-foreground mb-4">
-                      Add invoices to this batch to get started
-                    </p>
-                    {batch.status === 'created' && (
-                      <button
-                        onClick={() => setShowAddModal(true)}
-                        className="px-4 py-2 bg-accent text-accent-foreground rounded-lg hover:bg-accent/80 transition-colors btn-animate"
-                      >
-                        Add Invoices
-                      </button>
-                    )}
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {batch.items.map((item, index) => (
-                      <div
-                        key={item.id}
-                        className="bg-accent/20 p-4 rounded-lg animate-fade-in"
-                        style={{ animationDelay: `${index * 0.05}s` }}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-3 mb-2">
-                              <h4 className="font-semibold text-foreground">
-                                Invoice {item.invoice.number || item.invoice.id.slice(0, 8)}
-                              </h4>
-                              <span className="text-sm text-muted-foreground">
-                                Order: {item.invoice.orderId}
-                              </span>
-                            </div>
-                            <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-                              <span>Amount: {formatCurrency(item.amount)}</span>
-                              {item.invoice.currency && (
-                                <span>Currency: {item.invoice.currency}</span>
-                              )}
-                              {item.invoice.issuedAt && (
-                                <span>
-                                  Issued: {new Date(item.invoice.issuedAt).toLocaleDateString()}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                          {batch.status === 'created' && (
-                            <button
-                              onClick={() => removeItem(item.id)}
-                              disabled={saving}
-                              className="px-3 py-2 bg-destructive/10 text-destructive rounded-lg hover:bg-destructive/20 transition-colors disabled:opacity-50 btn-animate"
-                            >
-                              Remove
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Export Tab */}
-            {activeTab === 'export' && (
-              <div className="space-y-6 animate-fade-in">
-                <h3 className="text-lg font-semibold text-foreground">Export Options</h3>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="bg-accent/20 p-6 rounded-lg text-center">
-                    <div className="text-4xl mb-4">📊</div>
-                    <h4 className="font-semibold text-foreground mb-2">CSV Export</h4>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      Detailed invoice data in CSV format
-                    </p>
-                    <a
-                      href={`/api/billing/batches/${batch.id}/export.csv`}
-                      target="_blank"
-                      className="px-4 py-2 bg-blue-500/10 text-blue-500 rounded-lg hover:bg-blue-500/20 transition-colors btn-animate"
-                    >
-                      Download CSV
-                    </a>
-                  </div>
-
-                  <div className="bg-accent/20 p-6 rounded-lg text-center">
-                    <div className="text-4xl mb-4">📄</div>
-                    <h4 className="font-semibold text-foreground mb-2">PDF Export</h4>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      Summary report in PDF format
-                    </p>
-                    <a
-                      href={`/api/billing/batches/${batch.id}/export.pdf`}
-                      target="_blank"
-                      className="px-4 py-2 bg-purple-500/10 text-purple-500 rounded-lg hover:bg-purple-500/20 transition-colors btn-animate"
-                    >
-                      Download PDF
-                    </a>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
+          </nav>
         </div>
 
-        {/* Add Invoices Modal */}
-        {showAddModal && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-            <div className="bg-card rounded-lg border border-border p-6 w-full max-w-md animate-scale-in">
-              <h3 className="text-lg font-semibold text-foreground mb-4">Add Invoices to Batch</h3>
-              
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">
-                    Invoice IDs (comma-separated)
-                  </label>
-                  <textarea
-                    value={invoiceIds}
-                    onChange={(e) => setInvoiceIds(e.target.value)}
-                    placeholder="invoice1, invoice2, invoice3"
-                    className="w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground placeholder-muted-foreground"
-                    rows={4}
-                  />
+        {/* Tab Content */}
+        <div className="animate-fade-in">
+          {activeTab === 'overview' && (
+            <div className="space-y-6">
+              {/* Summary Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="bg-card p-6 rounded-lg border border-border">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Total Amount</p>
+                      <p className="text-2xl font-bold text-foreground">{formatCurrency(batch.totalAmount)}</p>
+                    </div>
+                    <div className="text-3xl">💰</div>
+                  </div>
+                </div>
+                <div className="bg-card p-6 rounded-lg border border-border">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Invoice Count</p>
+                      <p className="text-2xl font-bold text-foreground">{batch.invoiceCount}</p>
+                    </div>
+                    <div className="text-3xl">📄</div>
+                  </div>
+                </div>
+                <div className="bg-card p-6 rounded-lg border border-border">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Status</p>
+                      <p className="text-2xl font-bold text-foreground capitalize">{batch.status}</p>
+                    </div>
+                    <div className="text-3xl">
+                      {batch.status === 'paid' ? '✅' :
+                       batch.status === 'issued' ? '📤' :
+                       batch.status === 'cancelled' ? '❌' : '📝'}
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              <div className="flex gap-3 mt-6">
-                <button
-                  onClick={addInvoices}
-                  disabled={saving || !invoiceIds.trim()}
-                  className="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 btn-animate"
-                >
-                  {saving ? 'Adding...' : 'Add Invoices'}
-                </button>
-                <button
-                  onClick={() => setShowAddModal(false)}
-                  className="flex-1 px-4 py-2 bg-accent text-accent-foreground rounded-lg hover:bg-accent/80 transition-colors btn-animate"
-                >
-                  Cancel
-                </button>
+              {/* Batch Details */}
+              <div className="bg-card p-6 rounded-lg border border-border">
+                <h3 className="text-lg font-semibold text-foreground mb-4">Batch Information</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Batch ID</label>
+                    <p className="text-foreground font-mono">{batch.id}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Created At</label>
+                    <p className="text-foreground">{new Date(batch.createdAt).toLocaleString()}</p>
+                  </div>
+                  {batch.issuedAt && (
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">Issued At</label>
+                      <p className="text-foreground">{new Date(batch.issuedAt).toLocaleString()}</p>
+                    </div>
+                  )}
+                  {batch.paidAt && (
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">Paid At</label>
+                      <p className="text-foreground">{new Date(batch.paidAt).toLocaleString()}</p>
+                    </div>
+                  )}
+                  {batch.notes && (
+                    <div className="md:col-span-2">
+                      <label className="text-sm font-medium text-muted-foreground">Notes</label>
+                      <p className="text-foreground">{batch.notes}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Status Actions */}
+              {batch.status === 'created' && (
+                <div className="bg-card p-6 rounded-lg border border-border">
+                  <h3 className="text-lg font-semibold text-foreground mb-4">Actions</h3>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => handleStatusChange('issued')}
+                      className="px-4 py-2 bg-warning text-warning-foreground rounded-lg hover:bg-warning/90 transition-colors"
+                    >
+                      Issue Batch
+                    </button>
+                    <button
+                      onClick={() => handleStatusChange('cancelled')}
+                      className="px-4 py-2 bg-error text-error-foreground rounded-lg hover:bg-error/90 transition-colors"
+                    >
+                      Cancel Batch
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === 'invoices' && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-foreground">Invoices in this Batch</h3>
+                <div className="text-sm text-muted-foreground">
+                  {batch.invoices.length} invoice(s)
+                </div>
+              </div>
+
+              <div className="bg-card rounded-lg border border-border overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-muted">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                          Invoice
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                          Customer
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                          Amount
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                          Status
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                          Due Date
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                          Actions
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                      {batch.invoices.map((invoice) => (
+                        <tr key={invoice.id} className="hover:bg-muted/50">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div>
+                              <div className="text-sm font-medium text-foreground">
+                                {invoice.invoiceNumber}
+                              </div>
+                              <div className="text-sm text-muted-foreground">
+                                {new Date(invoice.createdAt).toLocaleDateString()}
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div>
+                              <div className="text-sm font-medium text-foreground">
+                                {invoice.customerName}
+                              </div>
+                              <div className="text-sm text-muted-foreground">
+                                {invoice.customerEmail}
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-foreground">
+                            {formatCurrency(invoice.amount)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className={`badge ${
+                              invoice.status === 'paid' ? 'badge-success' :
+                              invoice.status === 'overdue' ? 'badge-error' :
+                              invoice.status === 'sent' ? 'badge-warning' :
+                              'badge-info'
+                            }`}>
+                              {invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-foreground">
+                            {new Date(invoice.dueDate).toLocaleDateString()}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <button
+                              onClick={() => router.push(`/billing/invoices/${invoice.id}`)}
+                              className="text-primary hover:text-primary/80 transition-colors"
+                            >
+                              View
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
+
+          {activeTab === 'export' && (
+            <div className="space-y-6">
+              <div className="bg-card p-6 rounded-lg border border-border">
+                <h3 className="text-lg font-semibold text-foreground mb-4">Export Options</h3>
+                <p className="text-muted-foreground mb-6">
+                  Export this batch data in various formats for external use.
+                </p>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <button
+                    onClick={handleExport}
+                    className="flex items-center gap-3 p-4 border border-border rounded-lg hover:bg-muted transition-colors"
+                  >
+                    <div className="text-2xl">📊</div>
+                    <div className="text-left">
+                      <div className="font-medium text-foreground">Excel Export</div>
+                      <div className="text-sm text-muted-foreground">Export as .xlsx file</div>
+                    </div>
+                  </button>
+                  
+                  <button
+                    onClick={() => {/* PDF export logic */}}
+                    className="flex items-center gap-3 p-4 border border-border rounded-lg hover:bg-muted transition-colors"
+                  >
+                    <div className="text-2xl">📄</div>
+                    <div className="text-left">
+                      <div className="font-medium text-foreground">PDF Export</div>
+                      <div className="text-sm text-muted-foreground">Export as .pdf file</div>
+                    </div>
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </main>
     </div>
-  </ProtectedRoute>
-);
+  );
 }

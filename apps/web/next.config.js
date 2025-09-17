@@ -1,14 +1,4 @@
-const { validateEnvOnStartup } = require('./lib/env.validation');
-
-// Validate environment variables on startup
-try {
-  validateEnvOnStartup();
-} catch (error) {
-  // Environment validation warning (only in development)
-  if (process.env.NODE_ENV === 'development') {
-    console.warn('Environment validation warning:', error.message);
-  }
-}
+// Environment validation is handled in the app itself
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -21,7 +11,7 @@ const nextConfig = {
   i18n: {
     locales: ['en', 'tr'],
     defaultLocale: 'en',
-    localeDetection: true,
+    localeDetection: false,
   },
   
   // Security headers

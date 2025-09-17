@@ -11,7 +11,7 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { register } from 'prom-client';
-import * as cookieParser from 'cookie-parser';
+import cookieParser from 'cookie-parser';
 import { PrismaService } from './prisma.service';
 import { validateEnvOnStartup } from './config/env.validation';
 import { EnvService } from './config/env.service';

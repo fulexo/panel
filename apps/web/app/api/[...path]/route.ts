@@ -96,17 +96,17 @@ async function handleRequest(
     const response = await fetch(url.toString(), requestOptions);
 
     // Get response data
-    const contentType = response.headers.get('content-type') || 'application/json';
+    const responseContentType = response.headers.get('content-type') || 'application/json';
     
     // Check if response is binary (PDF, images, etc.)
-    const isBinary = contentType.includes('application/pdf') || 
-                     contentType.includes('image/') || 
-                     contentType.includes('application/octet-stream') ||
-                     contentType.includes('application/zip') ||
-                     contentType.includes('application/x-');
+    const isBinary = responseContentType.includes('application/pdf') || 
+                     responseContentType.includes('image/') || 
+                     responseContentType.includes('application/octet-stream') ||
+                     responseContentType.includes('application/zip') ||
+                     responseContentType.includes('application/x-');
     
     // Check if response is JSON (used in both binary and text branches)
-    const isJson = contentType.includes('application/json');
+    const isJson = responseContentType.includes('application/json');
     
     let responseData;
     let responseText;

@@ -206,13 +206,14 @@ export default function CustomerDetailPage() {
 
   if (loading) {
     return (
-    <ProtectedRoute>
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="spinner"></div>
-          <div className="text-lg text-foreground">Loading customer details...</div>
+      <ProtectedRoute>
+        <div className="min-h-screen bg-background flex items-center justify-center">
+          <div className="flex flex-col items-center gap-4">
+            <div className="spinner"></div>
+            <div className="text-lg text-foreground">Loading customer details...</div>
+          </div>
         </div>
-      </div>
+      </ProtectedRoute>
     );
   }
 
