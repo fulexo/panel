@@ -97,8 +97,8 @@ LOG_LEVEL=LOG
 # ADMIN PASSWORDS (for seed data)
 # =============================================================================
 # These passwords are used when creating initial admin users
-ADMIN_PASSWORD=Admin123!
-CUSTOMER_PASSWORD=Customer123!
+ADMIN_PASSWORD=demo123
+CUSTOMER_PASSWORD=demo123
 
 # =============================================================================
 # ALERTING CONFIGURATION (optional)
