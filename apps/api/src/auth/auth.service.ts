@@ -378,7 +378,7 @@ export class AuthService {
 
     const updatedUser = await this.prisma.user.update({
       where: { id: userId },
-      data: updateData,
+      data: updateData as any,
       select: {
         id: true,
         email: true,

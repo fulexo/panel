@@ -49,7 +49,7 @@ export class SanitizationPipe implements PipeTransform<unknown> {
       const sanitized: Record<string, unknown> = {};
       for (const key in obj) {
         if (Object.prototype.hasOwnProperty.call(obj, key)) {
-          sanitized[key] = this.sanitizeObject(obj[key]);
+          sanitized[key] = this.sanitizeObject((obj as any)[key]);
         }
       }
       return sanitized;

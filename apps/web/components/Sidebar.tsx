@@ -68,21 +68,21 @@ export default function Sidebar({ isOpen, onClose, isDesktopCollapsed = false, o
 
   const renderNavItems = (items: Record<string, unknown>[], _section: string) => {
     return items.map((item) => {
-      if (item.roles && !item.roles.includes(user?.role)) return null;
+      if (item['roles'] && !(item['roles'] as string[]).includes(user?.role || '')) return null;
       return (
         <Link
-          key={item.href}
-          href={item.href}
+          key={item['href'] as string}
+          href={item['href'] as string}
           className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors group ${
-            isActive(item.href)
+            isActive(item['href'] as string)
               ? 'bg-primary text-primary-foreground'
               : 'hover:bg-accent text-muted-foreground hover:text-foreground'
           } ${isDesktopCollapsed ? 'lg:justify-center lg:px-2' : ''}`}
           onClick={() => onClose()}
-          title={isDesktopCollapsed ? item.label : undefined}
+          title={isDesktopCollapsed ? (item['label'] as string) : undefined}
         >
-          <span className="text-lg group-hover:scale-110 transition-transform">{item.icon}</span>
-          {!isDesktopCollapsed && <span className="font-medium">{item.label}</span>}
+          <span className="text-lg group-hover:scale-110 transition-transform">{item['icon'] as React.ReactNode}</span>
+          {!isDesktopCollapsed && <span className="font-medium">{item['label'] as string}</span>}
         </Link>
       );
     });

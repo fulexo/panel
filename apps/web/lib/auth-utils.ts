@@ -28,12 +28,12 @@ export class AuthUtils {
       if (typeof window !== 'undefined') {
         // Only store non-sensitive user data in memory
         const safeUserData = {
-          id: user.id,
-          email: user.email,
-          role: user.role,
-          tenantId: user.tenantId,
-          tenantName: user.tenantName,
-          twofaEnabled: user.twofaEnabled
+          id: user['id'],
+          email: user['email'],
+          role: user['role'],
+          tenantId: user['tenantId'],
+          tenantName: user['tenantName'],
+          twofaEnabled: user['twofaEnabled']
         };
         sessionStorage.setItem(this.USER_KEY, JSON.stringify(safeUserData));
       }

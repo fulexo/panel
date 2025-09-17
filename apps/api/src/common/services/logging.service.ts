@@ -115,13 +115,13 @@ export class LoggingService implements LoggerService {
               message: entry.message,
               context: entry.context,
               metadata: entry.metadata,
-            },
+            } as any,
             metadata: {
               level: entry.level,
               timestamp: entry.timestamp,
             },
-            ipAddress: entry.metadata?.['ipAddress'],
-            userAgent: entry.metadata?.['userAgent'],
+            ipAddress: entry.metadata?.['ipAddress'] as string,
+            userAgent: entry.metadata?.['userAgent'] as string,
           },
         });
       }
@@ -184,10 +184,10 @@ export class LoggingService implements LoggerService {
         action,
         entityType,
         entityId,
-        changes,
-        metadata,
-        ipAddress: metadata?.['ipAddress'],
-        userAgent: metadata?.['userAgent'],
+        changes: changes as any,
+        metadata: metadata as any,
+        ipAddress: metadata?.['ipAddress'] as string,
+        userAgent: metadata?.['userAgent'] as string,
       },
     });
 
@@ -215,18 +215,18 @@ export class LoggingService implements LoggerService {
           event,
           severity,
           metadata,
-        },
+        } as any,
         metadata: {
           severity,
           timestamp: new Date(),
         },
-        ipAddress: metadata?.['ipAddress'],
-        userAgent: metadata?.['userAgent'],
+        ipAddress: metadata?.['ipAddress'] as string,
+        userAgent: metadata?.['userAgent'] as string,
       },
     });
 
     const level = severity === 'critical' ? 'fatal' : severity === 'high' ? 'error' : 'warn';
-    (this as { [key: string]: (message: string, context: string, metadata?: Record<string, unknown>) => void })[level](`Security event: ${event}`, 'Security', {
+    (this as any)[level](`Security event: ${event}`, 'Security', {
       event,
       severity,
       ...metadata,

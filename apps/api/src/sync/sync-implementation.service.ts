@@ -134,7 +134,7 @@ export class SyncImplementationService {
     const existing = await this.prisma.order.findFirst({
       where: {
         tenantId: accountId,
-        externalOrderNo: orderData.externalOrderNo,
+        externalOrderNo: orderData['externalOrderNo'] as string,
       },
     });
 

@@ -132,12 +132,12 @@ export class EmailService {
 
     await this.sendEmail(tenantId, {
       to: supportEmail,
-      subject: `Yeni Sipariş: #${orderData.orderNumber}`,
+      subject: `Yeni Sipariş: #${orderData['orderNumber']}`,
       html: `
         <h1>Yeni Sipariş Alındı</h1>
-        <p><strong>Sipariş No:</strong> ${orderData.orderNumber}</p>
-        <p><strong>Müşteri:</strong> ${orderData.customerName}</p>
-        <p><strong>Tutar:</strong> ${orderData.totalAmount} ${orderData.currency}</p>
+        <p><strong>Sipariş No:</strong> ${orderData['orderNumber']}</p>
+        <p><strong>Müşteri:</strong> ${orderData['customerName']}</p>
+        <p><strong>Tutar:</strong> ${orderData['totalAmount']} ${orderData['currency']}</p>
         <p><strong>Tarih:</strong> ${new Date().toLocaleString('tr-TR')}</p>
         <p>Sipariş detaylarını panelden görüntüleyebilirsiniz.</p>
       `,

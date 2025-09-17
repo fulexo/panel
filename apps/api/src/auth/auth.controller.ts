@@ -138,7 +138,7 @@ export class AuthController {
   @ApiOperation({ summary: 'Revoke all sessions except current' })
   async revokeAllSessions(@CurrentUser() user: { id: string; email: string; role: string; tenantId: string }, @Req() req: Request) {
     const currentToken = req.headers.authorization?.replace('Bearer ', '');
-    await this.sessionService.revokeAllSessions(user.id, currentToken);
+    await this.sessionService.revokeAllSessions(user.id, currentToken || '');
     return { message: 'All other sessions revoked successfully' };
   }
 
@@ -188,7 +188,7 @@ export class AuthController {
     });
     
     // Set httpOnly cookies for tokens
-    req.res.cookie('access_token', result.access, {
+    req.res!.cookie('access_token', result.access, {
       httpOnly: true,
       secure: process.env['NODE_ENV'] === 'production',
       sameSite: 'strict',
@@ -196,7 +196,7 @@ export class AuthController {
       path: '/',
     });
     
-    req.res.cookie('refresh_token', result.refresh, {
+    req.res!.cookie('refresh_token', result.refresh, {
       httpOnly: true,
       secure: process.env['NODE_ENV'] === 'production',
       sameSite: 'strict',
