@@ -3,6 +3,9 @@ import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger'
 import { ProductsService } from './products.service';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { CreateProductDto } from './dto/create-product.dto';
+import { UpdateProductDto } from './dto/update-product.dto';
+// import { ProductQueryDto } from './dto/product-query.dto';
 
 @ApiTags('products')
 @ApiBearerAuth()
@@ -38,13 +41,13 @@ export class ProductsController {
 
   @Post()
   @ApiOperation({ summary: 'Create product' })
-  async create(@CurrentUser() user: { id: string; email: string; role: string; tenantId: string }, @Body() dto: Record<string, unknown>) {
+  async create(@CurrentUser() user: { id: string; email: string; role: string; tenantId: string }, @Body() dto: CreateProductDto) {
     return this.products.create(user.tenantId, dto);
   }
 
   @Put(':id')
   @ApiOperation({ summary: 'Update product' })
-  async update(@CurrentUser() user: { id: string; email: string; role: string; tenantId: string }, @Param('id') id: string, @Body() dto: Record<string, unknown>) {
+  async update(@CurrentUser() user: { id: string; email: string; role: string; tenantId: string }, @Param('id') id: string, @Body() dto: UpdateProductDto) {
     return this.products.update(user.tenantId, id, dto);
   }
 
@@ -59,7 +62,7 @@ export class ProductsController {
   @ApiOperation({ summary: 'Bulk update products' })
   async bulkUpdate(
     @CurrentUser() user: { id: string; email: string; role: string; tenantId: string },
-    @Body() body: { productIds: string[]; updates: Record<string, unknown> },
+    @Body() body: { productIds: string[]; updates: Partial<UpdateProductDto> },
   ) {
     return this.products.bulkUpdate(user.tenantId, body.productIds, body.updates, user.id);
   }

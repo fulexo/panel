@@ -8,13 +8,13 @@ interface UseApiState<T> {
 }
 
 interface UseApiReturn<T> extends UseApiState<T> {
-  execute: (...args: unknown[]) => Promise<T | null>;
+  execute: (endpoint: string, options?: RequestInit) => Promise<T | null>;
   reset: () => void;
   setData: (data: T | null) => void;
 }
 
 export function useApi<T = unknown>(
-  apiFunction: (...args: unknown[]) => Promise<Response>
+  apiFunction: (endpoint: string, options?: RequestInit) => Promise<Response>
 ): UseApiReturn<T> {
   const [state, setState] = useState<UseApiState<T>>({
     data: null,
@@ -22,11 +22,11 @@ export function useApi<T = unknown>(
     error: null,
   });
 
-  const execute = useCallback(async (...args: unknown[]): Promise<T | null> => {
+  const execute = useCallback(async (endpoint: string, options?: RequestInit): Promise<T | null> => {
     setState(prev => ({ ...prev, loading: true, error: null }));
 
     try {
-      const response = await apiFunction(...args);
+      const response = await apiFunction(endpoint, options);
       
       if (!response.ok) {
         const errorData: ApiError = await response.json();

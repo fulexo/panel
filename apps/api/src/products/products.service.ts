@@ -2,6 +2,9 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { PrismaService } from '../prisma.service';
 import { PrismaClient } from '@prisma/client';
 import { Prisma } from '@prisma/client';
+import { CreateProductDto } from './dto/create-product.dto';
+import { UpdateProductDto } from './dto/update-product.dto';
+// import { ProductQueryDto } from './dto/product-query.dto';
 
 @Injectable()
 export class ProductsService {
@@ -14,7 +17,7 @@ export class ProductsService {
   async list(tenantId: string, page = 1, limit = 50, search?: string, status?: string, category?: string, storeId?: string) {
     const take = Math.min(limit, 200);
     const skip = (page - 1) * take;
-    const where: Record<string, unknown> = { tenantId };
+    const where: any = { tenantId };
     
     if (search) {
       where.OR = [
@@ -57,7 +60,7 @@ export class ProductsService {
     return product;
   }
 
-  async create(tenantId: string, dto: Record<string, unknown>) {
+  async create(tenantId: string, dto: CreateProductDto) {
     // Check if SKU already exists
     const existingProduct = await this.runTenant(tenantId, async (db) => 
       db.product.findFirst({ where: { sku: dto.sku, tenantId } })
@@ -84,7 +87,7 @@ export class ProductsService {
     }));
   }
 
-  async update(tenantId: string, id: string, dto: Record<string, unknown>) {
+  async update(tenantId: string, id: string, dto: UpdateProductDto) {
     const product = await this.runTenant(tenantId, async (db) => 
       db.product.findFirst({ where: { id, tenantId } })
     );
@@ -129,7 +132,7 @@ export class ProductsService {
     }));
   }
 
-  async bulkUpdate(tenantId: string, productIds: string[], updates: Record<string, unknown>, _userId: string) {
+  async bulkUpdate(tenantId: string, productIds: string[], updates: Partial<UpdateProductDto>, _userId: string) {
     if (!productIds || productIds.length === 0) {
       throw new BadRequestException('No product IDs provided');
     }
@@ -139,7 +142,7 @@ export class ProductsService {
     }
 
     const results = await this.runTenant(tenantId, async (db) => {
-      const updateData: Record<string, unknown> = {};
+      const updateData: any = {};
       
       if (updates.active !== undefined) updateData.active = updates.active;
       if (updates.stock !== undefined) updateData.stock = updates.stock !== null ? parseInt(updates.stock) : null;

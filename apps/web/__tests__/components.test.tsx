@@ -4,7 +4,7 @@ import '@testing-library/jest-dom';
 
 // Mock Next.js components
 jest.mock('next/link', () => {
-  return ({ children, href }) => (
+  return ({ children, href }: { children: React.ReactNode; href: string }) => (
     <a href={href}>{children}</a>
   );
 });
@@ -33,7 +33,7 @@ jest.mock('next/navigation', () => ({
 }));
 
 jest.mock('next/image', () => {
-  return ({ src, alt, ...props }) => (
+  return ({ src, alt, ...props }: { src: string; alt: string; [key: string]: any }) => (
     <img src={src} alt={alt} {...props} />
   );
 });

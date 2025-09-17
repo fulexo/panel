@@ -58,13 +58,13 @@ export async function POST(request: NextRequest) {
             if (!optName) continue;
             switch (optName.toLowerCase()) {
               case 'max-age':
-                if (optValue) cookieOptions.maxAge = parseInt(optValue, 10);
+                if (optValue) cookieOptions['maxAge'] = parseInt(optValue, 10);
                 break;
               case 'expires':
-                if (optValue) cookieOptions.expires = new Date(optValue);
+                if (optValue) cookieOptions['expires'] = new Date(optValue);
                 break;
               case 'domain':
-                cookieOptions.domain = optValue;
+                cookieOptions['domain'] = optValue;
                 break;
             }
           }
