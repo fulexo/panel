@@ -94,7 +94,7 @@ class ApiClient {
   ): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, {
       method: 'POST',
-      body: data ? JSON.stringify(data) : undefined,
+      body: data ? JSON.stringify(data) : null,
       headers,
     });
   }
@@ -107,7 +107,7 @@ class ApiClient {
   ): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, {
       method: 'PUT',
-      body: data ? JSON.stringify(data) : undefined,
+      body: data ? JSON.stringify(data) : null,
       headers,
     });
   }
@@ -128,7 +128,7 @@ class ApiClient {
   ): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, {
       method: 'PATCH',
-      body: data ? JSON.stringify(data) : undefined,
+      body: data ? JSON.stringify(data) : null,
       headers,
     });
   }
@@ -155,7 +155,7 @@ class ApiClient {
       headers: {
         ...headers,
         // Don't set Content-Type for FormData, let browser set it
-        'Content-Type': undefined,
+        'Content-Type': null,
       },
     });
   }

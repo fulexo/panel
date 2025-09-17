@@ -4,7 +4,7 @@ import * as client from 'prom-client';
 import express from 'express';
 import cors from 'cors';
 import { PrismaClient, Prisma } from '@prisma/client';
-import { validateEnvironment, validateEnvOnStartup } from './env.validation';
+import { validateEnvironment, validateEnvOnStartup } from './env.validation.js';
 import { logger } from './lib/logger';
 import fetch from 'node-fetch';
 

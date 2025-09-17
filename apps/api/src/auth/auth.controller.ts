@@ -1,4 +1,5 @@
 import { Controller, Post, Body, Get, Req, HttpCode, HttpStatus, BadRequestException, UnauthorizedException, Put } from '@nestjs/common';
+import { Request } from 'express';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { SessionService } from './session.service';
@@ -23,7 +24,7 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'User login' })
   @RateLimit({ points: 5, duration: 60_000, scope: 'ip' })
-  async login(@Body() dto: LoginDto, @Req() req: any) {
+  async login(@Body() dto: LoginDto, @Req() req: Request) {
     const result = await this.authService.login(dto, {
       ipAddress: req.ip,
       userAgent: req.headers['user-agent'],
@@ -69,7 +70,7 @@ export class AuthController {
 
   @Post('register')
   @ApiOperation({ summary: 'Register new user (admin only)' })
-  async register(@CurrentUser() user: any, @Body() dto: RegisterDto) {
+  async register(@CurrentUser() user: { id: string; role: string }, @Body() dto: RegisterDto) {
     // Allow only platform admins or staff to register new users
     if (!user || user.role !== 'ADMIN') {
       throw new UnauthorizedException('Not allowed');
@@ -91,7 +92,7 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'User logout' })
-  async logout(@CurrentUser() user: any, @Req() req: any) {
+  async logout(@CurrentUser() user: { id: string }, @Req() req: Request) {
     const token = req.headers.authorization?.replace('Bearer ', '');
     await this.sessionService.revokeSession(user.id, token);
     
@@ -218,14 +219,14 @@ export class AuthController {
   @Put('profile')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update user profile' })
-  async updateProfile(@CurrentUser() user: any, @Body() dto: UpdateProfileDto) {
+  async updateProfile(@CurrentUser() user: { id: string; tenantId: string }, @Body() dto: UpdateProfileDto) {
     return this.authService.updateUserProfile(user.id, dto);
   }
 
   @Put('change-password')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Change user password' })
-  async changePassword(@CurrentUser() user: any, @Body() dto: ChangePasswordDto) {
+  async changePassword(@CurrentUser() user: { id: string }, @Body() dto: ChangePasswordDto) {
     return this.authService.changePassword(user.id, dto.currentPassword, dto.newPassword);
   }
 
@@ -233,7 +234,7 @@ export class AuthController {
   @Post('set-tokens')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Set tokens as httpOnly cookies' })
-  async setTokens(@Body() dto: SetTokensDto, @Req() req: any) {
+  async setTokens(@Body() dto: SetTokensDto, @Req() req: Request) {
     // Set httpOnly cookies for tokens
     req.res.cookie('access_token', dto.accessToken, {
       httpOnly: true,

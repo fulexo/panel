@@ -6,12 +6,17 @@ import { register } from 'prom-client';
 import * as cookieParser from 'cookie-parser';
 import { PrismaService } from './prisma.service';
 import { validateEnvOnStartup } from './config/env.validation';
+import { EnvService } from './config/env.service';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 import { AppModule } from './app.module';
+import { Request, Response, NextFunction } from 'express';
 
 async function bootstrap() {
   // Validate environment variables
   validateEnvOnStartup();
+  
+  // Initialize environment service
+  const envService = new EnvService();
 
   const app = await NestFactory.create(AppModule, {
     logger: ['error', 'warn', 'log', 'debug', 'verbose'],
@@ -43,7 +48,7 @@ async function bootstrap() {
   // CORS configuration
   app.enableCors({
     origin: (origin, callback) => {
-      const isDevelopment = process.env['NODE_ENV'] === 'development';
+      const isDevelopment = envService.isDevelopment;
       
       // Get allowed origins from environment variables
       const allowedOrigins = isDevelopment ? [
@@ -54,11 +59,11 @@ async function bootstrap() {
         'http://127.0.0.1:3001',
         'http://127.0.0.1:3002',
       ] : [
-        process.env['DOMAIN_APP'],
-        process.env['NEXT_PUBLIC_APP_URL'],
-        process.env['SHARE_BASE_URL'],
-        process.env['FRONTEND_URL'],
-        process.env['WEB_URL'],
+        envService.domainApp,
+        envService.nextPublicAppUrl,
+        envService.shareBaseUrl,
+        envService.nextPublicAppUrl, // FRONTEND_URL
+        envService.nextPublicAppUrl, // WEB_URL
       ].filter(Boolean); // Remove undefined values
 
       // Validate that we have at least one allowed origin in production
@@ -116,7 +121,7 @@ async function bootstrap() {
   });
 
   // Enhanced security headers
-  app.use((_req: any, res: any, next: any) => {
+  app.use((_req: Request, res: Response, next: NextFunction) => {
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('X-Frame-Options', 'DENY');
     res.setHeader('X-XSS-Protection', '1; mode=block');
@@ -184,7 +189,8 @@ async function bootstrap() {
       // Check Redis connection
       let redisHealthy = false;
       try {
-        const redis = new (require('ioredis'))(process.env['REDIS_URL'] || 'redis://valkey:6379/0');
+        const Redis = require('ioredis');
+        const redis = new Redis(envService.redisUrl);
         await redis.ping();
         redisHealthy = true;
         await redis.quit();
@@ -258,7 +264,7 @@ async function bootstrap() {
     process.exit(0);
   });
 
-  const port = process.env['PORT'] || 3000;
+  const port = parseInt(envService.port, 10);
   await app.listen(port);
   // Application started successfully
   // API Documentation: http://localhost:${port}/api/docs
