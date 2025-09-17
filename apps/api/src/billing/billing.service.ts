@@ -54,7 +54,7 @@ export class BillingService {
     await this.runTenant(tenantId, async (db) => db.billingBatchItem.delete({ where: { id: itemId } }));
     // Recalculate total
     const sum = await this.runTenant(tenantId, async (db) => db.billingBatchItem.aggregate({ where: { batchId }, _sum: { amount: true } }));
-    await this.runTenant(tenantId, async (db) => db.billingBatch.update({ where: { id: batchId }, data: { total: sum._sum.amount || new (Prisma as Record<string, unknown>).Decimal(0) } }));
+    await this.runTenant(tenantId, async (db) => db.billingBatch.update({ where: { id: batchId }, data: { total: sum._sum.amount || new Prisma.Decimal(0) } }));
     return this.getBatch(tenantId, batchId);
   }
 
@@ -145,7 +145,7 @@ export class BillingService {
         tenantId,
         orderId: dto['orderId'],
         number: dto['number'],
-        total: new (Prisma as Record<string, unknown>).Decimal(dto['total']),
+        total: new Prisma.Decimal(dto['total'] as string),
         currency: dto['currency'] || 'USD',
         status: 'draft',
         dueDate: dto['dueDate'] ? new Date(dto['dueDate'] as string) : null,
@@ -175,7 +175,7 @@ export class BillingService {
       data: {
         status: dto['status'] || undefined,
         number: dto['number'] || undefined,
-        total: dto['total'] ? new (Prisma as Record<string, unknown>).Decimal(dto['total']) : undefined,
+        total: dto['total'] ? new Prisma.Decimal(dto['total'] as string) : undefined,
         currency: dto['currency'] || undefined,
         dueDate: dto['dueDate'] ? new Date(dto['dueDate'] as string) : undefined,
         ...(dto['status'] === 'issued' && { issuedAt: new Date() }),

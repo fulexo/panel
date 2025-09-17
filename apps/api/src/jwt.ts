@@ -70,7 +70,7 @@ export class JwtService {
           data: {
             kid,
             alg: 'RS256',
-            publicJwk: publicJwk as Record<string, unknown>,
+            publicJwk: publicJwk as any,
             privatePem,
             active: true,
             expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000) // 1 yıl
@@ -155,7 +155,7 @@ export class JwtService {
     
     const secretBuffer = new TextEncoder().encode(secret);
     
-    this.privateKey = secretBuffer as Record<string, unknown>;
+    this.privateKey = secretBuffer as unknown as CryptoKey;
     this.publicKey = this.privateKey;
     this.keyId = 'hmac-key';
   }
@@ -191,7 +191,7 @@ export class JwtService {
       jti: `refresh_${jti}`
     };
 
-    const accessToken = await new jose.SignJWT(accessPayload as Record<string, unknown>)
+    const accessToken = await new jose.SignJWT(accessPayload as any)
       .setProtectedHeader({ 
         alg: process.env['NODE_ENV'] === 'production' ? 'RS256' : 'HS256',
         ...(this.keyId && { kid: this.keyId })
@@ -200,7 +200,7 @@ export class JwtService {
       .setExpirationTime('15m')
       .sign(this.privateKey);
 
-    const refreshToken = await new jose.SignJWT(refreshPayload as Record<string, unknown>)
+    const refreshToken = await new jose.SignJWT(refreshPayload as any)
       .setProtectedHeader({ 
         alg: process.env['NODE_ENV'] === 'production' ? 'RS256' : 'HS256',
         ...(this.keyId && { kid: this.keyId })
@@ -240,7 +240,7 @@ export class JwtService {
         throw new Error('Token has been revoked');
       }
 
-      return payload as Record<string, unknown>;
+      return payload as unknown as JWTPayload;
     } catch (error) {
       if (error instanceof jose.errors.JWTExpired) {
         throw new Error('Token has expired');
@@ -272,7 +272,7 @@ export class JwtService {
         throw new Error('Invalid refresh token');
       }
 
-      return payload as Record<string, unknown>;
+      return payload as unknown as JWTPayload;
     } catch {
       throw new Error('Invalid or expired refresh token');
     }

@@ -66,12 +66,12 @@ export class CustomersService {
     ]));
     
     // Calculate order stats for each customer
-    const customersWithStats = data.map((customer: Record<string, unknown>) => {
-      const orders = (customer as Record<string, unknown>).orders || [];
+    const customersWithStats = data.map((customer: any) => {
+      const orders = customer.orders || [];
       const totalOrders = orders.length;
-      const totalSpent = orders.reduce((sum: number, order: Record<string, unknown>) => sum + (Number(order['total']) || 0), 0);
+      const totalSpent = orders.reduce((sum: number, order: any) => sum + (Number(order.total) || 0), 0);
       const averageOrderValue = totalOrders > 0 ? totalSpent / totalOrders : 0;
-      const lastOrderDate = orders.length > 0 ? (orders[0] as Record<string, unknown>).createdAt : null;
+      const lastOrderDate = orders.length > 0 ? orders[0].createdAt : null;
       
       return {
         ...customer,
