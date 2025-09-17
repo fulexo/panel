@@ -50,3 +50,44 @@ export class Verify2FADto {
   @IsString()
   token!: string;
 }
+
+export class UpdateProfileDto {
+  @ApiProperty({ example: 'John Doe', required: false })
+  @IsOptional()
+  @IsString()
+  name?: string;
+
+  @ApiProperty({ example: 'john@example.com', required: false })
+  @IsOptional()
+  @IsEmail()
+  email?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  notificationPreferences?: any;
+}
+
+export class ChangePasswordDto {
+  @ApiProperty({ example: 'CurrentPassword123!' })
+  @IsString()
+  @MinLength(6)
+  currentPassword!: string;
+
+  @ApiProperty({ example: 'NewPassword123!' })
+  @IsString()
+  @MinLength(8)
+  newPassword!: string;
+}
+
+export class SetTokensDto {
+  @ApiProperty()
+  @IsString()
+  accessToken!: string;
+
+  @ApiProperty()
+  @IsString()
+  refreshToken!: string;
+
+  @ApiProperty()
+  user!: any;
+}

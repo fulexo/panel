@@ -32,6 +32,7 @@ import { envValidationSchema } from './config/env.validation';
 import { CookieAuthMiddleware } from './common/middleware/cookie-auth.middleware';
 import { MonitoringService } from './common/services/monitoring.service';
 import { MonitoringModule } from './monitoring/monitoring.module';
+import { SettingsModule } from './modules/settings/settings.module';
 
 @Module({
   imports: [
@@ -73,7 +74,7 @@ import { MonitoringModule } from './monitoring/monitoring.module';
     CacheModule,
     AuditModule,
     MonitoringModule,
-    JwtModule,
+    SettingsModule,
   ],
   providers: [
     PrismaService,

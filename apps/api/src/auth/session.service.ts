@@ -277,4 +277,39 @@ export class SessionService {
   private hashToken(token: string): string {
     return crypto.createHash('sha256').update(token).digest('hex');
   }
+
+  // Additional methods for better session management
+  async getSessionById(sessionId: string) {
+    return this.prisma.session.findUnique({
+      where: { id: sessionId },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            role: true,
+          },
+        },
+      },
+    });
+  }
+
+  async updateSessionActivity(sessionId: string) {
+    await this.prisma.session.update({
+      where: { id: sessionId },
+      data: {
+        expiresAt: new Date(Date.now() + 15 * 60 * 1000), // Extend by 15 minutes
+      },
+    });
+  }
+
+  async getActiveSessionsCount(userId: string): Promise<number> {
+    return this.prisma.session.count({
+      where: {
+        userId,
+        expiresAt: { gt: new Date() },
+      },
+    });
+  }
 }

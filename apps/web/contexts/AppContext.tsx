@@ -133,9 +133,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // Auto-remove notification after duration
     if (notification.duration !== 0) {
       const duration = notification.duration || 5000; // Default 5 seconds
-      setTimeout(() => {
+      const timeoutId = setTimeout(() => {
         dispatch({ type: 'REMOVE_NOTIFICATION', payload: id });
       }, duration);
+      
+      // Store timeout ID for cleanup if needed
+      return timeoutId;
     }
   };
 

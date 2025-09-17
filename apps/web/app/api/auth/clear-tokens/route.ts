@@ -1,20 +1,37 @@
-import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
+import { NextRequest, NextResponse } from 'next/server';
 
-export async function POST() {
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:3000';
+
+export async function POST(request: NextRequest) {
   try {
-    const cookieStore = cookies();
+    const response = await fetch(`${API_BASE}/api/auth/clear-tokens`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
 
-    // Clear all auth cookies
-    cookieStore.delete('access_token');
-    cookieStore.delete('refresh_token');
-    cookieStore.delete('user');
-    cookieStore.delete('temp_2fa_token');
+    const data = await response.json();
+    
+    if (!response.ok) {
+      return NextResponse.json(data, { status: response.status });
+    }
 
-    return NextResponse.json({ success: true });
+    // Forward the response with proper headers
+    const nextResponse = NextResponse.json(data, { status: response.status });
+    
+    // Copy Set-Cookie headers from backend
+    const setCookieHeaders = response.headers.getSetCookie();
+    if (setCookieHeaders && setCookieHeaders.length > 0) {
+      setCookieHeaders.forEach(cookie => {
+        nextResponse.headers.append('Set-Cookie', cookie);
+      });
+    }
+    
+    return nextResponse;
   } catch (error) {
     return NextResponse.json(
-      { error: 'Failed to clear tokens' },
+      { error: 'Internal Server Error' },
       { status: 500 }
     );
   }

@@ -96,21 +96,36 @@ async function handleRequest(
     const response = await fetch(url.toString(), requestOptions);
 
     // Get response data
-    const responseText = await response.text();
     const contentType = response.headers.get('content-type') || 'application/json';
     
-    // Check if response is JSON
-    const isJson = contentType.includes('application/json');
-    let responseData;
+    // Check if response is binary (PDF, images, etc.)
+    const isBinary = contentType.includes('application/pdf') || 
+                     contentType.includes('image/') || 
+                     contentType.includes('application/octet-stream') ||
+                     contentType.includes('application/zip') ||
+                     contentType.includes('application/x-');
     
-    if (isJson) {
-      try {
-        responseData = JSON.parse(responseText);
-      } catch {
+    let responseData;
+    let responseText;
+    
+    if (isBinary) {
+      // Handle binary content
+      const arrayBuffer = await response.arrayBuffer();
+      responseData = Buffer.from(arrayBuffer);
+    } else {
+      // Handle text content
+      responseText = await response.text();
+      const isJson = contentType.includes('application/json');
+      
+      if (isJson) {
+        try {
+          responseData = JSON.parse(responseText);
+        } catch {
+          responseData = responseText;
+        }
+      } else {
         responseData = responseText;
       }
-    } else {
-      responseData = responseText;
     }
 
     // Prepare response headers
@@ -134,11 +149,29 @@ async function handleRequest(
       responseHeaders['Last-Modified'] = lastModified;
     }
 
+    // Copy Content-Disposition for file downloads
+    const contentDisposition = response.headers.get('content-disposition');
+    if (contentDisposition) {
+      responseHeaders['Content-Disposition'] = contentDisposition;
+    }
+
+    // Copy Content-Length for binary content
+    const contentLength = response.headers.get('content-length');
+    if (contentLength) {
+      responseHeaders['Content-Length'] = contentLength;
+    }
+
     // Copy Set-Cookie headers for authentication
     const setCookieHeaders = response.headers.getSetCookie();
     if (setCookieHeaders && setCookieHeaders.length > 0) {
       // Create response based on content type
-      const nextResponse = isJson 
+      const nextResponse = isBinary
+        ? new NextResponse(responseData, {
+            status: response.status,
+            statusText: response.statusText,
+            headers: responseHeaders,
+          })
+        : isJson 
         ? NextResponse.json(responseData, {
             status: response.status,
             statusText: response.statusText,
@@ -159,7 +192,13 @@ async function handleRequest(
     }
 
     // Return response with same content type
-    if (isJson) {
+    if (isBinary) {
+      return new NextResponse(responseData, {
+        status: response.status,
+        statusText: response.statusText,
+        headers: responseHeaders,
+      });
+    } else if (isJson) {
       return NextResponse.json(responseData, {
         status: response.status,
         statusText: response.statusText,

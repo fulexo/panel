@@ -30,7 +30,9 @@ export function useApi<T = any>(
       
       if (!response.ok) {
         const errorData: ApiError = await response.json();
-        throw new Error(errorData.message || 'API request failed');
+        const errorMessage = errorData.message || 'API request failed';
+        const errorCode = errorData.errorCode || 'UNKNOWN_ERROR';
+        throw new Error(`${errorCode}: ${errorMessage}`);
       }
 
       const result: ApiResponse<T> = await response.json();

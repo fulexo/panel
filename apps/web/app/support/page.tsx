@@ -68,11 +68,14 @@ export default function SupportPage() {
   const [messageFile, setMessageFile] = useState<File | null>(null);
 
   // Token is now handled by httpOnly cookies
-  const api = (path: string, init?: any) => 
-    fetch(`/api${path}`, {
-      headers: { 'Content-Type': 'application/json' },
+  const api = (path: string, init?: any) => {
+    const isFormData = init?.body instanceof FormData;
+    return fetch(`/api${path}`, {
+      credentials: 'include',
+      headers: isFormData ? {} : { 'Content-Type': 'application/json' },
       ...init
     });
+  };
 
   const loadTickets = async () => {
     try {
@@ -240,13 +243,14 @@ export default function SupportPage() {
 
   if (loading) {
     return (
-    <ProtectedRoute>
-      <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="spinner"></div>
-          <div className="text-lg">Loading support tickets...</div>
+      <ProtectedRoute>
+        <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
+          <div className="flex flex-col items-center gap-4">
+            <div className="spinner"></div>
+            <div className="text-lg">Loading support tickets...</div>
+          </div>
         </div>
-      </div>
+      </ProtectedRoute>
     );
   }
 

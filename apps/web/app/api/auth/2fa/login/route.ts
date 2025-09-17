@@ -6,7 +6,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     
-    const response = await fetch(`${API_BASE}/api/auth/set-tokens`, {
+    const response = await fetch(`${API_BASE}/api/auth/2fa/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

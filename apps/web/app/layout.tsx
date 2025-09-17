@@ -6,6 +6,7 @@ import ClientLayout from '@/components/ClientLayout';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { NotificationContainer } from '@/contexts/AppContext';
 import { ThemeProvider } from '@/components/ThemeProvider';
+import { QueryProvider } from '@/components/QueryProvider';
 
 export const metadata: Metadata = {
   title: 'Fulexo Platform',
@@ -80,12 +81,14 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-            <AppProvider>
-              <AuthProvider>
-                <ClientLayout>{children}</ClientLayout>
-                <NotificationContainer />
-              </AuthProvider>
-            </AppProvider>
+            <QueryProvider>
+              <AppProvider>
+                <AuthProvider>
+                  <ClientLayout>{children}</ClientLayout>
+                  <NotificationContainer />
+                </AuthProvider>
+              </AppProvider>
+            </QueryProvider>
           </ThemeProvider>
         </ErrorBoundary>
       </body>

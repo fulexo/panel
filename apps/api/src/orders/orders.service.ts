@@ -492,8 +492,19 @@ export class OrdersService {
   async createShareLink(tenantId: string, orderId: string, userId: string) {
     const order = await this.prisma.order.findFirst({ where: { id: orderId, tenantId }, select: { id: true, orderNo: true } });
     if (!order) throw new NotFoundException('Order not found');
+    
+    // Validate SHARE_TOKEN_SECRET is set and strong
+    const shareSecret = process.env['SHARE_TOKEN_SECRET'];
+    if (!shareSecret || shareSecret === 'dev-share-secret') {
+      throw new Error('SHARE_TOKEN_SECRET must be set with a strong secret for production');
+    }
+    
+    if (shareSecret.length < 32) {
+      throw new Error('SHARE_TOKEN_SECRET must be at least 32 characters long');
+    }
+    
     // Create short-lived token (24h) with order reference
-    const secret = new TextEncoder().encode(process.env['SHARE_TOKEN_SECRET'] || 'dev-share-secret');
+    const secret = new TextEncoder().encode(shareSecret);
     const token = await new jose.SignJWT({ orderId: order.id })
       .setProtectedHeader({ alg: 'HS256' })
       .setIssuedAt()
@@ -504,7 +515,12 @@ export class OrdersService {
   }
 
   async getPublicInfo(token: string) {
-    const secret = new TextEncoder().encode(process.env['SHARE_TOKEN_SECRET'] || 'dev-share-secret');
+    const shareSecret = process.env['SHARE_TOKEN_SECRET'];
+    if (!shareSecret || shareSecret === 'dev-share-secret') {
+      throw new Error('SHARE_TOKEN_SECRET must be set with a strong secret');
+    }
+    
+    const secret = new TextEncoder().encode(shareSecret);
     try {
       const { payload } = await jose.jwtVerify(token, secret);
       const order = await this.prisma.order.findFirst({

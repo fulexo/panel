@@ -182,9 +182,14 @@ export class TwoFactorService {
   async generateTempToken(userId: string): Promise<string> {
     const crypto = require('crypto');
     
-    // Generate cryptographically secure random token
+    // Generate cryptographically secure random token with timestamp and user context
+    const timestamp = Date.now().toString();
     const randomBytes = crypto.randomBytes(32);
-    const token = randomBytes.toString('hex');
+    const userContext = crypto.createHash('sha256').update(userId).digest('hex').substring(0, 8);
+    
+    // Combine all elements for maximum entropy
+    const combined = `${timestamp}_${userContext}_${randomBytes.toString('hex')}`;
+    const token = crypto.createHash('sha256').update(combined).digest('hex');
     
     // Store token temporarily in database with expiration
     await this.prisma.user.update({

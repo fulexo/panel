@@ -74,6 +74,18 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     } else if (exception instanceof Error) {
       message = exception.message;
       errorCode = 'APPLICATION_ERROR';
+      
+      // Handle specific error types
+      if (exception.message.includes('JWT')) {
+        errorCode = 'JWT_ERROR';
+        status = HttpStatus.UNAUTHORIZED;
+      } else if (exception.message.includes('Redis') || exception.message.includes('cache')) {
+        errorCode = 'CACHE_ERROR';
+        status = HttpStatus.SERVICE_UNAVAILABLE;
+      } else if (exception.message.includes('CORS')) {
+        errorCode = 'CORS_ERROR';
+        status = HttpStatus.FORBIDDEN;
+      }
     }
 
     // Log the error

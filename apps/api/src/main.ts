@@ -45,6 +45,7 @@ async function bootstrap() {
     origin: (origin, callback) => {
       const isDevelopment = process.env['NODE_ENV'] === 'development';
       
+      // Get allowed origins from environment variables
       const allowedOrigins = isDevelopment ? [
         'http://localhost:3000',
         'http://localhost:3001',
@@ -56,7 +57,15 @@ async function bootstrap() {
         process.env['DOMAIN_APP'],
         process.env['NEXT_PUBLIC_APP_URL'],
         process.env['SHARE_BASE_URL'],
+        process.env['FRONTEND_URL'],
+        process.env['WEB_URL'],
       ].filter(Boolean); // Remove undefined values
+
+      // Validate that we have at least one allowed origin in production
+      if (!isDevelopment && allowedOrigins.length === 0) {
+        console.error('No allowed origins configured for production');
+        return callback(new Error('CORS configuration error'), false);
+      }
 
       if (!origin) {
         // Only allow requests with no origin in development
@@ -70,10 +79,8 @@ async function bootstrap() {
         return callback(null, true);
       }
 
-      // Log rejected origin for debugging (only in development)
-      if (process.env.NODE_ENV === 'development') {
-        console.warn(`CORS: Origin rejected: ${origin}`);
-      }
+      // Log rejected origin for debugging
+      console.warn(`CORS: Origin rejected: ${origin}. Allowed origins: ${allowedOrigins.join(', ')}`);
       return callback(new Error('Not allowed by CORS'), false);
     },
     credentials: true,
@@ -86,6 +93,13 @@ async function bootstrap() {
       'X-Tenant-ID',
       'X-WC-Webhook-Topic',
       'X-WC-Webhook-Signature',
+      'Cookie',
+      'Set-Cookie',
+    ],
+    exposedHeaders: [
+      'Set-Cookie',
+      'X-Total-Count',
+      'X-Page-Count',
     ],
     maxAge: 86400, // 24 hours
   });
