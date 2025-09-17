@@ -25,6 +25,15 @@ export class OrdersController {
     return this.ordersService.findAll(user.tenantId, query, user.role);
   }
 
+  @Get('stats/summary')
+  @ApiOperation({ summary: 'Get orders summary statistics' })
+  @ApiQuery({ name: 'dateFrom', required: false, type: String })
+  @ApiQuery({ name: 'dateTo', required: false, type: String })
+  @ApiQuery({ name: 'storeId', required: false, type: String })
+  async getStats(@CurrentUser() user: any, @Query() query: { dateFrom?: string; dateTo?: string; storeId?: string }) {
+    return this.ordersService.getOrderStats(user.tenantId, query);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get order by ID' })
   async findOne(@CurrentUser() user: any, @Param('id') id: string) {
@@ -78,12 +87,6 @@ export class OrdersController {
 
   
 
-  @Get(':id/timeline')
-  @ApiOperation({ summary: 'Get order timeline' })
-  async getTimeline(@CurrentUser() user: any, @Param('id') id: string) {
-    return this.ordersService.getOrderTimeline(user.tenantId, id);
-  }
-
   @Get('stats/summary')
   @ApiOperation({ summary: 'Get orders summary statistics' })
   @ApiQuery({ name: 'dateFrom', required: false, type: String })
@@ -91,6 +94,12 @@ export class OrdersController {
   @ApiQuery({ name: 'storeId', required: false, type: String })
   async getStats(@CurrentUser() user: any, @Query() query: { dateFrom?: string; dateTo?: string; storeId?: string }) {
     return this.ordersService.getOrderStats(user.tenantId, query);
+  }
+
+  @Get(':id/timeline')
+  @ApiOperation({ summary: 'Get order timeline' })
+  async getTimeline(@CurrentUser() user: any, @Param('id') id: string) {
+    return this.ordersService.getOrderTimeline(user.tenantId, id);
   }
 
   @Get(':id/charges')

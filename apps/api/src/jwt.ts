@@ -253,20 +253,27 @@ export class JwtService {
     }
   }
 
-  getJwks() {
+  async getJwks() {
     if (!this.publicKey || !this.keyId) {
       return { keys: [] };
     }
 
-    return {
-      keys: [{
-        kty: 'RSA',
-        kid: this.keyId,
-        use: 'sig',
-        alg: 'RS256',
-        // JWK formatında public key
-      }]
-    };
+    try {
+      // Export the public key in JWK format
+      const jwk = await jose.exportJWK(this.publicKey);
+      
+      return {
+        keys: [{
+          ...jwk,
+          kid: this.keyId,
+          use: 'sig',
+          alg: 'RS256',
+        }]
+      };
+    } catch (error) {
+      // Fallback to empty keys if export fails
+      return { keys: [] };
+    }
   }
 
   async rotateKeys() {

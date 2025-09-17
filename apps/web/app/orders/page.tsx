@@ -72,7 +72,7 @@ export default function OrdersPage() {
     } else {
       router.push('/login');
     }
-  }, [user, currentPage, statusFilter, dateFilter, storeFilter, customerFilter]);
+  }, [user, currentPage, statusFilter, dateFilter, storeFilter, customerFilter, searchTerm]);
 
   const fetchOrders = async () => {
     try {
@@ -83,11 +83,19 @@ export default function OrdersPage() {
         page: currentPage.toString(),
         limit: '20',
         ...(statusFilter !== 'all' && { status: statusFilter }),
-        ...(dateFilter !== 'all' && { dateRange: dateFilter }),
         ...(searchTerm && { search: searchTerm }),
         ...(storeFilter !== 'all' && { storeId: storeFilter }),
         ...(customerFilter !== 'all' && { customerId: customerFilter }),
       });
+
+      // Add date filters based on the selected range
+      if (dateFilter !== 'all') {
+        const dateRange = getDateRange(dateFilter);
+        if (dateRange) {
+          params.set('dateFrom', dateRange.start.toISOString());
+          params.set('dateTo', dateRange.end.toISOString());
+        }
+      }
 
       const response = await api(`/orders?${params}`);
       if (!response.ok) {
