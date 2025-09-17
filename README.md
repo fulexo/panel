@@ -153,36 +153,25 @@ After running the installation script, you can login with the credentials you pr
 
 ## 🛠️ Development
 
+### Quick Start
+```bash
+# Clone and setup
+git clone https://github.com/fulexo/panel.git
+cd panel
+
+# Start development environment
+docker compose -f compose/docker-compose.yml up -d
+
+# Run migrations
+cd apps/api && npm run prisma:migrate
+```
+
 ### Project Structure
-```
-/workspace
-├── apps/
-│   ├── api/          # NestJS backend
-│   ├── web/          # Next.js frontend
-│   └── worker/       # Background job processor
-├── compose/          # Docker Compose configuration
-│   ├── nginx/        # Reverse proxy config
-│   ├── prometheus/   # Metrics configuration
-│   └── ...
-└── scripts/          # Installation and management scripts
-```
-
-### API Development
-```bash
-cd apps/api
-npm run dev          # Start development server
-npm run build        # Build for production
-npm run test         # Run tests
-npm run prisma:studio # Open Prisma Studio
-```
-
-### Frontend Development
-```bash
-cd apps/web
-npm run dev          # Start development server
-npm run build        # Build for production
-npm run test         # Run tests
-```
+- `apps/api/` - NestJS backend API
+- `apps/web/` - Next.js frontend
+- `apps/worker/` - Background job processor
+- `compose/` - Docker configurations
+- `scripts/` - Management scripts
 
 ## 📝 API Documentation
 
@@ -267,28 +256,16 @@ docker compose exec api node -e "console.log(process.env.JWT_SECRET)"
 docker compose logs api | grep auth
 ```
 
-## 📚 Additional Resources
+## 📚 Dökümantasyon
 
-- [Scripts Documentation](scripts/README.md)
-- [Docker Compose Configuration](compose/docker-compose.yml)
+- [Scripts](scripts/README.md) - Kurulum ve yönetim script'leri
+- [Güvenlik](SECURITY.md) - Güvenlik yapılandırması
+- [Sorun Giderme](TROUBLESHOOTING.md) - Yaygın sorunlar ve çözümler
 
-## 🤝 Contributing
+## 📞 Destek
 
-Please read our contributing guidelines before submitting pull requests.
-
-## 📄 License
-
-This project is proprietary software. All rights reserved.
-
-## 📞 Support
-
-For support and questions:
-- Create an issue in the repository
-- Contact the development team
-- Check the documentation
+- GitHub Issues
+- E-posta: support@fulexo.com
 
 ---
-
-**Version**: 1.0.0  
-**Last Updated**: January 2025  
-**Status**: Production Ready
+**Versiyon**: 1.0.0 | **Durum**: Production Ready

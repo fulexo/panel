@@ -1,6 +1,7 @@
 {
-  "name": "worker",
+  "name": "fulexo-worker",
   "version": "1.0.0",
+  "description": "Fulexo Platform - Background Job Processor",
   "main": "index.js",
   "scripts": {
     "start": "node dist/index.js",
