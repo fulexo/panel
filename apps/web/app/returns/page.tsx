@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../components/AuthProvider";
+import ProtectedRoute from "@/components/ProtectedRoute";
 
 interface ReturnItem {
   id: string;
@@ -217,6 +218,8 @@ export default function ReturnsPage() {
 
   if (loading) {
     return (
+  <ProtectedRoute>
+    
       <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <div className="spinner"></div>
@@ -549,5 +552,7 @@ export default function ReturnsPage() {
         )}
       </main>
     </div>
+  </ProtectedRoute>
+);
   );
 }

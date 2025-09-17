@@ -1,25 +1,48 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
+// Public routes that don't require authentication
+const publicRoutes = [
+  '/login',
+  '/api/auth/login',
+  '/api/auth/set-tokens',
+  '/api/auth/clear-tokens',
+  '/api/health',
+  '/api/errors',
+];
+
+// API routes that don't require authentication
+const publicApiRoutes = [
+  '/api/auth/login',
+  '/api/auth/set-tokens',
+  '/api/auth/clear-tokens',
+  '/api/health',
+  '/api/errors',
+];
+
 export function middleware(request: NextRequest) {
-  // Public sayfalar (login erişimi olan)
-  const publicPaths = ['/', '/login', '/login/2fa', '/order-info'];
-  const pathname = request.nextUrl.pathname;
-  const isPublicPath = publicPaths.includes(pathname);
-
-  // Token kontrolü
-  const token = request.cookies.get('access_token')?.value || '';
-
-  // Eğer login sayfasındaysa ve token varsa dashboard'a yönlendir
-  if (isPublicPath && token && pathname === '/login') {
-    return NextResponse.redirect(new URL('/dashboard', request.url));
+  const { pathname } = request.nextUrl;
+  
+  // Allow public routes
+  if (publicRoutes.includes(pathname)) {
+    return NextResponse.next();
   }
-
-  // Eğer korumalı sayfadaysa ve token yoksa login'e yönlendir
-  if (!isPublicPath && !token) {
-    return NextResponse.redirect(new URL('/login', request.url));
+  
+  // Allow public API routes
+  if (pathname.startsWith('/api/') && publicApiRoutes.some(route => pathname.startsWith(route))) {
+    return NextResponse.next();
   }
-
+  
+  // Check for authentication cookie
+  const accessToken = request.cookies.get('access_token');
+  
+  // If no access token, redirect to login
+  if (!accessToken) {
+    const loginUrl = new URL('/login', request.url);
+    return NextResponse.redirect(loginUrl);
+  }
+  
+  // If authenticated, allow access
   return NextResponse.next();
 }
 
@@ -27,11 +50,11 @@ export const config = {
   matcher: [
     /*
      * Match all request paths except for the ones starting with:
-     * - api (API routes)
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
+     * - public folder
      */
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 };

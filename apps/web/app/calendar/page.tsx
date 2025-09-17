@@ -51,6 +51,8 @@ export default function CalendarPage(){
   if(loading) return <div className="min-h-screen bg-gray-900 text-white p-8">Loading...</div>;
 
   return (
+  <ProtectedRoute>
+    
     <div className="min-h-screen bg-gray-900 text-white p-8">
       <h1 className="text-2xl font-bold mb-4">Calendar</h1>
       <div className="grid md:grid-cols-3 gap-6">
@@ -101,6 +103,8 @@ export default function CalendarPage(){
         </div>
       </div>
     </div>
+  </ProtectedRoute>
+);
   );
 }
 

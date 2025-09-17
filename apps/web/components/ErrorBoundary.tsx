@@ -5,51 +5,119 @@ import React, { Component, ErrorInfo, ReactNode } from 'react';
 interface Props {
   children: ReactNode;
   fallback?: ReactNode;
+  onError?: (error: Error, errorInfo: ErrorInfo) => void;
 }
 
 interface State {
   hasError: boolean;
   error?: Error;
   errorInfo?: ErrorInfo;
+  errorId?: string;
 }
 
-class ErrorBoundary extends Component<Props, State> {
+export default class ErrorBoundary extends Component<Props, State> {
+  private retryCount = 0;
+  private maxRetries = 3;
+
   constructor(props: Props) {
     super(props);
     this.state = { hasError: false };
   }
 
   static getDerivedStateFromError(error: Error): State {
-    return { hasError: true, error };
+    return { 
+      hasError: true, 
+      error,
+      errorId: `error_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+    };
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('ErrorBoundary caught an error:', error, errorInfo);
+    const errorId = this.state.errorId || `error_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    // Enhanced error logging
+    const errorData = {
+      errorId,
+      message: error.message,
+      stack: error.stack,
+      componentStack: errorInfo.componentStack,
+      timestamp: new Date().toISOString(),
+      userAgent: typeof window !== 'undefined' ? navigator.userAgent : 'unknown',
+      url: typeof window !== 'undefined' ? window.location.href : 'unknown',
+      retryCount: this.retryCount,
+      userId: this.getCurrentUserId(),
+      tenantId: this.getCurrentTenantId(),
+    };
+
+    console.error('ErrorBoundary caught an error:', errorData);
     
     // Log error to monitoring service
     if (typeof window !== 'undefined') {
-      // Send error to monitoring service
-      fetch('/api/error', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          error: error.message,
-          stack: error.stack,
-          errorInfo: errorInfo.componentStack,
-          timestamp: new Date().toISOString(),
-          userAgent: navigator.userAgent,
-          url: window.location.href,
-        }),
-      }).catch(console.error);
+      this.logErrorToService(errorData).catch(console.error);
     }
 
     this.setState({
       error,
       errorInfo,
+      errorId,
     });
+
+    // Call custom error handler if provided
+    if (this.props.onError) {
+      this.props.onError(error, errorInfo);
+    }
   }
+
+  private async logErrorToService(errorData: any) {
+    try {
+      await fetch('/api/errors', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(errorData),
+      });
+    } catch (logError) {
+      console.error('Failed to log error to service:', logError);
+    }
+  }
+
+  private getCurrentUserId(): string | null {
+    try {
+      const user = sessionStorage.getItem('user');
+      return user ? JSON.parse(user).id : null;
+    } catch {
+      return null;
+    }
+  }
+
+  private getCurrentTenantId(): string | null {
+    try {
+      const user = sessionStorage.getItem('user');
+      return user ? JSON.parse(user).tenantId : null;
+    } catch {
+      return null;
+    }
+  }
+
+  private handleRetry = () => {
+    if (this.retryCount < this.maxRetries) {
+      this.retryCount++;
+      this.setState({ hasError: false, error: undefined, errorInfo: undefined });
+    } else {
+      // Reset retry count and reload page
+      this.retryCount = 0;
+      window.location.reload();
+    }
+  };
+
+  private handleReload = () => {
+    window.location.reload();
+  };
+
+  private handleGoHome = () => {
+    window.location.href = '/dashboard';
+  };
 
   render() {
     if (this.state.hasError) {
@@ -57,12 +125,14 @@ class ErrorBoundary extends Component<Props, State> {
         return this.props.fallback;
       }
 
+      const canRetry = this.retryCount < this.maxRetries;
+
       return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50">
-          <div className="max-w-md w-full bg-white shadow-lg rounded-lg p-6">
-            <div className="flex items-center justify-center w-12 h-12 mx-auto bg-red-100 rounded-full">
+        <div className="min-h-screen flex items-center justify-center bg-background">
+          <div className="max-w-md w-full bg-card shadow-lg rounded-lg p-6 border border-border">
+            <div className="flex items-center justify-center w-12 h-12 mx-auto bg-destructive/10 rounded-full">
               <svg
-                className="w-6 h-6 text-red-600"
+                className="w-6 h-6 text-destructive"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -76,28 +146,56 @@ class ErrorBoundary extends Component<Props, State> {
               </svg>
             </div>
             <div className="mt-4 text-center">
-              <h3 className="text-lg font-medium text-gray-900">
+              <h3 className="text-lg font-medium text-foreground">
                 Something went wrong
               </h3>
-              <p className="mt-2 text-sm text-gray-500">
-                We're sorry, but something unexpected happened. Please try refreshing the page.
+              <p className="mt-2 text-sm text-muted-foreground">
+                We're sorry, but something unexpected happened. 
+                {canRetry ? ' You can try again or refresh the page.' : ' Please refresh the page.'}
               </p>
-              <div className="mt-4">
+              
+              {this.state.errorId && (
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Error ID: {this.state.errorId}
+                </p>
+              )}
+
+              <div className="mt-4 flex flex-col sm:flex-row gap-2 justify-center">
+                {canRetry && (
+                  <button
+                    onClick={this.handleRetry}
+                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-primary-foreground bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                  >
+                    Try Again ({this.maxRetries - this.retryCount} left)
+                  </button>
+                )}
                 <button
-                  onClick={() => window.location.reload()}
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  onClick={this.handleReload}
+                  className="inline-flex items-center px-4 py-2 border border-border text-sm font-medium rounded-md text-foreground bg-background hover:bg-accent focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
                 >
                   Refresh Page
                 </button>
+                <button
+                  onClick={this.handleGoHome}
+                  className="inline-flex items-center px-4 py-2 border border-border text-sm font-medium rounded-md text-foreground bg-background hover:bg-accent focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                >
+                  Go Home
+                </button>
               </div>
+
               {process.env.NODE_ENV === 'development' && this.state.error && (
                 <details className="mt-4 text-left">
-                  <summary className="text-sm font-medium text-gray-700 cursor-pointer">
+                  <summary className="text-sm font-medium text-foreground cursor-pointer">
                     Error Details (Development)
                   </summary>
-                  <pre className="mt-2 text-xs text-gray-600 bg-gray-100 p-2 rounded overflow-auto">
+                  <pre className="mt-2 text-xs text-muted-foreground bg-muted p-2 rounded overflow-auto max-h-40">
                     {this.state.error.stack}
                   </pre>
+                  {this.state.errorInfo && (
+                    <pre className="mt-2 text-xs text-muted-foreground bg-muted p-2 rounded overflow-auto max-h-40">
+                      {this.state.errorInfo.componentStack}
+                    </pre>
+                  )}
                 </details>
               )}
             </div>
@@ -109,5 +207,3 @@ class ErrorBoundary extends Component<Props, State> {
     return this.props.children;
   }
 }
-
-export default ErrorBoundary;

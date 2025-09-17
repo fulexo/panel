@@ -2,8 +2,9 @@
 
 import { createContext, useContext, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { AuthContextType, User, LoginResponse } from '../types/auth';
-import { AuthUtils } from '../lib/auth-utils';
+import { AuthContextType, User, LoginResponse } from '@/types/auth';
+import { ApiResponse } from '@/types/api';
+import { AuthUtils } from '@/lib/auth-utils';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -18,27 +19,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const checkAuth = async () => {
     try {
-      const token = AuthUtils.getToken();
-      if (!token || !AuthUtils.isAuthenticated()) {
-        setLoading(false);
-        return;
-      }
-
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:3000'}/auth/me`, {
+      // Since tokens are now in httpOnly cookies, we need to make a request to check auth
+      // The server will automatically include the httpOnly cookies
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:3000'}/api/auth/me`, {
+        method: 'GET',
+        credentials: 'include', // Include httpOnly cookies
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
       });
 
       if (response.ok) {
-        const userData = await response.json();
-        setUser(userData);
+        const userData: ApiResponse<User> = await response.json();
+        setUser(userData.data);
       } else {
+        // If auth fails, clear any local data and redirect to login
         await AuthUtils.clearTokens();
         setUser(null);
       }
     } catch (error) {
-      console.error('Auth check failed:', error);
+      // Log error to monitoring service instead of console
+      if (typeof window !== 'undefined') {
+        fetch('/api/errors', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'auth_check_failed',
+            message: error instanceof Error ? error.message : 'Unknown error',
+            stack: error instanceof Error ? error.stack : undefined,
+            timestamp: new Date().toISOString(),
+            url: window.location.href,
+          }),
+        }).catch(() => {}); // Silent fail for error logging
+      }
       await AuthUtils.clearTokens();
       setUser(null);
     } finally {
@@ -47,7 +60,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const login = async (email: string, password: string) => {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:3000'}/auth/login`, {
+    const response = await fetch('/api/auth/login', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -56,7 +69,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     if (!response.ok) {
-      throw new Error('Login failed');
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Login failed');
     }
 
     const data = await response.json();
@@ -65,20 +79,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // tempToken'ı güvenli şekilde sakla
       if (data.tempToken) {
         if (typeof window !== 'undefined') {
-          localStorage.setItem('temp_2fa_token', data.tempToken);
+          sessionStorage.setItem('temp_2fa_token', data.tempToken);
         }
       }
       throw new Error('2FA_REQUIRED');
     }
 
-    // Güvenli token saklama
-    await AuthUtils.setTokens(data.access, data.refresh, data.user);
-    
+    // Tokens are now set as httpOnly cookies by the server
+    // We just need to set the user data locally
     setUser(data.user);
     router.push('/dashboard');
   };
 
   const logout = async () => {
+    // Call backend logout to invalidate session
+    try {
+      await fetch(`${process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:3000'}/api/auth/logout`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+    } catch (error) {
+      // Ignore logout errors
+    }
+    
     await AuthUtils.clearTokens();
     setUser(null);
     router.push('/login');

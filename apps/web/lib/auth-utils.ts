@@ -4,7 +4,7 @@ export class AuthUtils {
   private static readonly REFRESH_KEY = 'refresh_token';
   private static readonly USER_KEY = 'user';
 
-  // Secure token storage with httpOnly cookies
+  // Secure token storage with httpOnly cookies only
   static async setTokens(accessToken: string, refreshToken: string, user: any) {
     try {
       // Set httpOnly cookies via API
@@ -24,34 +24,54 @@ export class AuthUtils {
         throw new Error('Failed to set secure tokens');
       }
 
-      // Also set in localStorage as fallback for client-side access
+      // Store user data in memory only (not localStorage for security)
       if (typeof window !== 'undefined') {
-        localStorage.setItem(this.TOKEN_KEY, accessToken);
-        localStorage.setItem(this.REFRESH_KEY, refreshToken);
-        localStorage.setItem(this.USER_KEY, JSON.stringify(user));
+        // Only store non-sensitive user data in memory
+        const safeUserData = {
+          id: user.id,
+          email: user.email,
+          role: user.role,
+          tenantId: user.tenantId,
+          tenantName: user.tenantName,
+          twofaEnabled: user.twofaEnabled
+        };
+        sessionStorage.setItem(this.USER_KEY, JSON.stringify(safeUserData));
       }
     } catch (error) {
-      console.error('Error setting tokens:', error);
+      // Log error to monitoring service instead of console
+      if (typeof window !== 'undefined') {
+        fetch('/api/errors', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'token_set_failed',
+            message: error instanceof Error ? error.message : 'Unknown error',
+            timestamp: new Date().toISOString(),
+          }),
+        }).catch(() => {}); // Silent fail for error logging
+      }
       throw error;
     }
   }
 
-  // Get token from secure storage
+  // Get token from secure storage (httpOnly cookie)
   static getToken(): string | null {
-    if (typeof window === 'undefined') return null;
-    return localStorage.getItem(this.TOKEN_KEY);
+    // Tokens are now stored in httpOnly cookies, not accessible via JS
+    // This method is kept for compatibility but returns null
+    // The actual token will be sent automatically with requests
+    return null;
   }
 
-  // Get refresh token from secure storage
+  // Get refresh token from secure storage (httpOnly cookie)
   static getRefreshToken(): string | null {
-    if (typeof window === 'undefined') return null;
-    return localStorage.getItem(this.REFRESH_KEY);
+    // Refresh tokens are now stored in httpOnly cookies
+    return null;
   }
 
-  // Get user from secure storage
+  // Get user from secure storage (sessionStorage only)
   static getUser(): any | null {
     if (typeof window === 'undefined') return null;
-    const userStr = localStorage.getItem(this.USER_KEY);
+    const userStr = sessionStorage.getItem(this.USER_KEY);
     return userStr ? JSON.parse(userStr) : null;
   }
 
@@ -63,51 +83,49 @@ export class AuthUtils {
         method: 'POST',
       });
 
-      // Clear localStorage
+      // Clear sessionStorage
       if (typeof window !== 'undefined') {
+        sessionStorage.removeItem(this.USER_KEY);
+        sessionStorage.removeItem('temp_2fa_token');
+        // Clear any remaining localStorage items for cleanup
         localStorage.removeItem(this.TOKEN_KEY);
         localStorage.removeItem(this.REFRESH_KEY);
         localStorage.removeItem(this.USER_KEY);
         localStorage.removeItem('temp_2fa_token');
       }
     } catch (error) {
-      console.error('Error clearing tokens:', error);
+      // Log error to monitoring service instead of console
+      if (typeof window !== 'undefined') {
+        fetch('/api/errors', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'token_clear_failed',
+            message: error instanceof Error ? error.message : 'Unknown error',
+            timestamp: new Date().toISOString(),
+          }),
+        }).catch(() => {}); // Silent fail for error logging
+      }
     }
   }
 
   // Check if user is authenticated
   static isAuthenticated(): boolean {
-    const token = this.getToken();
-    if (!token) return false;
-
-    try {
-      // Basic JWT expiration check
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      return payload.exp * 1000 > Date.now();
-    } catch {
-      return false;
-    }
+    // Since tokens are now in httpOnly cookies, we check if user data exists
+    const user = this.getUser();
+    return user !== null;
   }
 
-  // Get token expiration time
+  // Get token expiration time (not accessible with httpOnly cookies)
   static getTokenExpiration(): number | null {
-    const token = this.getToken();
-    if (!token) return null;
-
-    try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      return payload.exp * 1000;
-    } catch {
-      return null;
-    }
+    // With httpOnly cookies, we can't access token expiration
+    // The server will handle token validation
+    return null;
   }
 
-  // Check if token needs refresh (within 5 minutes of expiry)
+  // Check if token needs refresh (handled by server)
   static needsRefresh(): boolean {
-    const expiration = this.getTokenExpiration();
-    if (!expiration) return true;
-
-    const fiveMinutes = 5 * 60 * 1000;
-    return expiration - Date.now() < fiveMinutes;
+    // Token refresh is now handled by the server automatically
+    return false;
   }
 }

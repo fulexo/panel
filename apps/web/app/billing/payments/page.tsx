@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../../components/AuthProvider";
+import ProtectedRoute from "@/components/ProtectedRoute";
 
 interface Payment {
   id: string;
@@ -208,6 +209,8 @@ export default function PaymentsPage() {
 
   if (loading) {
     return (
+  <ProtectedRoute>
+    
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <div className="spinner"></div>
@@ -498,5 +501,7 @@ export default function PaymentsPage() {
         )}
       </main>
     </div>
+  </ProtectedRoute>
+);
   );
 }

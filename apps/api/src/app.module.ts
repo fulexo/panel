@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_FILTER } from '@nestjs/core';
 import { ThrottlerModule } from '@nestjs/throttler';
@@ -28,6 +28,7 @@ import { AuditModule } from './audit/audit.module';
 import { JwtModule } from './jwt.module';
 import { PrismaService } from './prisma.service';
 import { envValidationSchema } from './config/env.validation';
+import { CookieAuthMiddleware } from './common/middleware/cookie-auth.middleware';
 
 @Module({
   imports: [
@@ -77,4 +78,10 @@ import { envValidationSchema } from './config/env.validation';
     },
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(CookieAuthMiddleware)
+      .forRoutes('*');
+  }
+}

@@ -34,7 +34,15 @@ export class OrdersService {
           company: true,
         },
       },
-      items: true,
+      items: {
+        select: {
+          id: true,
+          sku: true,
+          name: true,
+          qty: true,
+          price: true,
+        },
+      },
       shipments: {
         select: {
           id: true,
@@ -53,15 +61,36 @@ export class OrdersService {
     };
 
     // Add sensitive fields for admin users
-    if (role === 'ADMIN') {
+    if (role === 'ADMIN' || role === 'FULEXO_ADMIN' || role === 'FULEXO_STAFF') {
       return {
         ...baseIncludes,
-        serviceCharges: true,
+        serviceCharges: {
+          select: {
+            id: true,
+            type: true,
+            amount: true,
+            currency: true,
+            notes: true,
+            createdAt: true,
+          },
+        },
+        invoices: {
+          select: {
+            id: true,
+            number: true,
+            status: true,
+            total: true,
+            currency: true,
+            issuedAt: true,
+            dueDate: true,
+          },
+        },
         returns: {
           select: {
             id: true,
             status: true,
             reason: true,
+            refundAmount: true,
             createdAt: true,
           },
         },
@@ -149,8 +178,8 @@ export class OrdersService {
   }
 
   async findOne(tenantId: string, id: string, role?: string) {
-    // Try cache first
-    const cacheKey = this.cache.orderDetailKey(id);
+    // Try cache first - include role in cache key to prevent privilege escalation
+    const cacheKey = this.cache.orderDetailKey(id, role);
     const cached = await this.cache.get(cacheKey);
     if (cached) {
       return cached;
@@ -161,25 +190,20 @@ export class OrdersService {
         id,
         tenantId,
       },
-      include: {
-        customer: true,
-        items: true,
-        shipments: true,
-        returns: true,
-        invoices: true,
-        
-        serviceCharges: true,
-      },
+      include: this.getOrderIncludes(role),
     }) as any);
 
     if (!order) {
       throw new NotFoundException('Order not found');
     }
 
-    // Cache for 5 minutes
-    await this.cache.set(cacheKey, order, 300);
+    // Apply role-based sanitization before caching
+    const sanitizedOrder = (role && role !== 'ADMIN') ? this.sanitizeOrderForCustomer(order) : order;
 
-    return (role && role !== 'ADMIN') ? this.sanitizeOrderForCustomer(order) : order;
+    // Cache the sanitized result for 5 minutes
+    await this.cache.set(cacheKey, sanitizedOrder, 300);
+
+    return sanitizedOrder;
   }
 
   async create(tenantId: string, dto: CreateOrderDto, userId: string) {
@@ -428,7 +452,10 @@ export class OrdersService {
           SUM("total") as revenue
         FROM "Order"
         WHERE "tenantId" = ${tenantId}::uuid
-          AND "confirmedAt" >= NOW() - INTERVAL '30 days'
+          ${query.dateFrom ? `AND "confirmedAt" >= ${new Date(query.dateFrom)}` : ''}
+          ${query.dateTo ? `AND "confirmedAt" <= ${new Date(query.dateTo)}` : ''}
+          ${query.storeId ? `AND "storeId" = ${query.storeId}::uuid` : ''}
+          ${!query.dateFrom && !query.dateTo ? `AND "confirmedAt" >= NOW() - INTERVAL '30 days'` : ''}
         GROUP BY DATE("confirmedAt")
         ORDER BY date DESC
       `,

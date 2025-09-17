@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../../components/AuthProvider";
+import ProtectedRoute from "@/components/ProtectedRoute";
 
 export default function CreateTenantPage() {
   const router = useRouter();
@@ -107,6 +108,8 @@ export default function CreateTenantPage() {
 
   if (loading && !error) {
     return (
+  <ProtectedRoute>
+    
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <div className="spinner"></div>
@@ -383,5 +386,7 @@ export default function CreateTenantPage() {
         </div>
       </main>
     </div>
+  </ProtectedRoute>
+);
   );
 }

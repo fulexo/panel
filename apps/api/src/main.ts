@@ -3,6 +3,7 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { register } from 'prom-client';
+import * as cookieParser from 'cookie-parser';
 import { PrismaService } from './prisma.service';
 import { validateEnvOnStartup } from './config/env.validation';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
@@ -33,34 +34,43 @@ async function bootstrap() {
   // Global exception filter
   app.useGlobalFilters(new GlobalExceptionFilter());
 
+  // Cookie parser
+  app.use(cookieParser());
+
+  // Set global prefix for all routes
+  app.setGlobalPrefix('api');
+
   // CORS configuration
   app.enableCors({
     origin: (origin, callback) => {
-      const allowedOrigins = [
-        process.env['DOMAIN_APP'] || 'http://localhost:3001',
-        process.env['NEXT_PUBLIC_APP_URL'] || 'http://localhost:3001',
+      const isDevelopment = process.env['NODE_ENV'] === 'development';
+      
+      const allowedOrigins = isDevelopment ? [
         'http://localhost:3000',
         'http://localhost:3001',
-        // Add development origins
-        ...(process.env['NODE_ENV'] === 'development' ? [
-          'http://localhost:3000',
-          'http://localhost:3001',
-          'http://127.0.0.1:3000',
-          'http://127.0.0.1:3001',
-        ] : []),
-      ];
+        'http://127.0.0.1:3000',
+        'http://127.0.0.1:3001',
+      ] : [
+        process.env['DOMAIN_APP'],
+        process.env['NEXT_PUBLIC_APP_URL'],
+      ].filter(Boolean); // Remove undefined values
 
       if (!origin) {
-        // Allow requests with no origin (like mobile apps or curl requests)
-        return callback(null, true);
+        // Only allow requests with no origin in development
+        if (isDevelopment) {
+          return callback(null, true);
+        }
+        return callback(new Error('Origin required in production'), false);
       }
 
       if (allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
 
-      // Log rejected origin for debugging
-      console.warn(`CORS: Origin rejected: ${origin}`);
+      // Log rejected origin for debugging (only in development)
+      if (process.env.NODE_ENV === 'development') {
+        console.warn(`CORS: Origin rejected: ${origin}`);
+      }
       return callback(new Error('Not allowed by CORS'), false);
     },
     credentials: true,
@@ -74,6 +84,7 @@ async function bootstrap() {
       'X-WC-Webhook-Topic',
       'X-WC-Webhook-Signature',
     ],
+    maxAge: 86400, // 24 hours
   });
 
   // Enhanced security headers
@@ -133,7 +144,10 @@ async function bootstrap() {
         await app.get(PrismaService).$queryRaw`SELECT 1`;
         dbHealthy = true;
       } catch (error) {
-        console.error('Database health check failed:', error);
+        // Log database health check failure
+        if (process.env.NODE_ENV === 'development') {
+          console.error('Database health check failed:', error);
+        }
       }
       
       // Check Redis connection
@@ -144,7 +158,10 @@ async function bootstrap() {
         redisHealthy = true;
         await redis.quit();
       } catch (error) {
-        console.error('Redis health check failed:', error);
+        // Log Redis health check failure
+        if (process.env.NODE_ENV === 'development') {
+          console.error('Redis health check failed:', error);
+        }
       }
       
       const overallHealthy = dbHealthy && redisHealthy;
