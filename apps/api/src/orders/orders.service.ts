@@ -490,8 +490,9 @@ export class OrdersService {
   }
 
   async createShareLink(tenantId: string, orderId: string, userId: string) {
-    const order = await this.prisma.order.findFirst({ where: { id: orderId, tenantId }, select: { id: true, orderNo: true } });
-    if (!order) throw new NotFoundException('Order not found');
+    return this.prisma.withTenant(tenantId, async (tx) => {
+      const order = await tx.order.findFirst({ where: { id: orderId }, select: { id: true, orderNo: true } });
+      if (!order) throw new NotFoundException('Order not found');
     
     // Validate SHARE_TOKEN_SECRET is set and strong
     const shareSecret = process.env['SHARE_TOKEN_SECRET'];
@@ -510,8 +511,9 @@ export class OrdersService {
       .setIssuedAt()
       .setExpirationTime('24h')
       .sign(secret);
-    await this.audit.log({ action: 'order.share.created', userId, tenantId, entityType: 'order', entityId: orderId });
-    return { token, url: `${process.env['SHARE_BASE_URL'] || 'http://localhost:3001'}/order-info?token=${token}` };
+      await this.audit.log({ action: 'order.share.created', userId, tenantId, entityType: 'order', entityId: orderId });
+      return { token, url: `${process.env['SHARE_BASE_URL'] || 'http://localhost:3001'}/order-info?token=${token}` };
+    });
   }
 
   async getPublicInfo(token: string) {
@@ -523,23 +525,37 @@ export class OrdersService {
     const secret = new TextEncoder().encode(shareSecret);
     try {
       const { payload } = await jose.jwtVerify(token, secret);
-      const order = await this.prisma.order.findFirst({
-        where: { id: String(payload['orderId']) },
-        select: {
-          id: true,
-          orderNo: true,
-          
-          externalOrderNo: true,
-          status: true,
-          total: true,
-          currency: true,
-          confirmedAt: true,
-          customerEmail: true,
-          items: { select: { id: true, sku: true, name: true, qty: true, price: true } },
-        },
+      const orderId = String(payload['orderId']);
+      
+      // Find the order first to get tenantId
+      const orderWithTenant = await this.prisma.order.findFirst({
+        where: { id: orderId },
+        select: { id: true, tenantId: true }
       });
-      if (!order) throw new NotFoundException('Order not found');
-      return { order };
+      
+      if (!orderWithTenant) {
+        throw new NotFoundException('Order not found');
+      }
+      
+      // Use withTenant for RLS compliance
+      return this.prisma.withTenant(orderWithTenant.tenantId, async (tx) => {
+        const order = await tx.order.findFirst({
+          where: { id: orderId },
+          select: {
+            id: true,
+            orderNo: true,
+            externalOrderNo: true,
+            status: true,
+            total: true,
+            currency: true,
+            confirmedAt: true,
+            customerEmail: true,
+            items: { select: { id: true, sku: true, name: true, qty: true, price: true } },
+          },
+        });
+        if (!order) throw new NotFoundException('Order not found');
+        return { order };
+      });
     } catch (e) {
       throw new BadRequestException('Invalid or expired token');
     }

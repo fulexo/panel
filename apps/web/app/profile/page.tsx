@@ -54,9 +54,10 @@ export default function ProfilePage() {
     }
   });
 
-  // Token is now handled by httpOnly cookies
+  // Use Next.js API proxy for all requests
   const api = (path: string, init?: any) => 
-    fetch(`${process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:3000'}/api${path}`, {
+    fetch(`/api${path}`, {
+      credentials: 'include', // Include httpOnly cookies
       headers: { 'Content-Type': 'application/json' },
       ...init
     });
