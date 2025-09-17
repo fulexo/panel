@@ -1,27 +1,27 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
-import { CacheService } from '../cache/cache.service';
-import { EncryptionService } from '../crypto';
+// import { CacheService } from '../cache/cache.service';
+// import { EncryptionService } from '../crypto';
 import Redis from 'ioredis';
-import { Queue, Worker } from 'bullmq';
+import { Queue } from 'bullmq';
 
 @Injectable()
 export class SyncService {
   private readonly logger = new Logger(SyncService.name);
   private redis: Redis;
-  private encryptionService: EncryptionService;
+  // private encryptionService: EncryptionService;
   private syncQueue: Queue;
   private readonly queueName = 'fx-jobs';
 
   constructor(
     private prisma: PrismaService,
-    private _cache: CacheService,
+    // private _cache: CacheService,
   ) {
     this.redis = new Redis(process.env['REDIS_URL'] || 'redis://valkey:6379/0');
     // BaseLinker removed
-    this.encryptionService = new EncryptionService(
-      process.env['ENCRYPTION_KEY'] || '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'
-    );
+    // this.encryptionService = new EncryptionService(
+    //   process.env['ENCRYPTION_KEY'] || '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'
+    // );
     
     // Initialize sync queue
     this.syncQueue = new Queue(this.queueName, {
@@ -43,10 +43,10 @@ export class SyncService {
       // const token = '';
 
       // Get sync state
-      const syncState = await this.getSyncState(accountId, 'orders');
-      const lastSyncDate = (syncState?.checkpoint && (syncState.checkpoint as any).lastDate)
-        ? new Date((syncState!.checkpoint as any).lastDate)
-        : new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+      // const syncState = await this.getSyncState(accountId, 'orders');
+      // const lastSyncDate = (syncState?.checkpoint && (syncState.checkpoint as any).lastDate)
+      //   ? new Date((syncState.checkpoint as any).lastDate)
+      //   : new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
       // Source system removed. Placeholder for Woo import.
       // const params = {
@@ -276,29 +276,29 @@ export class SyncService {
     return statusMap[statusId] || 'unknown';
   }
 
-  private _decryptToken(encryptedToken: Buffer | Uint8Array): string {
-    try {
-      const raw = Buffer.isBuffer(encryptedToken)
-        ? encryptedToken
-        : Buffer.from(encryptedToken as Uint8Array);
-      const payload = JSON.parse(raw.toString());
-      return this.encryptionService.decrypt(payload);
-    } catch (error) {
-      this.logger.error('Failed to decrypt token:', error);
-      throw new Error('Invalid token encryption');
-    }
-  }
+  // private _decryptToken(encryptedToken: Buffer | Uint8Array): string {
+  //   try {
+  //     const raw = Buffer.isBuffer(encryptedToken)
+  //       ? encryptedToken
+  //       : Buffer.from(encryptedToken as Uint8Array);
+  //     const payload = JSON.parse(raw.toString());
+  //     return this.encryptionService.decrypt(payload);
+  //   } catch (error) {
+  //     this.logger.error('Failed to decrypt token:', error);
+  //     throw new Error('Invalid token encryption');
+  //   }
+  // }
 
-  private async getSyncState(accountId: string, entityType: string) {
-    return this.prisma.syncState.findUnique({
-      where: {
-        accountId_entityType: {
-          accountId,
-          entityType,
-        },
-      },
-    });
-  }
+  // private async getSyncState(accountId: string, entityType: string) {
+  //   return this.prisma.syncState.findUnique({
+  //     where: {
+  //       accountId_entityType: {
+  //         accountId,
+  //         entityType,
+  //       },
+  //     },
+  //   });
+  // }
 
   private async updateSyncState(
     accountId: string,

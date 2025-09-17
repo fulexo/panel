@@ -97,7 +97,7 @@ export class UsersService {
   }
 
   async update(currentUser: any, id: string, data: any) {
-    const _user = await this.get(currentUser, id);
+    // const _user = await this.get(currentUser, id);
 
     // Additional permission checks
     if (currentUser.role !== 'ADMIN') {

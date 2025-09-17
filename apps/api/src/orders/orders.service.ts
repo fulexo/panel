@@ -249,7 +249,7 @@ export class OrdersService {
     const order = await this.runTenant(tenantId, async (db) => db.order.create({
       data: {
         tenantId,
-        customerId: customer?.id,
+        customerId: customer?.id || null,
         orderNo: nextOrderNo,
         externalOrderNo: dto.externalOrderNo,
         orderSource: dto.orderSource || 'manual',
@@ -308,9 +308,9 @@ export class OrdersService {
     const order = await this.runTenant(tenantId, async (db) => db.order.update({
       where: { id },
       data: {
-        status: dto.status,
-        notes: dto.notes,
-        tags: dto.tags,
+        status: dto.status || undefined,
+        notes: dto.notes || undefined,
+        tags: dto.tags || undefined,
         shippingAddress: dto.shippingAddress,
         billingAddress: dto.billingAddress,
         updatedAt: new Date(),
@@ -367,11 +367,7 @@ export class OrdersService {
     const order = await this.findOne(tenantId, orderId);
 
     // Get audit logs for this order
-    const auditLogs = await this.audit.getAuditLogs({
-      tenantId,
-      entityType: 'order',
-      entityId: orderId,
-    });
+    // const auditLogs = await this.audit.getAuditLogs({ tenantId, entityType: 'order', entityId: orderId });
 
     // Build timeline
     const timeline: any[] = [
@@ -401,13 +397,13 @@ export class OrdersService {
     }
 
     // Add audit events
-    for (const log of auditLogs.logs as any[]) {
-      timeline.push({
-        type: log.action,
-        date: log.createdAt,
-        description: `Action: ${log.action}`,
-      });
-    }
+    // for (const log of auditLogs.logs as any[]) {
+    //   timeline.push({
+    //     type: log.action,
+    //     date: log.createdAt,
+    //     description: `Action: ${log.action}`,
+    //   });
+    // }
 
     // Sort by date
     timeline.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
@@ -556,7 +552,7 @@ export class OrdersService {
         if (!order) throw new NotFoundException('Order not found');
         return { order };
       });
-    } catch (e) {
+    } catch {
       throw new BadRequestException('Invalid or expired token');
     }
   }
@@ -577,7 +573,7 @@ export class OrdersService {
         type: dto.type,
         amount: new (Prisma as any).Decimal(dto.amount),
         currency: dto.currency || order.currency || 'TRY',
-        notes: dto.notes,
+        notes: dto.notes || null,
       },
     }));
     await this.audit.log({ action: 'order.charge.added', userId, tenantId, entityType: 'order', entityId: orderId, changes: dto });

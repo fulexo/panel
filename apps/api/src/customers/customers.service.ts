@@ -117,7 +117,7 @@ export class CustomersService {
         const totalSpent = orders.reduce((sum: any, order: any) => sum + Number(order.total || 0), 0);
         const averageOrderValue = totalOrders > 0 ? totalSpent / totalOrders : 0;
         const lastOrderDate = orders.length > 0 
-          ? orders.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0].createdAt
+          ? orders.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0]?.createdAt
           : null;
         
         return {

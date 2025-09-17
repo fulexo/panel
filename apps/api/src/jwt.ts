@@ -77,7 +77,7 @@ export class JwtService {
 
         this.keyId = kid;
       }
-    } catch (error) {
+    } catch {
       // RSA key initialization failed, falling back to HMAC
       await this.initHMACKey();
     }
@@ -98,12 +98,12 @@ export class JwtService {
     }
     
     // Validate secret strength
-    if (secret.length < 64) {
+    if (secret && secret.length < 64) {
       if (process.env['NODE_ENV'] === 'development') {
         console.warn('JWT_SECRET is shorter than 64 characters. This is not recommended for production.');
         // Pad with random data for development
         const crypto = require('crypto');
-        const padding = crypto.randomBytes(64 - secret.length).toString('hex');
+        const padding = crypto.randomBytes(64 - secret!.length).toString('hex');
         secret = secret + padding;
       } else {
         throw new Error('JWT_SECRET must be at least 64 characters long');
@@ -125,7 +125,7 @@ export class JwtService {
       'demo',
     ];
     
-    if (weakPatterns.some(pattern => secret.toLowerCase().includes(pattern))) {
+    if (secret && weakPatterns.some(pattern => secret!.toLowerCase().includes(pattern))) {
       if (process.env['NODE_ENV'] === 'development') {
         console.warn('JWT_SECRET contains weak patterns. This is not recommended for production.');
         // Generate a secure replacement for development
@@ -271,7 +271,7 @@ export class JwtService {
       }
 
       return payload as any;
-    } catch (error) {
+    } catch {
       throw new Error('Invalid or expired refresh token');
     }
   }
@@ -293,7 +293,7 @@ export class JwtService {
           alg: 'RS256',
         }]
       };
-    } catch (error) {
+    } catch {
       // Fallback to empty keys if export fails
       return { keys: [] };
     }
@@ -322,13 +322,13 @@ export class JwtService {
     try {
       // Use Redis for faster token blacklist checking
       const Redis = require('ioredis');
-      const redis = new Redis(process.env.REDIS_URL || 'redis://valkey:6379/0');
+      const redis = new Redis(process.env['REDIS_URL'] || 'redis://valkey:6379/0');
       
       const isBlacklisted = await redis.exists(`blacklist:${jti}`);
       await redis.quit();
       
       return isBlacklisted === 1;
-    } catch (error) {
+    } catch {
       // Fallback to database check if Redis fails
       try {
         const blacklistedToken = await this.prisma.auditLog.findFirst({
@@ -342,7 +342,7 @@ export class JwtService {
         });
         
         return !!blacklistedToken;
-      } catch (dbError) {
+      } catch {
         // Error checking token blacklist
         return false; // If error, allow token (fail open)
       }
@@ -354,7 +354,7 @@ export class JwtService {
     try {
       // Use Redis for fast token blacklisting
       const Redis = require('ioredis');
-      const redis = new Redis(process.env.REDIS_URL || 'redis://valkey:6379/0');
+      const redis = new Redis(process.env['REDIS_URL'] || 'redis://valkey:6379/0');
       
       // Set token as blacklisted with 7 days expiry (same as refresh token)
       await redis.setex(`blacklist:${jti}`, 7 * 24 * 60 * 60, JSON.stringify({
@@ -387,9 +387,5 @@ export class JwtService {
   }
 
   // Generate secure random JTI
-  private _generateSecureJTI(): string {
-    const timestamp = Date.now().toString(36);
-    const random = Math.random().toString(36).substring(2);
-    return `jti_${timestamp}_${random}`;
-  }
+  // Removed unused method
 }

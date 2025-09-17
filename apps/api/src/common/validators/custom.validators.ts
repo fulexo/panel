@@ -9,7 +9,7 @@ import {
 // Email validation with domain restrictions
 @ValidatorConstraint({ name: 'isValidEmail', async: false })
 export class IsValidEmailConstraint implements ValidatorConstraintInterface {
-  validate(email: string, _args: ValidationArguments) {
+  validate(email: string) {
     if (!email) return false;
     
     const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
@@ -28,7 +28,7 @@ export class IsValidEmailConstraint implements ValidatorConstraintInterface {
     return !disposableDomains.includes(domain || '');
   }
 
-  defaultMessage(_args: ValidationArguments) {
+  defaultMessage() {
     return 'Please provide a valid email address';
   }
 }
@@ -48,7 +48,7 @@ export function IsValidEmail(validationOptions?: ValidationOptions) {
 // Strong password validation
 @ValidatorConstraint({ name: 'isStrongPassword', async: false })
 export class IsStrongPasswordConstraint implements ValidatorConstraintInterface {
-  validate(password: string, _args: ValidationArguments) {
+  validate(password: string) {
     if (!password) return false;
     
     // At least 8 characters
@@ -80,7 +80,7 @@ export class IsStrongPasswordConstraint implements ValidatorConstraintInterface 
     return !commonPatterns.some(pattern => lowerPassword.includes(pattern));
   }
 
-  defaultMessage(_args: ValidationArguments) {
+  defaultMessage() {
     return 'Password must be at least 8 characters long and contain uppercase, lowercase, number, and special character';
   }
 }
@@ -100,7 +100,7 @@ export function IsStrongPassword(validationOptions?: ValidationOptions) {
 // Phone number validation
 @ValidatorConstraint({ name: 'isValidPhone', async: false })
 export class IsValidPhoneConstraint implements ValidatorConstraintInterface {
-  validate(phone: string, _args: ValidationArguments) {
+  validate(phone: string) {
     if (!phone) return true; // Optional field
     
     // Remove all non-digit characters
@@ -119,7 +119,7 @@ export class IsValidPhoneConstraint implements ValidatorConstraintInterface {
     return !invalidPatterns.some(pattern => pattern.test(cleanPhone));
   }
 
-  defaultMessage(_args: ValidationArguments) {
+  defaultMessage() {
     return 'Please provide a valid phone number';
   }
 }
@@ -139,7 +139,7 @@ export function IsValidPhone(validationOptions?: ValidationOptions) {
 // SKU validation
 @ValidatorConstraint({ name: 'isValidSku', async: false })
 export class IsValidSkuConstraint implements ValidatorConstraintInterface {
-  validate(sku: string, _args: ValidationArguments) {
+  validate(sku: string) {
     if (!sku) return false;
     
     // SKU should be 3-50 characters, alphanumeric and hyphens only
@@ -147,7 +147,7 @@ export class IsValidSkuConstraint implements ValidatorConstraintInterface {
     return skuRegex.test(sku);
   }
 
-  defaultMessage(_args: ValidationArguments) {
+  defaultMessage() {
     return 'SKU must be 3-50 characters long and contain only letters, numbers, and hyphens';
   }
 }
@@ -167,7 +167,7 @@ export function IsValidSku(validationOptions?: ValidationOptions) {
 // Currency validation
 @ValidatorConstraint({ name: 'isValidCurrency', async: false })
 export class IsValidCurrencyConstraint implements ValidatorConstraintInterface {
-  validate(currency: string, _args: ValidationArguments) {
+  validate(currency: string) {
     if (!currency) return false;
     
     const validCurrencies = [
@@ -178,7 +178,7 @@ export class IsValidCurrencyConstraint implements ValidatorConstraintInterface {
     return validCurrencies.includes(currency.toUpperCase());
   }
 
-  defaultMessage(_args: ValidationArguments) {
+  defaultMessage() {
     return 'Please provide a valid currency code (e.g., USD, EUR, TRY)';
   }
 }
@@ -198,7 +198,7 @@ export function IsValidCurrency(validationOptions?: ValidationOptions) {
 // URL validation
 @ValidatorConstraint({ name: 'isValidUrl', async: false })
 export class IsValidUrlConstraint implements ValidatorConstraintInterface {
-  validate(url: string, _args: ValidationArguments) {
+  validate(url: string) {
     if (!url) return true; // Optional field
     
     try {
@@ -209,7 +209,7 @@ export class IsValidUrlConstraint implements ValidatorConstraintInterface {
     }
   }
 
-  defaultMessage(_args: ValidationArguments) {
+  defaultMessage() {
     return 'Please provide a valid URL';
   }
 }
@@ -241,7 +241,7 @@ export class IsValidDateRangeConstraint implements ValidatorConstraintInterface 
     return startDate <= endDate;
   }
 
-  defaultMessage(_args: ValidationArguments) {
+  defaultMessage(args: ValidationArguments) {
     const [relatedPropertyName] = args.constraints;
     return `${relatedPropertyName} must be after or equal to ${args.property}`;
   }
@@ -262,7 +262,7 @@ export function IsValidDateRange(property: string, validationOptions?: Validatio
 // Sanitize HTML input
 @ValidatorConstraint({ name: 'isSanitizedHtml', async: false })
 export class IsSanitizedHtmlConstraint implements ValidatorConstraintInterface {
-  validate(html: string, _args: ValidationArguments) {
+  validate(html: string) {
     if (!html) return true; // Optional field
     
     // Check for potentially dangerous HTML tags
@@ -286,7 +286,7 @@ export class IsSanitizedHtmlConstraint implements ValidatorConstraintInterface {
     return true;
   }
 
-  defaultMessage(_args: ValidationArguments) {
+  defaultMessage() {
     return 'HTML content contains potentially dangerous tags';
   }
 }

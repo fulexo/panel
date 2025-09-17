@@ -34,7 +34,7 @@ export class ReturnsService {
   async addPhoto(tenantId: string, returnId: string, fileUrl: string, note?: string) {
     const ret = await this.runTenant(tenantId, async (db) => db.return.findFirst({ where: { id: returnId, order: { tenantId } } }));
     if (!ret) throw new NotFoundException('Return not found');
-    const photo = await this.runTenant(tenantId, async (db) => db.returnPhoto.create({ data: { returnId, fileUrl, note } }));
+    const photo = await this.runTenant(tenantId, async (db) => db.returnPhoto.create({ data: { returnId, fileUrl, note: note || null } }));
     return photo;
   }
 
@@ -46,7 +46,7 @@ export class ReturnsService {
     if (!ret) throw new NotFoundException('Return not found');
     
     const notif = await this.runTenant(tenantId, async (db) => db.returnNotification.create({ 
-      data: { returnId, channel, subject, message } 
+      data: { returnId, channel, subject: subject || null, message: message || null } 
     }));
     
     // Send actual notification based on channel
@@ -68,7 +68,7 @@ export class ReturnsService {
         default:
           // Unknown notification channel
       }
-    } catch (error) {
+    } catch {
       // Failed to send notification
       // Don't throw - notification is best effort
     }

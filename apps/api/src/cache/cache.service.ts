@@ -20,7 +20,7 @@ export class CacheService implements OnModuleDestroy {
       await this.redis.quit();
       this.logger.log('Redis connection closed', 'CacheService');
     } catch (error) {
-      this.logger.error(`Error closing Redis connection: ${error.message}`, error.stack, 'CacheService');
+      this.logger.error(`Error closing Redis connection: ${error instanceof Error ? error.message : String(error)}`, error instanceof Error ? error.stack : undefined, 'CacheService');
     }
   }
 
@@ -29,7 +29,7 @@ export class CacheService implements OnModuleDestroy {
       const value = await this.redis.get(key);
       return value ? JSON.parse(value) : null;
     } catch (error) {
-      this.logger.error(`Cache get error for key ${key}: ${error.message}`, error.stack, 'CacheService');
+      this.logger.error(`Cache get error for key ${key}: ${error instanceof Error ? error.message : String(error)}`, error instanceof Error ? error.stack : undefined, 'CacheService');
       return null;
     }
   }
@@ -43,7 +43,7 @@ export class CacheService implements OnModuleDestroy {
         await this.redis.setex(key, this.defaultTTL, serialized);
       }
     } catch (error) {
-      this.logger.error(`Cache set error for key ${key}: ${error.message}`, error.stack, 'CacheService');
+      this.logger.error(`Cache set error for key ${key}: ${error instanceof Error ? error.message : String(error)}`, error instanceof Error ? error.stack : undefined, 'CacheService');
     }
   }
 
@@ -57,7 +57,7 @@ export class CacheService implements OnModuleDestroy {
         await this.redis.del(key);
       }
     } catch (error) {
-      this.logger.error(`Cache delete error: ${error.message}`, error.stack, 'CacheService');
+      this.logger.error(`Cache delete error: ${error instanceof Error ? error.message : String(error)}`, error instanceof Error ? error.stack : undefined, 'CacheService');
     }
   }
 
@@ -76,7 +76,7 @@ export class CacheService implements OnModuleDestroy {
         await this.redis.del(...toDelete);
       }
     } catch (error) {
-      this.logger.error(`Cache flush error for pattern ${pattern}: ${error.message}`, error.stack, 'CacheService');
+      this.logger.error(`Cache flush error for pattern ${pattern}: ${error instanceof Error ? error.message : String(error)}`, error instanceof Error ? error.stack : undefined, 'CacheService');
     }
   }
 

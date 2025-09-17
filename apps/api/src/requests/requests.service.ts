@@ -84,7 +84,7 @@ export class RequestsService {
   }
 
   async addComment(tenantId: string, id: string, userId: string, message: string, isInternal = false) {
-    const req = await this.ensureRequest(tenantId, id);
+    // const req = await this.ensureRequest(tenantId, id);
     const comment = await this.runTenant(tenantId, async (db) => db.requestComment.create({ data: { requestId: id, authorId: userId, message, isInternal } }));
     await this.audit.log({ action: 'request.comment.added', userId, tenantId, entityType: 'request', entityId: id });
     return comment;

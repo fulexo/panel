@@ -729,6 +729,6 @@ export default function BillingPage() {
       </main>
     </div>
   </ProtectedRoute>
-);
+  );
 }
 

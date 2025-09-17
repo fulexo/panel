@@ -40,8 +40,8 @@ export class InboundService {
     // Apply stock movements
     for (const it of inbound.items) {
       if (it.productId) {
-        await this.runTenant(tenantId, async (db) => db.product.update({ where: { id: it.productId }, data: { stock: { increment: it.quantity } } as any }));
-        await this.runTenant(tenantId, async (db) => db.stockMovement.create({ data: { productId: it.productId, type: 'INBOUND', quantity: it.quantity, relatedId: inbound.id } }));
+        await this.runTenant(tenantId, async (db) => db.product.update({ where: { id: it.productId! }, data: { stock: { increment: it.quantity } } as any }));
+        await this.runTenant(tenantId, async (db) => db.stockMovement.create({ data: { productId: it.productId!, type: 'INBOUND', quantity: it.quantity, relatedId: inbound.id } }));
       }
     }
 

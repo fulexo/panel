@@ -8,17 +8,17 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
       log: process.env['NODE_ENV'] === 'development' ? ['query', 'error', 'warn'] : ['error'],
       datasources: {
         db: {
-          url: process.env.DATABASE_URL,
+          url: process.env['DATABASE_URL']!,
         },
       },
       // Connection pool settings
-      __internal: {
-        engine: {
-          connectionLimit: 20, // Maximum number of connections
-          poolTimeout: 20, // Connection timeout in seconds
-          connectionTimeout: 10, // Connection acquisition timeout
-        },
-      },
+      // __internal: {
+      //   engine: {
+      //     connectionLimit: 20, // Maximum number of connections
+      //     poolTimeout: 20, // Connection timeout in seconds
+      //     connectionTimeout: 10, // Connection acquisition timeout
+      //   },
+      // },
     });
   }
 
@@ -81,27 +81,27 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
   }
 
   // Optimize includes to prevent N+1 queries
-  private _optimizeIncludes(_include: unknown): unknown {
-    if (!_include || typeof _include !== 'object') {
-      return _include;
-    }
+  // private _optimizeIncludes(_include: unknown): unknown {
+  //   if (!_include || typeof _include !== 'object') {
+  //     return _include;
+  //   }
 
-    const optimized: Record<string, unknown> = {};
-    
-    for (const [key, value] of Object.entries(_include as Record<string, unknown>)) {
-      if (value === true) {
-        optimized[key] = true;
-      } else if (typeof value === 'object' && value !== null) {
-        // Recursively optimize nested includes
-        optimized[key] = {
-          ...(value as Record<string, unknown>),
-          include: (value as Record<string, unknown>)['include'] ? this._optimizeIncludes((value as Record<string, unknown>)['include']) : undefined,
-        };
-      }
-    }
-    
-    return optimized;
-  }
+  //   const optimized: Record<string, unknown> = {};
+  //   
+  //   for (const [key, value] of Object.entries(_include as Record<string, unknown>)) {
+  //     if (value === true) {
+  //       optimized[key] = true;
+  //     } else if (typeof value === 'object' && value !== null) {
+  //       // Recursively optimize nested includes
+  //       optimized[key] = {
+  //         ...(value as Record<string, unknown>),
+  //         include: (value as Record<string, unknown>)['include'] ? this._optimizeIncludes((value as Record<string, unknown>)['include']) : undefined,
+  //       };
+  //     }
+  //   }
+  //   
+  //   return optimized;
+  // }
 
   // Set PostgreSQL session variable for RLS per transaction
   async withTenant<T>(tenantId: string, fn: (tx: PrismaClient) => Promise<T>, userId?: string): Promise<T> {
@@ -110,14 +110,14 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
       if (userId) {
         await tx.$executeRaw`SET LOCAL app.user_id = ${userId}::uuid`;
       }
-      return fn(tx);
+      return fn(tx as any);
     });
   }
 
   async withUser<T>(userId: string, fn: (tx: PrismaClient) => Promise<T>): Promise<T> {
     return this.$transaction(async (tx) => {
       await tx.$executeRaw`SET LOCAL app.user_id = ${userId}::uuid`;
-      return fn(tx);
+      return fn(tx as any);
     });
   }
 }

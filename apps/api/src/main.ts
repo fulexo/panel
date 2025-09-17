@@ -118,7 +118,7 @@ async function bootstrap() {
         if (url.protocol !== 'http:' && url.protocol !== 'https:') {
           return callback(new Error('Invalid protocol'), false);
         }
-      } catch (error) {
+      } catch {
         return callback(new Error('Invalid origin format'), false);
       }
 
@@ -213,7 +213,7 @@ async function bootstrap() {
         dbHealthy = true;
       } catch (error) {
         // Log database health check failure
-        if (process.env.NODE_ENV === 'development') {
+        if (process.env['NODE_ENV'] === 'development') {
           console.error('Database health check failed:', error);
         }
       }
@@ -228,7 +228,7 @@ async function bootstrap() {
         await redis.quit();
       } catch (error) {
         // Log Redis health check failure
-        if (process.env.NODE_ENV === 'development') {
+        if (process.env['NODE_ENV'] === 'development') {
           console.error('Redis health check failed:', error);
         }
       }
@@ -278,7 +278,7 @@ async function bootstrap() {
       const jwtService = app.get('JwtService');
       const jwks = await jwtService.getJwks();
       res.json(jwks);
-    } catch (error) {
+    } catch {
       res.json({ keys: [] });
     }
   });

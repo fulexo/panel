@@ -21,7 +21,7 @@ export class MonitoringService {
   async logError(errorData: ErrorLogData) {
     try {
       // Log to console in development
-      if (process.env.NODE_ENV === 'development') {
+      if (process.env['NODE_ENV'] === 'development') {
         this.logger.error('Error logged:', errorData);
       }
 
@@ -31,7 +31,7 @@ export class MonitoringService {
           action: 'ERROR_LOGGED',
           entityType: 'ERROR',
           entityId: errorData.type,
-          changes: errorData,
+          changes: errorData as any,
           metadata: {
             type: errorData.type,
             url: errorData.url,
@@ -97,12 +97,12 @@ export class MonitoringService {
     }
   }
 
-  private async sendToExternalService(errorData: ErrorLogData) {
+  private async sendToExternalService(_errorData: ErrorLogData) {
     // Integration points for external monitoring services
     const externalServices = [
-      process.env.SENTRY_DSN,
-      process.env.LOGROCKET_APP_ID,
-      process.env.BUGSNAG_API_KEY,
+      process.env['SENTRY_DSN'],
+      process.env['LOGROCKET_APP_ID'],
+      process.env['BUGSNAG_API_KEY'],
     ].filter(Boolean);
 
     for (const service of externalServices) {

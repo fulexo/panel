@@ -468,17 +468,19 @@ export default function CustomersPage() {
     return (
       <ProtectedRoute>
         <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="spinner"></div>
-          <div className="text-lg text-foreground">Loading customers...</div>
+          <div className="flex flex-col items-center gap-4">
+            <div className="spinner"></div>
+            <div className="text-lg text-foreground">Loading customers...</div>
+          </div>
         </div>
-      </div>
+      </ProtectedRoute>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <main className="mobile-container py-6 space-y-6">
+    <ProtectedRoute>
+      <div className="min-h-screen bg-background">
+        <main className="mobile-container py-6 space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 animate-fade-in">
           <div>
@@ -1293,9 +1295,9 @@ export default function CustomersPage() {
             </div>
           </div>
         )}
-      </main>
-    </div>
-  </ProtectedRoute>
-);
+        </main>
+      </div>
+    </ProtectedRoute>
+  );
 }
 

@@ -91,7 +91,7 @@ export class BillingController {
       doc.moveDown();
       doc.text(`Items: ${batch.items.length}`);
       doc.end();
-    }catch(e){
+    }catch{
       res.json({ ok:false, message:'PDF generator not available', summary: { id: batch.id, total: batch.total, items: batch.items.length } });
     }
   }

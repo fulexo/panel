@@ -176,10 +176,10 @@ export function validateSharedEnvOnStartup() {
     return config;
   } catch (error) {
     // Environment validation failed
-    console.error('Environment validation failed:', error.message);
+    console.error('Environment validation failed:', error instanceof Error ? error.message : String(error));
     
     // Only exit in production, allow development to continue with warnings
-    if (process.env.NODE_ENV === 'production') {
+    if (process.env['NODE_ENV'] === 'production') {
       process.exit(1);
     }
     

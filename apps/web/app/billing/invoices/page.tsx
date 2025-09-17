@@ -613,5 +613,5 @@ export default function InvoicesPage() {
       </main>
     </div>
   </ProtectedRoute>
-);
+  );
 }

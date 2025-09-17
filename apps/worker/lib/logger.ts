@@ -18,7 +18,7 @@ class Logger {
 
   constructor(service: string = 'worker') {
     this.service = service;
-    this.level = LOG_LEVELS[process.env.LOG_LEVEL as keyof LogLevel] || LOG_LEVELS.INFO;
+    this.level = LOG_LEVELS[process.env['LOG_LEVEL'] as keyof LogLevel] || LOG_LEVELS.INFO;
   }
 
   private shouldLog(level: number): boolean {

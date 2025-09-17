@@ -179,7 +179,7 @@ export class AuthService {
       // Create a new session for the refreshed access token
       await this.sessionService.createSession(user.id, tokens.access, {});
       return tokens;
-    } catch (error) {
+      } catch {
       throw new UnauthorizedException('Invalid refresh token');
     }
   }
@@ -198,7 +198,7 @@ export class AuthService {
     }
 
     // Generate new 2FA code
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    // const code = Math.floor(100000 + Math.random() * 900000).toString();
     
     // Update temp token with new code
     await this.prisma.user.update({
@@ -302,12 +302,12 @@ export class AuthService {
   }
 
   private async generateTokens(user: { id: string; email: string; role: string; tenantId: string }) {
-    const payload = {
-      sub: user.id,
-      email: user.email,
-      role: user.role,
-      tenantId: user.tenantId,
-    };
+    // const payload = {
+    //   sub: user.id,
+    //   email: user.email,
+    //   role: user.role,
+    //   tenantId: user.tenantId,
+    // };
 
     const tokens = await this.jwtService.issueTokens(user.id, user.email, user.role, user.tenantId);
     return tokens;

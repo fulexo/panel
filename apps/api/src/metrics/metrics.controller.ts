@@ -20,7 +20,7 @@ export class MetricsController {
       res.set('Content-Type', 'text/plain; version=0.0.4; charset=utf-8');
       return res.send(metrics);
     } catch (error) {
-      this.logger.error('Failed to generate metrics', error.stack, 'Metrics');
+      this.logger.error('Failed to generate metrics', error instanceof Error ? error.stack : String(error), 'Metrics');
       return res.status(500).send('# Error generating metrics\n');
     }
   }
@@ -73,7 +73,7 @@ export class MetricsController {
     // Application-specific metrics
     metrics.push('# HELP fulexo_application_info Application information');
     metrics.push('# TYPE fulexo_application_info gauge');
-    metrics.push(`fulexo_application_info{version="${process.env.npm_package_version || '1.0.0'}",environment="${process.env.NODE_ENV || 'development'}"} 1`);
+    metrics.push(`fulexo_application_info{version="${process.env['npm_package_version'] || '1.0.0'}",environment="${process.env['NODE_ENV'] || 'development'}"} 1`);
 
     // Database connection metrics (placeholder)
     metrics.push('# HELP fulexo_database_connections_active Active database connections');
