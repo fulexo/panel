@@ -22,16 +22,26 @@ export default function TwoFAPage() {
     try {
       const r = await fetch(`/api/auth/2fa/login`, {
         method: 'POST',
+        credentials: 'include', // Include httpOnly cookies
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ tempToken, twoFactorToken: token })
       });
-      if(!r.ok){ throw new Error('2FA verification failed'); }
+      
+      if(!r.ok){ 
+        const errorData = await r.json();
+        throw new Error(errorData.message || '2FA verification failed'); 
+      }
+      
       const data = await r.json();
-      localStorage.setItem('access_token', data.access);
-      localStorage.setItem('refresh_token', data.refresh);
-      localStorage.setItem('user', JSON.stringify(data.user));
-      document.cookie = `access_token=${data.access}; path=/; max-age=900`;
-      router.push('/dashboard');
+      
+      // Backend sets httpOnly cookies, we just need to handle the response
+      // No need to manually set localStorage or cookies
+      if (data.data && data.data.user) {
+        // Redirect to dashboard - AuthProvider will handle user state
+        router.push('/dashboard');
+      } else {
+        throw new Error('Invalid response from server');
+      }
     } catch(e:any){
       setError(e.message || '2FA verification failed');
     } finally {

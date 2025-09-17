@@ -77,10 +77,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const data = await response.json();
       
       if (data.requiresTwoFactor) {
-        // tempToken'ı güvenli şekilde sakla
+        // tempToken'ı güvenli şekilde sakla - localStorage kullan (2FA sayfası localStorage'dan okuyor)
         if (data.tempToken) {
           if (typeof window !== 'undefined') {
-            sessionStorage.setItem('temp_2fa_token', data.tempToken);
+            localStorage.setItem('temp_2fa_token', data.tempToken);
           }
         }
         throw new Error('2FA_REQUIRED');

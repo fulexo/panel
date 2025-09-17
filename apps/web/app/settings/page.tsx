@@ -97,14 +97,28 @@ export default function SettingsPage() {
     try {
       setLoading(true);
       setError(null);
-      const token = localStorage.getItem('access_token');
       
       const [generalRes, emailRes, notificationRes, woocommerceRes, securityRes] = await Promise.all([
-        fetch('/api/settings/general', { headers: { Authorization: `Bearer ${token}` } }),
-        fetch('/api/settings/email', { headers: { Authorization: `Bearer ${token}` } }),
-        fetch('/api/settings/notification', { headers: { Authorization: `Bearer ${token}` } }),
-        fetch('/api/settings/woocommerce', { headers: { Authorization: `Bearer ${token}` } }),
-        fetch('/api/settings/security', { headers: { Authorization: `Bearer ${token}` } }),
+        fetch('/api/settings/general', { 
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' }
+        }),
+        fetch('/api/settings/email', { 
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' }
+        }),
+        fetch('/api/settings/notification', { 
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' }
+        }),
+        fetch('/api/settings/woocommerce', { 
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' }
+        }),
+        fetch('/api/settings/security', { 
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' }
+        }),
       ]);
 
       const general = generalRes.ok ? await generalRes.json() : {};
@@ -135,11 +149,10 @@ export default function SettingsPage() {
       setError(null);
       setSuccess(null);
       
-      const token = localStorage.getItem('access_token');
       const response = await fetch(`/api/settings/${category}`, {
         method: 'PUT',
+        credentials: 'include',
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(data)
@@ -164,11 +177,10 @@ export default function SettingsPage() {
       setTesting(service);
       setError(null);
       
-      const token = localStorage.getItem('access_token');
       const response = await fetch('/api/settings/test-connection', {
         method: 'POST',
+        credentials: 'include',
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({ service })
