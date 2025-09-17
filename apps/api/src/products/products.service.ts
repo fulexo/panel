@@ -1,13 +1,14 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
+import { PrismaClient } from '@prisma/client';
 import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class ProductsService {
   constructor(private prisma: PrismaService) {}
 
-  private async runTenant<T>(tenantId: string, fn: (db: any) => Promise<T>): Promise<T> {
-    return this.prisma.withTenant(tenantId, fn as any);
+  private async runTenant<T>(tenantId: string, fn: (db: PrismaClient) => Promise<T>): Promise<T> {
+    return this.prisma.withTenant(tenantId, fn);
   }
 
   async list(tenantId: string, page = 1, limit = 50, search?: string, status?: string, category?: string, storeId?: string) {

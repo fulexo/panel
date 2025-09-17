@@ -13,7 +13,7 @@ export class BillingController {
   constructor(private readonly billing: BillingService) {}
 
   @Get('batches')
-  @Roles('FULEXO_ADMIN', 'FULEXO_STAFF')
+  @Roles('ADMIN')
   @ApiOperation({ summary: 'List billing batches' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
@@ -22,42 +22,42 @@ export class BillingController {
   }
 
   @Post('batches')
-  @Roles('FULEXO_ADMIN', 'FULEXO_STAFF')
+  @Roles('ADMIN')
   @ApiOperation({ summary: 'Create billing batch' })
   async create(@CurrentUser() user: any, @Body() dto: { periodFrom?: string; periodTo?: string }) {
     return this.billing.createBatch(user.tenantId, dto);
   }
 
   @Get('batches/:id')
-  @Roles('FULEXO_ADMIN', 'FULEXO_STAFF')
+  @Roles('ADMIN')
   @ApiOperation({ summary: 'Get billing batch' })
   async get(@CurrentUser() user: any, @Param('id') id: string) {
     return this.billing.getBatch(user.tenantId, id);
   }
 
   @Post('batches/:id/add-invoices')
-  @Roles('FULEXO_ADMIN', 'FULEXO_STAFF')
+  @Roles('ADMIN')
   @ApiOperation({ summary: 'Add invoices to batch' })
   async add(@CurrentUser() user: any, @Param('id') id: string, @Body() body: { invoiceIds: string[] }) {
     return this.billing.addInvoices(user.tenantId, id, body.invoiceIds || []);
   }
 
   @Delete('batches/:id/items/:itemId')
-  @Roles('FULEXO_ADMIN', 'FULEXO_STAFF')
+  @Roles('ADMIN')
   @ApiOperation({ summary: 'Remove batch item' })
   async remove(@CurrentUser() user: any, @Param('id') id: string, @Param('itemId') itemId: string) {
     return this.billing.removeItem(user.tenantId, id, itemId);
   }
 
   @Post('batches/:id/issue')
-  @Roles('FULEXO_ADMIN', 'FULEXO_STAFF')
+  @Roles('ADMIN')
   @ApiOperation({ summary: 'Issue billing batch' })
   async issue(@CurrentUser() user: any, @Param('id') id: string) {
     return this.billing.issue(user.tenantId, id);
   }
 
   @Get('batches/:id/export.csv')
-  @Roles('FULEXO_ADMIN', 'FULEXO_STAFF')
+  @Roles('ADMIN')
   @ApiOperation({ summary: 'Export billing batch as CSV (detailed)' })
   async exportCsv(@CurrentUser() user: any, @Param('id') id: string, @Res() res: Response) {
     const batch = await this.billing.getBatch(user.tenantId, id);
@@ -70,7 +70,7 @@ export class BillingController {
   }
 
   @Get('batches/:id/export.pdf')
-  @Roles('FULEXO_ADMIN', 'FULEXO_STAFF')
+  @Roles('ADMIN')
   @ApiOperation({ summary: 'Export billing batch as PDF (summary)' })
   async exportPdf(@CurrentUser() user: any, @Param('id') id: string, @Res() res: Response) {
     const batch = await this.billing.getBatch(user.tenantId, id);
@@ -98,7 +98,7 @@ export class BillingController {
 
   // Invoice endpoints
   @Get('invoices')
-  @Roles('FULEXO_ADMIN', 'FULEXO_STAFF')
+  @Roles('ADMIN')
   @ApiOperation({ summary: 'List invoices' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
@@ -110,28 +110,28 @@ export class BillingController {
   }
 
   @Post('invoices')
-  @Roles('FULEXO_ADMIN', 'FULEXO_STAFF')
+  @Roles('ADMIN')
   @ApiOperation({ summary: 'Create invoice' })
   async createInvoice(@CurrentUser() user: any, @Body() dto: any) {
     return this.billing.createInvoice(user.tenantId, dto);
   }
 
   @Get('invoices/:id')
-  @Roles('FULEXO_ADMIN', 'FULEXO_STAFF')
+  @Roles('ADMIN')
   @ApiOperation({ summary: 'Get invoice' })
   async getInvoice(@CurrentUser() user: any, @Param('id') id: string) {
     return this.billing.getInvoice(user.tenantId, id);
   }
 
   @Put('invoices/:id')
-  @Roles('FULEXO_ADMIN', 'FULEXO_STAFF')
+  @Roles('ADMIN')
   @ApiOperation({ summary: 'Update invoice' })
   async updateInvoice(@CurrentUser() user: any, @Param('id') id: string, @Body() dto: any) {
     return this.billing.updateInvoice(user.tenantId, id, dto);
   }
 
   @Delete('invoices/:id')
-  @Roles('FULEXO_ADMIN', 'FULEXO_STAFF')
+  @Roles('ADMIN')
   @ApiOperation({ summary: 'Delete invoice' })
   async deleteInvoice(@CurrentUser() user: any, @Param('id') id: string) {
     return this.billing.deleteInvoice(user.tenantId, id);
@@ -139,7 +139,7 @@ export class BillingController {
 
   // Payment endpoints
   @Get('payments')
-  @Roles('FULEXO_ADMIN', 'FULEXO_STAFF')
+  @Roles('ADMIN')
   @ApiOperation({ summary: 'List payments' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
@@ -152,28 +152,28 @@ export class BillingController {
   }
 
   @Get('payments/:id')
-  @Roles('FULEXO_ADMIN', 'FULEXO_STAFF')
+  @Roles('ADMIN')
   @ApiOperation({ summary: 'Get payment' })
   async getPayment(@CurrentUser() user: any, @Param('id') id: string) {
     return this.billing.getPayment(user.tenantId, id);
   }
 
   @Put('payments/:id')
-  @Roles('FULEXO_ADMIN', 'FULEXO_STAFF')
+  @Roles('ADMIN')
   @ApiOperation({ summary: 'Update payment' })
   async updatePayment(@CurrentUser() user: any, @Param('id') id: string, @Body() dto: any) {
     return this.billing.updatePayment(user.tenantId, id, dto);
   }
 
   @Post('payments/:id/refund')
-  @Roles('FULEXO_ADMIN', 'FULEXO_STAFF')
+  @Roles('ADMIN')
   @ApiOperation({ summary: 'Refund payment' })
   async refundPayment(@CurrentUser() user: any, @Param('id') id: string) {
     return this.billing.refundPayment(user.tenantId, id);
   }
 
   @Put('batches/bulk')
-  @Roles('FULEXO_ADMIN', 'FULEXO_STAFF')
+  @Roles('ADMIN')
   @ApiOperation({ summary: 'Bulk update billing batches' })
   async bulkUpdateBatches(
     @CurrentUser() user: any,
@@ -183,7 +183,7 @@ export class BillingController {
   }
 
   @Delete('batches/bulk')
-  @Roles('FULEXO_ADMIN', 'FULEXO_STAFF')
+  @Roles('ADMIN')
   @ApiOperation({ summary: 'Bulk delete billing batches' })
   async bulkDeleteBatches(
     @CurrentUser() user: any,

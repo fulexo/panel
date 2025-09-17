@@ -15,7 +15,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     checkAuth();
-  }, []);
+  }, []); // Empty dependency array is correct here
 
   const checkAuth = async () => {
     try {
@@ -87,7 +87,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Tokens are now set as httpOnly cookies by the server
     // We just need to set the user data locally
-    setUser(data.user);
+    setUser(data.data);
     router.push('/dashboard');
   };
 

@@ -1,7 +1,7 @@
 export interface User {
   id: string;
   email: string;
-  role: 'ADMIN' | 'CUSTOMER' | 'CUSTOMER_USER' | 'FULEXO_ADMIN' | 'FULEXO_STAFF';
+  role: 'ADMIN' | 'CUSTOMER';
   tenantId: string;
   tenantName?: string;
   twofaEnabled?: boolean;

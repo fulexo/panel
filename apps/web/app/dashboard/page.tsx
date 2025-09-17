@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../components/AuthProvider';
 import ProtectedRoute from '../../components/ProtectedRoute';
+import Link from 'next/link';
 
 interface DashboardStats {
   totalOrders: number;
@@ -256,9 +257,9 @@ export default function DashboardPage() {
           <div className="bg-card p-6 rounded-lg border border-border animate-slide-up">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-foreground">WooCommerce Stores</h2>
-              <a href="/stores" className="text-sm text-primary hover:text-primary/80">
+              <Link href="/stores" className="text-sm text-primary hover:text-primary/80">
                 Manage Stores →
-              </a>
+              </Link>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {stores.map((store) => (

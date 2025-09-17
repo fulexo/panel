@@ -38,10 +38,10 @@ export default function TenantDetailPage() {
   const [editMode, setEditMode] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
 
-  const token = () => localStorage.getItem('access_token');
+  // Token is now handled by httpOnly cookies
   const api = (path: string, init?: any) => 
     fetch(`/api${path}`, {
-      headers: { Authorization: `Bearer ${token()}`, 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json' },
       ...init
     });
 
@@ -172,32 +172,34 @@ export default function TenantDetailPage() {
 
   if (loading) {
     return (
-  <ProtectedRoute>
-    
+    <ProtectedRoute>
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="spinner"></div>
-          <div className="text-lg text-foreground">Loading tenant...</div>
+          <div className="flex flex-col items-center gap-4">
+            <div className="spinner"></div>
+            <div className="text-lg text-foreground">Loading tenant...</div>
+          </div>
         </div>
-      </div>
+      </ProtectedRoute>
     );
   }
 
   if (!tenant) {
     return (
+    <ProtectedRoute>
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-6xl mb-4">🏢</div>
-          <h2 className="text-2xl font-bold text-foreground mb-2">Tenant Not Found</h2>
-          <p className="text-muted-foreground mb-4">The tenant you're looking for doesn't exist.</p>
-          <button
-            onClick={() => router.push('/tenants')}
-            className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors btn-animate"
-          >
-            Back to Tenants
-          </button>
+          <div className="text-center">
+            <div className="text-6xl mb-4">🏢</div>
+            <h2 className="text-2xl font-bold text-foreground mb-2">Tenant Not Found</h2>
+            <p className="text-muted-foreground mb-4">The tenant you're looking for doesn't exist.</p>
+            <button
+              onClick={() => router.push('/tenants')}
+              className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors btn-animate"
+            >
+              Back to Tenants
+            </button>
+          </div>
         </div>
-      </div>
+      </ProtectedRoute>
     );
   }
 
@@ -209,7 +211,8 @@ export default function TenantDetailPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-background">
+    <ProtectedRoute>
+      <div className="min-h-screen bg-background">
       <main className="mobile-container py-6 space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 animate-fade-in">
@@ -572,8 +575,7 @@ export default function TenantDetailPage() {
           </div>
         </div>
       </main>
-    </div>
-  </ProtectedRoute>
-);
+      </div>
+    </ProtectedRoute>
   );
 }

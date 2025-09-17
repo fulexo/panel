@@ -6,6 +6,19 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
   constructor() {
     super({
       log: process.env['NODE_ENV'] === 'development' ? ['query', 'error', 'warn'] : ['error'],
+      datasources: {
+        db: {
+          url: process.env.DATABASE_URL,
+        },
+      },
+      // Connection pool settings
+      __internal: {
+        engine: {
+          connectionLimit: 20, // Maximum number of connections
+          poolTimeout: 20, // Connection timeout in seconds
+          connectionTimeout: 10, // Connection acquisition timeout
+        },
+      },
     });
   }
 
@@ -93,18 +106,18 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
   // Set PostgreSQL session variable for RLS per transaction
   async withTenant<T>(tenantId: string, fn: (tx: PrismaClient) => Promise<T>, userId?: string): Promise<T> {
     return this.$transaction(async (tx) => {
-      await (tx as any).$executeRaw`SET LOCAL app.tenant_id = ${tenantId}::uuid`;
+      await tx.$executeRaw`SET LOCAL app.tenant_id = ${tenantId}::uuid`;
       if (userId) {
-        await (tx as any).$executeRaw`SET LOCAL app.user_id = ${userId}::uuid`;
+        await tx.$executeRaw`SET LOCAL app.user_id = ${userId}::uuid`;
       }
-      return fn(tx as any);
+      return fn(tx);
     });
   }
 
   async withUser<T>(userId: string, fn: (tx: PrismaClient) => Promise<T>): Promise<T> {
     return this.$transaction(async (tx) => {
-      await (tx as any).$executeRaw`SET LOCAL app.user_id = ${userId}::uuid`;
-      return fn(tx as any);
+      await tx.$executeRaw`SET LOCAL app.user_id = ${userId}::uuid`;
+      return fn(tx);
     });
   }
 }

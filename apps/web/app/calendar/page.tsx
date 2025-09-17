@@ -10,11 +10,11 @@ export default function CalendarPage(){
   const [holidays, setHolidays] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const token = () => localStorage.getItem('access_token');
-  const api = (path: string, init?: any) => fetch(`/api${path}`, { headers: { Authorization: `Bearer ${token()}` , 'Content-Type': 'application/json' }, ...init });
+  // Token is now handled by httpOnly cookies
+  const api = (path: string, init?: any) => fetch(`/api${path}`, { headers: {  , 'Content-Type': 'application/json' }, ...init });
 
   const load = async () => {
-    const t = token();
+    const t = null;
     if(!t){ router.push('/login'); return; }
     const [e, bh, h] = await Promise.all([
       api('/calendar/events'),
@@ -51,9 +51,8 @@ export default function CalendarPage(){
   if(loading) return <div className="min-h-screen bg-gray-900 text-white p-8">Loading...</div>;
 
   return (
-  <ProtectedRoute>
-    
-    <div className="min-h-screen bg-gray-900 text-white p-8">
+    <ProtectedRoute>
+      <div className="min-h-screen bg-gray-900 text-white p-8">
       <h1 className="text-2xl font-bold mb-4">Calendar</h1>
       <div className="grid md:grid-cols-3 gap-6">
         <div className="bg-gray-800 border border-gray-700 rounded p-4">
@@ -105,6 +104,5 @@ export default function CalendarPage(){
     </div>
   </ProtectedRoute>
 );
-  );
 }
 

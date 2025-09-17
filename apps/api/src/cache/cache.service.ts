@@ -133,7 +133,10 @@ export class CacheService implements OnModuleDestroy {
   // Cache invalidation helpers
   async invalidateOrderCache(tenantId: string, orderId?: string): Promise<void> {
     if (orderId) {
-      await this.del(this.orderDetailKey(orderId));
+      // Invalidate all role-based order detail caches
+      await this.del(this.orderDetailKey(orderId)); // Base key
+      await this.del(this.orderDetailKey(orderId, 'ADMIN')); // Admin view
+      await this.del(this.orderDetailKey(orderId, 'CUSTOMER')); // Customer view
     }
     // Invalidate all list caches for this tenant
     await this.flush(`orders:list:${tenantId}:*`);

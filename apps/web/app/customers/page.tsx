@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../components/AuthProvider";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import { useDebounce } from "../../hooks/useDebounce";
 
 interface Customer {
   id: string;
@@ -54,6 +55,7 @@ export default function CustomersPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const debouncedSearchTerm = useDebounce(searchTerm, 500);
   const [statusFilter, setStatusFilter] = useState('all');
   const [tagFilter, setTagFilter] = useState('all');
   const [storeFilter, setStoreFilter] = useState('all');
@@ -99,10 +101,10 @@ export default function CustomersPage() {
     storeId: '',
   });
 
-  const token = () => localStorage.getItem('access_token');
+  // Token is now handled by httpOnly cookies
   const api = (path: string, init?: any) => 
     fetch(`/api${path}`, {
-      headers: { Authorization: `Bearer ${token()}`, 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json' },
       ...init
     });
 
@@ -115,13 +117,13 @@ export default function CustomersPage() {
     } else {
       router.push('/login');
     }
-  }, [user, currentPage, searchTerm, statusFilter, tagFilter, storeFilter]);
+  }, [user, currentPage, debouncedSearchTerm, statusFilter, tagFilter, storeFilter]);
 
   const fetchCustomers = async () => {
     try {
       setLoading(true);
       setError(null);
-      const t = token();
+      const t = null;
       if (!t) { 
         router.push('/login'); 
         return; 
@@ -130,7 +132,7 @@ export default function CustomersPage() {
       const params = new URLSearchParams({
         page: currentPage.toString(),
         limit: '20',
-        ...(searchTerm && { search: searchTerm }),
+        ...(debouncedSearchTerm && { search: debouncedSearchTerm }),
         ...(statusFilter !== 'all' && { status: statusFilter }),
         ...(tagFilter !== 'all' && { tag: tagFilter }),
         ...(storeFilter !== 'all' && { storeId: storeFilter }),
@@ -469,8 +471,7 @@ export default function CustomersPage() {
 
   if (loading) {
     return (
-  <ProtectedRoute>
-    
+    <ProtectedRoute>
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <div className="spinner"></div>
@@ -536,6 +537,7 @@ export default function CustomersPage() {
                 <input
                   type="text"
                   placeholder="Search customers by name, email, company, or phone..."
+                  aria-label="Search customers by name, email, company, or phone"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full px-4 py-2 pl-10 bg-input border border-border rounded-lg form-input text-foreground placeholder-muted-foreground"
@@ -1300,6 +1302,5 @@ export default function CustomersPage() {
     </div>
   </ProtectedRoute>
 );
-  );
 }
 

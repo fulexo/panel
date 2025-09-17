@@ -5,6 +5,7 @@ import { AppProvider } from '@/contexts/AppContext';
 import ClientLayout from '@/components/ClientLayout';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { NotificationContainer } from '@/contexts/AppContext';
+import { ThemeProvider } from '@/components/ThemeProvider';
 
 export const metadata: Metadata = {
   title: 'Fulexo Platform',
@@ -26,6 +27,29 @@ export default function RootLayout({
       <head>
         <style jsx global>{`
           :root {
+            --background: 0 0% 100%;
+            --foreground: 222.2 84% 4.9%;
+            --card: 0 0% 100%;
+            --card-foreground: 222.2 84% 4.9%;
+            --popover: 0 0% 100%;
+            --popover-foreground: 222.2 84% 4.9%;
+            --primary: 217.2 91.2% 59.8%;
+            --primary-foreground: 0 0% 100%;
+            --secondary: 210 40% 98%;
+            --secondary-foreground: 222.2 84% 4.9%;
+            --muted: 210 40% 98%;
+            --muted-foreground: 215.4 16.3% 46.9%;
+            --accent: 210 40% 98%;
+            --accent-foreground: 222.2 84% 4.9%;
+            --destructive: 0 84.2% 60.2%;
+            --destructive-foreground: 210 40% 98%;
+            --border: 214.3 31.8% 91.4%;
+            --input: 214.3 31.8% 91.4%;
+            --ring: 217.2 91.2% 59.8%;
+            --radius: 0.5rem;
+          }
+
+          .dark {
             --background: 222.2 84% 4.9%;
             --foreground: 210 40% 98%;
             --card: 222.2 84% 4.9%;
@@ -45,18 +69,24 @@ export default function RootLayout({
             --border: 217.2 32.6% 17.5%;
             --input: 217.2 32.6% 17.5%;
             --ring: 224.3 76.3% 94.1%;
-            --radius: 0.5rem;
           }
         `}</style>
       </head>
       <body className="h-full bg-background text-foreground antialiased">
         <ErrorBoundary>
-          <AppProvider>
-            <AuthProvider>
-              <ClientLayout>{children}</ClientLayout>
-              <NotificationContainer />
-            </AuthProvider>
-          </AppProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="dark"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <AppProvider>
+              <AuthProvider>
+                <ClientLayout>{children}</ClientLayout>
+                <NotificationContainer />
+              </AuthProvider>
+            </AppProvider>
+          </ThemeProvider>
         </ErrorBoundary>
       </body>
     </html>

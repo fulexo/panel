@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import { useDebounce } from "@/hooks/useDebounce";
 
 interface Order {
   id: string;
@@ -44,6 +45,7 @@ export default function OrdersPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const debouncedSearchTerm = useDebounce(searchTerm, 500);
   const [statusFilter, setStatusFilter] = useState('all');
   const [dateFilter, setDateFilter] = useState('all');
   const [storeFilter, setStoreFilter] = useState('all');
@@ -72,7 +74,7 @@ export default function OrdersPage() {
     } else {
       router.push('/login');
     }
-  }, [user, currentPage, statusFilter, dateFilter, storeFilter, customerFilter, searchTerm]);
+  }, [user, currentPage, statusFilter, dateFilter, storeFilter, customerFilter, debouncedSearchTerm]);
 
   const fetchOrders = async () => {
     try {
@@ -83,7 +85,7 @@ export default function OrdersPage() {
         page: currentPage.toString(),
         limit: '20',
         ...(statusFilter !== 'all' && { status: statusFilter }),
-        ...(searchTerm && { search: searchTerm }),
+        ...(debouncedSearchTerm && { search: debouncedSearchTerm }),
         ...(storeFilter !== 'all' && { storeId: storeFilter }),
         ...(customerFilter !== 'all' && { customerId: customerFilter }),
       });
@@ -399,6 +401,7 @@ export default function OrdersPage() {
                 <input
                   type="text"
                   placeholder="Search orders by number, customer, email..."
+                  aria-label="Search orders by number, customer, email"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full px-4 py-2 pl-10 bg-input border border-border rounded-lg form-input text-foreground placeholder-muted-foreground"

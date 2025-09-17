@@ -222,8 +222,7 @@ export default function OrderDetailPage() {
 
   if (loading) {
     return (
-  <ProtectedRoute>
-    
+    <ProtectedRoute>
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <div className="spinner"></div>
@@ -734,6 +733,5 @@ export default function OrderDetailPage() {
     </div>
   </ProtectedRoute>
 );
-  );
 }
 

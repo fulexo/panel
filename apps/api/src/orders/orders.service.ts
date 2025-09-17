@@ -3,7 +3,7 @@ import { PrismaService } from '../prisma.service';
 import { CacheService } from '../cache/cache.service';
 import { AuditService } from '../audit/audit.service';
 import { CreateOrderDto, UpdateOrderDto, OrderQueryDto, CreateChargeDto } from './dto';
-import { Prisma } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
 import * as jose from 'jose';
 
 @Injectable()
@@ -14,8 +14,8 @@ export class OrdersService {
     private audit: AuditService,
   ) {}
 
-  private async runTenant<T>(tenantId: string, fn: (db: any) => Promise<T>): Promise<T> {
-    return this.prisma.withTenant(tenantId, fn as any);
+  private async runTenant<T>(tenantId: string, fn: (db: PrismaClient) => Promise<T>): Promise<T> {
+    return this.prisma.withTenant(tenantId, fn);
   }
 
   private sanitizeOrderForCustomer = (order: any) => {
@@ -61,7 +61,7 @@ export class OrdersService {
     };
 
     // Add sensitive fields for admin users
-    if (role === 'ADMIN' || role === 'FULEXO_ADMIN' || role === 'FULEXO_STAFF') {
+    if (role === 'ADMIN') {
       return {
         ...baseIncludes,
         serviceCharges: {
@@ -363,8 +363,6 @@ export class OrdersService {
     return { message: 'Order deleted successfully' };
   }
 
-  
-
   async getOrderTimeline(tenantId: string, orderId: string) {
     const order = await this.findOne(tenantId, orderId);
 
@@ -445,20 +443,39 @@ export class OrdersService {
       db.order.count({ where }),
       db.order.aggregate({ where, _sum: { total: true } }),
       db.order.groupBy({ by: ['status'], where, _count: true }),
-      db.$queryRaw`
-        SELECT 
-          DATE("confirmedAt") as date,
-          COUNT(*) as count,
-          SUM("total") as revenue
-        FROM "Order"
-        WHERE "tenantId" = ${tenantId}::uuid
-          ${query.dateFrom ? `AND "confirmedAt" >= ${new Date(query.dateFrom)}` : ''}
-          ${query.dateTo ? `AND "confirmedAt" <= ${new Date(query.dateTo)}` : ''}
-          ${query.storeId ? `AND "storeId" = ${query.storeId}::uuid` : ''}
-          ${!query.dateFrom && !query.dateTo ? `AND "confirmedAt" >= NOW() - INTERVAL '30 days'` : ''}
-        GROUP BY DATE("confirmedAt")
-        ORDER BY date DESC
-      `,
+      // Use Prisma's safe aggregation instead of raw SQL
+      db.order.findMany({
+        where: {
+          ...where,
+          confirmedAt: {
+            gte: query.dateFrom ? new Date(query.dateFrom) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+            lte: query.dateTo ? new Date(query.dateTo) : undefined,
+          },
+        },
+        select: {
+          confirmedAt: true,
+          total: true,
+        },
+        orderBy: { confirmedAt: 'desc' },
+        take: 30,
+      }).then(orders => {
+        // Group by date
+        const grouped = orders.reduce((acc, order) => {
+          const date = order.confirmedAt?.toISOString().split('T')[0] || 'unknown';
+          if (!acc[date]) {
+            acc[date] = { count: 0, revenue: 0 };
+          }
+          acc[date].count++;
+          acc[date].revenue += Number(order.total || 0);
+          return acc;
+        }, {} as Record<string, { count: number; revenue: number }>);
+        
+        return Object.entries(grouped).map(([date, data]) => ({
+          date,
+          count: data.count,
+          revenue: data.revenue,
+        }));
+      }),
     ]));
 
     return {

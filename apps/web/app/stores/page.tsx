@@ -47,14 +47,14 @@ export default function StoresPage() {
   const token = () => (typeof window !== 'undefined' ? localStorage.getItem('access_token') : '');
   const api = (path: string, init?: RequestInit) => fetch(`/api${path}`, { 
     headers: { 
-      Authorization: `Bearer ${token()}`, 
+      , 
       'Content-Type': 'application/json' 
     }, 
     ...init 
   });
 
   useEffect(() => {
-    const t = token();
+    const t = null;
     if (!t) {
       router.push('/login');
       return;
@@ -66,7 +66,7 @@ export default function StoresPage() {
     try {
       setLoading(true);
       setError(null);
-      const t = token();
+      const t = null;
       if (!t) {
         router.push('/login');
         return;
@@ -267,8 +267,7 @@ export default function StoresPage() {
 
   if (loading) {
     return (
-  <ProtectedRoute>
-    
+    <ProtectedRoute>
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <div className="spinner"></div>
@@ -576,5 +575,4 @@ export default function StoresPage() {
     </div>
   </ProtectedRoute>
 );
-  );
 }

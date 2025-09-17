@@ -58,7 +58,7 @@ export class AuthController {
     });
     
     return {
-      user: result.user,
+      data: result.user,
       message: 'Login successful',
       statusCode: 200,
       timestamp: new Date().toISOString(),
@@ -70,7 +70,7 @@ export class AuthController {
   @ApiOperation({ summary: 'Register new user (admin only)' })
   async register(@CurrentUser() user: any, @Body() dto: RegisterDto) {
     // Allow only platform admins or staff to register new users
-    if (!user || !['FULEXO_ADMIN', 'FULEXO_STAFF'].includes(user.role)) {
+    if (!user || user.role !== 'ADMIN') {
       throw new UnauthorizedException('Not allowed');
     }
     return this.authService.register(dto);
@@ -174,14 +174,46 @@ export class AuthController {
   }
 
   @Public()
+  @Post('resend-2fa')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Resend 2FA code' })
+  async resend2FA(@Body() dto: { tempToken: string }) {
+    return this.authService.resend2FA(dto.tempToken);
+  }
+
   @Post('2fa/login')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Complete login with 2FA token' })
   async login2FA(@Body() dto: { tempToken: string; twoFactorToken: string }, @Req() req: any) {
-    return this.authService.completeTwoFactorLogin(dto.tempToken, dto.twoFactorToken, {
+    const result = await this.authService.completeTwoFactorLogin(dto.tempToken, dto.twoFactorToken, {
       ipAddress: req.ip,
       userAgent: req.headers['user-agent'],
     });
+    
+    // Set httpOnly cookies for tokens
+    req.res.cookie('access_token', result.access, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 15 * 60 * 1000, // 15 minutes
+      path: '/',
+    });
+    
+    req.res.cookie('refresh_token', result.refresh, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      path: '/',
+    });
+    
+    return {
+      data: result.user,
+      message: '2FA login successful',
+      statusCode: 200,
+      timestamp: new Date().toISOString(),
+      path: '/api/auth/2fa/login'
+    };
   }
 
   @Get('profile')

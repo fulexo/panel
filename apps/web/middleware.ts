@@ -1,49 +1,99 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-// Public routes that don't require authentication
-const publicRoutes = [
-  '/login',
-  '/api/auth/login',
-  '/api/auth/set-tokens',
-  '/api/auth/clear-tokens',
-  '/api/health',
-  '/api/errors',
-];
-
-// API routes that don't require authentication
-const publicApiRoutes = [
-  '/api/auth/login',
-  '/api/auth/set-tokens',
-  '/api/auth/clear-tokens',
-  '/api/health',
-  '/api/errors',
-];
-
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  
-  // Allow public routes
-  if (publicRoutes.includes(pathname)) {
-    return NextResponse.next();
-  }
-  
-  // Allow public API routes
-  if (pathname.startsWith('/api/') && publicApiRoutes.some(route => pathname.startsWith(route))) {
-    return NextResponse.next();
-  }
-  
-  // Check for authentication cookie
+
+  // Get user from cookies
+  const userCookie = request.cookies.get('user');
   const accessToken = request.cookies.get('access_token');
   
-  // If no access token, redirect to login
-  if (!accessToken) {
+  let user = null;
+  try {
+    if (userCookie?.value) {
+      user = JSON.parse(userCookie.value);
+    }
+  } catch (error) {
+    // Invalid user cookie, clear it
+  }
+
+  // Public routes that don't require authentication
+  const publicRoutes = [
+    '/login',
+    '/register',
+    '/forgot-password',
+    '/reset-password',
+    '/order-info', // Public order info page
+    '/api/auth/login',
+    '/api/auth/register',
+    '/api/auth/forgot-password',
+    '/api/auth/reset-password',
+    '/api/errors',
+    '/api/auth/clear-tokens',
+    '/api/auth/set-tokens',
+    '/_next',
+    '/favicon.ico',
+    '/manifest.json',
+  ];
+
+  // Check if the current path is public
+  const isPublicRoute = publicRoutes.some(route => 
+    pathname.startsWith(route) || pathname === '/'
+  );
+
+  // API routes that require authentication
+  const protectedApiRoutes = [
+    '/api/auth/me',
+    '/api/auth/logout',
+    '/api/auth/2fa',
+  ];
+
+  const isProtectedApiRoute = protectedApiRoutes.some(route => 
+    pathname.startsWith(route)
+  );
+
+  // Redirect unauthenticated users to login
+  if (!isPublicRoute && !user && !accessToken) {
     const loginUrl = new URL('/login', request.url);
+    loginUrl.searchParams.set('from', pathname);
     return NextResponse.redirect(loginUrl);
   }
+
+  // Redirect authenticated users away from auth pages
+  if ((user || accessToken) && (pathname === '/login' || pathname === '/register')) {
+    return NextResponse.redirect(new URL('/dashboard', request.url));
+  }
+
+  // Handle protected API routes
+  if (isProtectedApiRoute && !accessToken) {
+    return NextResponse.json(
+      { error: 'Unauthorized' },
+      { status: 401 }
+    );
+  }
+
+  // Add security headers
+  const response = NextResponse.next();
+
+  response.headers.set('X-Frame-Options', 'DENY');
+  response.headers.set('X-Content-Type-Options', 'nosniff');
+  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+  response.headers.set('X-XSS-Protection', '1; mode=block');
   
-  // If authenticated, allow access
-  return NextResponse.next();
+  // Add CSRF protection for state-changing requests
+  if (request.method !== 'GET' && request.method !== 'HEAD') {
+    const origin = request.headers.get('origin');
+    const host = request.headers.get('host');
+    
+    if (origin && host && !origin.includes(host)) {
+      return NextResponse.json(
+        { error: 'CSRF protection: Origin mismatch' },
+        { status: 403 }
+      );
+    }
+  }
+
+  return response;
 }
 
 export const config = {
@@ -53,8 +103,8 @@ export const config = {
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
-     * - public folder
+     * - public folder files
      */
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|public/).*)',
   ],
 };

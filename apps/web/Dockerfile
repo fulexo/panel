@@ -1,49 +1,46 @@
-FROM node:20-alpine as build
+# Multi-stage Dockerfile for Web App
+FROM node:18-alpine AS base
+
+# Install dependencies only when needed
+FROM base AS deps
+RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
+COPY apps/web/package*.json ./apps/web/
 
-# Install all dependencies (including dev dependencies for build)
-RUN npm ci && npm cache clean --force
+# Install dependencies
+RUN npm ci --only=production
 
-# Copy source code
+# Rebuild the source code only when needed
+FROM base AS builder
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Build Next.js application
-RUN npm run build
+# Build the application
+RUN cd apps/web && npm run build
 
-# Production stage
-FROM node:20-alpine
+# Production image
+FROM base AS production
 WORKDIR /app
 
-# Install wget for HEALTHCHECK
-RUN apk add --no-cache wget
-
-# Copy package files for production install
-COPY package*.json ./
-
-# Install only production dependencies
-RUN npm ci --only=production && npm cache clean --force
+# Create non-root user
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
 
 # Copy built application
-COPY --from=build /app/.next ./.next
-COPY --from=build /app/public ./public
-COPY --from=build /app/next.config.js ./
+COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/static ./apps/web/.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/apps/web/public ./apps/web/public
 
-# Create non-root user
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S fulexo -u 1001
+USER nextjs
 
-# Change ownership of the app directory
-RUN chown -R fulexo:nodejs /app
-USER fulexo
-
-# Clean up build artifacts
-RUN rm -rf /tmp/* /var/cache/apk/*
+EXPOSE 3000
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=5s --retries=3 CMD wget -qO- http://localhost:3001/health || exit 1
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:3000 || exit 1
 
-EXPOSE 3001
-CMD ["npm", "start"]
+CMD ["node", "apps/web/server.js"]

@@ -6,6 +6,7 @@ import cors from 'cors';
 import { PrismaClient, Prisma } from '@prisma/client';
 import { validateEnvironment } from './env.validation';
 import { logger } from './lib/logger';
+import fetch from 'node-fetch';
 
 // Initialize Prometheus metrics
 client.collectDefaultMetrics();
@@ -152,7 +153,7 @@ const jobProcessors = {
       const res = await fetch(url, { 
         headers: { Authorization: 'Basic '+Buffer.from(store.consumerKey+':'+store.consumerSecret).toString('base64') },
         timeout: 30000 // 30 second timeout
-      });
+      } as any);
       
       if(!res.ok){ 
         logger.error(`WooCommerce API error: ${res.status} ${res.statusText}`);

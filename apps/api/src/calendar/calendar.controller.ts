@@ -26,21 +26,21 @@ export class CalendarController {
   }
 
   @Post('events')
-  @Roles('FULEXO_ADMIN', 'FULEXO_STAFF')
+  @Roles('ADMIN')
   @ApiOperation({ summary: 'Create calendar event (admin)' })
   async createEvent(@CurrentUser() user: any, @Body() dto: any) {
     return this.calendar.createEvent(user.tenantId, dto);
   }
 
   @Put('events/:id')
-  @Roles('FULEXO_ADMIN', 'FULEXO_STAFF')
+  @Roles('ADMIN')
   @ApiOperation({ summary: 'Update calendar event (admin)' })
   async updateEvent(@CurrentUser() user: any, @Param('id') id: string, @Body() dto: any) {
     return this.calendar.updateEvent(user.tenantId, id, dto);
   }
 
   @Delete('events/:id')
-  @Roles('FULEXO_ADMIN', 'FULEXO_STAFF')
+  @Roles('ADMIN')
   @ApiOperation({ summary: 'Delete calendar event (admin)' })
   async deleteEvent(@CurrentUser() user: any, @Param('id') id: string) {
     return this.calendar.deleteEvent(user.tenantId, id);
@@ -54,7 +54,7 @@ export class CalendarController {
   }
 
   @Post('business-hours')
-  @Roles('FULEXO_ADMIN', 'FULEXO_STAFF')
+  @Roles('ADMIN')
   @ApiOperation({ summary: 'Set business hours (admin)' })
   async setBusinessHours(@CurrentUser() user: any, @Body() dto: any) {
     return this.calendar.setBusinessHours(user.tenantId, dto);
@@ -68,14 +68,14 @@ export class CalendarController {
   }
 
   @Post('holidays')
-  @Roles('FULEXO_ADMIN', 'FULEXO_STAFF')
+  @Roles('ADMIN')
   @ApiOperation({ summary: 'Add holiday (admin)' })
   async addHoliday(@CurrentUser() user: any, @Body() dto: any) {
     return this.calendar.addHoliday(user.tenantId, dto);
   }
 
   @Delete('holidays/:id')
-  @Roles('FULEXO_ADMIN', 'FULEXO_STAFF')
+  @Roles('ADMIN')
   @ApiOperation({ summary: 'Remove holiday (admin)' })
   async removeHoliday(@CurrentUser() user: any, @Param('id') id: string) {
     return this.calendar.removeHoliday(user.tenantId, id);
@@ -83,7 +83,7 @@ export class CalendarController {
 
   // OAuth credential storage (Google Calendar)
   @Post('oauth/google')
-  @Roles('FULEXO_ADMIN', 'FULEXO_STAFF')
+  @Roles('ADMIN')
   @ApiOperation({ summary: 'Save Google Calendar OAuth credentials (encrypted)' })
   async saveGoogleOAuth(@CurrentUser() user: any, @Body() dto: { credentialsJson: any }) {
     return this.calendar.saveOAuth(user.tenantId, 'google_calendar', dto.credentialsJson);

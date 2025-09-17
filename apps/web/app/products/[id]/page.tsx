@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useAuth } from "../../../components/AuthProvider";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import Image from "next/image";
 
 interface Product {
   id: string;
@@ -48,10 +49,10 @@ export default function ProductDetailPage() {
     tags: '',
   });
 
-  const token = () => localStorage.getItem('access_token');
+  // Token is now handled by httpOnly cookies
   const api = (path: string, init?: any) => 
     fetch(`/api${path}`, {
-      headers: { Authorization: `Bearer ${token()}`, 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json' },
       ...init
     });
 
@@ -194,8 +195,7 @@ export default function ProductDetailPage() {
 
   if (loading) {
     return (
-  <ProtectedRoute>
-    
+    <ProtectedRoute>
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <div className="spinner"></div>
@@ -515,14 +515,18 @@ export default function ProductDetailPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {product.images.map((image, index) => (
                       <div key={index} className="bg-accent/20 p-4 rounded-lg">
-                        <img
-                          src={image}
-                          alt={`Product image ${index + 1}`}
-                          className="w-full h-48 object-cover rounded-lg mb-2"
-                          onError={(e) => {
-                            e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjNmNGY2Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5YTNhZiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkltYWdlPC90ZXh0Pjwvc3ZnPg==';
-                          }}
-                        />
+                        <div className="relative w-full h-48 rounded-lg mb-2 overflow-hidden">
+                          <Image
+                            src={image}
+                            alt={`Product image ${index + 1}`}
+                            fill
+                            className="object-cover"
+                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                            onError={(e) => {
+                              e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjNmNGY2Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5YTNhZiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkltYWdlPC90ZXh0Pjwvc3ZnPg==';
+                            }}
+                          />
+                        </div>
                         <p className="text-xs text-muted-foreground text-center truncate">
                           Image {index + 1}
                         </p>
@@ -743,5 +747,4 @@ export default function ProductDetailPage() {
     </div>
   </ProtectedRoute>
 );
-  );
 }
