@@ -120,7 +120,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         },
       });
     } catch (error) {
-      // Ignore logout errors
+      // Log logout errors for debugging but don't show to user
+      if (typeof window !== 'undefined') {
+        fetch('/api/errors', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'logout_error',
+            message: error instanceof Error ? error.message : 'Unknown logout error',
+            timestamp: new Date().toISOString(),
+          }),
+        }).catch(() => {}); // Silent fail for error logging
+      }
     }
     
     await AuthUtils.clearTokens();

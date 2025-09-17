@@ -49,8 +49,8 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const api = (path: string, init?: any) => 
-    fetch(`${process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:3000'}${path}`, {
+  const api = (path: string, init?: RequestInit) => 
+    fetch(`/api${path}`, {
       credentials: 'include', // Include httpOnly cookies
       headers: { 'Content-Type': 'application/json' },
       ...init
@@ -103,7 +103,15 @@ export default function DashboardPage() {
           const activityData = await activityResponse.json();
           const recentOrders = activityData?.data || [];
           
-          const activities: RecentActivity[] = recentOrders.map((order: any, index: number) => ({
+          const activities: RecentActivity[] = recentOrders.map((order: {
+            id: string;
+            externalOrderNo?: string;
+            customerName?: string;
+            customerEmail?: string;
+            createdAt: string;
+            status?: string;
+            storeName?: string;
+          }, index: number) => ({
             id: order.id,
             type: 'order' as const,
             title: `Order #${order.externalOrderNo || order.id.slice(0, 8)}`,
@@ -360,7 +368,7 @@ export default function DashboardPage() {
 
         {/* Quick Actions */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 animate-slide-up">
-          <a
+          <Link
             href="/orders"
             className="bg-primary text-primary-foreground p-6 rounded-lg hover:bg-primary/90 transition-colors btn-animate group"
           >
@@ -371,9 +379,9 @@ export default function DashboardPage() {
                 <p className="text-primary-foreground/80 text-sm">Manage all orders</p>
               </div>
             </div>
-          </a>
+          </Link>
 
-          <a
+          <Link
             href="/products"
             className="bg-accent text-accent-foreground p-6 rounded-lg hover:bg-accent/90 transition-colors btn-animate group"
           >
@@ -384,9 +392,9 @@ export default function DashboardPage() {
                 <p className="text-accent-foreground/80 text-sm">Manage inventory</p>
               </div>
             </div>
-          </a>
+          </Link>
 
-          <a
+          <Link
             href="/customers"
             className="bg-secondary text-secondary-foreground p-6 rounded-lg hover:bg-secondary/90 transition-colors btn-animate group"
           >
@@ -397,9 +405,9 @@ export default function DashboardPage() {
                 <p className="text-secondary-foreground/80 text-sm">Customer management</p>
               </div>
             </div>
-          </a>
+          </Link>
 
-          <a
+          <Link
             href="/shipments"
             className="bg-muted text-muted-foreground p-6 rounded-lg hover:bg-muted/90 transition-colors btn-animate group"
           >
@@ -410,7 +418,7 @@ export default function DashboardPage() {
                 <p className="text-muted-foreground/80 text-sm">Track deliveries</p>
               </div>
             </div>
-          </a>
+          </Link>
         </div>
 
         {/* Recent Activity */}
