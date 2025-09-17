@@ -75,7 +75,7 @@ export function OrdersTable({
         return (
           <div>
             <div className="font-medium text-foreground">
-              {customer?.firstName} {customer?.lastName}
+              {customer?.name || 'N/A'}
             </div>
             <div className="text-sm text-muted-foreground">
               {customer?.email}
@@ -167,12 +167,12 @@ export function OrdersTable({
     <DataTable
       columns={columns}
       data={data}
-      loading={loading}
-      error={error}
+      loading={loading || false}
+      error={error || ''}
       searchKey="orderNo"
       searchPlaceholder="Search orders..."
-      onSearch={onSearch}
-      pagination={pagination}
+      onSearch={onSearch || (() => {})}
+      pagination={pagination || { page: 1, limit: 10, total: 0, totalPages: 0, onPageChange: () => {} }}
     />
   );
 }

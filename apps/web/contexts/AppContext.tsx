@@ -140,6 +140,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       // Store timeout ID for cleanup if needed
       return timeoutId;
     }
+    
+    return id;
   };
 
   const removeNotification = (id: string) => {

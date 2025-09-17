@@ -3,7 +3,7 @@
 import { useState } from 'react'
 
 export function NotificationSettings() {
-  const [notifications, setNotifications] = useState({
+  const [notifications] = useState({
     emailNotifications: true,
     orderAlerts: true,
     stockAlerts: false,

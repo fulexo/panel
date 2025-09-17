@@ -23,7 +23,7 @@ class ApiClient {
   private defaultHeaders: Record<string, string>;
 
   constructor() {
-    this.baseUrl = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:3000/api';
+    this.baseUrl = process.env['NEXT_PUBLIC_API_BASE'] || 'http://localhost:3000/api';
     this.defaultHeaders = {
       'Content-Type': 'application/json',
     };
@@ -82,7 +82,7 @@ class ApiClient {
   async get<T>(endpoint: string, headers?: Record<string, string>): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, {
       method: 'GET',
-      headers,
+      headers: headers || {},
     });
   }
 
@@ -95,7 +95,7 @@ class ApiClient {
     return this.request<T>(endpoint, {
       method: 'POST',
       body: data ? JSON.stringify(data) : null,
-      headers,
+      headers: headers || {},
     });
   }
 
@@ -108,7 +108,7 @@ class ApiClient {
     return this.request<T>(endpoint, {
       method: 'PUT',
       body: data ? JSON.stringify(data) : null,
-      headers,
+      headers: headers || {},
     });
   }
 
@@ -116,7 +116,7 @@ class ApiClient {
   async delete<T>(endpoint: string, headers?: Record<string, string>): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, {
       method: 'DELETE',
-      headers,
+      headers: headers || {},
     });
   }
 
@@ -129,7 +129,7 @@ class ApiClient {
     return this.request<T>(endpoint, {
       method: 'PATCH',
       body: data ? JSON.stringify(data) : null,
-      headers,
+      headers: headers || {},
     });
   }
 
@@ -155,7 +155,6 @@ class ApiClient {
       headers: {
         ...headers,
         // Don't set Content-Type for FormData, let browser set it
-        'Content-Type': null,
       },
     });
   }

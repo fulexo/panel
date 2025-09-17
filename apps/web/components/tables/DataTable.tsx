@@ -13,7 +13,6 @@ import {
   VisibilityState,
 } from '@tanstack/react-table';
 import { useState } from 'react';
-import { cn } from '@/lib/utils';
 import { LoadingSpinner } from '@/components/ui/loading';
 
 interface DataTableProps<TData, TValue> {

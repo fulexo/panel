@@ -1,63 +1,60 @@
-'use client';
+"use client";
 
-import { ColumnDef } from '@tanstack/react-table';
-import { DataTable } from './DataTable';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Customer } from '@/types/api';
+import { useState } from "react";
+import {
+  ColumnDef,
+  flexRender,
+  getCoreRowModel,
+  useReactTable,
+  getPaginationRowModel,
+  getSortedRowModel,
+  SortingState,
+  getFilteredRowModel,
+  ColumnFiltersState,
+} from "@tanstack/react-table";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
-const getStatusColor = (status: string) => {
-  switch (status) {
-    case 'active': return 'bg-green-100 text-green-800';
-    case 'inactive': return 'bg-gray-100 text-gray-800';
-    case 'suspended': return 'bg-red-100 text-red-800';
-    default: return 'bg-gray-100 text-gray-800';
-  }
-};
-
-const getStatusIcon = (status: string) => {
-  switch (status) {
-    case 'active': return '✅';
-    case 'inactive': return '⏸️';
-    case 'suspended': return '🚫';
-    default: return '❓';
-  }
-};
+interface Customer {
+  id: string;
+  name?: string;
+  email?: string;
+  phoneE164?: string;
+  company?: string;
+  vatId?: string;
+  addressLine1?: string;
+  addressLine2?: string;
+  city?: string;
+  state?: string;
+  postalCode?: string;
+  country?: string;
+  notes?: string;
+  tags?: string[];
+  createdAt: string;
+  updatedAt: string;
+  wooCustomerId?: string;
+  storeId?: string;
+  storeName?: string;
+  syncStatus?: 'synced' | 'pending' | 'failed';
+}
 
 interface CustomersTableProps {
   data: Customer[];
   loading?: boolean;
-  error?: string;
-  onSearch?: (value: string) => void;
-  pagination?: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-    onPageChange: (page: number) => void;
-  };
-  onView?: (customer: Customer) => void;
-  onEdit?: (customer: Customer) => void;
-  onDelete?: (customer: Customer) => void;
 }
 
-export function CustomersTable({
-  data,
-  loading,
-  error,
-  onSearch,
-  pagination,
-  onView,
-  onEdit,
-  onDelete,
-}: CustomersTableProps) {
+export function CustomersTable({ data, loading = false }: CustomersTableProps) {
+  const [sorting, setSorting] = useState<SortingState>([]);
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+
   const columns: ColumnDef<Customer>[] = [
     {
-      accessorKey: 'firstName',
+      accessorKey: 'name',
       header: 'Name',
       cell: ({ row }) => (
         <div className="font-medium text-foreground">
-          {row.getValue('firstName')} {row.original.lastName}
+          {row.getValue('name') || 'N/A'}
         </div>
       ),
     },
@@ -66,135 +63,146 @@ export function CustomersTable({
       header: 'Email',
       cell: ({ row }) => (
         <div className="text-sm text-foreground">
-          {row.getValue('email')}
+          {row.getValue('email') || 'N/A'}
         </div>
       ),
     },
     {
-      accessorKey: 'phone',
+      accessorKey: 'phoneE164',
       header: 'Phone',
-      cell: ({ row }) => {
-        const phone = row.getValue('phone') as string;
-        return (
-          <div className="text-sm text-foreground">
-            {phone || 'N/A'}
-          </div>
-        );
-      },
+      cell: ({ row }) => (
+        <div className="text-sm text-foreground">
+          {row.getValue('phoneE164') || 'N/A'}
+        </div>
+      ),
     },
     {
-      accessorKey: 'address',
-      header: 'Address',
-      cell: ({ row }) => {
-        const address = row.original.address;
-        return (
-          <div className="text-sm text-foreground">
-            {address ? `${address.city}, ${address.state}` : 'N/A'}
-          </div>
-        );
-      },
+      accessorKey: 'company',
+      header: 'Company',
+      cell: ({ row }) => (
+        <div className="text-sm text-foreground">
+          {row.getValue('company') || 'N/A'}
+        </div>
+      ),
     },
     {
-      accessorKey: 'status',
+      accessorKey: 'syncStatus',
       header: 'Status',
       cell: ({ row }) => {
-        const status = row.getValue('status') as string;
+        const status = row.getValue('syncStatus') as string || 'unknown';
         return (
-          <Badge className={getStatusColor(status)}>
-            <span className="mr-1">{getStatusIcon(status)}</span>
+          <Badge variant={status === 'synced' ? 'default' : 'secondary'}>
             {status.charAt(0).toUpperCase() + status.slice(1)}
           </Badge>
         );
       },
     },
-    {
-      accessorKey: 'totalOrders',
-      header: 'Orders',
-      cell: ({ row }) => {
-        const totalOrders = row.original.totalOrders || 0;
-        return (
-          <div className="text-sm text-foreground">
-            {totalOrders}
-          </div>
-        );
-      },
-    },
-    {
-      accessorKey: 'totalSpent',
-      header: 'Total Spent',
-      cell: ({ row }) => {
-        const totalSpent = row.original.totalSpent || 0;
-        const currency = row.original.currency || 'USD';
-        return (
-          <div className="font-medium text-foreground">
-            {currency} {totalSpent.toFixed(2)}
-          </div>
-        );
-      },
-    },
-    {
-      accessorKey: 'lastOrderDate',
-      header: 'Last Order',
-      cell: ({ row }) => {
-        const lastOrderDate = row.original.lastOrderDate;
-        return (
-          <div className="text-sm text-foreground">
-            {lastOrderDate ? new Date(lastOrderDate).toLocaleDateString() : 'N/A'}
-          </div>
-        );
-      },
-    },
-    {
-      id: 'actions',
-      header: 'Actions',
-      cell: ({ row }) => {
-        const customer = row.original;
-        return (
-          <div className="flex items-center space-x-2">
-            {onView && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onView(customer)}
-              >
-                View
-              </Button>
-            )}
-            {onEdit && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onEdit(customer)}
-              >
-                Edit
-              </Button>
-            )}
-            {onDelete && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onDelete(customer)}
-                className="text-destructive hover:text-destructive"
-              >
-                Delete
-              </Button>
-            )}
-          </div>
-        );
-      },
-    },
   ];
 
+  const table = useReactTable({
+    data,
+    columns,
+    onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters,
+    getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    state: {
+      sorting,
+      columnFilters,
+    },
+  });
+
+  if (loading) {
+    return (
+      <div className="w-full">
+        <div className="rounded-md border">
+          <div className="p-8 text-center">
+            <div className="spinner mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Loading customers...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <DataTable
-      columns={columns}
-      data={data}
-      loading={loading}
-      error={error}
-      searchKey="firstName"
-      searchPlaceholder="Search customers..."
-      onSearch={onSearch}
-      pagination={pagination}
-    />
+    <div className="w-full">
+      <div className="flex items-center py-4">
+        <Input
+          placeholder="Filter customers..."
+          value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
+          onChange={(event) =>
+            table.getColumn("name")?.setFilterValue(event.target.value)
+          }
+          className="max-w-sm"
+        />
+      </div>
+      <div className="rounded-md border">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              {table.getHeaderGroups().map((headerGroup) => (
+                <tr key={headerGroup.id} className="border-b">
+                  {headerGroup.headers.map((header) => (
+                    <th key={header.id} className="p-4 text-left">
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
+                    </th>
+                  ))}
+                </tr>
+              ))}
+            </thead>
+            <tbody>
+              {table.getRowModel().rows?.length ? (
+                table.getRowModel().rows.map((row) => (
+                  <tr key={row.id} className="border-b hover:bg-muted/50">
+                    {row.getVisibleCells().map((cell) => (
+                      <td key={cell.id} className="p-4">
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </td>
+                    ))}
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={columns.length} className="p-8 text-center text-muted-foreground">
+                    No customers found.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div className="flex items-center justify-end space-x-2 py-4">
+        <div className="flex-1 text-sm text-muted-foreground">
+          {table.getFilteredRowModel().rows.length} of {data.length} customers
+        </div>
+        <div className="space-x-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => table.previousPage()}
+            disabled={!table.getCanPreviousPage()}
+          >
+            Previous
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => table.nextPage()}
+            disabled={!table.getCanNextPage()}
+          >
+            Next
+          </Button>
+        </div>
+      </div>
+    </div>
   );
 }
