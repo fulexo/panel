@@ -241,7 +241,7 @@ export class IsValidDateRangeConstraint implements ValidatorConstraintInterface 
     return startDate <= endDate;
   }
 
-  defaultMessage(_args: ValidationArguments) {
+  defaultMessage(args: ValidationArguments) {
     const [relatedPropertyName] = args.constraints;
     return `${relatedPropertyName} must be after or equal to ${args.property}`;
   }

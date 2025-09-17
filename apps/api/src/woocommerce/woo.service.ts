@@ -20,6 +20,9 @@ export class WooService {
   async addStore(tenantId: string, dto: { name: string; baseUrl: string; consumerKey: string; consumerSecret: string; apiVersion?: string; webhookSecret?: string; }){
     return this.prisma.withTenant(tenantId, async (tx) => {
       const store = await tx.wooStore.create({ data: {
+        tenant: {
+          connect: { id: tenantId }
+        },
         name: dto.name,
         baseUrl: dto.baseUrl.replace(/\/$/, ''),
         consumerKey: dto.consumerKey,

@@ -22,8 +22,8 @@ export class HealthController {
       status: 'ok',
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
-      version: process.env.npm_package_version || '1.0.0',
-      environment: process.env.NODE_ENV || 'development',
+      version: process.env['npm_package_version'] || '1.0.0',
+      environment: process.env['NODE_ENV'] || 'development',
       services: {
         database: 'unknown',
         redis: 'unknown',
@@ -50,7 +50,7 @@ export class HealthController {
     } catch (error) {
       health.services.database = 'unhealthy';
       health.status = 'error';
-      this.logger.error('Database health check failed', error.stack, 'HealthCheck');
+      this.logger.error('Database health check failed', error instanceof Error ? error.stack : String(error), 'HealthCheck');
     }
 
     try {
@@ -59,7 +59,7 @@ export class HealthController {
       health.services.redis = 'healthy';
     } catch (error) {
       health.services.redis = 'unhealthy';
-      this.logger.warn('Redis health check failed', 'HealthCheck', { error: error.message });
+      this.logger.warn('Redis health check failed', 'HealthCheck', { error: error instanceof Error ? error.message : String(error) });
     }
 
     try {
@@ -68,7 +68,7 @@ export class HealthController {
       health.services.storage = 'healthy';
     } catch (error) {
       health.services.storage = 'unhealthy';
-      this.logger.warn('Storage health check failed', 'HealthCheck', { error: error.message });
+      this.logger.warn('Storage health check failed', 'HealthCheck', { error: error instanceof Error ? error.message : String(error) });
     }
 
     // Calculate response time
@@ -105,11 +105,11 @@ export class HealthController {
         timestamp: new Date().toISOString(),
       });
     } catch (error) {
-      this.logger.error('Readiness check failed', error.stack, 'HealthCheck');
+      this.logger.error('Readiness check failed', error instanceof Error ? error.stack : String(error), 'HealthCheck');
       return res.status(HttpStatus.SERVICE_UNAVAILABLE).json({
         status: 'not ready',
         timestamp: new Date().toISOString(),
-        error: error.message,
+        error: error instanceof Error ? error.message : String(error),
       });
     }
   }

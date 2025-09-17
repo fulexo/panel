@@ -213,7 +213,7 @@ async function bootstrap() {
         dbHealthy = true;
       } catch (error) {
         // Log database health check failure
-        if (process.env.NODE_ENV === 'development') {
+        if (process.env['NODE_ENV'] === 'development') {
           console.error('Database health check failed:', error);
         }
       }
@@ -228,7 +228,7 @@ async function bootstrap() {
         await redis.quit();
       } catch (error) {
         // Log Redis health check failure
-        if (process.env.NODE_ENV === 'development') {
+        if (process.env['NODE_ENV'] === 'development') {
           console.error('Redis health check failed:', error);
         }
       }

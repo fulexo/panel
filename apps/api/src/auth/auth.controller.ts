@@ -44,24 +44,26 @@ export class AuthController {
     }
     
     // Set httpOnly cookies for tokens
-    req.res.cookie('access_token', result.access, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 15 * 60 * 1000, // 15 minutes
-      path: '/',
-    });
-    
-    req.res.cookie('refresh_token', result.refresh, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-      path: '/',
-    });
+    if (req.res && 'access' in result) {
+      req.res.cookie('access_token', result.access, {
+        httpOnly: true,
+        secure: process.env['NODE_ENV'] === 'production',
+        sameSite: 'strict',
+        maxAge: 15 * 60 * 1000, // 15 minutes
+        path: '/',
+      });
+      
+      req.res.cookie('refresh_token', result.refresh, {
+        httpOnly: true,
+        secure: process.env['NODE_ENV'] === 'production',
+        sameSite: 'strict',
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        path: '/',
+      });
+    }
     
     return ResponseUtil.success(
-      result.user,
+      'user' in result ? result.user : null,
       'Login successful',
       200,
       '/api/auth/login'
@@ -94,7 +96,7 @@ export class AuthController {
   @ApiOperation({ summary: 'User logout' })
   async logout(@CurrentUser() user: { id: string }, @Req() req: Request) {
     const token = req.headers.authorization?.replace('Bearer ', '');
-    await this.sessionService.revokeSession(user.id, token);
+    await this.sessionService.revokeSession(user.id, token || '');
     
     // Clear httpOnly cookies
     req.res.clearCookie('access_token', { path: '/' });
@@ -186,7 +188,7 @@ export class AuthController {
     // Set httpOnly cookies for tokens
     req.res.cookie('access_token', result.access, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: process.env['NODE_ENV'] === 'production',
       sameSite: 'strict',
       maxAge: 15 * 60 * 1000, // 15 minutes
       path: '/',
@@ -194,7 +196,7 @@ export class AuthController {
     
     req.res.cookie('refresh_token', result.refresh, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: process.env['NODE_ENV'] === 'production',
       sameSite: 'strict',
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       path: '/',
@@ -238,7 +240,7 @@ export class AuthController {
     // Set httpOnly cookies for tokens
     req.res.cookie('access_token', dto.accessToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: process.env['NODE_ENV'] === 'production',
       sameSite: 'strict',
       maxAge: 15 * 60 * 1000, // 15 minutes
       path: '/',
@@ -246,7 +248,7 @@ export class AuthController {
     
     req.res.cookie('refresh_token', dto.refreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: process.env['NODE_ENV'] === 'production',
       sameSite: 'strict',
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       path: '/',

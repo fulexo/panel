@@ -3,7 +3,7 @@ import { PrismaService } from '../prisma.service';
 import { CacheService } from '../cache/cache.service';
 import { EncryptionService } from '../crypto';
 import Redis from 'ioredis';
-import { Queue, Worker } from 'bullmq';
+import { Queue } from 'bullmq';
 
 @Injectable()
 export class SyncService {
@@ -15,7 +15,7 @@ export class SyncService {
 
   constructor(
     private prisma: PrismaService,
-    private _cache: CacheService,
+    private cache: CacheService,
   ) {
     this.redis = new Redis(process.env['REDIS_URL'] || 'redis://valkey:6379/0');
     // BaseLinker removed

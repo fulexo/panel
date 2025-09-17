@@ -11,30 +11,30 @@ export class EnvService {
 
   private validateAndLoadConfig(): SharedEnvironmentVariables {
     const config = {
-      NODE_ENV: process.env.NODE_ENV as 'development' | 'production' | 'test',
-      PORT: process.env.PORT || '3000',
-      DATABASE_URL: process.env.DATABASE_URL!,
-      REDIS_URL: process.env.REDIS_URL!,
-      JWT_SECRET: process.env.JWT_SECRET!,
-      ENCRYPTION_KEY: process.env.ENCRYPTION_KEY!,
-      DOMAIN_API: process.env.DOMAIN_API!,
-      DOMAIN_APP: process.env.DOMAIN_APP!,
-      NEXT_PUBLIC_API_BASE: process.env.NEXT_PUBLIC_API_BASE!,
-      NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL!,
-      SHARE_BASE_URL: process.env.SHARE_BASE_URL,
-      S3_ENDPOINT: process.env.S3_ENDPOINT!,
-      S3_ACCESS_KEY: process.env.S3_ACCESS_KEY!,
-      S3_SECRET_KEY: process.env.S3_SECRET_KEY!,
-      S3_BUCKET: process.env.S3_BUCKET!,
-      SHARE_TOKEN_SECRET: process.env.SHARE_TOKEN_SECRET,
-      LOG_LEVEL: process.env.LOG_LEVEL || 'info',
-      SMTP_HOST: process.env.SMTP_HOST,
-      SMTP_PORT: process.env.SMTP_PORT,
-      SMTP_USER: process.env.SMTP_USER,
-      SMTP_PASS: process.env.SMTP_PASS,
-      SMTP_FROM: process.env.SMTP_FROM,
-      MASTER_KEY_HEX: process.env.MASTER_KEY_HEX,
-      WORKER_PORT: process.env.WORKER_PORT || '3002',
+      NODE_ENV: process.env['NODE_ENV'] as 'development' | 'production' | 'test',
+      PORT: process.env['PORT'] || '3000',
+      DATABASE_URL: process.env['DATABASE_URL']!,
+      REDIS_URL: process.env['REDIS_URL']!,
+      JWT_SECRET: process.env['JWT_SECRET']!,
+      ENCRYPTION_KEY: process.env['ENCRYPTION_KEY']!,
+      DOMAIN_API: process.env['DOMAIN_API']!,
+      DOMAIN_APP: process.env['DOMAIN_APP']!,
+      NEXT_PUBLIC_API_BASE: process.env['NEXT_PUBLIC_API_BASE']!,
+      NEXT_PUBLIC_APP_URL: process.env['NEXT_PUBLIC_APP_URL']!,
+      SHARE_BASE_URL: process.env['SHARE_BASE_URL'],
+      S3_ENDPOINT: process.env['S3_ENDPOINT']!,
+      S3_ACCESS_KEY: process.env['S3_ACCESS_KEY']!,
+      S3_SECRET_KEY: process.env['S3_SECRET_KEY']!,
+      S3_BUCKET: process.env['S3_BUCKET']!,
+      SHARE_TOKEN_SECRET: process.env['SHARE_TOKEN_SECRET'],
+      LOG_LEVEL: process.env['LOG_LEVEL'] || 'info',
+      SMTP_HOST: process.env['SMTP_HOST'],
+      SMTP_PORT: process.env['SMTP_PORT'],
+      SMTP_USER: process.env['SMTP_USER'],
+      SMTP_PASS: process.env['SMTP_PASS'],
+      SMTP_FROM: process.env['SMTP_FROM'],
+      MASTER_KEY_HEX: process.env['MASTER_KEY_HEX'],
+      WORKER_PORT: process.env['WORKER_PORT'] || '3002',
     };
 
     // Validate required fields
@@ -59,7 +59,7 @@ export class EnvService {
   }
 
   get port(): string {
-    return this.config.PORT;
+    return this.config.PORT || '3000';
   }
 
   get databaseUrl(): string {
@@ -119,7 +119,7 @@ export class EnvService {
   }
 
   get logLevel(): string {
-    return this.config.LOG_LEVEL;
+    return this.config.LOG_LEVEL || 'info';
   }
 
   get smtpHost(): string | undefined {
@@ -147,7 +147,7 @@ export class EnvService {
   }
 
   get workerPort(): string {
-    return this.config.WORKER_PORT;
+    return this.config.WORKER_PORT || '3002';
   }
 
   // Utility methods

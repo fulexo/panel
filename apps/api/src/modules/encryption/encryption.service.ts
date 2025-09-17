@@ -5,7 +5,7 @@ import * as crypto from 'crypto'
 export class EncryptionService {
   private readonly algorithm = 'aes-256-gcm'
   private readonly key: Buffer
-  private readonly _saltLength = 32
+  // private readonly _saltLength = 32
   private readonly tagLength = 16
   private readonly ivLength = 16
 

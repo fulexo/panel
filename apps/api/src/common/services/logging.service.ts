@@ -5,7 +5,7 @@ export interface LogEntry {
   level: 'debug' | 'info' | 'warn' | 'error' | 'fatal';
   message: string;
   context?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, any> | undefined;
   userId?: string;
   tenantId?: string;
   requestId?: string;
@@ -83,7 +83,7 @@ export class LoggingService implements LoggerService {
   private async writeLog(entry: LogEntry) {
     try {
       // Console logging for development
-      if (process.env.NODE_ENV === 'development') {
+      if (process.env['NODE_ENV'] === 'development') {
         const logMessage = `[${entry.timestamp?.toISOString()}] ${entry.level.toUpperCase()} [${entry.context}] ${entry.message}`;
         
         switch (entry.level) {
@@ -103,7 +103,7 @@ export class LoggingService implements LoggerService {
       }
 
       // Database logging for production
-      if (process.env.NODE_ENV === 'production') {
+      if (process.env['NODE_ENV'] === 'production') {
         await this.prisma.auditLog.create({
           data: {
             tenantId: entry.tenantId,
@@ -120,8 +120,8 @@ export class LoggingService implements LoggerService {
               level: entry.level,
               timestamp: entry.timestamp,
             },
-            ipAddress: entry.metadata?.ipAddress,
-            userAgent: entry.metadata?.userAgent,
+            ipAddress: entry.metadata?.['ipAddress'],
+            userAgent: entry.metadata?.['userAgent'],
           },
         });
       }
@@ -137,11 +137,11 @@ export class LoggingService implements LoggerService {
     }
   }
 
-  private async sendToExternalService(entry: LogEntry) {
+  private async sendToExternalService(_entry: LogEntry) {
     // Integration with external logging services
     // This is a placeholder - implement based on your chosen service
     
-    if (process.env.SENTRY_DSN) {
+    if (process.env['SENTRY_DSN']) {
       // Sentry integration
       // const Sentry = require('@sentry/node');
       // Sentry.captureException(new Error(entry.message), {
@@ -154,7 +154,7 @@ export class LoggingService implements LoggerService {
       // });
     }
 
-    if (process.env.DATADOG_API_KEY) {
+    if (process.env['DATADOG_API_KEY']) {
       // DataDog integration
       // const dogapi = require('dogapi');
       // dogapi.event.create(entry.message, {
@@ -186,8 +186,8 @@ export class LoggingService implements LoggerService {
         entityId,
         changes,
         metadata,
-        ipAddress: metadata?.ipAddress,
-        userAgent: metadata?.userAgent,
+        ipAddress: metadata?.['ipAddress'],
+        userAgent: metadata?.['userAgent'],
       },
     });
 
@@ -220,8 +220,8 @@ export class LoggingService implements LoggerService {
           severity,
           timestamp: new Date(),
         },
-        ipAddress: metadata?.ipAddress,
-        userAgent: metadata?.userAgent,
+        ipAddress: metadata?.['ipAddress'],
+        userAgent: metadata?.['userAgent'],
       },
     });
 
@@ -230,7 +230,7 @@ export class LoggingService implements LoggerService {
       event,
       severity,
       ...metadata,
-    });
+    } as Record<string, any>);
   }
 
   async logPerformanceMetric(

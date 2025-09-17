@@ -249,7 +249,7 @@ export class OrdersService {
     const order = await this.runTenant(tenantId, async (db) => db.order.create({
       data: {
         tenantId,
-        customerId: customer?.id,
+        customerId: customer?.id || null,
         orderNo: nextOrderNo,
         externalOrderNo: dto.externalOrderNo,
         orderSource: dto.orderSource || 'manual',
@@ -308,9 +308,9 @@ export class OrdersService {
     const order = await this.runTenant(tenantId, async (db) => db.order.update({
       where: { id },
       data: {
-        status: dto.status,
-        notes: dto.notes,
-        tags: dto.tags,
+        status: dto.status || undefined,
+        notes: dto.notes || undefined,
+        tags: dto.tags || undefined,
         shippingAddress: dto.shippingAddress,
         billingAddress: dto.billingAddress,
         updatedAt: new Date(),
@@ -367,11 +367,7 @@ export class OrdersService {
     const order = await this.findOne(tenantId, orderId);
 
     // Get audit logs for this order
-    const auditLogs = await this.audit.getAuditLogs({
-      tenantId,
-      entityType: 'order',
-      entityId: orderId,
-    });
+    const auditLogs = await this.audit.getAuditLogs(tenantId, 'order', orderId);
 
     // Build timeline
     const timeline: any[] = [
@@ -577,7 +573,7 @@ export class OrdersService {
         type: dto.type,
         amount: new (Prisma as any).Decimal(dto.amount),
         currency: dto.currency || order.currency || 'TRY',
-        notes: dto.notes,
+        notes: dto.notes || null,
       },
     }));
     await this.audit.log({ action: 'order.charge.added', userId, tenantId, entityType: 'order', entityId: orderId, changes: dto });

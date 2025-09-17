@@ -41,7 +41,7 @@ export class ProductsService {
         orderBy: { createdAt: 'desc' }, 
         take, 
         skip,
-        include: { category: true }
+        include: { categories: true }
       }),
       db.product.count({ where }),
     ]));
