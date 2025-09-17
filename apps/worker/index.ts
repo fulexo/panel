@@ -556,7 +556,7 @@ const worker = new Worker('fx-jobs', async (job) => {
         
       } catch (error) {
         lastError = error;
-        logger.error(`Job ${job.name} failed on attempt ${attempt}:`, (error as any).message);
+        logger.error(`Job ${job.name} failed on attempt ${attempt}:`, error instanceof Error ? error.message : String(error));
         
         // Check if this is a retryable error
         if (isRetryableError(error) && attempt < maxRetries) {
@@ -659,14 +659,14 @@ async function applyRequestChanges(request: any) {
 }
 
 // Helper function to send rejection notification
-async function sendRejectionNotification(request: any) {
+async function sendRejectionNotification(request: Record<string, unknown>) {
   // This would integrate with your notification system
   logger.info(`Sending rejection notification for request ${request.id}`);
   // Implementation would depend on your notification service
 }
 
 // Helper function to determine if an error is retryable
-function isRetryableError(error: any) {
+function isRetryableError(error: unknown) {
   if (!error) return false;
   
   const retryableErrors = [
@@ -682,23 +682,23 @@ function isRetryableError(error: any) {
     'Rate limit exceeded'
   ];
   
-  const errorMessage = error.message || error.toString();
+  const errorMessage = error instanceof Error ? error.message : String(error);
   return retryableErrors.some(retryableError => 
     errorMessage.toLowerCase().includes(retryableError.toLowerCase())
   );
 }
 
 // Helper function to store job error details
-async function storeJobError(job: any, error: any, retryCount: any) {
+async function storeJobError(job: Record<string, unknown>, error: unknown, retryCount: number) {
   try {
     const errorData = {
       jobId: job.id,
       jobName: job.name,
       jobData: job.data,
       error: {
-        name: error.name,
-        message: error.message,
-        stack: error.stack,
+        name: error instanceof Error ? error.name : 'Unknown',
+        message: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
       },
       retryCount,
       timestamp: new Date().toISOString(),
@@ -713,7 +713,7 @@ async function storeJobError(job: any, error: any, retryCount: any) {
         metadata: {
           jobType: job.name,
           retryCount,
-          errorType: error.name,
+          errorType: error instanceof Error ? error.name : 'Unknown',
         },
       },
     });
