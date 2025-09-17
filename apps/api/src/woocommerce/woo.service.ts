@@ -1,6 +1,7 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { toPrismaJsonValue } from '../common/utils/json-utils';
+import { Prisma } from '@prisma/client';
 import * as crypto from 'crypto';
 
 function buildAuthHeader(ck: string, cs: string){
@@ -121,7 +122,7 @@ export class WooService {
       provider: 'woocommerce',
       topic,
       signature: signature || null,
-      payload: toPrismaJsonValue(payload),
+      payload: toPrismaJsonValue(payload) || Prisma.JsonNull,
       status: valid ? 'received' : 'failed',
       error: valid ? null : 'invalid_signature',
     }});

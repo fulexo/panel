@@ -15,7 +15,7 @@ import Redis from 'ioredis';
 import * as client from 'prom-client';
 import express from 'express';
 import cors from 'cors';
-import { PrismaClient, Prisma } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import { Decimal } from 'decimal.js';
 // import { validateEnvOnStartup } from './env.validation.js';
 import { logger } from './lib/logger';
@@ -78,7 +78,7 @@ const jobProcessors = {
       logger.info(`Order sync completed for account: ${accountId}`);
       return { success: true, accountId };
     } catch (error) {
-      logger.error(`Order sync failed for account ${(job.data as any)?.['accountId']}:`, error);
+      logger.error(`Order sync failed for account ${(job['data'] as any)?.['accountId']}:`, { error });
       throw error;
     }
   },
@@ -98,7 +98,7 @@ const jobProcessors = {
       logger.info(`Shipment sync completed for account: ${accountId}`);
       return { success: true, accountId };
     } catch (error) {
-      logger.error(`Shipment sync failed for account ${(job.data as any)?.['accountId']}:`, error);
+      logger.error(`Shipment sync failed for account ${(job['data'] as any)?.['accountId']}:`, { error });
       throw error;
     }
   },
@@ -118,7 +118,7 @@ const jobProcessors = {
       logger.info(`Return sync completed for account: ${accountId}`);
       return { success: true, accountId };
     } catch (error) {
-      logger.error(`Return sync failed for account ${(job.data as any)?.['accountId']}:`, error);
+      logger.error(`Return sync failed for account ${(job['data'] as any)?.['accountId']}:`, { error });
       throw error;
     }
   },
@@ -138,7 +138,7 @@ const jobProcessors = {
       logger.info(`Invoice sync completed for account: ${accountId}`);
       return { success: true, accountId };
     } catch (error) {
-      logger.error(`Invoice sync failed for account ${(job.data as any)?.['accountId']}:`, error);
+      logger.error(`Invoice sync failed for account ${(job['data'] as any)?.['accountId']}:`, { error });
       throw error;
     }
   },
@@ -274,7 +274,7 @@ const jobProcessors = {
           tenantId: store.tenantId,
           sku: p.sku || String(p.id),
           name: p.name || null,
-          price: p.price ? new Prisma.Decimal(p.price) : null,
+          price: p.price ? new PrismaClient.Decimal(p.price) : null,
           stock: (typeof p.stock_quantity==='number') ? p.stock_quantity : null,
           images: Array.isArray(p.images) ? p.images.map((i: any)=>i.src).filter(Boolean) : [],
           tags: Array.isArray(p.tags) ? p.tags.map((t: any)=>t.name).filter(Boolean) : [],
@@ -395,7 +395,7 @@ const jobProcessors = {
   },
 
   'process-request': async (job: Record<string, unknown>) => {
-    const { requestId, action } = job.data as any;
+    const { requestId, action } = job['data'] as any;
     
     if (!requestId || !action) {
       throw new Error('Request ID and action are required');
@@ -419,7 +419,7 @@ const jobProcessors = {
           data: { 
             status: 'APPROVED',
             reviewedAt: new Date(),
-            reviewerUserId: (job.data as any).reviewerUserId
+            reviewerUserId: (job['data'] as any).reviewerUserId
           }
         });
         
@@ -433,7 +433,7 @@ const jobProcessors = {
           data: { 
             status: 'REJECTED',
             reviewedAt: new Date(),
-            reviewerUserId: (job.data as any).reviewerUserId
+            reviewerUserId: (job['data'] as any).reviewerUserId
           }
         });
         
@@ -557,7 +557,7 @@ const worker = new Worker('fx-jobs', async (job) => {
         
       } catch (error) {
         lastError = error;
-        logger.error(`Job ${job.name} failed on attempt ${attempt}:`, error instanceof Error ? error.message : String(error));
+        logger.error(`Job ${job.name} failed on attempt ${attempt}:`, { error: error instanceof Error ? error.message : String(error) });
         
         // Check if this is a retryable error
         if (isRetryableError(error) && attempt < maxRetries) {

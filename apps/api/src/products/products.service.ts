@@ -85,7 +85,6 @@ export class ProductsService {
         images: dto.images || [],
         tags: dto.tags || [],
         active: dto.active !== undefined ? dto.active : true,
-        categoryId: dto.categoryId,
       },
     }));
   }
