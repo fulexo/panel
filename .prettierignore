@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.next/
+coverage/
+*.log
+*.lock
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+.env*
+*.config.js
+*.config.ts
