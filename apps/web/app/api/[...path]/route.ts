@@ -97,27 +97,58 @@ async function handleRequest(
 
     // Get response data
     const responseText = await response.text();
+    const contentType = response.headers.get('content-type') || 'application/json';
+    
+    // Check if response is JSON
+    const isJson = contentType.includes('application/json');
     let responseData;
-    try {
-      responseData = JSON.parse(responseText);
-    } catch {
+    
+    if (isJson) {
+      try {
+        responseData = JSON.parse(responseText);
+      } catch {
+        responseData = responseText;
+      }
+    } else {
       responseData = responseText;
     }
 
     // Prepare response headers
     const responseHeaders: HeadersInit = {
-      'Content-Type': response.headers.get('content-type') || 'application/json',
+      'Content-Type': contentType,
     };
+
+    // Copy other important headers
+    const cacheControl = response.headers.get('cache-control');
+    if (cacheControl) {
+      responseHeaders['Cache-Control'] = cacheControl;
+    }
+
+    const etag = response.headers.get('etag');
+    if (etag) {
+      responseHeaders['ETag'] = etag;
+    }
+
+    const lastModified = response.headers.get('last-modified');
+    if (lastModified) {
+      responseHeaders['Last-Modified'] = lastModified;
+    }
 
     // Copy Set-Cookie headers for authentication
     const setCookieHeaders = response.headers.getSetCookie();
     if (setCookieHeaders && setCookieHeaders.length > 0) {
-      // Next.js requires Set-Cookie headers to be set individually
-      const nextResponse = NextResponse.json(responseData, {
-        status: response.status,
-        statusText: response.statusText,
-        headers: responseHeaders,
-      });
+      // Create response based on content type
+      const nextResponse = isJson 
+        ? NextResponse.json(responseData, {
+            status: response.status,
+            statusText: response.statusText,
+            headers: responseHeaders,
+          })
+        : new NextResponse(responseData, {
+            status: response.status,
+            statusText: response.statusText,
+            headers: responseHeaders,
+          });
       
       // Set each Set-Cookie header
       setCookieHeaders.forEach(cookie => {
@@ -127,12 +158,20 @@ async function handleRequest(
       return nextResponse;
     }
 
-    // Return response with same status and headers
-    return NextResponse.json(responseData, {
-      status: response.status,
-      statusText: response.statusText,
-      headers: responseHeaders,
-    });
+    // Return response with same content type
+    if (isJson) {
+      return NextResponse.json(responseData, {
+        status: response.status,
+        statusText: response.statusText,
+        headers: responseHeaders,
+      });
+    } else {
+      return new NextResponse(responseData, {
+        status: response.status,
+        statusText: response.statusText,
+        headers: responseHeaders,
+      });
+    }
 
   } catch (error) {
     // API Proxy Error occurred

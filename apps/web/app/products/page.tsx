@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../components/AuthProvider";
 import ProtectedRoute from "../../components/ProtectedRoute";
+import { useDebounce } from "../../hooks/useDebounce";
 
 interface Product {
   id: string;
@@ -51,6 +52,7 @@ export default function ProductsPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const debouncedSearchTerm = useDebounce(searchTerm, 500);
   const [statusFilter, setStatusFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [storeFilter, setStoreFilter] = useState('all');
@@ -90,7 +92,7 @@ export default function ProductsPage() {
     } else {
       router.push('/login');
     }
-  }, [user, currentPage, searchTerm, statusFilter, categoryFilter, storeFilter]);
+  }, [user, currentPage, debouncedSearchTerm, statusFilter, categoryFilter, storeFilter]);
 
   const fetchProducts = async () => {
     try {
@@ -105,7 +107,7 @@ export default function ProductsPage() {
       const params = new URLSearchParams({
         page: currentPage.toString(),
         limit: '20',
-        ...(searchTerm && { search: searchTerm }),
+        ...(debouncedSearchTerm && { search: debouncedSearchTerm }),
         ...(statusFilter !== 'all' && { status: statusFilter }),
         ...(categoryFilter !== 'all' && { category: categoryFilter }),
         ...(storeFilter !== 'all' && { storeId: storeFilter }),
@@ -484,6 +486,7 @@ export default function ProductsPage() {
                 <input
                   type="text"
                   placeholder="Search products by name or SKU..."
+                  aria-label="Search products by name or SKU"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full px-4 py-2 pl-10 bg-input border border-border rounded-lg form-input text-foreground placeholder-muted-foreground"

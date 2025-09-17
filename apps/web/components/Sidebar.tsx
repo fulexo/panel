@@ -2,14 +2,17 @@
 
 import { useAuth } from './AuthProvider';
 import { usePathname } from 'next/navigation';
+import Link from 'next/link';
 import { useState } from 'react';
 
 interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
+  isDesktopCollapsed?: boolean;
+  onDesktopToggle?: () => void;
 }
 
-export default function Sidebar({ isOpen, onClose }: SidebarProps) {
+export default function Sidebar({ isOpen, onClose, isDesktopCollapsed = false, onDesktopToggle }: SidebarProps) {
   const { user, logout } = useAuth();
   const pathname = usePathname();
   const [expandedSections, setExpandedSections] = useState<string[]>(['main']);
@@ -74,11 +77,12 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             isActive(item.href)
               ? 'bg-primary text-primary-foreground'
               : 'hover:bg-accent text-muted-foreground hover:text-foreground'
-          }`}
+          } ${isDesktopCollapsed ? 'lg:justify-center lg:px-2' : ''}`}
           onClick={() => onClose()}
+          title={isDesktopCollapsed ? item.label : undefined}
         >
           <span className="text-lg group-hover:scale-110 transition-transform">{item.icon}</span>
-          <span className="font-medium">{item.label}</span>
+          {!isDesktopCollapsed && <span className="font-medium">{item.label}</span>}
         </a>
       );
     });
@@ -96,21 +100,42 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
       {/* Sidebar */}
       <div className={`
-        fixed top-0 left-0 h-full w-80 bg-card border-r border-border z-50 transform transition-transform duration-300 ease-in-out
+        fixed top-0 left-0 h-full bg-card border-r border-border z-50 transform transition-all duration-300 ease-in-out
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
         lg:translate-x-0 lg:static lg:z-auto
+        ${isDesktopCollapsed ? 'lg:w-16' : 'lg:w-80'}
+        w-80
       `}>
         <div className="flex flex-col h-full">
           {/* Header */}
-          <div className="p-6 border-b border-border">
+          <div className={`p-6 border-b border-border ${isDesktopCollapsed ? 'lg:p-2' : ''}`}>
             <div className="flex items-center justify-between">
-              <a href="/dashboard" className="font-bold text-2xl text-foreground">
-                Fulexo
-              </a>
-              <button
-                onClick={onClose}
-                className="lg:hidden p-2 rounded-md hover:bg-accent transition-colors"
-              >
+              {!isDesktopCollapsed && (
+                <Link href="/dashboard" className="font-bold text-2xl text-foreground">
+                  Fulexo
+                </Link>
+              )}
+              {isDesktopCollapsed && (
+                <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+                  <span className="text-primary-foreground font-bold text-lg">F</span>
+                </div>
+              )}
+              <div className="flex items-center gap-2">
+                {onDesktopToggle && (
+                  <button
+                    onClick={onDesktopToggle}
+                    className="hidden lg:block p-2 rounded-md hover:bg-accent transition-colors"
+                    title={isDesktopCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={isDesktopCollapsed ? "M9 5l7 7-7 7" : "M15 19l-7-7 7-7"} />
+                    </svg>
+                  </button>
+                )}
+                <button
+                  onClick={onClose}
+                  className="lg:hidden p-2 rounded-md hover:bg-accent transition-colors"
+                >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
                 </svg>
@@ -136,20 +161,23 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           </div>
 
           {/* Search */}
-          <div className="p-4 border-b border-border">
-            <form action="/search">
-              <div className="relative">
-                <input 
-                  name="q" 
-                  placeholder="Search..." 
-                  className="w-full px-4 py-2 pl-10 bg-input border border-border rounded-lg form-input text-foreground placeholder-muted-foreground" 
-                />
-                <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-              </div>
-            </form>
-          </div>
+          {!isDesktopCollapsed && (
+            <div className="p-4 border-b border-border">
+              <form action="/search">
+                <div className="relative">
+                  <input 
+                    name="q" 
+                    placeholder="Search..."
+                    aria-label="Search" 
+                    className="w-full px-4 py-2 pl-10 bg-input border border-border rounded-lg form-input text-foreground placeholder-muted-foreground" 
+                  />
+                  <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+              </form>
+            </div>
+          )}
 
           {/* Navigation */}
           <div className="flex-1 overflow-y-auto custom-scrollbar">
