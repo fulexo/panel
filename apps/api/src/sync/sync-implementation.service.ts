@@ -35,7 +35,7 @@ export class SyncImplementationService {
       
       return { success: true, synced };
     } catch (error) {
-      this.logger.error(`Order sync failed for account ${accountId}: ${error.message}`, error.stack, 'SyncService');
+      this.logger.error(`Order sync failed for account ${accountId}: ${error instanceof Error ? error.message : 'Unknown error'}`, error instanceof Error ? error.stack : undefined, 'SyncService');
       throw error;
     }
   }
@@ -57,7 +57,7 @@ export class SyncImplementationService {
       
       return { success: true, synced };
     } catch (error) {
-      this.logger.error(`Shipment sync failed for account ${accountId}: ${error.message}`, error.stack, 'SyncService');
+      this.logger.error(`Shipment sync failed for account ${accountId}: ${error instanceof Error ? error.message : 'Unknown error'}`, error instanceof Error ? error.stack : undefined, 'SyncService');
       throw error;
     }
   }
@@ -79,7 +79,7 @@ export class SyncImplementationService {
       
       return { success: true, synced };
     } catch (error) {
-      this.logger.error(`Return sync failed for account ${accountId}: ${error.message}`, error.stack, 'SyncService');
+      this.logger.error(`Return sync failed for account ${accountId}: ${error instanceof Error ? error.message : 'Unknown error'}`, error instanceof Error ? error.stack : undefined, 'SyncService');
       throw error;
     }
   }
@@ -101,29 +101,29 @@ export class SyncImplementationService {
       
       return { success: true, synced };
     } catch (error) {
-      this.logger.error(`Invoice sync failed for account ${accountId}: ${error.message}`, error.stack, 'SyncService');
+      this.logger.error(`Invoice sync failed for account ${accountId}: ${error instanceof Error ? error.message : 'Unknown error'}`, error instanceof Error ? error.stack : undefined, 'SyncService');
       throw error;
     }
   }
 
   // Helper methods for fetching data from external sources
-  private async fetchOrdersFromSource(accountId: string): Promise<any[]> {
+  private async fetchOrdersFromSource(_accountId: string): Promise<any[]> {
     // Implement actual API call to external source
     // This is a placeholder
     return [];
   }
 
-  private async fetchShipmentsFromSource(accountId: string): Promise<any[]> {
+  private async fetchShipmentsFromSource(_accountId: string): Promise<any[]> {
     // Implement actual API call to external source
     return [];
   }
 
-  private async fetchReturnsFromSource(accountId: string): Promise<any[]> {
+  private async fetchReturnsFromSource(_accountId: string): Promise<any[]> {
     // Implement actual API call to external source
     return [];
   }
 
-  private async fetchInvoicesFromSource(accountId: string): Promise<any[]> {
+  private async fetchInvoicesFromSource(_accountId: string): Promise<any[]> {
     // Implement actual API call to external source
     return [];
   }
@@ -153,15 +153,15 @@ export class SyncImplementationService {
     }
   }
 
-  private async upsertShipment(accountId: string, shipmentData: any): Promise<void> {
+  private async upsertShipment(_accountId: string, _shipmentData: any): Promise<void> {
     // Implement shipment upsert logic
   }
 
-  private async upsertReturn(accountId: string, returnData: any): Promise<void> {
+  private async upsertReturn(_accountId: string, _returnData: any): Promise<void> {
     // Implement return upsert logic
   }
 
-  private async upsertInvoice(accountId: string, invoiceData: any): Promise<void> {
+  private async upsertInvoice(_accountId: string, _invoiceData: any): Promise<void> {
     // Implement invoice upsert logic
   }
 }

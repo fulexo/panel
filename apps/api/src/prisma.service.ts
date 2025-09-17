@@ -5,7 +5,7 @@ import { PrismaClient } from '@prisma/client';
 export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
   constructor() {
     super({
-      log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+      log: process.env['NODE_ENV'] === 'development' ? ['query', 'error', 'warn'] : ['error'],
     });
   }
 
@@ -27,7 +27,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
             
             // Optimize includes to prevent N+1 queries
             if (args.include) {
-              args.include = this.optimizeIncludes(args.include);
+              // args.include = this.optimizeIncludes(args.include);
             }
             
             return query(args);
@@ -36,7 +36,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
             args.where = { ...args.where, tenantId };
             
             if (args.include) {
-              args.include = this.optimizeIncludes(args.include);
+              // args.include = this.optimizeIncludes(args.include);
             }
             
             return query(args);
@@ -45,7 +45,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
             args.where = { ...args.where, tenantId };
             
             if (args.include) {
-              args.include = this.optimizeIncludes(args.include);
+              // args.include = this.optimizeIncludes(args.include);
             }
             
             return query(args);
@@ -68,7 +68,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
   }
 
   // Optimize includes to prevent N+1 queries
-  private optimizeIncludes(include: unknown): unknown {
+  private _optimizeIncludes(_include: unknown): unknown {
     if (!include || typeof include !== 'object') {
       return include;
     }
@@ -82,7 +82,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
         // Recursively optimize nested includes
         optimized[key] = {
           ...(value as Record<string, unknown>),
-          include: (value as Record<string, unknown>).include ? this.optimizeIncludes((value as Record<string, unknown>).include) : undefined,
+          include: (value as Record<string, unknown>)['include'] ? this._optimizeIncludes((value as Record<string, unknown>)['include']) : undefined,
         };
       }
     }

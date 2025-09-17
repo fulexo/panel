@@ -8,6 +8,14 @@ services:
     ports: ["80:80", "443:443"]
     depends_on: [api, web]
     restart: unless-stopped
+    environment:
+      - DOMAIN_API=${DOMAIN_API}
+      - DOMAIN_APP=${DOMAIN_APP}
+    command: >
+      sh -c "
+        envsubst '$$DOMAIN_API $$DOMAIN_APP' < /etc/nginx/conf.d/app.conf.template > /etc/nginx/conf.d/app.conf &&
+        nginx -g 'daemon off;'
+      "
 
   postgres:
     image: postgres:16

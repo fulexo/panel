@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { AuthProvider } from '../components/AuthProvider';
 import ClientLayout from '../components/ClientLayout';
+import ErrorBoundary from '../components/ErrorBoundary';
 
 export const metadata: Metadata = {
   title: 'Fulexo Platform',
@@ -47,9 +48,11 @@ export default function RootLayout({
         `}</style>
       </head>
       <body className="h-full bg-background text-foreground antialiased">
-        <AuthProvider>
-          <ClientLayout>{children}</ClientLayout>
-        </AuthProvider>
+        <ErrorBoundary>
+          <AuthProvider>
+            <ClientLayout>{children}</ClientLayout>
+          </AuthProvider>
+        </ErrorBoundary>
       </body>
     </html>
   );

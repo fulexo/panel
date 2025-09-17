@@ -4,27 +4,27 @@ import { ApiProperty } from '@nestjs/swagger';
 export class LoginDto {
   @ApiProperty({ example: 'admin@example.com' })
   @IsEmail()
-  email: string;
+  email!: string;
 
   @ApiProperty({ example: 'Admin123!' })
   @IsString()
   @MinLength(6)
-  password: string;
+  password!: string;
 }
 
 export class RegisterDto {
   @ApiProperty({ example: 'user@example.com' })
   @IsEmail()
-  email: string;
+  email!: string;
 
   @ApiProperty({ example: 'SecurePass123!' })
   @IsString()
   @MinLength(6)
-  password: string;
+  password!: string;
 
   @ApiProperty()
   @IsUUID()
-  tenantId: string;
+  tenantId!: string;
 
   @ApiProperty({ enum: ['ADMIN', 'CUSTOMER'] })
   @IsOptional()
@@ -35,18 +35,18 @@ export class RegisterDto {
 export class RefreshTokenDto {
   @ApiProperty()
   @IsString()
-  refreshToken: string;
+  refreshToken!: string;
 }
 
 export class Enable2FADto {
   @ApiProperty()
   @IsString()
   @MinLength(6)
-  password: string;
+  password!: string;
 }
 
 export class Verify2FADto {
   @ApiProperty({ example: '123456' })
   @IsString()
-  token: string;
+  token!: string;
 }

@@ -30,7 +30,7 @@ export class WooService {
     try {
       const { Queue } = await import('bullmq');
       const Redis = (await import('ioredis')).default;
-      const connection = new Redis(process.env.REDIS_URL || 'redis://valkey:6379/0', { maxRetriesPerRequest: null });
+      const connection = new Redis(process.env['REDIS_URL'] || 'redis://valkey:6379/0', { maxRetriesPerRequest: null });
       const q = new Queue('fx-jobs', { connection });
       await q.add('woo-sync-orders', { storeId: store.id });
       await q.add('woo-sync-products', { storeId: store.id });
@@ -68,7 +68,7 @@ export class WooService {
       const body = {
         name: `fx-${topic}`,
         topic,
-        delivery_url: `https://${process.env.DOMAIN_API || 'api.example.com'}/woo/webhooks/${id}`,
+        delivery_url: `https://${process.env['DOMAIN_API'] || 'api.example.com'}/woo/webhooks/${id}`,
         secret: s.webhookSecret || undefined,
       };
       const r = await fetch(`${s.baseUrl}/wp-json/wc/${s.apiVersion}/webhooks`, {

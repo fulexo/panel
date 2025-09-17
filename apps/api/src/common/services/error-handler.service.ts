@@ -90,12 +90,12 @@ export class ErrorHandlerService {
       await this.sendToMonitoringService(errorInfo);
       
       // Send email notification if configured
-      if (process.env.ALERT_EMAIL) {
+      if (process.env['ALERT_EMAIL']) {
         await this.sendEmailAlert(errorInfo);
       }
       
       // Send Slack notification if configured
-      if (process.env.SLACK_WEBHOOK_URL) {
+      if (process.env['SLACK_WEBHOOK_URL']) {
         await this.sendSlackAlert(errorInfo);
       }
     } catch (alertError) {

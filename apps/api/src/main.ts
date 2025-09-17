@@ -37,9 +37,17 @@ async function bootstrap() {
   app.enableCors({
     origin: (origin, callback) => {
       const allowedOrigins = [
-        process.env.DOMAIN_APP || 'http://localhost:3000',
+        process.env['DOMAIN_APP'] || 'http://localhost:3001',
+        process.env['NEXT_PUBLIC_APP_URL'] || 'http://localhost:3001',
         'http://localhost:3000',
         'http://localhost:3001',
+        // Add development origins
+        ...(process.env['NODE_ENV'] === 'development' ? [
+          'http://localhost:3000',
+          'http://localhost:3001',
+          'http://127.0.0.1:3000',
+          'http://127.0.0.1:3001',
+        ] : []),
       ];
 
       if (!origin) {
@@ -52,7 +60,7 @@ async function bootstrap() {
       }
 
       // Log rejected origin for debugging
-      // Origin rejected by CORS policy
+      console.warn(`CORS: Origin rejected: ${origin}`);
       return callback(new Error('Not allowed by CORS'), false);
     },
     credentials: true,
@@ -63,11 +71,13 @@ async function bootstrap() {
       'X-Requested-With',
       'X-CSRF-Token',
       'X-Tenant-ID',
+      'X-WC-Webhook-Topic',
+      'X-WC-Webhook-Signature',
     ],
   });
 
   // Enhanced security headers
-  app.use((req, res, next) => {
+  app.use((_req: any, res: any, next: any) => {
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('X-Frame-Options', 'DENY');
     res.setHeader('X-XSS-Protection', '1; mode=block');
@@ -115,22 +125,69 @@ async function bootstrap() {
   });
 
   // Health check endpoint
-  app.getHttpAdapter().get('/health', (req, res) => {
-    res.json({
-      status: 'ok',
-      timestamp: new Date().toISOString(),
-      uptime: process.uptime(),
-    });
+  app.getHttpAdapter().get('/health', async (_req, res) => {
+    try {
+      // Check database connection
+      let dbHealthy = false;
+      try {
+        await app.get(PrismaService).$queryRaw`SELECT 1`;
+        dbHealthy = true;
+      } catch (error) {
+        console.error('Database health check failed:', error);
+      }
+      
+      // Check Redis connection
+      let redisHealthy = false;
+      try {
+        const redis = new (require('ioredis'))(process.env['REDIS_URL'] || 'redis://valkey:6379/0');
+        await redis.ping();
+        redisHealthy = true;
+        await redis.quit();
+      } catch (error) {
+        console.error('Redis health check failed:', error);
+      }
+      
+      const overallHealthy = dbHealthy && redisHealthy;
+      
+      if (overallHealthy) {
+        res.json({
+          status: 'healthy',
+          timestamp: new Date().toISOString(),
+          uptime: process.uptime(),
+          service: 'api',
+          version: process.env['npm_package_version'] || '1.0.0',
+          checks: {
+            database: dbHealthy,
+            redis: redisHealthy,
+          }
+        });
+      } else {
+        res.status(503).json({
+          status: 'unhealthy',
+          timestamp: new Date().toISOString(),
+          checks: {
+            database: dbHealthy,
+            redis: redisHealthy,
+          }
+        });
+      }
+    } catch (error) {
+      res.status(503).json({
+        status: 'unhealthy',
+        timestamp: new Date().toISOString(),
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+    }
   });
 
   // Metrics endpoint
-  app.getHttpAdapter().get('/metrics', (req, res) => {
+  app.getHttpAdapter().get('/metrics', (_req, res) => {
     res.set('Content-Type', register.contentType);
     res.end(register.metrics());
   });
 
   // JWKS endpoint
-  app.getHttpAdapter().get('/auth/.well-known/jwks.json', (req, res) => {
+  app.getHttpAdapter().get('/auth/.well-known/jwks.json', (_req, res) => {
     res.json({ keys: [] });
   });
 
@@ -147,7 +204,7 @@ async function bootstrap() {
     process.exit(0);
   });
 
-  const port = process.env.PORT || 3000;
+  const port = process.env['PORT'] || 3000;
   await app.listen(port);
   // Application started successfully
   // API Documentation: http://localhost:${port}/api/docs
@@ -155,7 +212,7 @@ async function bootstrap() {
   // Metrics: http://localhost:${port}/metrics
 }
 
-bootstrap().catch((error) => {
+bootstrap().catch((_error) => {
   // Failed to start application
   process.exit(1);
 });

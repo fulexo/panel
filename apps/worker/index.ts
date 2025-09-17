@@ -5,14 +5,7 @@ const express = require('express');
 const cors = require('cors');
 const { PrismaClient, Prisma } = require('@prisma/client');
 const { validateEnvironment } = require('./env.validation');
-
-// Simple logger for worker
-const logger = {
-  info: (msg, ...args) => { /* [INFO] ${new Date().toISOString()} - ${msg} */ },
-  error: (msg, ...args) => { /* [ERROR] ${new Date().toISOString()} - ${msg} */ },
-  warn: (msg, ...args) => { /* [WARN] ${new Date().toISOString()} - ${msg} */ },
-  debug: (msg, ...args) => { /* [DEBUG] ${new Date().toISOString()} - ${msg} */ },
-};
+import { logger } from './lib/logger';
 
 // Initialize Prometheus metrics
 client.collectDefaultMetrics();
@@ -52,42 +45,85 @@ const prisma = new PrismaClient({
 // Job processors
 const jobProcessors = {
   'sync-orders': async (job) => {
-    const { accountId } = job.data;
-    // Order sync processing
-    
-    // Import and use SyncService for actual sync implementation
-    // Currently simulating sync process
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    // Order sync completed
-    return { success: true, accountId };
+    try {
+      const { accountId } = job.data;
+      if (!accountId) {
+        throw new Error('Account ID is required for sync-orders job');
+      }
+      
+      // Order sync processing
+      logger.info(`Starting order sync for account: ${accountId}`);
+      
+      // Import and use SyncService for actual sync implementation
+      // Currently simulating sync process
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      logger.info(`Order sync completed for account: ${accountId}`);
+      return { success: true, accountId };
+    } catch (error) {
+      logger.error(`Order sync failed for account ${job.data?.accountId}:`, error);
+      throw error;
+    }
   },
 
   'sync-shipments': async (job) => {
-    const { accountId } = job.data;
-    // Processing shipment sync for account
-    
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    return { success: true, accountId };
+    try {
+      const { accountId } = job.data;
+      if (!accountId) {
+        throw new Error('Account ID is required for sync-shipments job');
+      }
+      
+      logger.info(`Starting shipment sync for account: ${accountId}`);
+      
+      // Processing shipment sync for account
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      logger.info(`Shipment sync completed for account: ${accountId}`);
+      return { success: true, accountId };
+    } catch (error) {
+      logger.error(`Shipment sync failed for account ${job.data?.accountId}:`, error);
+      throw error;
+    }
   },
 
   'sync-returns': async (job) => {
-    const { accountId } = job.data;
-    // Processing return sync for account
-    
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    return { success: true, accountId };
+    try {
+      const { accountId } = job.data;
+      if (!accountId) {
+        throw new Error('Account ID is required for sync-returns job');
+      }
+      
+      logger.info(`Starting return sync for account: ${accountId}`);
+      
+      // Processing return sync for account
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      logger.info(`Return sync completed for account: ${accountId}`);
+      return { success: true, accountId };
+    } catch (error) {
+      logger.error(`Return sync failed for account ${job.data?.accountId}:`, error);
+      throw error;
+    }
   },
 
   'sync-invoices': async (job) => {
-    const { accountId } = job.data;
-    // Processing invoice sync for account
-    
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    return { success: true, accountId };
+    try {
+      const { accountId } = job.data;
+      if (!accountId) {
+        throw new Error('Account ID is required for sync-invoices job');
+      }
+      
+      logger.info(`Starting invoice sync for account: ${accountId}`);
+      
+      // Processing invoice sync for account
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      logger.info(`Invoice sync completed for account: ${accountId}`);
+      return { success: true, accountId };
+    } catch (error) {
+      logger.error(`Invoice sync failed for account ${job.data?.accountId}:`, error);
+      throw error;
+    }
   },
 
   // WooCommerce sync placeholders
@@ -620,19 +656,56 @@ app.get('/health', async (req, res) => {
     // Check worker health
     const isHealthy = worker.isRunning() && !worker.closing;
     
-    if (isHealthy) {
+    // Check database connection
+    let dbHealthy = false;
+    try {
+      await prisma.$queryRaw`SELECT 1`;
+      dbHealthy = true;
+    } catch (error) {
+      logger.error('Database health check failed:', error);
+    }
+    
+    // Check Redis connection
+    let redisHealthy = false;
+    try {
+      await connection.ping();
+      redisHealthy = true;
+    } catch (error) {
+      logger.error('Redis health check failed:', error);
+    }
+    
+    const overallHealthy = isHealthy && dbHealthy && redisHealthy;
+    
+    if (overallHealthy) {
       res.json({
         status: 'healthy',
         uptime: process.uptime(),
         activeJobs: (await worker.getJobs()).length,
         memory: process.memoryUsage(),
-        version: process.env.npm_package_version || '1.0.0'
+        version: process.env.npm_package_version || '1.0.0',
+        checks: {
+          worker: isHealthy,
+          database: dbHealthy,
+          redis: redisHealthy,
+        }
       });
     } else {
-      res.status(503).json({ status: 'unhealthy' });
+      res.status(503).json({ 
+        status: 'unhealthy',
+        checks: {
+          worker: isHealthy,
+          database: dbHealthy,
+          redis: redisHealthy,
+        }
+      });
     }
   } catch (error) {
-    res.status(503).json({ status: 'unhealthy', error: error.message });
+    logger.error('Health check failed:', error);
+    res.status(503).json({ 
+      status: 'unhealthy', 
+      error: error instanceof Error ? error.message : 'Unknown error',
+      timestamp: new Date().toISOString()
+    });
   }
 });
 
@@ -717,42 +790,35 @@ start().catch(err => {
 // Export for testing
 module.exports = { app, worker, prisma, connection };
 
-// Handle process errors
+// Process event handlers (consolidated)
 process.on('warning', (warning) => {
   logger.warn('Process warning:', warning);
 });
 
-// Handle process errors
 process.on('exit', (code) => {
   logger.info(`Process exiting with code ${code}`);
 });
 
-// Handle process errors
 process.on('beforeExit', (code) => {
   logger.info(`Process beforeExit with code ${code}`);
 });
 
-// Handle process errors
 process.on('disconnect', () => {
   logger.info('Process disconnected');
 });
 
-// Handle process errors
 process.on('message', (message) => {
   logger.info('Process received message:', message);
 });
 
-// Handle process errors
 process.on('rejectionHandled', (promise) => {
   logger.info('Promise rejection handled:', promise);
 });
 
-// Handle process errors
 process.on('multipleResolves', (type, promise, reason) => {
   logger.warn('Promise multiple resolves:', { type, promise, reason });
 });
 
-// Handle uncaught exceptions and unhandled rejections
 process.on('uncaughtException', (error) => {
   logger.error('Uncaught Exception:', error);
   process.exit(1);
@@ -763,7 +829,6 @@ process.on('unhandledRejection', (reason, promise) => {
   process.exit(1);
 });
 
-// Handle graceful shutdown signals
 process.on('SIGTERM', () => {
   logger.info('SIGTERM received, shutting down gracefully');
   process.exit(0);
@@ -774,7 +839,6 @@ process.on('SIGINT', () => {
   process.exit(0);
 });
 
-// Handle other important signals
 process.on('SIGHUP', () => {
   logger.info('SIGHUP received, reloading configuration');
 });
@@ -782,9 +846,4 @@ process.on('SIGHUP', () => {
 process.on('SIGQUIT', () => {
   logger.info('SIGQUIT received, shutting down gracefully');
   process.exit(0);
-});
-
-// Handle warnings
-process.on('warning', (warning) => {
-  logger.warn('Process warning:', warning);
 });

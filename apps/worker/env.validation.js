@@ -1,5 +1,5 @@
 const { plainToClass } = require('class-transformer');
-const { IsString, IsOptional, validateSync, IsEnum } = require('class-validator');
+const { IsString, IsOptional, validateSync, IsEnum, MinLength } = require('class-validator');
 
 const Environment = {
   Development: 'development',
@@ -20,6 +20,18 @@ class EnvironmentVariables {
   @IsString()
   @IsOptional()
   WORKER_PORT = '3002';
+
+  // Add encryption key validation for consistency
+  @IsString()
+  @IsOptional()
+  @MinLength(32)
+  ENCRYPTION_KEY;
+
+  // Add JWT secret validation for consistency
+  @IsString()
+  @IsOptional()
+  @MinLength(64)
+  JWT_SECRET;
 }
 
 function validateEnvironment(config = process.env) {

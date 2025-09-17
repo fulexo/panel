@@ -115,9 +115,9 @@ export class CalendarService {
   }
 
   async saveOAuth(tenantId: string, provider: string, credentialsJson: any) {
-    const enc = new (require('../crypto').EncryptionService)(process.env.MASTER_KEY_HEX || process.env.ENCRYPTION_KEY || ''.padEnd(64,'0'));
+    const enc = new (require('../crypto').EncryptionService)(process.env['MASTER_KEY_HEX'] || process.env['ENCRYPTION_KEY'] || ''.padEnd(64,'0'));
     const payload = enc.encrypt(JSON.stringify(credentialsJson));
-    const up = await this.runTenant(tenantId, async (db) => db.oAuthCredential.upsert({
+    await this.runTenant(tenantId, async (db) => db.oAuthCredential.upsert({
       where: { tenantId_provider: { tenantId, provider } } as any,
       create: { tenantId, provider, secret: payload as any },
       update: { secret: payload as any },

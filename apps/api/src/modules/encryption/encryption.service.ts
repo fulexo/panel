@@ -5,15 +5,15 @@ import * as crypto from 'crypto'
 export class EncryptionService {
   private readonly algorithm = 'aes-256-gcm'
   private readonly key: Buffer
-  private readonly saltLength = 32
+  private readonly _saltLength = 32
   private readonly tagLength = 16
   private readonly ivLength = 16
 
   constructor() {
-    const keyString = process.env.ENCRYPTION_KEY
+    const keyString = process.env['ENCRYPTION_KEY']
     
     if (!keyString) {
-      if (process.env.NODE_ENV === 'production') {
+      if (process.env['NODE_ENV'] === 'production') {
         throw new Error('ENCRYPTION_KEY environment variable is required in production')
       }
       // ENCRYPTION_KEY not set, using default key (development only)
@@ -49,7 +49,7 @@ export class EncryptionService {
       // Return base64 encoded string
       return combined.toString('base64')
     } catch (error) {
-      throw new Error(`Encryption failed: ${error.message}`)
+      throw new Error(`Encryption failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }
 
@@ -73,7 +73,7 @@ export class EncryptionService {
       
       return decrypted.toString('utf8')
     } catch (error) {
-      throw new Error(`Decryption failed: ${error.message}`)
+      throw new Error(`Decryption failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }
   

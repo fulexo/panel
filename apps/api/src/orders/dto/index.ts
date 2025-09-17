@@ -1,23 +1,23 @@
-import { IsString, IsNumber, IsOptional, IsArray, IsDateString, IsObject, ValidateNested, IsEnum } from 'class-validator';
+import { IsString, IsNumber, IsOptional, IsArray, IsDateString, IsObject, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class OrderItemDto {
   @ApiProperty()
   @IsString()
-  sku: string;
+  sku!: string;
 
   @ApiProperty()
   @IsString()
-  name: string;
+  name!: string;
 
   @ApiProperty()
   @IsNumber()
-  qty: number;
+  qty!: number;
 
   @ApiProperty()
   @IsNumber()
-  price: number;
+  price!: number;
 }
 
 export class CreateOrderDto {
@@ -35,11 +35,11 @@ export class CreateOrderDto {
 
   @ApiProperty()
   @IsString()
-  status: string;
+  status!: string;
 
   @ApiProperty()
   @IsNumber()
-  total: number;
+  total!: number;
 
   @ApiPropertyOptional()
   @IsOptional()
@@ -180,11 +180,11 @@ export class OrderQueryDto {
 export class CreateChargeDto {
   @ApiProperty()
   @IsString()
-  type: string;
+  type!: string;
 
   @ApiProperty()
   @IsNumber()
-  amount: number;
+  amount!: number;
 
   @ApiPropertyOptional()
   @IsOptional()

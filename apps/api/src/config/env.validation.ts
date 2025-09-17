@@ -1,5 +1,5 @@
 import { plainToClass } from 'class-transformer';
-import { IsString, IsNumber, IsEnum, IsOptional, validateSync, IsUrl, MinLength, IsPort } from 'class-validator';
+import { IsString, IsEnum, IsOptional, validateSync, MinLength, IsPort } from 'class-validator';
 
 enum Environment {
   Development = 'development',
@@ -17,40 +17,40 @@ class EnvironmentVariables {
 
   // Database
   @IsString()
-  DATABASE_URL: string;
+  DATABASE_URL!: string;
 
   // Redis
   @IsString()
-  REDIS_URL: string;
+  REDIS_URL!: string;
 
   // Security
   @IsString()
   @MinLength(64)
-  JWT_SECRET: string;
+  JWT_SECRET!: string;
 
   @IsString()
   @MinLength(32)
-  ENCRYPTION_KEY: string;
+  ENCRYPTION_KEY!: string;
 
   // Domains
   @IsString()
-  DOMAIN_API: string;
+  DOMAIN_API!: string;
 
   @IsString()
-  DOMAIN_APP: string;
+  DOMAIN_APP!: string;
 
   // S3/MinIO
   @IsString()
-  S3_ENDPOINT: string;
+  S3_ENDPOINT!: string;
 
   @IsString()
-  S3_ACCESS_KEY: string;
+  S3_ACCESS_KEY!: string;
 
   @IsString()
-  S3_SECRET_KEY: string;
+  S3_SECRET_KEY!: string;
 
   @IsString()
-  S3_BUCKET: string;
+  S3_BUCKET!: string;
 
   // Optional
   @IsString()
@@ -127,6 +127,15 @@ export function validateEnvOnStartup() {
       if (config.REDIS_URL.includes('localhost') || config.REDIS_URL.includes('127.0.0.1')) {
         throw new Error('REDIS_URL must not use localhost in production');
       }
+    } else {
+      // Development environment - warn about weak secrets but don't fail
+      if (config.JWT_SECRET && config.JWT_SECRET.length < 64) {
+        console.warn('WARNING: JWT_SECRET is shorter than 64 characters. This is not recommended for production.');
+      }
+      
+      if (config.ENCRYPTION_KEY && config.ENCRYPTION_KEY.length !== 32) {
+        console.warn('WARNING: ENCRYPTION_KEY should be exactly 32 characters for production.');
+      }
     }
     
     return config;
@@ -135,9 +144,11 @@ export function validateEnvOnStartup() {
     // Error details logged
     
     // Only exit in production, allow development to continue with warnings
-    if (process.env.NODE_ENV === 'production') {
+    if (process.env['NODE_ENV'] === 'production') {
       process.exit(1);
     }
+    
+    return undefined;
   }
 }
 

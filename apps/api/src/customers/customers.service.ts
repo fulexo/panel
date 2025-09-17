@@ -62,10 +62,10 @@ export class CustomersService {
     ]));
     
     // Calculate order stats for each customer
-    const customersWithStats = data.map(customer => {
+    const customersWithStats = data.map((customer: any) => {
       const orders = customer.orders || [];
       const totalOrders = orders.length;
-      const totalSpent = orders.reduce((sum, order) => sum + (order.total || 0), 0);
+      const totalSpent = orders.reduce((sum: any, order: any) => sum + (order.total || 0), 0);
       const averageOrderValue = totalOrders > 0 ? totalSpent / totalOrders : 0;
       const lastOrderDate = orders.length > 0 ? orders[0].createdAt : null;
       
@@ -113,10 +113,10 @@ export class CustomersService {
         });
         
         const totalOrders = orders.length;
-        const totalSpent = orders.reduce((sum, order) => sum + Number(order.total || 0), 0);
+        const totalSpent = orders.reduce((sum: any, order: any) => sum + Number(order.total || 0), 0);
         const averageOrderValue = totalOrders > 0 ? totalSpent / totalOrders : 0;
         const lastOrderDate = orders.length > 0 
-          ? orders.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0].createdAt
+          ? orders.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0].createdAt
           : null;
         
         return {
@@ -190,7 +190,7 @@ export class CustomersService {
     return { message: 'Customer deleted' };
   }
 
-  async bulkUpdate(tenantId: string, customerIds: string[], updates: any, userId: string) {
+  async bulkUpdate(tenantId: string, customerIds: string[], updates: any, _userId: string) {
     if (!customerIds || customerIds.length === 0) {
       throw new BadRequestException('No customer IDs provided');
     }
@@ -227,7 +227,7 @@ export class CustomersService {
     };
   }
 
-  async bulkDelete(tenantId: string, customerIds: string[], userId: string) {
+  async bulkDelete(tenantId: string, customerIds: string[], _userId: string) {
     if (!customerIds || customerIds.length === 0) {
       throw new BadRequestException('No customer IDs provided');
     }

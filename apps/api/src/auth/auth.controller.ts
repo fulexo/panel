@@ -1,11 +1,11 @@
-import { Controller, Post, Body, Get, Req, Res, HttpCode, HttpStatus, UseGuards, BadRequestException, UnauthorizedException, Put } from '@nestjs/common';
+import { Controller, Post, Body, Get, Req, HttpCode, HttpStatus, BadRequestException, UnauthorizedException, Put } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { SessionService } from './session.service';
 import { TwoFactorService } from './twofactor.service';
 import { Public } from './decorators/public.decorator';
 import { CurrentUser } from './decorators/current-user.decorator';
-import { LoginDto, RegisterDto, Enable2FADto, Verify2FADto, RefreshTokenDto } from './dto';
+import { LoginDto, RegisterDto, Verify2FADto, RefreshTokenDto } from './dto';
 import { RateLimit } from '../rate-limit.decorator';
 
 @ApiTags('auth')

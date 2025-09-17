@@ -15,12 +15,12 @@ export class SyncService {
 
   constructor(
     private prisma: PrismaService,
-    private cache: CacheService,
+    private _cache: CacheService,
   ) {
-    this.redis = new Redis(process.env.REDIS_URL || 'redis://valkey:6379/0');
+    this.redis = new Redis(process.env['REDIS_URL'] || 'redis://valkey:6379/0');
     // BaseLinker removed
     this.encryptionService = new EncryptionService(
-      process.env.ENCRYPTION_KEY || '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'
+      process.env['ENCRYPTION_KEY'] || '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'
     );
     
     // Initialize sync queue
@@ -40,7 +40,7 @@ export class SyncService {
       // No-op if account concept not applicable
 
       // Decrypt token
-      const token = '';
+      // const token = '';
 
       // Get sync state
       const syncState = await this.getSyncState(accountId, 'orders');
@@ -49,10 +49,10 @@ export class SyncService {
         : new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
       // Source system removed. Placeholder for Woo import.
-      const params = {
-        date_confirmed_from: Math.floor(lastSyncDate.getTime() / 1000),
-        get_unconfirmed_orders: false,
-      };
+      // const params = {
+      //   date_confirmed_from: Math.floor(lastSyncDate.getTime() / 1000),
+      //   get_unconfirmed_orders: false,
+      // };
 
       const orders: any[] = [];
 
@@ -276,7 +276,7 @@ export class SyncService {
     return statusMap[statusId] || 'unknown';
   }
 
-  private decryptToken(encryptedToken: Buffer | Uint8Array): string {
+  private _decryptToken(encryptedToken: Buffer | Uint8Array): string {
     try {
       const raw = Buffer.isBuffer(encryptedToken)
         ? encryptedToken

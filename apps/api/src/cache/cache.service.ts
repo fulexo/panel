@@ -8,7 +8,7 @@ export class CacheService implements OnModuleDestroy {
   private defaultTTL = 300; // 5 minutes
 
   constructor(private logger: LoggerService) {
-    this.redis = new Redis(process.env.REDIS_URL || 'redis://valkey:6379/0', {
+    this.redis = new Redis(process.env['REDIS_URL'] || 'redis://valkey:6379/0', {
       maxRetriesPerRequest: 3,
       lazyConnect: true,
     });

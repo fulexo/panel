@@ -63,7 +63,7 @@ export class BillingController {
     const batch = await this.billing.getBatch(user.tenantId, id);
     const header = ['invoice_number','order_id','amount','currency','issued_at'];
     const rows = batch.items.map((it:any)=> [it.invoice.number||'', it.invoice.orderId, it.amount, it.invoice.currency||'', it.invoice.issuedAt||'']);
-    const csv = [header.join(','), ...rows.map(r=> r.join(','))].join('\n');
+    const csv = [header.join(','), ...rows.map((r: any)=> r.join(','))].join('\n');
     res.setHeader('Content-Type', 'text/csv');
     res.setHeader('Content-Disposition', `attachment; filename="billing_${id}.csv"`);
     res.send(csv);

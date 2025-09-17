@@ -128,7 +128,7 @@ export class ProductsService {
     }));
   }
 
-  async bulkUpdate(tenantId: string, productIds: string[], updates: any, userId: string) {
+  async bulkUpdate(tenantId: string, productIds: string[], updates: any, _userId: string) {
     if (!productIds || productIds.length === 0) {
       throw new BadRequestException('No product IDs provided');
     }
@@ -165,7 +165,7 @@ export class ProductsService {
     };
   }
 
-  async bulkDelete(tenantId: string, productIds: string[], userId: string) {
+  async bulkDelete(tenantId: string, productIds: string[], _userId: string) {
     if (!productIds || productIds.length === 0) {
       throw new BadRequestException('No product IDs provided');
     }

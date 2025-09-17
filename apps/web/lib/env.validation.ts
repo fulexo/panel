@@ -1,5 +1,5 @@
 import { plainToClass } from 'class-transformer';
-import { IsString, IsUrl, IsOptional, validateSync, IsEnum } from 'class-validator';
+import { IsString, IsUrl, IsOptional, validateSync, IsEnum, MinLength } from 'class-validator';
 
 enum Environment {
   Development = 'development',
@@ -22,6 +22,18 @@ class EnvironmentVariables {
   @IsString()
   @IsOptional()
   SHARE_BASE_URL?: string;
+
+  // Add encryption key validation for consistency
+  @IsString()
+  @IsOptional()
+  @MinLength(32)
+  ENCRYPTION_KEY?: string;
+
+  // Add JWT secret validation for consistency
+  @IsString()
+  @IsOptional()
+  @MinLength(64)
+  JWT_SECRET?: string;
 }
 
 export function validateEnvironment(config: Record<string, unknown>) {
