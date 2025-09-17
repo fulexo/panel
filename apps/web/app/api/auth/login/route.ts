@@ -19,6 +19,7 @@ export async function POST(request: NextRequest) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ email, password }),
+      credentials: 'include', // Include cookies from backend
     });
 
     if (!response.ok) {
@@ -31,37 +32,44 @@ export async function POST(request: NextRequest) {
 
     const data = await response.json();
 
-    // Set httpOnly cookies
+    // Forward cookies from backend response
     const cookieStore = cookies();
+    const setCookieHeaders = response.headers.get('set-cookie');
     
-    if (data.access) {
-      cookieStore.set('access_token', data.access, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-        maxAge: 15 * 60, // 15 minutes
-        path: '/',
-      });
-    }
-
-    if (data.refresh) {
-      cookieStore.set('refresh_token', data.refresh, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-        maxAge: 7 * 24 * 60 * 60, // 7 days
-        path: '/',
-      });
-    }
-
-    if (data.data) {
-      cookieStore.set('user', JSON.stringify(data.data), {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-        maxAge: 15 * 60, // 15 minutes
-        path: '/',
-      });
+    if (setCookieHeaders) {
+      // Parse and forward backend cookies
+      const cookies = setCookieHeaders.split(',').map(cookie => cookie.trim());
+      for (const cookie of cookies) {
+        const [nameValue, ...options] = cookie.split(';');
+        const [name, value] = nameValue.split('=');
+        
+        if (name && value) {
+          const cookieOptions: any = {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'strict',
+            path: '/',
+          };
+          
+          // Parse cookie options
+          for (const option of options) {
+            const [optName, optValue] = option.trim().split('=');
+            switch (optName.toLowerCase()) {
+              case 'max-age':
+                cookieOptions.maxAge = parseInt(optValue, 10);
+                break;
+              case 'expires':
+                cookieOptions.expires = new Date(optValue);
+                break;
+              case 'domain':
+                cookieOptions.domain = optValue;
+                break;
+            }
+          }
+          
+          cookieStore.set(name, value, cookieOptions);
+        }
+      }
     }
 
     // Return the response without sensitive data

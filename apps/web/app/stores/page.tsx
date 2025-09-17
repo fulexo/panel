@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import ProtectedRoute from '@/components/ProtectedRoute';
 
 interface Store {
   id: string;
@@ -54,7 +55,6 @@ export default function StoresPage() {
   });
 
   useEffect(() => {
-    const t = null;
     if (!t) {
       router.push('/login');
       return;
@@ -66,7 +66,6 @@ export default function StoresPage() {
     try {
       setLoading(true);
       setError(null);
-      const t = null;
       if (!t) {
         router.push('/login');
         return;

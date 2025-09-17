@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import ProtectedRoute from "@/components/ProtectedRoute";
 
 export default function CalendarPage(){
   const router = useRouter();
@@ -14,8 +15,6 @@ export default function CalendarPage(){
   const api = (path: string, init?: any) => fetch(`/api${path}`, { headers: {  , 'Content-Type': 'application/json' }, ...init });
 
   const load = async () => {
-    const t = null;
-    if(!t){ router.push('/login'); return; }
     const [e, bh, h] = await Promise.all([
       api('/calendar/events'),
       api('/calendar/business-hours'),

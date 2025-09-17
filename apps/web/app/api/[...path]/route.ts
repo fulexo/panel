@@ -105,6 +105,9 @@ async function handleRequest(
                      contentType.includes('application/zip') ||
                      contentType.includes('application/x-');
     
+    // Check if response is JSON (used in both binary and text branches)
+    const isJson = contentType.includes('application/json');
+    
     let responseData;
     let responseText;
     
@@ -115,7 +118,6 @@ async function handleRequest(
     } else {
       // Handle text content
       responseText = await response.text();
-      const isJson = contentType.includes('application/json');
       
       if (isJson) {
         try {

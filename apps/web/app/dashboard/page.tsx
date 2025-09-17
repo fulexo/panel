@@ -41,7 +41,7 @@ interface WooStore {
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
   const [stores, setStores] = useState<WooStore[]>([]);
@@ -57,12 +57,17 @@ export default function DashboardPage() {
     });
 
   useEffect(() => {
-    if (user) {
-      fetchDashboardData();
-    } else {
+    // Only redirect to login if auth check is complete and user is not authenticated
+    if (!authLoading && !user) {
       router.push('/login');
+      return;
     }
-  }, [user, selectedStore]);
+    
+    // Only fetch data if user is authenticated and auth check is complete
+    if (!authLoading && user) {
+      fetchDashboardData();
+    }
+  }, [user, authLoading, selectedStore]);
 
   const fetchDashboardData = async () => {
     try {
@@ -193,12 +198,15 @@ export default function DashboardPage() {
   const pendingOrders = getStatusCount('pending') + getStatusCount('processing');
   const completedOrders = getStatusCount('completed') + getStatusCount('shipped');
 
-  if (loading) {
+  // Show loading while auth is being checked or data is being fetched
+  if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <div className="spinner"></div>
-          <div className="text-lg text-foreground">Loading dashboard...</div>
+          <div className="text-lg text-foreground">
+            {authLoading ? 'Checking authentication...' : 'Loading dashboard...'}
+          </div>
         </div>
       </div>
     );

@@ -36,7 +36,7 @@ export default function TwoFAPage() {
       
       // Backend sets httpOnly cookies, we just need to handle the response
       // No need to manually set localStorage or cookies
-      if (data.data && data.data.user) {
+      if (data.data) {
         // Redirect to dashboard - AuthProvider will handle user state
         router.push('/dashboard');
       } else {
