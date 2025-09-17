@@ -220,6 +220,8 @@ model Order {
   @@index([tenantId, total])
   @@index([tenantId, paymentMethod])
   @@index([tenantId, orderSource])
+  @@index([tenantId, status, total])
+  @@index([tenantId, createdAt, status])
   @@index([createdAt])
   @@index([confirmedAt])
 }
@@ -234,6 +236,8 @@ model OrderItem {
   order   Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   
   @@index([orderId])
+  @@index([sku])
+  @@index([orderId, sku])
 }
 
 model Shipment {

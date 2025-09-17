@@ -4,6 +4,7 @@ const { validateEnvOnStartup } = require('./lib/env.validation');
 try {
   validateEnvOnStartup();
 } catch (error) {
+  // Environment validation warning (only in development)
   if (process.env.NODE_ENV === 'development') {
     console.warn('Environment validation warning:', error.message);
   }

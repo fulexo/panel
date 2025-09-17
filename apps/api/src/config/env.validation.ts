@@ -119,6 +119,15 @@ export function validateEnvOnStartup() {
         throw new Error('ENCRYPTION_KEY must be exactly 32 characters');
       }
       
+      // Check for secure URLs in production
+      if (!config.DATABASE_URL.startsWith('postgresql://')) {
+        throw new Error('DATABASE_URL must be a valid PostgreSQL connection string');
+      }
+      
+      if (!config.REDIS_URL.startsWith('redis://') && !config.REDIS_URL.startsWith('rediss://')) {
+        throw new Error('REDIS_URL must be a valid Redis connection string');
+      }
+      
       // Check for default values
       if (config.DATABASE_URL.includes('localhost') || config.DATABASE_URL.includes('127.0.0.1')) {
         throw new Error('DATABASE_URL must not use localhost in production');

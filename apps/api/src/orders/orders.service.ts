@@ -34,7 +34,15 @@ export class OrdersService {
           company: true,
         },
       },
-      items: true,
+      items: {
+        select: {
+          id: true,
+          sku: true,
+          name: true,
+          qty: true,
+          price: true,
+        },
+      },
       shipments: {
         select: {
           id: true,
@@ -53,15 +61,36 @@ export class OrdersService {
     };
 
     // Add sensitive fields for admin users
-    if (role === 'ADMIN') {
+    if (role === 'ADMIN' || role === 'FULEXO_ADMIN' || role === 'FULEXO_STAFF') {
       return {
         ...baseIncludes,
-        serviceCharges: true,
+        serviceCharges: {
+          select: {
+            id: true,
+            type: true,
+            amount: true,
+            currency: true,
+            notes: true,
+            createdAt: true,
+          },
+        },
+        invoices: {
+          select: {
+            id: true,
+            number: true,
+            status: true,
+            total: true,
+            currency: true,
+            issuedAt: true,
+            dueDate: true,
+          },
+        },
         returns: {
           select: {
             id: true,
             status: true,
             reason: true,
+            refundAmount: true,
             createdAt: true,
           },
         },

@@ -70,11 +70,15 @@ export class JwtService {
   }
 
   private async initHMACKey() {
-    const secret = process.env['JWT_SECRET'] || 'dev-secret-key-change-in-production';
+    const secret = process.env['JWT_SECRET'];
+    
+    if (!secret) {
+      throw new Error('JWT_SECRET environment variable is required');
+    }
     
     // Validate secret strength
-    if (secret.length < 32) {
-      throw new Error('JWT_SECRET must be at least 32 characters long');
+    if (secret.length < 64) {
+      throw new Error('JWT_SECRET must be at least 64 characters long');
     }
     
     // Check for weak secrets
@@ -86,10 +90,20 @@ export class JwtService {
       'jwt-secret',
       '1234567890',
       'abcdefghijklmnopqrstuvwxyz',
+      'password',
+      'admin',
+      'test',
+      'demo',
     ];
     
     if (weakPatterns.some(pattern => secret.toLowerCase().includes(pattern))) {
       throw new Error('JWT_SECRET contains weak patterns. Please use a stronger secret.');
+    }
+    
+    // Check for sufficient entropy
+    const uniqueChars = new Set(secret).size;
+    if (uniqueChars < 16) {
+      throw new Error('JWT_SECRET must contain at least 16 unique characters');
     }
     
     const secretBuffer = new TextEncoder().encode(secret);

@@ -2,8 +2,9 @@
 
 import { createContext, useContext, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { AuthContextType, User, LoginResponse } from '../types/auth';
-import { AuthUtils } from '../lib/auth-utils';
+import { AuthContextType, User, LoginResponse } from '@/types/auth';
+import { ApiResponse } from '@/types/api';
+import { AuthUtils } from '@/lib/auth-utils';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -24,21 +25,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:3000'}/auth/me`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:3000'}/api/auth/me`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
       });
 
       if (response.ok) {
-        const userData = await response.json();
-        setUser(userData);
+        const userData: ApiResponse<User> = await response.json();
+        setUser(userData.data);
       } else {
         await AuthUtils.clearTokens();
         setUser(null);
       }
     } catch (error) {
-      console.error('Auth check failed:', error);
+      // Log error to monitoring service instead of console
+      if (typeof window !== 'undefined') {
+        fetch('/api/errors', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'auth_check_failed',
+            message: error instanceof Error ? error.message : 'Unknown error',
+            stack: error instanceof Error ? error.stack : undefined,
+            timestamp: new Date().toISOString(),
+            url: window.location.href,
+          }),
+        }).catch(() => {}); // Silent fail for error logging
+      }
       await AuthUtils.clearTokens();
       setUser(null);
     } finally {
@@ -47,7 +61,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const login = async (email: string, password: string) => {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:3000'}/auth/login`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:3000'}/api/auth/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -59,7 +73,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       throw new Error('Login failed');
     }
 
-    const data = await response.json();
+    const data: LoginResponse = await response.json();
     
     if (data.requiresTwoFactor) {
       // tempToken'ı güvenli şekilde sakla

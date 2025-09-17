@@ -61,14 +61,14 @@ export class AuthController {
   @Get('me')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get current user info' })
-  async me(@CurrentUser() user: any) {
+  async me(@CurrentUser() user: { id: string; email: string; role: string; tenantId: string }) {
     return this.authService.getUserInfo(user.id);
   }
 
   @Get('sessions')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get active sessions' })
-  async getSessions(@CurrentUser() user: any) {
+  async getSessions(@CurrentUser() user: { id: string; email: string; role: string; tenantId: string }) {
     return this.sessionService.getUserSessions(user.id);
   }
 
@@ -76,7 +76,7 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Revoke a specific session' })
-  async revokeSession(@CurrentUser() user: any, @Body() body: { sessionId: string }) {
+  async revokeSession(@CurrentUser() user: { id: string; email: string; role: string; tenantId: string }, @Body() body: { sessionId: string }) {
     await this.sessionService.revokeSessionById(user.id, body.sessionId);
     return { message: 'Session revoked successfully' };
   }
@@ -85,7 +85,7 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Revoke all sessions except current' })
-  async revokeAllSessions(@CurrentUser() user: any, @Req() req: any) {
+  async revokeAllSessions(@CurrentUser() user: { id: string; email: string; role: string; tenantId: string }, @Req() req: any) {
     const currentToken = req.headers.authorization?.replace('Bearer ', '');
     await this.sessionService.revokeAllSessions(user.id, currentToken);
     return { message: 'All other sessions revoked successfully' };
