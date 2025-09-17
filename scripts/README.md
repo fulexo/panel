@@ -9,10 +9,11 @@ Bu dizin, Fulexo Platform'un kurulumu, yönetimi ve bakımı için gerekli scrip
 #### `quick-install.sh`
 **Hızlı kurulum script'i (Önerilen)**
 - Tüm kurulumu tek seferde yapar
-- Domain bilgilerini sorar
-- SSL kurulumu dahil
-- Veritabanı setup'ı dahil
+- Domain bilgilerini interaktif olarak sorar
+- SSL sertifikalarını otomatik kurar
+- Veritabanı yapılandırması dahil
 - Admin kullanıcısı oluşturma dahil
+- Systemd servisi kurulumu dahil
 
 ```bash
 chmod +x scripts/quick-install.sh
@@ -145,25 +146,12 @@ chmod +x scripts/backup-restore.sh
 - Grafana dashboard'larını oluşturur
 - Prometheus alert kurallarını günceller
 - Log rotation yapılandırır
-- Monitoring script'leri oluşturur
+- Monitoring servislerini kurar
 
 ```bash
 chmod +x scripts/setup-monitoring.sh
 ./scripts/setup-monitoring.sh
 ```
-
-#### `system-metrics.sh`
-**Sistem metrikleri toplama script'i**
-- CPU kullanımını toplar
-- Memory kullanımını toplar
-- Disk kullanımını toplar
-- Load average'ı toplar
-
-#### `send-alert.sh`
-**Alert gönderme script'i**
-- Email alert'leri gönderir
-- Webhook alert'leri gönderir
-- Log dosyasına yazar
 
 ### 👤 Kullanıcı Script'leri
 
@@ -231,14 +219,14 @@ chmod +x scripts/backup-restore.sh
 Script'ler otomatik olarak şu cron job'ları oluşturur:
 
 ```bash
-# System metrics (her 5 dakikada)
-*/5 * * * * root /opt/fulexo/scripts/system-metrics.sh
-
 # Health check (her 10 dakikada)
 */10 * * * * root /opt/fulexo/scripts/health-check.sh
 
 # Backup (günlük saat 02:00)
 0 2 * * * fulexo /opt/fulexo/scripts/backup.sh
+
+# Build cleanup (her Pazar 03:00)
+0 3 * * 0 root /opt/fulexo/scripts/cleanup-build.sh
 ```
 
 ## 🐛 Sorun Giderme
