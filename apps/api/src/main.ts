@@ -118,7 +118,7 @@ async function bootstrap() {
         if (url.protocol !== 'http:' && url.protocol !== 'https:') {
           return callback(new Error('Invalid protocol'), false);
         }
-      } catch (error) {
+      } catch {
         return callback(new Error('Invalid origin format'), false);
       }
 
@@ -278,7 +278,7 @@ async function bootstrap() {
       const jwtService = app.get('JwtService');
       const jwks = await jwtService.getJwks();
       res.json(jwks);
-    } catch (error) {
+    } catch {
       res.json({ keys: [] });
     }
   });

@@ -41,7 +41,7 @@ export class WooService {
         await q.add('woo-sync-products', { storeId: store.id });
         await q.close();
         await connection.quit();
-      } catch(e) {
+      } catch {
         // noop if queue unavailable
       }
       return store;

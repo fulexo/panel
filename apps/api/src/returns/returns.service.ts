@@ -68,7 +68,7 @@ export class ReturnsService {
         default:
           // Unknown notification channel
       }
-    } catch (error) {
+    } catch {
       // Failed to send notification
       // Don't throw - notification is best effort
     }

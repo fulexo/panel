@@ -179,7 +179,7 @@ export class AuthService {
       // Create a new session for the refreshed access token
       await this.sessionService.createSession(user.id, tokens.access, {});
       return tokens;
-    } catch (error) {
+      } catch {
       throw new UnauthorizedException('Invalid refresh token');
     }
   }

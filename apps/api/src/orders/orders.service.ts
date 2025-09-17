@@ -552,7 +552,7 @@ export class OrdersService {
         if (!order) throw new NotFoundException('Order not found');
         return { order };
       });
-    } catch (e) {
+    } catch {
       throw new BadRequestException('Invalid or expired token');
     }
   }

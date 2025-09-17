@@ -77,7 +77,7 @@ export class JwtService {
 
         this.keyId = kid;
       }
-    } catch (error) {
+    } catch {
       // RSA key initialization failed, falling back to HMAC
       await this.initHMACKey();
     }
@@ -271,7 +271,7 @@ export class JwtService {
       }
 
       return payload as any;
-    } catch (error) {
+    } catch {
       throw new Error('Invalid or expired refresh token');
     }
   }
@@ -293,7 +293,7 @@ export class JwtService {
           alg: 'RS256',
         }]
       };
-    } catch (error) {
+    } catch {
       // Fallback to empty keys if export fails
       return { keys: [] };
     }
@@ -328,7 +328,7 @@ export class JwtService {
       await redis.quit();
       
       return isBlacklisted === 1;
-    } catch (error) {
+    } catch {
       // Fallback to database check if Redis fails
       try {
         const blacklistedToken = await this.prisma.auditLog.findFirst({
@@ -342,7 +342,7 @@ export class JwtService {
         });
         
         return !!blacklistedToken;
-      } catch (dbError) {
+      } catch {
         // Error checking token blacklist
         return false; // If error, allow token (fail open)
       }
