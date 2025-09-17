@@ -34,20 +34,26 @@ export default function RootLayout({
             --card-foreground: 222.2 84% 4.9%;
             --popover: 0 0% 100%;
             --popover-foreground: 222.2 84% 4.9%;
-            --primary: 217.2 91.2% 59.8%;
-            --primary-foreground: 0 0% 100%;
-            --secondary: 210 40% 98%;
+            --primary: 221.2 83.2% 53.3%;
+            --primary-foreground: 210 40% 98%;
+            --secondary: 210 40% 96%;
             --secondary-foreground: 222.2 84% 4.9%;
-            --muted: 210 40% 98%;
+            --muted: 210 40% 96%;
             --muted-foreground: 215.4 16.3% 46.9%;
-            --accent: 210 40% 98%;
+            --accent: 210 40% 96%;
             --accent-foreground: 222.2 84% 4.9%;
             --destructive: 0 84.2% 60.2%;
             --destructive-foreground: 210 40% 98%;
             --border: 214.3 31.8% 91.4%;
             --input: 214.3 31.8% 91.4%;
-            --ring: 217.2 91.2% 59.8%;
-            --radius: 0.5rem;
+            --ring: 221.2 83.2% 53.3%;
+            --radius: 0.75rem;
+            --success: 142.1 76.2% 36.3%;
+            --success-foreground: 355.7 100% 97.3%;
+            --warning: 32.5 94.6% 43.7%;
+            --warning-foreground: 210 40% 98%;
+            --info: 199.4 89.1% 48.4%;
+            --info-foreground: 210 40% 98%;
           }
 
           .dark {
@@ -70,6 +76,12 @@ export default function RootLayout({
             --border: 217.2 32.6% 17.5%;
             --input: 217.2 32.6% 17.5%;
             --ring: 224.3 76.3% 94.1%;
+            --success: 142.1 70.6% 45.3%;
+            --success-foreground: 144.9 80.4% 10%;
+            --warning: 32.5 94.6% 43.7%;
+            --warning-foreground: 20.5 90.2% 4.3%;
+            --info: 199.4 89.1% 48.4%;
+            --info-foreground: 210 40% 98%;
           }
         `}</style>
       </head>

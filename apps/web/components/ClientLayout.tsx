@@ -97,12 +97,12 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
             <div className="flex items-center gap-3">
               <ThemeToggle />
               <div className="text-right">
-                <div className="text-sm font-medium text-foreground">{user?.email}</div>
-                <div className="text-xs text-muted-foreground">{user?.role?.replace('_', ' ')}</div>
+                <div className="text-sm font-medium text-primary">{user?.email}</div>
+                <div className="text-xs text-muted">{user?.role?.replace('_', ' ')}</div>
               </div>
-              <a 
+              <Link 
                 href="/profile"
-                className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-primary-foreground font-bold"
+                className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-primary-foreground font-bold hover:bg-primary/90 transition-colors"
               >
                 {user?.email?.charAt(0).toUpperCase()}
               </Link>

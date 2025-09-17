@@ -47,9 +47,9 @@ export default function Sidebar({ isOpen, onClose, isDesktopCollapsed = false, o
 
   const getRoleColor = (role: string) => {
     switch (role) {
-      case 'ADMIN': return 'bg-red-600';
-      case 'CUSTOMER': return 'bg-blue-600';
-      default: return 'bg-gray-600';
+      case 'ADMIN': return 'badge-error';
+      case 'CUSTOMER': return 'badge-primary';
+      default: return 'badge-default';
     }
   };
 
@@ -152,8 +152,8 @@ export default function Sidebar({ isOpen, onClose, isDesktopCollapsed = false, o
                 </span>
               </div>
               <div className="flex-1 min-w-0">
-                <div className="font-medium text-foreground truncate">{user?.email}</div>
-                <div className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${getRoleColor(user?.role || '')} text-white mt-1`}>
+                <div className="font-medium text-primary truncate">{user?.email}</div>
+                <div className={`badge ${getRoleColor(user?.role || '')} mt-1`}>
                   {user?.role?.replace('_', ' ')}
                 </div>
               </div>
@@ -280,7 +280,7 @@ export default function Sidebar({ isOpen, onClose, isDesktopCollapsed = false, o
           <div className="p-4 border-t border-border">
             <button 
               onClick={logout} 
-              className="w-full flex items-center gap-3 px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors"
+              className="w-full btn btn-ghost justify-start"
             >
               <span className="text-lg">🚪</span>
               <span className="font-medium">Logout</span>
