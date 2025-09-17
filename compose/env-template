@@ -82,6 +82,24 @@ SHARE_BASE_URL=https://panel.yourdomain.com
 PORT=3000
 
 # =============================================================================
+# ADMIN PASSWORDS (for seed data)
+# =============================================================================
+# These passwords are used when creating initial admin users
+ADMIN_PASSWORD=Admin123!
+CUSTOMER_PASSWORD=Customer123!
+STAFF_PASSWORD=Staff123!
+CUSTOMER_ADMIN_PASSWORD=Customer123!
+
+# =============================================================================
+# ALERTING CONFIGURATION (optional)
+# =============================================================================
+# Email for critical error alerts
+ALERT_EMAIL=admin@example.com
+
+# Slack webhook URL for alerts
+SLACK_WEBHOOK_URL=
+
+# =============================================================================
 # DEVELOPMENT ONLY
 # =============================================================================
 # Uncomment for development environment

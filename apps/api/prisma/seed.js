@@ -49,7 +49,7 @@ async function main() {
     });
     console.log('✅ Created tenant:', tenant.name);
     // Create admin user
-    const adminPassword = await bcrypt.hash('Admin123!', 10);
+    const adminPassword = await bcrypt.hash(process.env.ADMIN_PASSWORD || 'Admin123!', 10);
     const admin = await prisma.user.upsert({
         where: { email: 'admin@example.com' },
         update: {},
@@ -62,7 +62,7 @@ async function main() {
     });
     console.log('✅ Created admin user:', admin.email);
     // Create staff user
-    const staffPassword = await bcrypt.hash('Staff123!', 10);
+    const staffPassword = await bcrypt.hash(process.env.STAFF_PASSWORD || 'Staff123!', 10);
     const staff = await prisma.user.upsert({
         where: { email: 'staff@example.com' },
         update: {},
@@ -75,7 +75,7 @@ async function main() {
     });
     console.log('✅ Created staff user:', staff.email);
     // Create customer admin user
-    const customerAdminPassword = await bcrypt.hash('Customer123!', 10);
+    const customerAdminPassword = await bcrypt.hash(process.env.CUSTOMER_ADMIN_PASSWORD || 'Customer123!', 10);
     const customerAdmin = await prisma.user.upsert({
         where: { email: 'customer.admin@example.com' },
         update: {},
@@ -88,7 +88,7 @@ async function main() {
     });
     console.log('✅ Created customer admin:', customerAdmin.email);
     // Create customer user
-    const customerPassword = await bcrypt.hash('Customer123!', 10);
+    const customerPassword = await bcrypt.hash(process.env.CUSTOMER_PASSWORD || 'Customer123!', 10);
     const customer = await prisma.user.upsert({
         where: { email: 'customer@example.com' },
         update: {},

@@ -103,15 +103,26 @@ const jobProcessors = {
     const updatedAfter = since.toISOString();
     let page = 1;
     let imported = 0;
-    while(true){
+    const maxPages = 100; // Safety limit to prevent infinite loops
+    
+    while(page <= maxPages){
       const url = new URL(`/wp-json/wc/${store.apiVersion}/orders`, store.baseUrl);
       url.searchParams.set('per_page', '50');
       url.searchParams.set('page', String(page));
       url.searchParams.set('orderby', 'date_modified');
       url.searchParams.set('order', 'asc');
       url.searchParams.set('modified_after', updatedAfter);
-      const res = await fetch(url, { headers: { Authorization: 'Basic '+Buffer.from(store.consumerKey+':'+store.consumerSecret).toString('base64') } });
-      if(!res.ok){ throw new Error('Woo HTTP '+res.status); }
+      
+      const res = await fetch(url, { 
+        headers: { Authorization: 'Basic '+Buffer.from(store.consumerKey+':'+store.consumerSecret).toString('base64') },
+        timeout: 30000 // 30 second timeout
+      });
+      
+      if(!res.ok){ 
+        logger.error(`WooCommerce API error: ${res.status} ${res.statusText}`);
+        throw new Error('Woo HTTP '+res.status); 
+      }
+      
       const list = await res.json();
       if(!Array.isArray(list) || list.length===0) break;
       for(const o of list){
@@ -157,6 +168,11 @@ const jobProcessors = {
         }
       }
       page++;
+      
+      // Add delay between requests to avoid rate limiting
+      if (page <= maxPages) {
+        await new Promise(resolve => setTimeout(resolve, 100)); // 100ms delay
+      }
     }
     // update lastSync
     await prisma.wooStore.update({ where: { id: storeId }, data: { lastSync: { ...(store.lastSync||{}), ordersUpdatedAfter: new Date().toISOString() } } });
@@ -308,23 +324,29 @@ const jobProcessors = {
     // Clean expired cache entries
     const redis = new Redis(process.env.REDIS_URL || 'redis://valkey:6379/0');
     
-    // Get all cache keys
-    const keys = await redis.keys('cache:*');
-    let cleaned = 0;
-    
-    for (const key of keys) {
-      const ttl = await redis.ttl(key);
-      if (ttl === -1) {
-        // No expiry set, clean if older than 1 hour
-        await redis.expire(key, 3600);
-        cleaned++;
+    try {
+      // Get all cache keys
+      const keys = await redis.keys('cache:*');
+      let cleaned = 0;
+      
+      for (const key of keys) {
+        const ttl = await redis.ttl(key);
+        if (ttl === -1) {
+          // No expiry set, clean if older than 1 hour
+          await redis.expire(key, 3600);
+          cleaned++;
+        }
       }
+      
+      logger.info(`Cache cleanup completed: ${cleaned} keys processed`);
+      return { success: true, cleaned };
+    } catch (error) {
+      logger.error('Cache cleanup failed:', error);
+      throw error;
+    } finally {
+      // Always close Redis connection
+      await redis.quit();
     }
-    
-    await redis.quit();
-    // Cache cleanup completed
-    
-    return { success: true, cleaned };
   },
 
   'cleanup-sessions': async (job) => {
@@ -663,7 +685,12 @@ process.on('unhandledRejection', (reason, promise) => {
 // Start worker
 async function start() {
   // Validate environment variables first
-  validateEnvironment();
+  try {
+    validateEnvironment();
+  } catch (error) {
+    logger.error('Environment validation failed:', error.message);
+    process.exit(1);
+  }
   
   logger.info('Worker starting...');
   await scheduleRecurringJobs();
@@ -725,264 +752,39 @@ process.on('multipleResolves', (type, promise, reason) => {
   logger.warn('Promise multiple resolves:', { type, promise, reason });
 });
 
-// Handle process errors
+// Handle uncaught exceptions and unhandled rejections
 process.on('uncaughtException', (error) => {
   logger.error('Uncaught Exception:', error);
   process.exit(1);
 });
 
-// Handle process errors
 process.on('unhandledRejection', (reason, promise) => {
   logger.error('Unhandled Rejection at:', promise, 'reason:', reason);
   process.exit(1);
 });
 
-// Handle process errors
-process.on('SIGUSR1', () => {
-  logger.info('SIGUSR1 received, reloading configuration');
-});
-
-// Handle process errors
-process.on('SIGUSR2', () => {
-  logger.info('SIGUSR2 received, reloading configuration');
-});
-
-// Handle process errors
-process.on('SIGPIPE', () => {
-  logger.warn('SIGPIPE received, ignoring');
-});
-
-// Handle process errors
-process.on('SIGALRM', () => {
-  logger.info('SIGALRM received, alarm triggered');
-});
-
-// Handle process errors
+// Handle graceful shutdown signals
 process.on('SIGTERM', () => {
   logger.info('SIGTERM received, shutting down gracefully');
   process.exit(0);
 });
 
-// Handle process errors
 process.on('SIGINT', () => {
   logger.info('SIGINT received, shutting down gracefully');
   process.exit(0);
 });
 
-// Handle process errors
+// Handle other important signals
 process.on('SIGHUP', () => {
   logger.info('SIGHUP received, reloading configuration');
 });
 
-// Handle process errors
 process.on('SIGQUIT', () => {
   logger.info('SIGQUIT received, shutting down gracefully');
   process.exit(0);
 });
 
-// Handle process errors
-process.on('SIGILL', () => {
-  logger.error('SIGILL received, illegal instruction');
-  process.exit(1);
-});
-
-// Handle process errors
-process.on('SIGTRAP', () => {
-  logger.error('SIGTRAP received, trace trap');
-  process.exit(1);
-});
-
-// Handle process errors
-process.on('SIGABRT', () => {
-  logger.error('SIGABRT received, abort signal');
-  process.exit(1);
-});
-
-// Handle process errors
-process.on('SIGFPE', () => {
-  logger.error('SIGFPE received, floating point exception');
-  process.exit(1);
-});
-
-// Handle process errors
-process.on('SIGSEGV', () => {
-  logger.error('SIGSEGV received, segmentation fault');
-  process.exit(1);
-});
-
-// Handle process errors
-process.on('SIGBUS', () => {
-  logger.error('SIGBUS received, bus error');
-  process.exit(1);
-});
-
-// Handle process errors
-process.on('SIGSYS', () => {
-  logger.error('SIGSYS received, bad system call');
-  process.exit(1);
-});
-
-// Handle process errors
-process.on('SIGPIPE', () => {
-  logger.warn('SIGPIPE received, broken pipe');
-});
-
-// Handle process errors
-process.on('SIGURG', () => {
-  logger.info('SIGURG received, urgent condition');
-});
-
-// Handle process errors
-process.on('SIGSTOP', () => {
-  logger.info('SIGSTOP received, stop process');
-});
-
-// Handle process errors
-process.on('SIGTSTP', () => {
-  logger.info('SIGTSTP received, terminal stop');
-});
-
-// Handle process errors
-process.on('SIGCONT', () => {
-  logger.info('SIGCONT received, continue process');
-});
-
-// Handle process errors
-process.on('SIGCHLD', () => {
-  logger.info('SIGCHLD received, child process status change');
-});
-
-// Handle process errors
-process.on('SIGTTIN', () => {
-  logger.info('SIGTTIN received, terminal input for background process');
-});
-
-// Handle process errors
-process.on('SIGTTOU', () => {
-  logger.info('SIGTTOU received, terminal output for background process');
-});
-
-// Handle process errors
-process.on('SIGIO', () => {
-  logger.info('SIGIO received, I/O possible');
-});
-
-// Handle process errors
-process.on('SIGXCPU', () => {
-  logger.error('SIGXCPU received, CPU time limit exceeded');
-  process.exit(1);
-});
-
-// Handle process errors
-process.on('SIGXFSZ', () => {
-  logger.error('SIGXFSZ received, file size limit exceeded');
-  process.exit(1);
-});
-
-// Handle process errors
-process.on('SIGVTALRM', () => {
-  logger.info('SIGVTALRM received, virtual timer expired');
-});
-
-// Handle process errors
-process.on('SIGPROF', () => {
-  logger.info('SIGPROF received, profiling timer expired');
-});
-
-// Handle process errors
-process.on('SIGWINCH', () => {
-  logger.info('SIGWINCH received, window size change');
-});
-
-// Handle process errors
-process.on('SIGINFO', () => {
-  logger.info('SIGINFO received, status request');
-});
-
-// Handle process errors
-process.on('SIGUSR1', () => {
-  logger.info('SIGUSR1 received, user-defined signal 1');
-});
-
-// Handle process errors
-process.on('SIGUSR2', () => {
-  logger.info('SIGUSR2 received, user-defined signal 2');
-});
-
-// Handle process errors
-process.on('SIGTERM', () => {
-  logger.info('SIGTERM received, termination request');
-  process.exit(0);
-});
-
-// Handle process errors
-process.on('SIGINT', () => {
-  logger.info('SIGINT received, interrupt signal');
-  process.exit(0);
-});
-
-// Handle process errors
-process.on('SIGQUIT', () => {
-  logger.info('SIGQUIT received, quit signal');
-  process.exit(0);
-});
-
-// Handle process errors
-process.on('SIGHUP', () => {
-  logger.info('SIGHUP received, hangup signal');
-});
-
-// Handle process errors
-process.on('SIGPIPE', () => {
-  logger.warn('SIGPIPE received, broken pipe');
-});
-
-// Handle process errors
-process.on('SIGALRM', () => {
-  logger.info('SIGALRM received, alarm signal');
-});
-
-// Handle process errors
-process.on('SIGPIPE', () => {
-  logger.warn('SIGPIPE received, broken pipe');
-});
-
-// Handle process errors
-process.on('SIGTERM', () => {
-  logger.info('SIGTERM received, termination request');
-  process.exit(0);
-});
-
-// Handle process errors
-process.on('SIGINT', () => {
-  logger.info('SIGINT received, interrupt signal');
-  process.exit(0);
-});
-
-// Handle process errors
-process.on('SIGALRM', () => {
-  logger.info('SIGALRM received, alarm signal');
-});
-
-// Handle process errors
-process.on('SIGPIPE', () => {
-  logger.warn('SIGPIPE received, broken pipe');
-});
-
-// Handle process errors
-process.on('SIGTERM', () => {
-  logger.info('SIGTERM received, termination request');
-  process.exit(0);
-});
-
-// Handle process errors
-process.on('SIGTERM', () => {
-  logger.info('SIGTERM received, termination request');
-  process.exit(0);
-});
-
-// Handle process errors
-process.on('SIGINT', () => {
-  logger.info('SIGINT received, interrupt signal');
-  process.exit(0);
+// Handle warnings
+process.on('warning', (warning) => {
+  logger.warn('Process warning:', warning);
 });

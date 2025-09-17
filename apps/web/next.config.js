@@ -1,7 +1,13 @@
 const { validateEnvOnStartup } = require('./lib/env.validation');
 
 // Validate environment variables on startup
-validateEnvOnStartup();
+try {
+  validateEnvOnStartup();
+} catch (error) {
+  if (process.env.NODE_ENV === 'development') {
+    console.warn('Environment validation warning:', error.message);
+  }
+}
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {

@@ -30,6 +30,8 @@ model Tenant {
   wooStores WooStore[]
   invoices  Invoice[]
   payments  Payment[]
+  shipments Shipment[]
+  returns   Return[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -217,6 +219,7 @@ model Order {
   @@index([tenantId, status, createdAt])
   @@index([tenantId, total])
   @@index([tenantId, paymentMethod])
+  @@index([tenantId, orderSource])
   @@index([createdAt])
   @@index([confirmedAt])
 }
@@ -236,6 +239,7 @@ model OrderItem {
 model Shipment {
   id          String   @id @default(uuid())
   orderId     String
+  tenantId    String
   
   carrier     String?
   trackingNo  String?
@@ -249,9 +253,13 @@ model Shipment {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   order       Order    @relation(fields: [orderId], references: [id])
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
   
   @@index([trackingNo])
   @@index([orderId])
+  @@index([tenantId, status])
+  @@index([tenantId, carrier])
+  @@index([tenantId, createdAt])
 }
 
 model Product {
@@ -347,6 +355,7 @@ model Payment {
 model Return {
   id          String   @id @default(uuid())
   orderId     String
+  tenantId    String
   
   status      String?
   reason      String?
@@ -356,10 +365,13 @@ model Return {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   order       Order    @relation(fields: [orderId], references: [id])
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
   photos      ReturnPhoto[]
   notifications ReturnNotification[]
   
   @@index([orderId])
+  @@index([tenantId, status])
+  @@index([tenantId, createdAt])
 }
 
 model ReturnPhoto {

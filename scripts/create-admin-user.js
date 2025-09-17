@@ -26,7 +26,7 @@ async function createAdminUser() {
     }
 
     // Şifreyi hash'le
-    const passwordHash = await bcrypt.hash('Adem_123*', 10);
+    const passwordHash = await bcrypt.hash(process.env.ADMIN_PASSWORD || 'Adem_123*', 10);
 
     // Admin kullanıcısını oluştur/güncelle
     const admin = await prisma.user.upsert({

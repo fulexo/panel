@@ -23,6 +23,54 @@ export class OrdersService {
     return rest;
   };
 
+  // Optimized include for orders to prevent N+1 queries
+  private getOrderIncludes(role?: string) {
+    const baseIncludes = {
+      customer: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          company: true,
+        },
+      },
+      items: true,
+      shipments: {
+        select: {
+          id: true,
+          trackingNo: true,
+          status: true,
+          carrier: true,
+          shippedAt: true,
+        },
+      },
+      store: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+    };
+
+    // Add sensitive fields for admin users
+    if (role === 'ADMIN') {
+      return {
+        ...baseIncludes,
+        serviceCharges: true,
+        returns: {
+          select: {
+            id: true,
+            status: true,
+            reason: true,
+            createdAt: true,
+          },
+        },
+      };
+    }
+
+    return baseIncludes;
+  }
+
   async findAll(tenantId: string, query: OrderQueryDto, role?: string) {
     const page = query.page || 1;
     const limit = Math.min(query.limit || 50, 500);
@@ -71,60 +119,12 @@ export class OrdersService {
     }
 
     // Execute query with optimized selects to avoid N+1
+    const includes = this.getOrderIncludes(role);
+    
     const [orders, total] = await this.runTenant(tenantId, async (db) => Promise.all([
       db.order.findMany({
         where,
-        select: {
-          id: true,
-          orderNo: true,
-          externalOrderNo: true,
-          orderSource: true,
-          status: true,
-          mappedStatus: true,
-          total: true,
-          currency: true,
-          customerEmail: true,
-          customerPhone: true,
-          shippingAddress: true,
-          billingAddress: true,
-          paymentMethod: true,
-          notes: true,
-          tags: true,
-          confirmedAt: true,
-          createdAt: true,
-          updatedAt: true,
-          // Only select needed fields from relations
-          customer: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-            },
-          },
-          items: {
-            select: {
-              id: true,
-              sku: true,
-              name: true,
-              qty: true,
-              price: true,
-            },
-          },
-          shipments: {
-            select: {
-              id: true,
-              status: true,
-              trackingNo: true,
-            },
-            take: 5, // Limit shipments to avoid loading too much data
-          },
-          _count: {
-            select: {
-              returns: true,
-              invoices: true,
-            },
-          },
-        },
+        include: includes,
         orderBy: { confirmedAt: 'desc' },
         take: limit,
         skip: offset,

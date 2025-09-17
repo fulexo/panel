@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AuthContextType, User, LoginResponse } from '../types/auth';
+import { AuthUtils } from '../lib/auth-utils';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -17,8 +18,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const checkAuth = async () => {
     try {
-      const token = localStorage.getItem('access_token');
-      if (!token) {
+      const token = AuthUtils.getToken();
+      if (!token || !AuthUtils.isAuthenticated()) {
         setLoading(false);
         return;
       }
@@ -33,12 +34,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const userData = await response.json();
         setUser(userData);
       } else {
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
-        localStorage.removeItem('user');
+        await AuthUtils.clearTokens();
+        setUser(null);
       }
     } catch (error) {
-      // Auth check failed
+      console.error('Auth check failed:', error);
+      await AuthUtils.clearTokens();
+      setUser(null);
     } finally {
       setLoading(false);
     }
@@ -60,29 +62,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const data = await response.json();
     
     if (data.requiresTwoFactor) {
-      // tempToken'ı localStorage'a koy ki 2FA sayfasında kullanılabilsin
+      // tempToken'ı güvenli şekilde sakla
       if (data.tempToken) {
-        localStorage.setItem('temp_2fa_token', data.tempToken);
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('temp_2fa_token', data.tempToken);
+        }
       }
       throw new Error('2FA_REQUIRED');
     }
 
-    localStorage.setItem('access_token', data.access);
-    localStorage.setItem('refresh_token', data.refresh);
-    localStorage.setItem('user', JSON.stringify(data.user));
-    
-    // Cookie set et (middleware için)
-    document.cookie = `access_token=${data.access}; path=/; max-age=900`; // 15 minutes
+    // Güvenli token saklama
+    await AuthUtils.setTokens(data.access, data.refresh, data.user);
     
     setUser(data.user);
     router.push('/dashboard');
   };
 
-  const logout = () => {
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
-    localStorage.removeItem('user');
-    document.cookie = 'access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT';
+  const logout = async () => {
+    await AuthUtils.clearTokens();
     setUser(null);
     router.push('/login');
   };
