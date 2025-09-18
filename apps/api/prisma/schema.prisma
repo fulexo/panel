@@ -32,6 +32,7 @@ model Tenant {
   payments  Payment[]
   shipments Shipment[]
   returns   Return[]
+  fileUploads FileUpload[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -933,6 +934,31 @@ model SupportMessage {
   @@index([authorId])
   @@index([isInternal])
   @@index([createdAt])
+}
+
+// File upload management
+model FileUpload {
+  id          String   @id @default(uuid())
+  tenantId    String
+  filename    String
+  originalName String
+  mimeType    String
+  size        Int
+  key         String   @unique // S3/MinIO object key
+  status      String   @default("PENDING") // PENDING, COMPLETED, DELETED
+  maxSize     Int?     // Maximum allowed size in bytes
+  uploadedAt  DateTime?
+  deletedAt   DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([status])
+  @@index([mimeType])
+  @@index([createdAt])
+  @@index([uploadedAt])
 }
 
 // Order number sequence per tenant

@@ -489,6 +489,34 @@ class ApiClient {
     const queryString = searchParams.toString();
     return this.request(`/dashboard/stats${queryString ? `?${queryString}` : ''}`);
   }
+
+  // File upload endpoints
+  async getFiles(params: { page?: number; limit?: number; search?: string } = {}) {
+    const searchParams = new URLSearchParams();
+    if (params?.page) searchParams.set('page', params.page.toString());
+    if (params?.limit) searchParams.set('limit', params.limit.toString());
+    if (params?.search) searchParams.set('search', params.search);
+    
+    const queryString = searchParams.toString();
+    return this.request(`/file-upload/files${queryString ? `?${queryString}` : ''}`);
+  }
+
+  async getFile(id: string) {
+    return this.request(`/file-upload/files/${id}`);
+  }
+
+  async deleteFile(id: string) {
+    return this.request(`/file-upload/files/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async getFileDownloadUrl(id: string, expiresIn: number = 3600) {
+    const searchParams = new URLSearchParams();
+    searchParams.set('expiresIn', expiresIn.toString());
+    
+    return this.request(`/file-upload/files/${id}/download-url?${searchParams.toString()}`);
+  }
 }
 
 export const apiClient = new ApiClient();

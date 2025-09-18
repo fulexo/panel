@@ -3,6 +3,7 @@ import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { Response } from 'express';
 import { PrismaService } from '../prisma.service';
 import { LoggingService } from '../common/services/logging.service';
+import { HealthService } from './health.service';
 
 @ApiTags('health')
 @Controller('health')
@@ -10,6 +11,7 @@ export class HealthController {
   constructor(
     private readonly prisma: PrismaService,
     private readonly logger: LoggingService,
+    private readonly healthService: HealthService,
   ) {}
 
   @Get()
@@ -123,5 +125,41 @@ export class HealthController {
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
     });
+  }
+
+  @Get('detailed')
+  @ApiOperation({ summary: 'Detailed health check with all services' })
+  @ApiResponse({ status: 200, description: 'Detailed health information' })
+  async getDetailedHealth(@Res() res: Response) {
+    try {
+      const health = await this.healthService.getDetailedHealthCheck();
+      const statusCode = health.status === 'healthy' ? HttpStatus.OK : HttpStatus.SERVICE_UNAVAILABLE;
+      return res.status(statusCode).json(health);
+    } catch (error) {
+      this.logger.error('Detailed health check failed', error instanceof Error ? error.stack : String(error), 'HealthCheck');
+      return res.status(HttpStatus.SERVICE_UNAVAILABLE).json({
+        status: 'unhealthy',
+        timestamp: new Date().toISOString(),
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+
+  @Get('services')
+  @ApiOperation({ summary: 'Health check for all services' })
+  @ApiResponse({ status: 200, description: 'Services health information' })
+  async getServicesHealth(@Res() res: Response) {
+    try {
+      const health = await this.healthService.getHealthCheck();
+      const statusCode = health.status === 'healthy' ? HttpStatus.OK : HttpStatus.SERVICE_UNAVAILABLE;
+      return res.status(statusCode).json(health);
+    } catch (error) {
+      this.logger.error('Services health check failed', error instanceof Error ? error.stack : String(error), 'HealthCheck');
+      return res.status(HttpStatus.SERVICE_UNAVAILABLE).json({
+        status: 'unhealthy',
+        timestamp: new Date().toISOString(),
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
   }
 }
