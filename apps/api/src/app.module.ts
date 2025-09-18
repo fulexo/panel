@@ -43,6 +43,9 @@ import { CookieAuthMiddleware } from './common/middleware/cookie-auth.middleware
 import { MonitoringService } from './common/services/monitoring.service';
 import { MonitoringModule } from './monitoring/monitoring.module';
 import { SettingsModule } from './modules/settings/settings.module';
+import { FileUploadModule } from './modules/file-upload/file-upload.module';
+import { JobService } from './jobs/job.service';
+import { HealthService } from './health/health.service';
 
 /**
  * Main application module that configures the entire Fulexo API
@@ -108,10 +111,13 @@ import { SettingsModule } from './modules/settings/settings.module';
     AuditModule,
     MonitoringModule,
     SettingsModule,
+    FileUploadModule,
   ],
   providers: [
     PrismaService,
     MonitoringService,
+    JobService,
+    HealthService,
     {
       provide: APP_FILTER,
       useClass: GlobalExceptionFilter,
