@@ -2096,7 +2096,7 @@ import Redis from 'ioredis';
 import * as client from 'prom-client';
 import express from 'express';
 import cors from 'cors';
-import { PrismaClient, Prisma } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import { Decimal } from 'decimal.js';
 // import { validateEnvOnStartup } from './env.validation.js';
 import { logger } from './lib/logger';
@@ -2159,7 +2159,7 @@ const jobProcessors = <span class="cstat-no" title="statement not covered" >{</s
 <span class="cstat-no" title="statement not covered" >      logger.info(`Order sync completed for account: ${accountId}`);</span>
 <span class="cstat-no" title="statement not covered" >      return { success: true, accountId };</span>
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      logger.error(`Order sync failed for account ${job.data?.['accountId']}:`, error);</span>
+<span class="cstat-no" title="statement not covered" >      logger.error(`Order sync failed for account ${(job['data'] as Record&lt;string, unknown&gt;)?.['accountId']}:`, { error });</span>
 <span class="cstat-no" title="statement not covered" >      throw error;</span>
     }
   },
@@ -2179,7 +2179,7 @@ const jobProcessors = <span class="cstat-no" title="statement not covered" >{</s
 <span class="cstat-no" title="statement not covered" >      logger.info(`Shipment sync completed for account: ${accountId}`);</span>
 <span class="cstat-no" title="statement not covered" >      return { success: true, accountId };</span>
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      logger.error(`Shipment sync failed for account ${job.data?.['accountId']}:`, error);</span>
+<span class="cstat-no" title="statement not covered" >      logger.error(`Shipment sync failed for account ${(job['data'] as Record&lt;string, unknown&gt;)?.['accountId']}:`, { error });</span>
 <span class="cstat-no" title="statement not covered" >      throw error;</span>
     }
   },
@@ -2199,7 +2199,7 @@ const jobProcessors = <span class="cstat-no" title="statement not covered" >{</s
 <span class="cstat-no" title="statement not covered" >      logger.info(`Return sync completed for account: ${accountId}`);</span>
 <span class="cstat-no" title="statement not covered" >      return { success: true, accountId };</span>
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      logger.error(`Return sync failed for account ${job.data?.['accountId']}:`, error);</span>
+<span class="cstat-no" title="statement not covered" >      logger.error(`Return sync failed for account ${(job['data'] as Record&lt;string, unknown&gt;)?.['accountId']}:`, { error });</span>
 <span class="cstat-no" title="statement not covered" >      throw error;</span>
     }
   },
@@ -2219,7 +2219,7 @@ const jobProcessors = <span class="cstat-no" title="statement not covered" >{</s
 <span class="cstat-no" title="statement not covered" >      logger.info(`Invoice sync completed for account: ${accountId}`);</span>
 <span class="cstat-no" title="statement not covered" >      return { success: true, accountId };</span>
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      logger.error(`Invoice sync failed for account ${job.data?.['accountId']}:`, error);</span>
+<span class="cstat-no" title="statement not covered" >      logger.error(`Invoice sync failed for account ${(job['data'] as Record&lt;string, unknown&gt;)?.['accountId']}:`, { error });</span>
 <span class="cstat-no" title="statement not covered" >      throw error;</span>
     }
   },
@@ -2256,7 +2256,7 @@ const jobProcessors = <span class="cstat-no" title="statement not covered" >{</s
       const res = <span class="cstat-no" title="statement not covered" >await fetch(url, {</span>
         headers: { Authorization: 'Basic '+Buffer.from(store.consumerKey+':'+store.consumerSecret).toString('base64') },
         timeout: 30000 // 30 second timeout
-      } as any);
+      } as Record&lt;string, unknown&gt;);
       
 <span class="cstat-no" title="statement not covered" >      if(!res.ok){ </span>
 <span class="cstat-no" title="statement not covered" >        logger.error(`WooCommerce API error: ${res.status} ${res.statusText}`);</span>
@@ -2342,7 +2342,7 @@ const jobProcessors = <span class="cstat-no" title="statement not covered" >{</s
       const res = <span class="cstat-no" title="statement not covered" >await fetch(url, {</span>
         headers: { Authorization: 'Basic '+Buffer.from(store.consumerKey+':'+store.consumerSecret).toString('base64') },
         timeout: 30000 // 30 second timeout
-      } as any);
+      } as Record&lt;string, unknown&gt;);
 <span class="cstat-no" title="statement not covered" >      if(!res.ok) { </span>
 <span class="cstat-no" title="statement not covered" >        logger.error(`WooCommerce API error: ${res.status} ${res.statusText}`);</span>
 <span class="cstat-no" title="statement not covered" >        throw new Error('Woo HTTP '+res.status); </span>
@@ -2355,10 +2355,10 @@ const jobProcessors = <span class="cstat-no" title="statement not covered" >{</s
           tenantId: store.tenantId,
           sku: p.sku || String(p.id),
           name: p.name || null,
-          price: p.price ? new (Prisma as any).Decimal(p.price) : null,
+          price: p.price ? new Decimal(p.price) : null,
           stock: (typeof p.stock_quantity==='number') ? p.stock_quantity : null,
-          images: Array.isArray(p.images) ? p.images.map(<span class="fstat-no" title="function not covered" >(i</span>: any)=&gt;<span class="cstat-no" title="statement not covered" >i.src)</span>.filter(Boolean) : [],
-          tags: Array.isArray(p.tags) ? p.tags.map(<span class="fstat-no" title="function not covered" >(t</span>: any)=&gt;<span class="cstat-no" title="statement not covered" >t.name)</span>.filter(Boolean) : [],
+          images: Array.isArray(p.images) ? p.images.map(<span class="fstat-no" title="function not covered" >(i</span>: Record&lt;string, unknown&gt;)=&gt;<span class="cstat-no" title="statement not covered" >i['src'])</span>.filter(Boolean) : [],
+          tags: Array.isArray(p.tags) ? p.tags.map(<span class="fstat-no" title="function not covered" >(t</span>: Record&lt;string, unknown&gt;)=&gt;<span class="cstat-no" title="statement not covered" >t['name'])</span>.filter(Boolean) : [],
           active: p.status !== 'draft' &amp;&amp; p.status !== 'trash',
         };
 <span class="cstat-no" title="statement not covered" >        if(existing){</span>
@@ -2459,7 +2459,7 @@ const jobProcessors = <span class="cstat-no" title="statement not covered" >{</s
 <span class="cstat-no" title="statement not covered" >        await prisma.webhookEvent.update({ where: { id: evt.id }, data: { status: 'processed', processedAt: new Date(), attempts: { increment: 1 } } });</span>
       } catch (err) {
         // Webhook event failed
-<span class="cstat-no" title="statement not covered" >        await prisma.webhookEvent.update({ where: { id: evt.id }, data: { status: 'failed', error: String((err as any)?.message || err), attempts: { increment: 1 } } });</span>
+<span class="cstat-no" title="statement not covered" >        await prisma.webhookEvent.update({ where: { id: evt.id }, data: { status: 'failed', error: String((err as Error)?.message || err), attempts: { increment: 1 } } });</span>
       }
     }
 <span class="cstat-no" title="statement not covered" >    return { success: true, processed: pending.length };</span>
@@ -2475,8 +2475,8 @@ const jobProcessors = <span class="cstat-no" title="statement not covered" >{</s
 <span class="cstat-no" title="statement not covered" >    return { success: true, stores: stores.length };</span>
   },
 &nbsp;
-  'process-request': <span class="fstat-no" title="function not covered" >as</span>ync (job: any) =&gt; {
-    const { requestId, action } = <span class="cstat-no" title="statement not covered" >job.data;</span>
+  'process-request': <span class="fstat-no" title="function not covered" >as</span>ync (job: Record&lt;string, unknown&gt;) =&gt; {
+    const { requestId, action } = <span class="cstat-no" title="statement not covered" >job['data'] as Record&lt;string, unknown&gt;;</span>
     
 <span class="cstat-no" title="statement not covered" >    if (!requestId || !action) {</span>
 <span class="cstat-no" title="statement not covered" >      throw new Error('Request ID and action are required');</span>
@@ -2500,7 +2500,7 @@ const jobProcessors = <span class="cstat-no" title="statement not covered" >{</s
           data: { 
             status: 'APPROVED',
             reviewedAt: new Date(),
-            reviewerUserId: job.data.reviewerUserId
+            reviewerUserId: (job['data'] as Record&lt;string, unknown&gt;)['reviewerUserId']
           }
         });
         
@@ -2514,7 +2514,7 @@ const jobProcessors = <span class="cstat-no" title="statement not covered" >{</s
           data: { 
             status: 'REJECTED',
             reviewedAt: new Date(),
-            reviewerUserId: job.data.reviewerUserId
+            reviewerUserId: (job['data'] as Record&lt;string, unknown&gt;)['reviewerUserId']
           }
         });
         
@@ -2561,7 +2561,7 @@ const jobProcessors = <span class="cstat-no" title="statement not covered" >{</s
 <span class="cstat-no" title="statement not covered" >      logger.info(`Cache cleanup completed: ${cleaned} keys processed`);</span>
 <span class="cstat-no" title="statement not covered" >      return { success: true, cleaned };</span>
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      logger.error('Cache cleanup failed:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logger.error('Cache cleanup failed:', { error });</span>
 <span class="cstat-no" title="statement not covered" >      throw error;</span>
     }
   },
@@ -2638,7 +2638,7 @@ const worker = <span class="cstat-no" title="statement not covered" >new Worker(
         
       } catch (error) {
 <span class="cstat-no" title="statement not covered" >        lastError = error;</span>
-<span class="cstat-no" title="statement not covered" >        logger.error(`Job ${job.name} failed on attempt ${attempt}:`, error instanceof Error ? error.message : String(error));</span>
+<span class="cstat-no" title="statement not covered" >        logger.error(`Job ${job.name} failed on attempt ${attempt}:`, { error: error instanceof Error ? error.message : String(error) });</span>
         
         // Check if this is a retryable error
 <span class="cstat-no" title="statement not covered" >        if (isRetryableError(error) &amp;&amp; attempt &lt; maxRetries) {</span>
@@ -2653,24 +2653,24 @@ const worker = <span class="cstat-no" title="statement not covered" >new Worker(
     }
     
     // All retries failed
-<span class="cstat-no" title="statement not covered" >    logger.error(`Job ${job.name} failed after ${maxRetries} attempts:`, lastError);</span>
+<span class="cstat-no" title="statement not covered" >    logger.error(`Job ${job.name} failed after ${maxRetries} attempts:`, { error: lastError });</span>
     
     // Record failure metrics
 <span class="cstat-no" title="statement not covered" >    jobProcessedCounter.inc({ job_type: job.name, status: 'failure' });</span>
     
     // Store error details for debugging
-<span class="cstat-no" title="statement not covered" >    await storeJobError(job as any, lastError, maxRetries);</span>
+<span class="cstat-no" title="statement not covered" >    await storeJobError(job as unknown as Record&lt;string, unknown&gt;, lastError, maxRetries);</span>
     
 <span class="cstat-no" title="statement not covered" >    throw lastError;</span>
     
   } catch (error) {
-<span class="cstat-no" title="statement not covered" >    logger.error(`Job ${job.name} failed with unhandled error:`, error);</span>
+<span class="cstat-no" title="statement not covered" >    logger.error(`Job ${job.name} failed with unhandled error:`, { error });</span>
     
     // Record failure metric
 <span class="cstat-no" title="statement not covered" >    jobProcessedCounter.inc({ job_type: job.name, status: 'failure' });</span>
     
     // Store error details
-<span class="cstat-no" title="statement not covered" >    await storeJobError(job as any, error, 0);</span>
+<span class="cstat-no" title="statement not covered" >    await storeJobError(job as unknown as Record&lt;string, unknown&gt;, error, 0);</span>
     
 <span class="cstat-no" title="statement not covered" >    throw error;</span>
   }
@@ -2688,48 +2688,48 @@ const worker = <span class="cstat-no" title="statement not covered" >new Worker(
 });
 &nbsp;
 // Helper function to apply request changes
-async function <span class="fstat-no" title="function not covered" >applyRequestChanges(</span>request: any) {
+async function <span class="fstat-no" title="function not covered" >applyRequestChanges(</span>request: Record&lt;string, unknown&gt;) {
   const { type, payload } = <span class="cstat-no" title="statement not covered" >request;</span>
   
 <span class="cstat-no" title="statement not covered" >  switch (type) {</span>
     case 'STOCK_ADJUSTMENT':
-<span class="cstat-no" title="statement not covered" >      if (payload.productId &amp;&amp; payload.quantity) {</span>
+<span class="cstat-no" title="statement not covered" >      if ((payload as Record&lt;string, unknown&gt;)['productId'] &amp;&amp; (payload as Record&lt;string, unknown&gt;)['quantity']) {</span>
 <span class="cstat-no" title="statement not covered" >        await prisma.stockMovement.create({</span>
           data: {
-            productId: payload.productId,
+            productId: (payload as Record&lt;string, unknown&gt;)['productId'] as string,
             type: 'ADJUSTMENT',
-            quantity: payload.quantity,
-            relatedId: request.id
+            quantity: (payload as Record&lt;string, unknown&gt;)['quantity'] as number,
+            relatedId: (request as Record&lt;string, unknown&gt;)['id'] as string
           }
         });
         
         // Update product stock
 <span class="cstat-no" title="statement not covered" >        await prisma.product.update({</span>
-          where: { id: payload.productId },
+          where: { id: (payload as Record&lt;string, unknown&gt;)['productId'] as string },
           data: {
-            stock: { increment: payload.quantity }
+            stock: { increment: (payload as Record&lt;string, unknown&gt;)['quantity'] as number }
           }
         });
       }
 <span class="cstat-no" title="statement not covered" >      break;</span>
       
     case 'NEW_PRODUCT':
-<span class="cstat-no" title="statement not covered" >      if (payload.productData) {</span>
+<span class="cstat-no" title="statement not covered" >      if ((payload as Record&lt;string, unknown&gt;)['productData']) {</span>
 <span class="cstat-no" title="statement not covered" >        await prisma.product.create({</span>
           data: {
-            ...payload.productData,
-            tenantId: request.tenantId
+            ...(payload as Record&lt;string, unknown&gt;)['productData'] as Record&lt;string, unknown&gt;,
+            tenantId: (request as Record&lt;string, unknown&gt;)['tenantId'] as string
           }
         });
       }
 <span class="cstat-no" title="statement not covered" >      break;</span>
       
     case 'ORDER_NOTE':
-<span class="cstat-no" title="statement not covered" >      if (payload.orderId &amp;&amp; payload.note) {</span>
+<span class="cstat-no" title="statement not covered" >      if ((payload as Record&lt;string, unknown&gt;)['orderId'] &amp;&amp; (payload as Record&lt;string, unknown&gt;)['note']) {</span>
 <span class="cstat-no" title="statement not covered" >        await prisma.order.update({</span>
-          where: { id: payload.orderId },
+          where: { id: (payload as Record&lt;string, unknown&gt;)['orderId'] as string },
           data: {
-            notes: payload.note
+            notes: (payload as Record&lt;string, unknown&gt;)['note'] as string
           }
         });
       }
@@ -2802,7 +2802,7 @@ async function <span class="fstat-no" title="function not covered" >storeJobErro
     
 <span class="cstat-no" title="statement not covered" >    logger.info(`Stored error details for job ${job['id']}`);</span>
   } catch (dbError) {
-<span class="cstat-no" title="statement not covered" >    logger.error('Failed to store job error details:', dbError);</span>
+<span class="cstat-no" title="statement not covered" >    logger.error('Failed to store job error details:', { error: dbError });</span>
   }
 }
 &nbsp;
@@ -2883,7 +2883,7 @@ const events = <span class="cstat-no" title="statement not covered" >new QueueEv
 });
 &nbsp;
 <span class="cstat-no" title="statement not covered" >worker.on('failed', <span class="fstat-no" title="function not covered" >(j</span>ob, err) =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >  logger.error(`Job ${job?.id} has failed:`, err);</span>
+<span class="cstat-no" title="statement not covered" >  logger.error(`Job ${job?.id} has failed:`, { error: err });</span>
 });
 &nbsp;
 // Health check and metrics server
@@ -2903,7 +2903,7 @@ const app = <span class="cstat-no" title="statement not covered" >express();</sp
 <span class="cstat-no" title="statement not covered" >      await prisma.$queryRaw`SELECT 1`;</span>
 <span class="cstat-no" title="statement not covered" >      dbHealthy = true;</span>
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      logger.error('Database health check failed:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logger.error('Database health check failed:', { error });</span>
     }
     
     // Check Redis connection
@@ -2912,7 +2912,7 @@ const app = <span class="cstat-no" title="statement not covered" >express();</sp
 <span class="cstat-no" title="statement not covered" >      await connection.ping();</span>
 <span class="cstat-no" title="statement not covered" >      redisHealthy = true;</span>
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      logger.error('Redis health check failed:', error);</span>
+<span class="cstat-no" title="statement not covered" >      logger.error('Redis health check failed:', { error });</span>
     }
     
     const overallHealthy = <span class="cstat-no" title="statement not covered" >isHealthy &amp;&amp; dbHealthy &amp;&amp; redisHealthy;</span>
@@ -2941,7 +2941,7 @@ const app = <span class="cstat-no" title="statement not covered" >express();</sp
       });
     }
   } catch (error) {
-<span class="cstat-no" title="statement not covered" >    logger.error('Health check failed:', error);</span>
+<span class="cstat-no" title="statement not covered" >    logger.error('Health check failed:', { error });</span>
 <span class="cstat-no" title="statement not covered" >    res.status(503).json({ </span>
       status: 'unhealthy', 
       error: error instanceof Error ? error.message : 'Unknown error',
@@ -2987,12 +2987,12 @@ const PORT = <span class="cstat-no" title="statement not covered" >process.env['
 &nbsp;
 // Handle uncaught exceptions
 <span class="cstat-no" title="statement not covered" >process.on('uncaughtException', <span class="fstat-no" title="function not covered" >(e</span>rror) =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >  logger.error('Uncaught Exception:', error);</span>
+<span class="cstat-no" title="statement not covered" >  logger.error('Uncaught Exception:', { error });</span>
 <span class="cstat-no" title="statement not covered" >  process.exit(1);</span>
 });
 &nbsp;
 <span class="cstat-no" title="statement not covered" >process.on('unhandledRejection', <span class="fstat-no" title="function not covered" >(r</span>eason, _promise) =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >  logger.error('Unhandled Rejection:', reason);</span>
+<span class="cstat-no" title="statement not covered" >  logger.error('Unhandled Rejection:', { reason });</span>
 <span class="cstat-no" title="statement not covered" >  process.exit(1);</span>
 });
 &nbsp;
@@ -3002,7 +3002,7 @@ async function <span class="fstat-no" title="function not covered" >start(</span
 <span class="cstat-no" title="statement not covered" >  try {</span>
     // validateEnvOnStartup();
   } catch (error) {
-<span class="cstat-no" title="statement not covered" >    logger.error('Environment validation failed:', (error as any).message);</span>
+<span class="cstat-no" title="statement not covered" >    logger.error('Environment validation failed:', { error: (error as Error).message });</span>
 <span class="cstat-no" title="statement not covered" >    process.exit(1);</span>
   }
   
@@ -3018,7 +3018,7 @@ async function <span class="fstat-no" title="function not covered" >start(</span
     }
 <span class="cstat-no" title="statement not covered" >    await q.close();</span>
   } catch (e) {
-<span class="cstat-no" title="statement not covered" >    logger.error('Failed to schedule Woo periodic syncs:', e);</span>
+<span class="cstat-no" title="statement not covered" >    logger.error('Failed to schedule Woo periodic syncs:', { error: e });</span>
   }
 <span class="cstat-no" title="statement not covered" >  logger.info('Worker ready and processing jobs');</span>
 }
@@ -3033,7 +3033,7 @@ export { app, worker, prisma, connection };
 &nbsp;
 // Process event handlers (consolidated)
 <span class="cstat-no" title="statement not covered" >process.on('warning', <span class="fstat-no" title="function not covered" >(w</span>arning) =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >  logger.warn('Process warning:', warning);</span>
+<span class="cstat-no" title="statement not covered" >  logger.warn('Process warning:', { warning });</span>
 });
 &nbsp;
 <span class="cstat-no" title="statement not covered" >process.on('exit', <span class="fstat-no" title="function not covered" >(c</span>ode) =&gt; {</span>
@@ -3049,11 +3049,11 @@ export { app, worker, prisma, connection };
 });
 &nbsp;
 <span class="cstat-no" title="statement not covered" >process.on('message', <span class="fstat-no" title="function not covered" >(m</span>essage) =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >  logger.info('Process received message:', message);</span>
+<span class="cstat-no" title="statement not covered" >  logger.info('Process received message:', { message });</span>
 });
 &nbsp;
 <span class="cstat-no" title="statement not covered" >process.on('rejectionHandled', <span class="fstat-no" title="function not covered" >(p</span>romise) =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >  logger.info('Promise rejection handled:', promise);</span>
+<span class="cstat-no" title="statement not covered" >  logger.info('Promise rejection handled:', { promise });</span>
 });
 &nbsp;
 <span class="cstat-no" title="statement not covered" >process.on('multipleResolves', <span class="fstat-no" title="function not covered" >(t</span>ype, promise, reason) =&gt; {</span>
@@ -3061,12 +3061,12 @@ export { app, worker, prisma, connection };
 });
 &nbsp;
 <span class="cstat-no" title="statement not covered" >process.on('uncaughtException', <span class="fstat-no" title="function not covered" >(e</span>rror) =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >  logger.error('Uncaught Exception:', error);</span>
+<span class="cstat-no" title="statement not covered" >  logger.error('Uncaught Exception:', { error });</span>
 <span class="cstat-no" title="statement not covered" >  process.exit(1);</span>
 });
 &nbsp;
 <span class="cstat-no" title="statement not covered" >process.on('unhandledRejection', <span class="fstat-no" title="function not covered" >(r</span>eason, _promise) =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >  logger.error('Unhandled Rejection:', reason);</span>
+<span class="cstat-no" title="statement not covered" >  logger.error('Unhandled Rejection:', { reason });</span>
 <span class="cstat-no" title="statement not covered" >  process.exit(1);</span>
 });
 &nbsp;
@@ -3094,7 +3094,7 @@ export { app, worker, prisma, connection };
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-09-17T14:22:36.727Z
+                at 2025-09-18T08:17:48.547Z
             </div>
         <script src="../prettify.js"></script>
         <script>

@@ -10,7 +10,9 @@ module.exports = {
       tsconfig: {
         esModuleInterop: true,
         allowSyntheticDefaultImports: true,
-        jsx: 'react-jsx'
+        jsx: 'react-jsx',
+        experimentalDecorators: true,
+        emitDecoratorMetadata: true
       }
     }],
     '^.+\\.(js|jsx)$': ['babel-jest'],

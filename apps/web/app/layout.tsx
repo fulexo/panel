@@ -6,7 +6,7 @@
  * @version 1.0.0
  */
 
-"use client";
+// "use client"; // This should be removed for root layout
 
 import './globals.css';
 import { AuthProvider } from '@/components/AuthProvider';
