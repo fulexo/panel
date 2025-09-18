@@ -32,14 +32,14 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/47</span>
+                <span class='fraction'>0/49</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/11</span>
+                <span class='fraction'>0/10</span>
             </div>
         
             
@@ -463,11 +463,7 @@
 <a name='L398'></a><a href='#L398'>398</a>
 <a name='L399'></a><a href='#L399'>399</a>
 <a name='L400'></a><a href='#L400'>400</a>
-<a name='L401'></a><a href='#L401'>401</a>
-<a name='L402'></a><a href='#L402'>402</a>
-<a name='L403'></a><a href='#L403'>403</a>
-<a name='L404'></a><a href='#L404'>404</a>
-<a name='L405'></a><a href='#L405'>405</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L401'></a><a href='#L401'>401</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -482,6 +478,8 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -626,6 +624,7 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -834,8 +833,6 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -857,11 +854,6 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -873,8 +865,10 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
-import { CreateInventoryApprovalDto, UpdateInventoryApprovalDto } from './dto/inventory.dto';
+import { CreateInventoryApprovalDto } from './dto/inventory.dto';
 import { User } from '../users/entities/user.entity';
+import { toPrismaJsonValue } from '../common/utils/prisma-json.util';
+import { Prisma } from '@prisma/client';
 &nbsp;
 @Injectable()
 export class InventoryService {
@@ -887,7 +881,7 @@ export class InventoryService {
     storeId?: string;
   }) {
     const skip = <span class="cstat-no" title="statement not covered" >(page - 1) * limit;</span>
-    const where: any = <span class="cstat-no" title="statement not covered" >{};</span>
+    const where: Record&lt;string, unknown&gt; = <span class="cstat-no" title="statement not covered" >{};</span>
 &nbsp;
 <span class="cstat-no" title="statement not covered" >    if (status) {</span>
 <span class="cstat-no" title="statement not covered" >      where.status = status;</span>
@@ -984,8 +978,8 @@ export class InventoryService {
         storeId: createApprovalDto.storeId,
         productId: createApprovalDto.productId,
         changeType: createApprovalDto.changeType,
-        oldValue,
-        newValue: createApprovalDto.newValue,
+        oldValue: oldValue ? toPrismaJsonValue(oldValue) : Prisma.JsonNull,
+        newValue: toPrismaJsonValue(createApprovalDto.newValue),
         requestedBy: userId,
         status: 'pending',
       },
@@ -1027,20 +1021,21 @@ export class InventoryService {
     }
 &nbsp;
     // Apply the change based on change type
-    let updateData: any = <span class="cstat-no" title="statement not covered" >{};</span>
+    const updateData: Record&lt;string, unknown&gt; = <span class="cstat-no" title="statement not covered" >{};</span>
     
+    const newValue = <span class="cstat-no" title="statement not covered" >approval.newValue as Record&lt;string, unknown&gt;;</span>
 <span class="cstat-no" title="statement not covered" >    switch (approval.changeType) {</span>
       case 'stock_update':
-<span class="cstat-no" title="statement not covered" >        updateData.stockQuantity = approval.newValue.stockQuantity;</span>
+<span class="cstat-no" title="statement not covered" >        updateData.stockQuantity = newValue?.stockQuantity;</span>
 <span class="cstat-no" title="statement not covered" >        break;</span>
       case 'price_update':
-<span class="cstat-no" title="statement not covered" >        updateData.price = approval.newValue.price;</span>
-<span class="cstat-no" title="statement not covered" >        if (approval.newValue.salePrice !== undefined) {</span>
-<span class="cstat-no" title="statement not covered" >          updateData.salePrice = approval.newValue.salePrice;</span>
+<span class="cstat-no" title="statement not covered" >        updateData.price = newValue?.price;</span>
+<span class="cstat-no" title="statement not covered" >        if (newValue?.salePrice !== undefined) {</span>
+<span class="cstat-no" title="statement not covered" >          updateData.salePrice = newValue.salePrice;</span>
         }
 <span class="cstat-no" title="statement not covered" >        break;</span>
       case 'status_update':
-<span class="cstat-no" title="statement not covered" >        updateData.status = approval.newValue.status;</span>
+<span class="cstat-no" title="statement not covered" >        updateData.status = newValue?.status;</span>
 <span class="cstat-no" title="statement not covered" >        break;</span>
       default:
 <span class="cstat-no" title="statement not covered" >        throw new BadRequestException('Invalid change type');</span>
@@ -1159,7 +1154,7 @@ export class InventoryService {
     }
 &nbsp;
     // Check if user has access to this approval
-<span class="cstat-no" title="statement not covered" >    if (user.role === 'CUSTOMER' &amp;&amp; approval.store.customerId !== user.id) {</span>
+<span class="cstat-no" title="statement not covered" >    if (user.role === 'CUSTOMER' &amp;&amp; approval.store.customer?.id !== user.id) {</span>
 <span class="cstat-no" title="statement not covered" >      throw new ForbiddenException('You do not have access to this approval');</span>
     }
 &nbsp;
@@ -1173,7 +1168,7 @@ export class InventoryService {
     lowStock?: boolean;
   }) {
     const skip = <span class="cstat-no" title="statement not covered" >(page - 1) * limit;</span>
-    const where: any = <span class="cstat-no" title="statement not covered" >{};</span>
+    const where: Record&lt;string, unknown&gt; = <span class="cstat-no" title="statement not covered" >{};</span>
 &nbsp;
 <span class="cstat-no" title="statement not covered" >    if (storeId) {</span>
 <span class="cstat-no" title="statement not covered" >      where.storeId = storeId;</span>
@@ -1268,13 +1263,6 @@ export class InventoryService {
 <span class="cstat-no" title="statement not covered" >    return approval;</span>
   }
 &nbsp;
-  // Helper method to sync changes to WooCommerce
-<span class="fstat-no" title="function not covered" >  pr</span>ivate async syncToWooCommerce(store: any, product: any, updateData: any) {
-    // This would integrate with the WooCommerce service
-    // to push changes back to the WooCommerce store
-<span class="cstat-no" title="statement not covered" >    console.log('Syncing to WooCommerce:', { store, product, updateData });</span>
-    // Implementation would go here
-  }
 }</pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
@@ -1282,7 +1270,7 @@ export class InventoryService {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-09-18T12:34:05.324Z
+                at 2025-09-18T15:47:05.811Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

@@ -37,5 +37,5 @@
     "noUncheckedIndexedAccess": false
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "prisma/**/*"]
+  "exclude": ["node_modules", "dist", "prisma/**/*", "**/*.spec.ts", "**/*.test.ts"]
 }

@@ -32,7 +32,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/96</span>
+                <span class='fraction'>0/102</span>
             </div>
         
             
@@ -262,7 +262,9 @@
 <a name='L197'></a><a href='#L197'>197</a>
 <a name='L198'></a><a href='#L198'>198</a>
 <a name='L199'></a><a href='#L199'>199</a>
-<a name='L200'></a><a href='#L200'>200</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L200'></a><a href='#L200'>200</a>
+<a name='L201'></a><a href='#L201'>201</a>
+<a name='L202'></a><a href='#L202'>202</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -335,6 +337,8 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -464,7 +468,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { PrismaClient } from '@prisma/client';
-import { Prisma } from '@prisma/client';
+import { Decimal } from 'decimal.js';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { toPrismaJsonValue } from '../common/utils/prisma-json.util';
@@ -538,12 +542,14 @@ export class ProductsService {
         tenant: {
           connect: { id: tenantId }
         },
+        store: { connect: { id: dto.storeId } },
         sku: dto.sku,
-        name: dto.name,
+        name: dto.name || '',
         description: dto.description,
-        price: dto.price !== undefined &amp;&amp; dto.price !== null ? new Prisma.Decimal(dto.price) : null,
+        price: dto.price !== undefined &amp;&amp; dto.price !== null ? new Decimal(dto.price) : new Decimal(0),
+        regularPrice: dto.regularPrice !== undefined &amp;&amp; dto.regularPrice !== null ? new Decimal(dto.regularPrice) : new Decimal(0),
         stock: dto.stock !== undefined &amp;&amp; dto.stock !== null ? parseInt(dto.stock) : null,
-        weight: dto.weight !== undefined &amp;&amp; dto.weight !== null ? new Prisma.Decimal(dto.weight) : null,
+        weight: dto.weight !== undefined &amp;&amp; dto.weight !== null ? new Decimal(dto.weight) : null,
         dimensions: dto.dimensions ? toPrismaJsonValue(dto.dimensions) : undefined,
         images: dto.images || [],
         tags: dto.tags || [],
@@ -574,9 +580,9 @@ export class ProductsService {
         ...(dto.sku !== undefined &amp;&amp; { sku: dto.sku }),
         ...(dto.name !== undefined &amp;&amp; { name: dto.name }),
         ...(dto.description !== undefined &amp;&amp; { description: dto.description }),
-        ...(dto.price !== undefined &amp;&amp; { price: dto.price !== null ? new Prisma.Decimal(dto.price) : null }),
+        ...(dto.price !== undefined &amp;&amp; { price: dto.price !== null ? new Decimal(dto.price) : null }),
         ...(dto.stock !== undefined &amp;&amp; { stock: dto.stock !== null ? parseInt(dto.stock) : null }),
-        ...(dto.weight !== undefined &amp;&amp; { weight: dto.weight !== null ? new Prisma.Decimal(dto.weight) : null }),
+        ...(dto.weight !== undefined &amp;&amp; { weight: dto.weight !== null ? new Decimal(dto.weight) : null }),
         ...(dto.dimensions !== undefined &amp;&amp; { dimensions: dto.dimensions }),
         ...(dto.images !== undefined &amp;&amp; { images: dto.images }),
         ...(dto.tags !== undefined &amp;&amp; { tags: dto.tags }),
@@ -611,7 +617,7 @@ export class ProductsService {
       
 <span class="cstat-no" title="statement not covered" >      if (updates.active !== undefined) <span class="cstat-no" title="statement not covered" >updateData.active = updates.active;</span></span>
 <span class="cstat-no" title="statement not covered" >      if (updates.stock !== undefined) <span class="cstat-no" title="statement not covered" >updateData.stock = updates.stock !== null ? parseInt(updates.stock) : null;</span></span>
-<span class="cstat-no" title="statement not covered" >      if (updates.price !== undefined) <span class="cstat-no" title="statement not covered" >updateData.price = updates.price !== null ? new Prisma.Decimal(updates.price) : null;</span></span>
+<span class="cstat-no" title="statement not covered" >      if (updates.price !== undefined) <span class="cstat-no" title="statement not covered" >updateData.price = updates.price !== null ? new Decimal(updates.price) : null;</span></span>
 <span class="cstat-no" title="statement not covered" >      if (updates.tags !== undefined) <span class="cstat-no" title="statement not covered" >updateData.tags = updates.tags;</span></span>
       
 <span class="cstat-no" title="statement not covered" >      updateData.updatedAt = new Date();</span>
@@ -667,7 +673,7 @@ export class ProductsService {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-09-18T12:34:05.458Z
+                at 2025-09-18T15:47:05.956Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

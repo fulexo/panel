@@ -19,6 +19,16 @@ module.exports = {
     }],
     '^.+\\.(js|jsx)$': ['babel-jest'],
   },
+  collectCoverageFrom: [
+    'apps/**/*.{ts,tsx}',
+    '!apps/**/*.d.ts',
+    '!apps/**/node_modules/**',
+    '!apps/**/dist/**',
+    '!apps/**/.next/**',
+    '!apps/**/__tests__/**',
+    '!apps/**/*.test.{ts,tsx}',
+    '!apps/**/*.spec.{ts,tsx}',
+  ],
   globals: {
     'ts-jest': {
       useESM: false
@@ -29,13 +39,6 @@ module.exports = {
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
   transformIgnorePatterns: [
     'node_modules/(?!(.*\\.mjs$))'
-  ],
-  collectCoverageFrom: [
-    'apps/**/*.{ts,tsx}',
-    '!apps/**/*.d.ts',
-    '!apps/**/node_modules/**',
-    '!apps/**/dist/**',
-    '!apps/**/.next/**',
   ],
   coverageDirectory: 'coverage',
   coverageReporters: ['text', 'lcov', 'html'],

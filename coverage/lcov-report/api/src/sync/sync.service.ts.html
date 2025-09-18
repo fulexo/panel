@@ -25,14 +25,14 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/72</span>
+                <span class='fraction'>0/75</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/65</span>
+                <span class='fraction'>0/69</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/67</span>
+                <span class='fraction'>0/70</span>
             </div>
         
             
@@ -452,7 +452,18 @@
 <a name='L387'></a><a href='#L387'>387</a>
 <a name='L388'></a><a href='#L388'>388</a>
 <a name='L389'></a><a href='#L389'>389</a>
-<a name='L390'></a><a href='#L390'>390</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L390'></a><a href='#L390'>390</a>
+<a name='L391'></a><a href='#L391'>391</a>
+<a name='L392'></a><a href='#L392'>392</a>
+<a name='L393'></a><a href='#L393'>393</a>
+<a name='L394'></a><a href='#L394'>394</a>
+<a name='L395'></a><a href='#L395'>395</a>
+<a name='L396'></a><a href='#L396'>396</a>
+<a name='L397'></a><a href='#L397'>397</a>
+<a name='L398'></a><a href='#L398'>398</a>
+<a name='L399'></a><a href='#L399'>399</a>
+<a name='L400'></a><a href='#L400'>400</a>
+<a name='L401'></a><a href='#L401'>401</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -595,8 +606,16 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -659,6 +678,9 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -977,30 +999,38 @@ export class SyncService {
       // Find or create customer
       let customerId = <span class="cstat-no" title="statement not covered" >null;</span>
 <span class="cstat-no" title="statement not covered" >      if (remoteOrder.email) {</span>
-        const customer = <span class="cstat-no" title="statement not covered" >await this.prisma.customer.upsert({</span>
+        let customer = <span class="cstat-no" title="statement not covered" >await this.prisma.customer.findFirst({</span>
           where: {
-            tenantId_emailNormalized: {
-              tenantId,
-              emailNormalized: (remoteOrder.email as string).toLowerCase(),
-            },
-          },
-          update: {
-            name: (remoteOrder.delivery_fullname || remoteOrder.invoice_fullname) as string | null,
-            phoneE164: remoteOrder.phone as string | null,
-          },
-          create: {
-            tenantId,
             email: remoteOrder.email as string,
-            emailNormalized: (remoteOrder.email as string).toLowerCase(),
-            name: (remoteOrder.delivery_fullname || remoteOrder.invoice_fullname) as string | null,
-            phoneE164: remoteOrder.phone as string | null,
-            company: remoteOrder.invoice_company as string | null,
-            addressLine1: remoteOrder.delivery_address as string | null,
-            city: remoteOrder.delivery_city as string | null,
-            postalCode: remoteOrder.delivery_postcode as string | null,
-            country: remoteOrder.delivery_country_code as string | null,
+            tenantId,
           },
         });
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        if (customer) {</span>
+<span class="cstat-no" title="statement not covered" >          customer = await this.prisma.customer.update({</span>
+            where: { id: customer.id },
+            data: {
+              name: (remoteOrder.delivery_fullname || remoteOrder.invoice_fullname) as string | null,
+              phoneE164: remoteOrder.phone as string | null,
+            },
+          });
+        } else {
+<span class="cstat-no" title="statement not covered" >          customer = await this.prisma.customer.create({</span>
+            data: {
+              tenantId,
+              storeId: 'default-store',
+              email: remoteOrder.email as string,
+              emailNormalized: (remoteOrder.email as string).toLowerCase(),
+              name: (remoteOrder.delivery_fullname || remoteOrder.invoice_fullname) as string | null,
+              phoneE164: remoteOrder.phone as string | null,
+              company: remoteOrder.invoice_company as string | null,
+              addressLine1: remoteOrder.delivery_address as string | null,
+              city: remoteOrder.delivery_city as string | null,
+              postalCode: remoteOrder.delivery_postcode as string | null,
+              country: remoteOrder.delivery_country_code as string | null,
+            },
+          });
+        }
 <span class="cstat-no" title="statement not covered" >        customerId = customer.id;</span>
       }
 &nbsp;
@@ -1012,7 +1042,7 @@ export class SyncService {
         status: this.mapOrderStatus(remoteOrder.order_status_id as number),
         mappedStatus: remoteOrder.order_status_id?.toString() || null,
         total: parseFloat((remoteOrder.payment_done as string) || '0'),
-        currency: remoteOrder.currency as string | null,
+            currency: remoteOrder.currency as string || 'TRY',
         customerEmail: remoteOrder.email as string | null,
         customerPhone: remoteOrder.phone as string | null,
         shippingAddress: {
@@ -1048,7 +1078,10 @@ export class SyncService {
       } else {
         // Create new order
         const order = <span class="cstat-no" title="statement not covered" >await this.prisma.order.create({</span>
-          data: orderData,
+          data: {
+            ...orderData,
+            storeId: 'default-store',
+          },
         });
 &nbsp;
         // Process order items
@@ -1237,7 +1270,7 @@ export class SyncService {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-09-18T12:34:05.324Z
+                at 2025-09-18T15:47:05.811Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

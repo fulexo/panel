@@ -386,9 +386,7 @@
 <a name='L321'></a><a href='#L321'>321</a>
 <a name='L322'></a><a href='#L322'>322</a>
 <a name='L323'></a><a href='#L323'>323</a>
-<a name='L324'></a><a href='#L324'>324</a>
-<a name='L325'></a><a href='#L325'>325</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L324'></a><a href='#L324'>324</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -744,7 +742,7 @@ export interface WooCommerceProduct {
   total_sales: number;
   virtual: boolean;
   downloadable: boolean;
-  downloads: any[];
+  downloads: Array&lt;{ id: string; name: string; file: string }&gt;;
   download_limit: number;
   download_expiry: number;
   external_url: string;
@@ -794,8 +792,8 @@ export interface WooCommerceProduct {
     name: string;
     alt: string;
   }&gt;;
-  attributes: any[];
-  default_attributes: any[];
+  attributes: Array&lt;{ id: number; name: string; position: number; visible: boolean; variation: boolean; options: string[] }&gt;;
+  default_attributes: Array&lt;{ id: number; name: string; option: string }&gt;;
   variations: number[];
   grouped_products: number[];
   menu_order: number;
@@ -825,7 +823,6 @@ export interface WooCommerceOrder {
   total: string;
   total_tax: string;
   customer_id: number;
-  order_key: string;
   billing: {
     first_name: string;
     last_name: string;
@@ -867,16 +864,16 @@ export interface WooCommerceOrder {
     subtotal_tax: string;
     total: string;
     total_tax: string;
-    taxes: any[];
-    meta_data: any[];
+    taxes: Array&lt;{ id: number; rate_code: string; rate_id: number; label: string; compound: boolean; tax_total: string; shipping_tax_total: string }&gt;;
+    meta_data: Array&lt;{ id: number; key: string; value: string }&gt;;
     sku: string;
     price: number;
   }&gt;;
-  tax_lines: any[];
-  shipping_lines: any[];
-  fee_lines: any[];
-  coupon_lines: any[];
-  refunds: any[];
+  tax_lines: Array&lt;{ id: number; rate_code: string; rate_id: number; label: string; compound: boolean; tax_total: string; shipping_tax_total: string }&gt;;
+  shipping_lines: Array&lt;{ id: number; method_title: string; method_id: string; total: string; total_tax: string; taxes: Array&lt;{ id: number; rate_code: string; rate_id: number; label: string; compound: boolean; tax_total: string; shipping_tax_total: string }&gt; }&gt;;
+  fee_lines: Array&lt;{ id: number; name: string; tax_class: string; tax_status: string; total: string; total_tax: string; taxes: Array&lt;{ id: number; rate_code: string; rate_id: number; label: string; compound: boolean; tax_total: string; shipping_tax_total: string }&gt; }&gt;;
+  coupon_lines: Array&lt;{ id: number; code: string; discount: string; discount_tax: string }&gt;;
+  refunds: Array&lt;{ id: number; reason: string; total: string; total_tax: string }&gt;;
   meta_data: Array&lt;{
     id: number;
     key: string;
@@ -966,8 +963,8 @@ export class WooCommerceClient {
   }
 &nbsp;
   // Products
-<span class="fstat-no" title="function not covered" >  as</span>ync getProducts(params?: Record&lt;string, any&gt;): Promise&lt;WooCommerceProduct[]&gt; {
-    const queryParams = <span class="cstat-no" title="statement not covered" >new URLSearchParams(params).toString();</span>
+<span class="fstat-no" title="function not covered" >  as</span>ync getProducts(params?: Record&lt;string, unknown&gt;): Promise&lt;WooCommerceProduct[]&gt; {
+    const queryParams = <span class="cstat-no" title="statement not covered" >new URLSearchParams(params as Record&lt;string, string&gt;).toString();</span>
     const endpoint = <span class="cstat-no" title="statement not covered" >`products${queryParams ? `?${queryParams}` : ''}`;</span>
 <span class="cstat-no" title="statement not covered" >    return this.request&lt;WooCommerceProduct[]&gt;(endpoint);</span>
   }
@@ -991,8 +988,8 @@ export class WooCommerceClient {
   }
 &nbsp;
   // Orders
-<span class="fstat-no" title="function not covered" >  as</span>ync getOrders(params?: Record&lt;string, any&gt;): Promise&lt;WooCommerceOrder[]&gt; {
-    const queryParams = <span class="cstat-no" title="statement not covered" >new URLSearchParams(params).toString();</span>
+<span class="fstat-no" title="function not covered" >  as</span>ync getOrders(params?: Record&lt;string, unknown&gt;): Promise&lt;WooCommerceOrder[]&gt; {
+    const queryParams = <span class="cstat-no" title="statement not covered" >new URLSearchParams(params as Record&lt;string, string&gt;).toString();</span>
     const endpoint = <span class="cstat-no" title="statement not covered" >`orders${queryParams ? `?${queryParams}` : ''}`;</span>
 <span class="cstat-no" title="statement not covered" >    return this.request&lt;WooCommerceOrder[]&gt;(endpoint);</span>
   }
@@ -1009,8 +1006,8 @@ export class WooCommerceClient {
   }
 &nbsp;
   // Customers
-<span class="fstat-no" title="function not covered" >  as</span>ync getCustomers(params?: Record&lt;string, any&gt;): Promise&lt;WooCommerceCustomer[]&gt; {
-    const queryParams = <span class="cstat-no" title="statement not covered" >new URLSearchParams(params).toString();</span>
+<span class="fstat-no" title="function not covered" >  as</span>ync getCustomers(params?: Record&lt;string, unknown&gt;): Promise&lt;WooCommerceCustomer[]&gt; {
+    const queryParams = <span class="cstat-no" title="statement not covered" >new URLSearchParams(params as Record&lt;string, string&gt;).toString();</span>
     const endpoint = <span class="cstat-no" title="statement not covered" >`customers${queryParams ? `?${queryParams}` : ''}`;</span>
 <span class="cstat-no" title="statement not covered" >    return this.request&lt;WooCommerceCustomer[]&gt;(endpoint);</span>
   }
@@ -1042,7 +1039,7 @@ export class WooCommerceClient {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-09-18T12:34:05.458Z
+                at 2025-09-18T15:47:05.956Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

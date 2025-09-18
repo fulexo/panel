@@ -32,7 +32,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/59</span>
+                <span class='fraction'>0/65</span>
             </div>
         
             
@@ -274,7 +274,9 @@
 <a name='L209'></a><a href='#L209'>209</a>
 <a name='L210'></a><a href='#L210'>210</a>
 <a name='L211'></a><a href='#L211'>211</a>
-<a name='L212'></a><a href='#L212'>212</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L212'></a><a href='#L212'>212</a>
+<a name='L213'></a><a href='#L213'>213</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -490,12 +492,13 @@
 import { useAuth } from "@/components/AuthProvider";
 import { useRBAC } from "@/hooks/useRBAC";
 import { useDashboardStats, useOrders, useStores } from "@/hooks/useApi";
+import { DashboardStats } from "@/types/api";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { ApiError } from "@/lib/api-client";
 &nbsp;
 export default function <span class="fstat-no" title="function not covered" >DashboardPage(</span>) {
   const { user } = <span class="cstat-no" title="statement not covered" >useAuth();</span>
-  const { isAdmin, isCustomer } = <span class="cstat-no" title="statement not covered" >useRBAC();</span>
+  const { isAdmin } = <span class="cstat-no" title="statement not covered" >useRBAC();</span>
   
   // Get user's store ID for customer view
   const userStoreId = <span class="cstat-no" title="statement not covered" >user?.stores?.[0]?.id;</span>
@@ -503,14 +506,14 @@ export default function <span class="fstat-no" title="function not covered" >Das
   // Fetch dashboard data
   const { data: stats, isLoading: statsLoading, error: statsError } = <span class="cstat-no" title="statement not covered" >useDashboardStats(</span>
     isAdmin() ? undefined : userStoreId
-  );
+  ) as { data: DashboardStats | undefined; isLoading: boolean; error: ApiError | null };
   
   const { data: recentOrders, isLoading: ordersLoading } = <span class="cstat-no" title="statement not covered" >useOrders({</span>
     limit: 5,
-    storeId: isAdmin() ? undefined : userStoreId,
-  });
+    ...(isAdmin() ? {} : userStoreId ? { storeId: userStoreId } : {}),
+  }) as { data: { data: Array&lt;{ id: string; orderNumber: string; createdAt: string; status: string; total: number }&gt;; pagination: { total: number; pages: number } } | undefined; isLoading: boolean; error: unknown };
   
-  const { data: stores, isLoading: storesLoading } = <span class="cstat-no" title="statement not covered" >useStores();</span>
+  const { data: stores, isLoading: storesLoading } = <span class="cstat-no" title="statement not covered" >useStores() as { data: { data: Array&lt;{ id: string; name: string; status: string; url: string }&gt; } | undefined; isLoading: boolean; error: unknown };</span>
 &nbsp;
 <span class="cstat-no" title="statement not covered" >  if (statsLoading || ordersLoading || (isAdmin() &amp;&amp; storesLoading)) {</span>
 <span class="cstat-no" title="statement not covered" >    return (</span>
@@ -599,8 +602,8 @@ export default function <span class="fstat-no" title="function not covered" >Das
             &lt;div className="bg-card p-6 rounded-lg border border-border"&gt;
               &lt;h3 className="text-lg font-semibold text-foreground mb-4"&gt;Recent Orders&lt;/h3&gt;
               &lt;div className="space-y-3"&gt;
-                {recentOrders?.data?.length &gt; 0 ? (
-                  recentOrders.data.map(<span class="fstat-no" title="function not covered" >(o</span>rder: any) =&gt; (
+                {recentOrders?.data &amp;&amp; recentOrders.data.length &gt; 0 ? (
+                  recentOrders.data.map(<span class="fstat-no" title="function not covered" >(o</span>rder: { id: string; orderNumber: string; createdAt: string; status: string; total: number }) =&gt; (
 <span class="cstat-no" title="statement not covered" >                    &lt;div key={order.id} className="flex justify-between items-center p-3 bg-accent rounded-lg"&gt;</span>
                       &lt;div&gt;
                         &lt;div className="font-medium"&gt;Order #{order.orderNumber}&lt;/div&gt;
@@ -631,33 +634,33 @@ export default function <span class="fstat-no" title="function not covered" >Das
             &lt;div className="bg-card p-6 rounded-lg border border-border"&gt;
               &lt;h3 className="text-lg font-semibold text-foreground mb-4"&gt;Low Stock Alerts&lt;/h3&gt;
               &lt;div className="space-y-3"&gt;
-                {stats?.lowStockProducts?.length &gt; 0 ? (
-                  stats.lowStockProducts.map(<span class="fstat-no" title="function not covered" >(p</span>roduct: any) =&gt; (
+                {stats?.lowStockProducts &amp;&amp; stats.lowStockProducts.length &gt; 0 ? (
+                  stats.lowStockProducts.map(<span class="fstat-no" title="function not covered" >(p</span>roduct: { id: string; name: string; sku: string; stock: number }) =&gt; (
 <span class="cstat-no" title="statement not covered" >                    &lt;div key={product.id} className={`flex justify-between items-center p-3 rounded-lg ${</span>
-                      product.stockQuantity &lt;= 5 ? 'bg-red-50 border border-red-200' : 'bg-yellow-50 border border-yellow-200'
+                      product.stock &lt;= 5 ? 'bg-red-50 border border-red-200' : 'bg-yellow-50 border border-yellow-200'
                     }`}&gt;
                       &lt;div&gt;
                         &lt;div className={`font-medium ${
-                          product.stockQuantity &lt;= 5 ? 'text-red-800' : 'text-yellow-800'
+                          product.stock &lt;= 5 ? 'text-red-800' : 'text-yellow-800'
                         }`}&gt;
                           {product.name}
                         &lt;/div&gt;
                         &lt;div className={`text-sm ${
-                          product.stockQuantity &lt;= 5 ? 'text-red-600' : 'text-yellow-600'
+                          product.stock &lt;= 5 ? 'text-red-600' : 'text-yellow-600'
                         }`}&gt;
                           SKU: {product.sku}
                         &lt;/div&gt;
                       &lt;/div&gt;
                       &lt;div className="text-right"&gt;
                         &lt;div className={`font-medium ${
-                          product.stockQuantity &lt;= 5 ? 'text-red-800' : 'text-yellow-800'
+                          product.stock &lt;= 5 ? 'text-red-800' : 'text-yellow-800'
                         }`}&gt;
-                          {product.stockQuantity} left
+                          {product.stock} left
                         &lt;/div&gt;
                         &lt;div className={`text-sm ${
-                          product.stockQuantity &lt;= 5 ? 'text-red-600' : 'text-yellow-600'
+                          product.stock &lt;= 5 ? 'text-red-600' : 'text-yellow-600'
                         }`}&gt;
-                          {product.stockQuantity &lt;= 5 ? 'Critical' : 'Warning'}
+                          {product.stock &lt;= 5 ? 'Critical' : 'Warning'}
                         &lt;/div&gt;
                       &lt;/div&gt;
                     &lt;/div&gt;
@@ -675,7 +678,7 @@ export default function <span class="fstat-no" title="function not covered" >Das
             &lt;div className="bg-card p-6 rounded-lg border border-border"&gt;
               &lt;h3 className="text-lg font-semibold text-foreground mb-4"&gt;Store Overview&lt;/h3&gt;
               &lt;div className="grid grid-cols-1 md:grid-cols-3 gap-4"&gt;
-                {stores.data.map(<span class="fstat-no" title="function not covered" >(s</span>tore: any) =&gt; (
+                {stores.data.map(<span class="fstat-no" title="function not covered" >(s</span>tore: { id: string; name: string; status: string; url: string; _count?: { orders: number } }) =&gt; (
 <span class="cstat-no" title="statement not covered" >                  &lt;div key={store.id} className="p-4 bg-accent rounded-lg"&gt;</span>
                     &lt;div className="font-medium"&gt;{store.name}&lt;/div&gt;
                     &lt;div className="text-sm text-muted-foreground"&gt;
@@ -703,7 +706,7 @@ export default function <span class="fstat-no" title="function not covered" >Das
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-09-18T12:34:05.324Z
+                at 2025-09-18T15:47:05.811Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

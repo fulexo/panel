@@ -832,7 +832,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { PrismaClient } from '@prisma/client';
-import { Prisma } from '@prisma/client';
+import { Decimal } from 'decimal.js';
 &nbsp;
 @Injectable()
 export class BillingService {
@@ -866,12 +866,12 @@ export class BillingService {
 <span class="fstat-no" title="function not covered" >  as</span>ync addInvoices(tenantId: string, batchId: string, invoiceIds: string[]) {
     const batch = <span class="cstat-no" title="statement not covered" >await this.runTenant(tenantId, <span class="fstat-no" title="function not covered" >as</span>ync (db) =&gt; <span class="cstat-no" title="statement not covered" >db.billingBatch.findFirst({ where: { id: batchId, tenantId } }))</span>;</span>
 <span class="cstat-no" title="statement not covered" >    if (!batch) <span class="cstat-no" title="statement not covered" >throw new NotFoundException('Batch not found');</span></span>
-    let total = <span class="cstat-no" title="statement not covered" >new Prisma.Decimal(batch.total || 0);</span>
+    let total = <span class="cstat-no" title="statement not covered" >new Decimal(batch.total || 0);</span>
 <span class="cstat-no" title="statement not covered" >    for (const invoiceId of invoiceIds) {</span>
       const inv = <span class="cstat-no" title="statement not covered" >await this.runTenant(tenantId, <span class="fstat-no" title="function not covered" >as</span>ync (db) =&gt; <span class="cstat-no" title="statement not covered" >db.invoice.findFirst({ where: { id: invoiceId, order: { tenantId } } }))</span>;</span>
 <span class="cstat-no" title="statement not covered" >      if (!inv) <span class="cstat-no" title="statement not covered" >continue;</span></span>
-<span class="cstat-no" title="statement not covered" >      await this.runTenant(tenantId, <span class="fstat-no" title="function not covered" >as</span>ync (db) =&gt; <span class="cstat-no" title="statement not covered" >db.billingBatchItem.create({ data: { batchId, invoiceId, amount: inv.total || new Prisma.Decimal(0) } }))</span>;</span>
-<span class="cstat-no" title="statement not covered" >      total = total.add(inv.total || new Prisma.Decimal(0));</span>
+<span class="cstat-no" title="statement not covered" >      await this.runTenant(tenantId, <span class="fstat-no" title="function not covered" >as</span>ync (db) =&gt; <span class="cstat-no" title="statement not covered" >db.billingBatchItem.create({ data: { batchId, invoiceId, amount: inv.total || new Decimal(0) } }))</span>;</span>
+<span class="cstat-no" title="statement not covered" >      total = total.add(inv.total || new Decimal(0));</span>
     }
 <span class="cstat-no" title="statement not covered" >    await this.runTenant(tenantId, <span class="fstat-no" title="function not covered" >as</span>ync (db) =&gt; <span class="cstat-no" title="statement not covered" >db.billingBatch.update({ where: { id: batchId }, data: { total } }))</span>;</span>
 <span class="cstat-no" title="statement not covered" >    return this.getBatch(tenantId, batchId);</span>
@@ -885,7 +885,7 @@ export class BillingService {
 <span class="cstat-no" title="statement not covered" >    await this.runTenant(tenantId, <span class="fstat-no" title="function not covered" >as</span>ync (db) =&gt; <span class="cstat-no" title="statement not covered" >db.billingBatchItem.delete({ where: { id: itemId } }))</span>;</span>
     // Recalculate total
     const sum = <span class="cstat-no" title="statement not covered" >await this.runTenant(tenantId, <span class="fstat-no" title="function not covered" >as</span>ync (db) =&gt; <span class="cstat-no" title="statement not covered" >db.billingBatchItem.aggregate({ where: { batchId }, _sum: { amount: true } }))</span>;</span>
-<span class="cstat-no" title="statement not covered" >    await this.runTenant(tenantId, <span class="fstat-no" title="function not covered" >as</span>ync (db) =&gt; <span class="cstat-no" title="statement not covered" >db.billingBatch.update({ where: { id: batchId }, data: { total: sum._sum.amount || new Prisma.Decimal(0) } }))</span>;</span>
+<span class="cstat-no" title="statement not covered" >    await this.runTenant(tenantId, <span class="fstat-no" title="function not covered" >as</span>ync (db) =&gt; <span class="cstat-no" title="statement not covered" >db.billingBatch.update({ where: { id: batchId }, data: { total: sum._sum.amount || new Decimal(0) } }))</span>;</span>
 <span class="cstat-no" title="statement not covered" >    return this.getBatch(tenantId, batchId);</span>
   }
 &nbsp;
@@ -980,7 +980,7 @@ export class BillingService {
           connect: { id: dto['orderId'] as string }
         },
         number: dto['number'] as string,
-        total: new Prisma.Decimal(dto['total'] as string),
+        total: new Decimal(dto['total'] as string),
         currency: (dto['currency'] as string) || 'USD',
         status: 'draft',
         dueDate: dto['dueDate'] ? new Date(dto['dueDate'] as string) : null,
@@ -1010,7 +1010,7 @@ export class BillingService {
       data: {
         status: dto['status'] || undefined,
         number: dto['number'] || undefined,
-        total: dto['total'] ? new Prisma.Decimal(dto['total'] as string) : undefined,
+        total: dto['total'] ? new Decimal(dto['total'] as string) : undefined,
         currency: dto['currency'] || undefined,
         dueDate: dto['dueDate'] ? new Date(dto['dueDate'] as string) : undefined,
         ...(dto['status'] === 'issued' &amp;&amp; { issuedAt: new Date() }),
@@ -1219,7 +1219,7 @@ export class BillingService {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-09-18T12:34:05.324Z
+                at 2025-09-18T15:47:05.811Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>
