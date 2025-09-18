@@ -3,11 +3,14 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
+import { useRBAC } from "@/hooks/useRBAC";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import ProtectedComponent from "@/components/ProtectedComponent";
 
-export default function PlaceholderPage() {
+export default function OrdersPage() {
   const router = useRouter();
   const { user } = useAuth();
+  const { isAdmin, isCustomer } = useRBAC();
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -24,7 +27,7 @@ export default function PlaceholderPage() {
         <div className="min-h-screen bg-background flex items-center justify-center">
           <div className="flex flex-col items-center gap-4">
             <div className="spinner"></div>
-            <div className="text-lg text-foreground">Loading...</div>
+            <div className="text-lg text-foreground">Loading orders...</div>
           </div>
         </div>
       </ProtectedRoute>
@@ -37,19 +40,39 @@ export default function PlaceholderPage() {
         <main className="mobile-container py-6 space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h1 className="mobile-heading text-foreground">Page Under Development</h1>
+              <h1 className="mobile-heading text-foreground">Orders Management</h1>
               <p className="text-muted-foreground mobile-text">
-                This page is currently under development.
+                {isAdmin() ? 'Manage all orders across all stores' : 'View your store orders'}
               </p>
             </div>
+            <ProtectedComponent permission="orders.manage">
+              <button className="btn btn-primary">
+                Create Order
+              </button>
+            </ProtectedComponent>
           </div>
 
-          <div className="bg-card p-8 rounded-lg border border-border text-center">
-            <div className="text-6xl mb-4">🚧</div>
-            <h3 className="text-lg font-semibold text-foreground mb-2">Under Development</h3>
-            <p className="text-muted-foreground">
-              This page is currently under development and will be available soon.
-            </p>
+          <div className="bg-card p-8 rounded-lg border border-border">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-foreground">Orders</h3>
+              <ProtectedComponent permission="orders.manage">
+                <div className="flex gap-2">
+                  <button className="btn btn-outline btn-sm">Export</button>
+                  <button className="btn btn-outline btn-sm">Filter</button>
+                </div>
+              </ProtectedComponent>
+            </div>
+            
+            <div className="text-center py-8">
+              <div className="text-6xl mb-4">📦</div>
+              <h3 className="text-lg font-semibold text-foreground mb-2">Orders Management</h3>
+              <p className="text-muted-foreground">
+                {isAdmin() 
+                  ? 'This page is under development. Order management functionality will be available soon.'
+                  : 'You can view your orders here. Management functions are not available for customers.'
+                }
+              </p>
+            </div>
           </div>
         </main>
       </div>
