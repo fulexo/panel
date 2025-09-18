@@ -13,9 +13,15 @@ module.exports = {
         jsx: 'react-jsx',
         experimentalDecorators: true,
         emitDecoratorMetadata: true
-      }
+      },
+      useESM: false
     }],
     '^.+\\.(js|jsx)$': ['babel-jest'],
+  },
+  globals: {
+    'ts-jest': {
+      useESM: false
+    }
   },
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
   testEnvironment: 'node',
