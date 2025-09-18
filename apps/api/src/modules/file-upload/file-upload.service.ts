@@ -84,7 +84,7 @@ export class FileUploadService {
       const uploadUrl = await getSignedUrl(this.s3Client, command, { expiresIn });
 
       // Store file metadata in database
-      const fileRecord = await this.prisma.fileUpload.create({
+      await this.prisma.fileUpload.create({
         data: {
           tenantId,
           filename: `${baseName}${fileExtension}`,
@@ -130,7 +130,7 @@ export class FileUploadService {
       }
 
       // Check size limit
-      if (actualSize > fileRecord.maxSize) {
+      if (fileRecord.maxSize && actualSize > fileRecord.maxSize) {
         // Delete from S3
         await this.deleteFile(tenantId, key);
         throw new BadRequestException(`File size ${actualSize} exceeds limit ${fileRecord.maxSize}`);

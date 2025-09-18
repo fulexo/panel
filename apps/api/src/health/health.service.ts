@@ -206,10 +206,10 @@ export class HealthService {
     
     try {
       // Basic API functionality test
-      const testData = {
-        timestamp: new Date().toISOString(),
-        test: true,
-      };
+      // const testData = {
+      //   timestamp: new Date().toISOString(),
+      //   test: true,
+      // };
       
       // Test environment variables
       const requiredEnvVars = [

@@ -1,4 +1,4 @@
-import { Processor, Worker, Job } from 'bullmq';
+import { Worker, Job } from 'bullmq';
 import { Logger } from '@nestjs/common';
 import { PrismaService } from '../../prisma.service';
 import { FileUploadService } from '../../modules/file-upload/file-upload.service';
@@ -10,7 +10,6 @@ export interface FileCleanupJobData {
   olderThanHours?: number; // Default 24 hours
 }
 
-@Processor('file-cleanup')
 export class FileCleanupProcessor {
   private readonly logger = new Logger(FileCleanupProcessor.name);
 
@@ -19,7 +18,6 @@ export class FileCleanupProcessor {
     private fileUploadService: FileUploadService,
   ) {}
 
-  @Processor('cleanup-expired-files')
   async processFileCleanup(job: Job<FileCleanupJobData>) {
     const { tenantId, olderThanHours = 24 } = job.data;
     
@@ -52,8 +50,7 @@ export class FileCleanupProcessor {
     }
   }
 
-  @Processor('cleanup-orphaned-files')
-  async processOrphanedFileCleanup(job: Job<FileCleanupJobData>) {
+  async processOrphanedFileCleanup() {
     try {
       this.logger.log('Starting orphaned file cleanup');
 
@@ -131,14 +128,14 @@ export function createFileCleanupWorker(redis: Redis): Worker {
       case 'cleanup-expired-files':
         return processor.processFileCleanup(job);
       case 'cleanup-orphaned-files':
-        return processor.processOrphanedFileCleanup(job);
+        return processor.processOrphanedFileCleanup();
       default:
         throw new Error(`Unknown file cleanup job type: ${job.name}`);
     }
   }, {
     connection: redis,
     concurrency: 3,
-    removeOnComplete: 50,
-    removeOnFail: 25,
+    removeOnComplete: { count: 50 },
+    removeOnFail: { count: 25 },
   });
 }

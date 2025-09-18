@@ -1,6 +1,6 @@
 import { Controller, Post, Get, Delete, Param, Query, Body, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
-import { FileUploadService, PresignedUploadUrl, FileUploadResult } from './file-upload.service';
+import { FileUploadService } from './file-upload.service';
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 import { AuthGuard } from '../../auth/auth.guard';
 import { RateLimit } from '../../rate-limit.decorator';

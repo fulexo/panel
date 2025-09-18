@@ -1,8 +1,9 @@
-import { Processor, Worker, Job } from 'bullmq';
+import { Worker, Job } from 'bullmq';
 import { Logger } from '@nestjs/common';
 import { PrismaService } from '../../prisma.service';
 import { EmailService } from '../../modules/email/email.service';
 import { SettingsService } from '../../modules/settings/settings.service';
+import { EncryptionService } from '../../modules/encryption/encryption.service';
 import Redis from 'ioredis';
 
 export interface EmailJobData {
@@ -16,19 +17,15 @@ export interface EmailJobData {
   priority?: 'low' | 'normal' | 'high';
 }
 
-@Processor('email')
 export class EmailProcessor {
   private readonly logger = new Logger(EmailProcessor.name);
 
   constructor(
-    private prisma: PrismaService,
     private emailService: EmailService,
-    private settingsService: SettingsService,
   ) {}
 
-  @Processor('send-email')
   async processEmail(job: Job<EmailJobData>) {
-    const { tenantId, to, subject, html, text, template, templateData, priority = 'normal' } = job.data;
+    const { tenantId, to, subject, html, text, template, templateData } = job.data;
     
     try {
       this.logger.log(`Processing email job: ${subject} to ${to}`);
@@ -59,7 +56,6 @@ export class EmailProcessor {
     }
   }
 
-  @Processor('send-welcome-email')
   async processWelcomeEmail(job: Job<{ tenantId: string; userEmail: string; userName: string }>) {
     const { tenantId, userEmail, userName } = job.data;
     
@@ -77,7 +73,6 @@ export class EmailProcessor {
     }
   }
 
-  @Processor('send-password-reset-email')
   async processPasswordResetEmail(job: Job<{ tenantId: string; userEmail: string; resetToken: string }>) {
     const { tenantId, userEmail, resetToken } = job.data;
     
@@ -95,7 +90,6 @@ export class EmailProcessor {
     }
   }
 
-  @Processor('send-order-notification')
   async processOrderNotification(job: Job<{ tenantId: string; orderData: Record<string, unknown> }>) {
     const { tenantId, orderData } = job.data;
     
@@ -139,9 +133,7 @@ export class EmailProcessor {
 export function createEmailWorker(redis: Redis): Worker {
   return new Worker('email', async (job) => {
     const processor = new EmailProcessor(
-      new PrismaService(),
-      new EmailService(new SettingsService(new PrismaService())),
-      new SettingsService(new PrismaService())
+      new EmailService(new SettingsService(new PrismaService(), new EncryptionService()))
     );
 
     switch (job.name) {
@@ -159,7 +151,7 @@ export function createEmailWorker(redis: Redis): Worker {
   }, {
     connection: redis,
     concurrency: 10,
-    removeOnComplete: 100,
-    removeOnFail: 50,
+    removeOnComplete: { count: 100 },
+    removeOnFail: { count: 50 },
   });
 }

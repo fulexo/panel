@@ -1,4 +1,4 @@
-import { Processor, Worker, Job } from 'bullmq';
+import { Worker, Job } from 'bullmq';
 import { Logger } from '@nestjs/common';
 import { PrismaService } from '../../prisma.service';
 import { WooCommerceService } from '../../woocommerce/woo.service';
@@ -10,7 +10,6 @@ export interface WooSyncJobData {
   syncType: 'products' | 'orders' | 'customers' | 'all';
 }
 
-@Processor('woo-sync')
 export class WooSyncProcessor {
   private readonly logger = new Logger(WooSyncProcessor.name);
 
@@ -19,7 +18,6 @@ export class WooSyncProcessor {
     private wooService: WooCommerceService,
   ) {}
 
-  @Processor('woo-sync-orders')
   async processOrderSync(job: Job<WooSyncJobData>) {
     const { storeId, tenantId } = job.data;
     
@@ -53,7 +51,6 @@ export class WooSyncProcessor {
     }
   }
 
-  @Processor('woo-sync-products')
   async processProductSync(job: Job<WooSyncJobData>) {
     const { storeId, tenantId } = job.data;
     
@@ -87,7 +84,6 @@ export class WooSyncProcessor {
     }
   }
 
-  @Processor('woo-sync-customers')
   async processCustomerSync(job: Job<WooSyncJobData>) {
     const { storeId, tenantId } = job.data;
     
@@ -142,7 +138,7 @@ export function createWooSyncWorker(redis: Redis): Worker {
   }, {
     connection: redis,
     concurrency: 5,
-    removeOnComplete: 100,
-    removeOnFail: 50,
+    removeOnComplete: { count: 100 },
+    removeOnFail: { count: 50 },
   });
 }

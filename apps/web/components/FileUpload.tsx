@@ -79,7 +79,6 @@ export function FileUpload({
       return;
     }
 
-    const uploadId = Math.random().toString(36).substring(7);
     const upload: UploadProgress = {
       file,
       progress: 0,
