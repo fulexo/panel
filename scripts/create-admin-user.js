@@ -30,14 +30,14 @@ async function createAdminUser() {
 
     // Admin kullanıcısını oluştur/güncelle
     const admin = await prisma.user.upsert({
-      where: { email: 'fulexo@fulexo.com' },
+      where: { email: 'admin@fulexo.com' },
       update: {
         passwordHash: passwordHash,
         role: 'ADMIN',
         tenantId: tenant.id,
       },
       create: {
-        email: 'fulexo@fulexo.com',
+        email: 'admin@fulexo.com',
         passwordHash: passwordHash,
         role: 'ADMIN',
         tenantId: tenant.id,
@@ -45,7 +45,7 @@ async function createAdminUser() {
     });
 
     console.log('✅ Admin kullanıcısı hazırlandı:');
-    console.log('   Email: fulexo@fulexo.com');
+    console.log('   Email: admin@fulexo.com');
     console.log('   Şifre: demo123');
     console.log('   Rol: ADMIN');
 

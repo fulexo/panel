@@ -124,7 +124,7 @@ fi
 # Set up SSL certificates (Let's Encrypt)
 log "Setting up SSL certificates..."
 if command -v certbot &> /dev/null; then
-    warning "Certbot is available. Run 'sudo certbot --nginx' to set up SSL certificates"
+    warning "Certbot is available. Run 'sudo certbot --nginx -d panel.fulexo.com -d api.fulexo.com' to set up SSL certificates"
 else
     warning "Certbot not found. Install it to set up SSL certificates"
 fi
