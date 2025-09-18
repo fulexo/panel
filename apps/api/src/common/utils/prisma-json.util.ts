@@ -8,7 +8,7 @@ export function toPrismaJsonValue(value: unknown): Prisma.InputJsonValue {
 }
 
 export function fromPrismaJsonValue<T = unknown>(value: Prisma.JsonValue): T {
-  if (value === Prisma.JsonNull as unknown) {
+  if (value === null) {
     return null as T;
   }
   return value as T;

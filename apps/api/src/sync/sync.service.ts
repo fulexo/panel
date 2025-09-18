@@ -134,30 +134,38 @@ export class SyncService {
       // Find or create customer
       let customerId = null;
       if (remoteOrder.email) {
-        const customer = await this.prisma.customer.upsert({
+        let customer = await this.prisma.customer.findFirst({
           where: {
-            tenantId_emailNormalized: {
-              tenantId,
-              emailNormalized: (remoteOrder.email as string).toLowerCase(),
-            },
-          },
-          update: {
-            name: (remoteOrder.delivery_fullname || remoteOrder.invoice_fullname) as string | null,
-            phoneE164: remoteOrder.phone as string | null,
-          },
-          create: {
-            tenantId,
             email: remoteOrder.email as string,
-            emailNormalized: (remoteOrder.email as string).toLowerCase(),
-            name: (remoteOrder.delivery_fullname || remoteOrder.invoice_fullname) as string | null,
-            phoneE164: remoteOrder.phone as string | null,
-            company: remoteOrder.invoice_company as string | null,
-            addressLine1: remoteOrder.delivery_address as string | null,
-            city: remoteOrder.delivery_city as string | null,
-            postalCode: remoteOrder.delivery_postcode as string | null,
-            country: remoteOrder.delivery_country_code as string | null,
+            tenantId,
           },
         });
+
+        if (customer) {
+          customer = await this.prisma.customer.update({
+            where: { id: customer.id },
+            data: {
+              name: (remoteOrder.delivery_fullname || remoteOrder.invoice_fullname) as string | null,
+              phoneE164: remoteOrder.phone as string | null,
+            },
+          });
+        } else {
+          customer = await this.prisma.customer.create({
+            data: {
+              tenantId,
+              storeId: 'default-store',
+              email: remoteOrder.email as string,
+              emailNormalized: (remoteOrder.email as string).toLowerCase(),
+              name: (remoteOrder.delivery_fullname || remoteOrder.invoice_fullname) as string | null,
+              phoneE164: remoteOrder.phone as string | null,
+              company: remoteOrder.invoice_company as string | null,
+              addressLine1: remoteOrder.delivery_address as string | null,
+              city: remoteOrder.delivery_city as string | null,
+              postalCode: remoteOrder.delivery_postcode as string | null,
+              country: remoteOrder.delivery_country_code as string | null,
+            },
+          });
+        }
         customerId = customer.id;
       }
 
@@ -169,7 +177,7 @@ export class SyncService {
         status: this.mapOrderStatus(remoteOrder.order_status_id as number),
         mappedStatus: remoteOrder.order_status_id?.toString() || null,
         total: parseFloat((remoteOrder.payment_done as string) || '0'),
-        currency: remoteOrder.currency as string | null,
+            currency: remoteOrder.currency as string || 'TRY',
         customerEmail: remoteOrder.email as string | null,
         customerPhone: remoteOrder.phone as string | null,
         shippingAddress: {
@@ -205,7 +213,10 @@ export class SyncService {
       } else {
         // Create new order
         const order = await this.prisma.order.create({
-          data: orderData,
+          data: {
+            ...orderData,
+            storeId: 'default-store',
+          },
         });
 
         // Process order items

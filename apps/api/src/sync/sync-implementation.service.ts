@@ -148,6 +148,8 @@ export class SyncImplementationService {
         data: {
           ...orderData,
           tenantId: accountId,
+          storeId: (orderData.storeId as string) || 'default-store',
+          total: (orderData.total as number) || 0,
         },
       });
     }

@@ -1,4 +1,4 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const API_BASE_URL = process.env['NEXT_PUBLIC_API_URL'] || 'http://localhost:3001';
 
 class ApiError extends Error {
   constructor(
@@ -285,7 +285,7 @@ class ApiClient {
   async requestInventoryChange(data: {
     productId: string;
     changeType: string;
-    newValue: any;
+    newValue: Record<string, unknown>;
     reason?: string;
   }) {
     return this.request('/inventory/approvals', {

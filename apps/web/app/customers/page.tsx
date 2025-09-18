@@ -10,7 +10,7 @@ import ProtectedComponent from "@/components/ProtectedComponent";
 export default function CustomersPage() {
   const router = useRouter();
   const { user } = useAuth();
-  const { isAdmin, isCustomer } = useRBAC();
+  const { isAdmin } = useRBAC();
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

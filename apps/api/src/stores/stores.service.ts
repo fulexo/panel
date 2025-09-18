@@ -1,7 +1,8 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { CreateStoreDto, UpdateStoreDto } from './dto/stores.dto';
-import { WooCommerceService } from '../woocommerce/woocommerce.service';
+import { WooCommerceService } from '../woocommerce/woo.service';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class StoresService {
@@ -14,9 +15,9 @@ export class StoresService {
     const skip = (page - 1) * limit;
     const where = search ? {
       OR: [
-        { name: { contains: search, mode: 'insensitive' } },
-        { url: { contains: search, mode: 'insensitive' } },
-        { customer: { email: { contains: search, mode: 'insensitive' } } },
+        { name: { contains: search, mode: Prisma.QueryMode.insensitive } },
+        { url: { contains: search, mode: Prisma.QueryMode.insensitive } },
+        { customer: { email: { contains: search, mode: Prisma.QueryMode.insensitive } } },
       ],
     } : {};
 
@@ -190,7 +191,7 @@ export class StoresService {
     return { message: 'Store deleted successfully' };
   }
 
-  async syncStore(id: string) {
+  async syncStore(id: string, tenantId: string) {
     const store = await this.findOne(id);
 
     if (store.status !== 'connected') {
@@ -198,7 +199,7 @@ export class StoresService {
     }
 
     try {
-      const syncResult = await this.wooCommerceService.syncStore(store);
+      const syncResult = await this.wooCommerceService.syncStore(store, tenantId);
       
       await this.prisma.store.update({
         where: { id },
@@ -214,11 +215,11 @@ export class StoresService {
         where: { id },
         data: {
           syncStatus: 'error',
-          lastError: error.message,
+          lastError: (error as Error).message,
         },
       });
 
-      throw new BadRequestException(`Sync failed: ${error.message}`);
+      throw new BadRequestException(`Sync failed: ${(error as Error).message}`);
     }
   }
 

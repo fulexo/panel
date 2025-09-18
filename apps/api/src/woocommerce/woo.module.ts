@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
-import { WooService } from './woo.service';
+import { WooCommerceService } from './woo.service';
 import { WooController } from './woo.controller';
 
 @Module({
-  providers: [PrismaService, WooService],
+  providers: [PrismaService, WooCommerceService],
   controllers: [WooController],
-  exports: [WooService],
+  exports: [WooCommerceService],
 })
 export class WooCommerceModule {}

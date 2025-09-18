@@ -1,20 +1,20 @@
-import { IsString, IsUrl, IsOptional, IsUUID, IsEnum } from 'class-validator';
+import { IsString, IsUrl, IsOptional, IsUUID } from 'class-validator';
 
 export class CreateStoreDto {
   @IsString()
-  name: string;
+  name!: string;
 
   @IsUrl()
-  url: string;
+  url!: string;
 
   @IsString()
-  consumerKey: string;
+  consumerKey!: string;
 
   @IsString()
-  consumerSecret: string;
+  consumerSecret!: string;
 
   @IsUUID()
-  customerId: string;
+  customerId!: string;
 }
 
 export class UpdateStoreDto {
@@ -36,22 +36,22 @@ export class UpdateStoreDto {
 }
 
 export class StoreResponseDto {
-  id: string;
-  name: string;
-  url: string;
-  status: 'connected' | 'disconnected' | 'error';
-  lastSyncAt: Date | null;
-  syncStatus: 'success' | 'error' | 'pending' | null;
-  lastError: string | null;
-  createdAt: Date;
-  updatedAt: Date;
-  customer: {
+  id!: string;
+  name!: string;
+  url!: string;
+  status!: 'connected' | 'disconnected' | 'error';
+  lastSyncAt!: Date | null;
+  syncStatus!: 'success' | 'error' | 'pending' | null;
+  lastError!: string | null;
+  createdAt!: Date;
+  updatedAt!: Date;
+  customer!: {
     id: string;
     email: string;
     firstName: string;
     lastName: string;
   };
-  _count: {
+  _count!: {
     orders: number;
     products: number;
     customers: number;
@@ -59,18 +59,18 @@ export class StoreResponseDto {
 }
 
 export class SyncResultDto {
-  success: boolean;
-  message: string;
-  syncedItems: {
+  success!: boolean;
+  message!: string;
+  syncedItems!: {
     products: number;
     orders: number;
     customers: number;
   };
-  errors: string[];
+  errors!: string[];
 }
 
 export class ConnectionTestDto {
-  success: boolean;
-  message: string;
+  success!: boolean;
+  message!: string;
   error?: string;
 }

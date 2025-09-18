@@ -1,20 +1,20 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiClient, ApiError } from '@/lib/api-client';
+import { apiClient } from '@/lib/api-client';
 
 // Query keys
 export const queryKeys = {
   stores: ['stores'] as const,
   store: (id: string) => ['stores', id] as const,
-  orders: (params?: any) => ['orders', params] as const,
+  orders: (params?: Record<string, unknown>) => ['orders', params] as const,
   order: (id: string) => ['orders', id] as const,
-  products: (params?: any) => ['products', params] as const,
+  products: (params?: Record<string, unknown>) => ['products', params] as const,
   product: (id: string) => ['products', id] as const,
-  customers: (params?: any) => ['customers', params] as const,
+  customers: (params?: Record<string, unknown>) => ['customers', params] as const,
   customer: (id: string) => ['customers', id] as const,
-  inventoryApprovals: (params?: any) => ['inventory-approvals', params] as const,
-  returns: (params?: any) => ['returns', params] as const,
+  inventoryApprovals: (params?: Record<string, unknown>) => ['inventory-approvals', params] as const,
+  returns: (params?: Record<string, unknown>) => ['returns', params] as const,
   return: (id: string) => ['returns', id] as const,
-  supportTickets: (params?: any) => ['support-tickets', params] as const,
+  supportTickets: (params?: Record<string, unknown>) => ['support-tickets', params] as const,
   supportTicket: (id: string) => ['support-tickets', id] as const,
   supportTicketMessages: (ticketId: string) => ['support-tickets', ticketId, 'messages'] as const,
   dashboardStats: (storeId?: string) => ['dashboard-stats', storeId] as const,
@@ -53,7 +53,7 @@ export const useUpdateStore = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) => 
+    mutationFn: ({ id, data }: { id: string; data: Record<string, unknown> }) => 
       apiClient.updateStore(id, data),
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.stores });
@@ -97,5 +97,18 @@ export const useDashboardStats = (storeId?: string) => {
     queryKey: queryKeys.dashboardStats(storeId),
     queryFn: () => apiClient.getDashboardStats(storeId),
     staleTime: 2 * 60 * 1000, // 2 minutes
+  });
+};
+
+export const useOrders = (params: { page?: number; limit?: number; search?: string; status?: string; storeId?: string } = {}) => {
+  // Filter out undefined values to avoid exactOptionalPropertyTypes issues
+  const filteredParams = Object.fromEntries(
+    Object.entries(params).filter(([_, value]) => value !== undefined)
+  );
+  
+  return useQuery({
+    queryKey: queryKeys.orders(filteredParams),
+    queryFn: () => apiClient.getOrders(filteredParams),
+    staleTime: 30 * 1000, // 30 seconds
   });
 };

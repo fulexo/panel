@@ -7,6 +7,12 @@ export interface User {
   twofaEnabled?: boolean;
   createdAt?: string;
   lastLoginAt?: string;
+  stores?: Array<{
+    id: string;
+    name: string;
+    url: string;
+    status: string;
+  }>;
 }
 
 export interface AuthContextType {

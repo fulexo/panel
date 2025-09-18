@@ -52,4 +52,7 @@ export class CreateCustomerDto {
   @IsString({ each: true })
   @IsOptional()
   tags?: string[];
+
+  @IsString()
+  storeId!: string;
 }

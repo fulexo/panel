@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Delete, Param, Body, Req, HttpCode } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { WooService } from './woo.service';
+import { WooCommerceService } from './woo.service';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Public } from '../auth/decorators/public.decorator';
 import { AuthenticatedUser } from '../auth/types/user.types';
@@ -10,7 +10,7 @@ import { AddStoreDto } from './dto/woo.dto';
 @ApiBearerAuth()
 @Controller('woo')
 export class WooController {
-  constructor(private readonly woo: WooService) {}
+  constructor(private readonly woo: WooCommerceService) {}
 
   @Get('stores')
   @ApiOperation({ summary: 'List Woo stores for tenant' })
@@ -38,7 +38,7 @@ export class WooController {
   @Post('stores/:id/test')
   @ApiOperation({ summary: 'Test Woo store connection' })
   async test(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string){
-    return this.woo.testConnection(user.tenantId, id);
+    return this.woo.testStoreConnection(user.tenantId, id);
   }
 
   @Post('stores/:id/register-webhooks')

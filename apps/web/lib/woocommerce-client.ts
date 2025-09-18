@@ -31,7 +31,7 @@ export interface WooCommerceProduct {
   total_sales: number;
   virtual: boolean;
   downloadable: boolean;
-  downloads: any[];
+  downloads: Array<{ id: string; name: string; file: string }>;
   download_limit: number;
   download_expiry: number;
   external_url: string;
@@ -81,8 +81,8 @@ export interface WooCommerceProduct {
     name: string;
     alt: string;
   }>;
-  attributes: any[];
-  default_attributes: any[];
+  attributes: Array<{ id: number; name: string; position: number; visible: boolean; variation: boolean; options: string[] }>;
+  default_attributes: Array<{ id: number; name: string; option: string }>;
   variations: number[];
   grouped_products: number[];
   menu_order: number;
@@ -112,7 +112,6 @@ export interface WooCommerceOrder {
   total: string;
   total_tax: string;
   customer_id: number;
-  order_key: string;
   billing: {
     first_name: string;
     last_name: string;
@@ -154,16 +153,16 @@ export interface WooCommerceOrder {
     subtotal_tax: string;
     total: string;
     total_tax: string;
-    taxes: any[];
-    meta_data: any[];
+    taxes: Array<{ id: number; rate_code: string; rate_id: number; label: string; compound: boolean; tax_total: string; shipping_tax_total: string }>;
+    meta_data: Array<{ id: number; key: string; value: string }>;
     sku: string;
     price: number;
   }>;
-  tax_lines: any[];
-  shipping_lines: any[];
-  fee_lines: any[];
-  coupon_lines: any[];
-  refunds: any[];
+  tax_lines: Array<{ id: number; rate_code: string; rate_id: number; label: string; compound: boolean; tax_total: string; shipping_tax_total: string }>;
+  shipping_lines: Array<{ id: number; method_title: string; method_id: string; total: string; total_tax: string; taxes: Array<{ id: number; rate_code: string; rate_id: number; label: string; compound: boolean; tax_total: string; shipping_tax_total: string }> }>;
+  fee_lines: Array<{ id: number; name: string; tax_class: string; tax_status: string; total: string; total_tax: string; taxes: Array<{ id: number; rate_code: string; rate_id: number; label: string; compound: boolean; tax_total: string; shipping_tax_total: string }> }>;
+  coupon_lines: Array<{ id: number; code: string; discount: string; discount_tax: string }>;
+  refunds: Array<{ id: number; reason: string; total: string; total_tax: string }>;
   meta_data: Array<{
     id: number;
     key: string;
@@ -253,8 +252,8 @@ export class WooCommerceClient {
   }
 
   // Products
-  async getProducts(params?: Record<string, any>): Promise<WooCommerceProduct[]> {
-    const queryParams = new URLSearchParams(params).toString();
+  async getProducts(params?: Record<string, unknown>): Promise<WooCommerceProduct[]> {
+    const queryParams = new URLSearchParams(params as Record<string, string>).toString();
     const endpoint = `products${queryParams ? `?${queryParams}` : ''}`;
     return this.request<WooCommerceProduct[]>(endpoint);
   }
@@ -278,8 +277,8 @@ export class WooCommerceClient {
   }
 
   // Orders
-  async getOrders(params?: Record<string, any>): Promise<WooCommerceOrder[]> {
-    const queryParams = new URLSearchParams(params).toString();
+  async getOrders(params?: Record<string, unknown>): Promise<WooCommerceOrder[]> {
+    const queryParams = new URLSearchParams(params as Record<string, string>).toString();
     const endpoint = `orders${queryParams ? `?${queryParams}` : ''}`;
     return this.request<WooCommerceOrder[]>(endpoint);
   }
@@ -296,8 +295,8 @@ export class WooCommerceClient {
   }
 
   // Customers
-  async getCustomers(params?: Record<string, any>): Promise<WooCommerceCustomer[]> {
-    const queryParams = new URLSearchParams(params).toString();
+  async getCustomers(params?: Record<string, unknown>): Promise<WooCommerceCustomer[]> {
+    const queryParams = new URLSearchParams(params as Record<string, string>).toString();
     const endpoint = `customers${queryParams ? `?${queryParams}` : ''}`;
     return this.request<WooCommerceCustomer[]>(endpoint);
   }

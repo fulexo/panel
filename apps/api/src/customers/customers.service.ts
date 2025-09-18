@@ -147,7 +147,8 @@ export class CustomersService {
         tenant: {
           connect: { id: tenantId }
         },
-        email: body.email || null, 
+        store: { connect: { id: body.storeId } },
+        email: body.email || '', 
         emailNormalized: body.email ? String(body.email).toLowerCase() : null, 
         name: body.name || null, 
         phoneE164: body['phoneE164'] || null, 

@@ -1,24 +1,24 @@
 import { Controller, Get, Post, Put, Body, Param, Query, UseGuards } from '@nestjs/common';
 import { InventoryService } from './inventory.service';
-import { CreateInventoryApprovalDto, UpdateInventoryApprovalDto } from './dto/inventory.dto';
-import { JwtAuthGuard } from '../auth/auth.guard';
+import { CreateInventoryApprovalDto } from './dto/inventory.dto';
+import { AuthGuard } from '../auth/auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { User } from '../users/entities/user.entity';
 
 @Controller('inventory')
-@UseGuards(JwtAuthGuard)
+@UseGuards(AuthGuard)
 export class InventoryController {
   constructor(private readonly inventoryService: InventoryService) {}
 
   @Get('approvals')
   async getApprovals(
+    @CurrentUser() user: User,
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 10,
     @Query('status') status?: string,
     @Query('storeId') storeId?: string,
-    @CurrentUser() user: User,
   ) {
     // Filter by user's store if customer
     const userStoreId = user.role === 'CUSTOMER' ? user.stores?.[0]?.id : storeId;
@@ -60,11 +60,11 @@ export class InventoryController {
 
   @Get('stock-levels')
   async getStockLevels(
+    @CurrentUser() user: User,
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 10,
     @Query('storeId') storeId?: string,
     @Query('lowStock') lowStock?: boolean,
-    @CurrentUser() user: User,
   ) {
     // Filter by user's store if customer
     const userStoreId = user.role === 'CUSTOMER' ? user.stores?.[0]?.id : storeId;

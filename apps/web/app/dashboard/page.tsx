@@ -3,12 +3,13 @@
 import { useAuth } from "@/components/AuthProvider";
 import { useRBAC } from "@/hooks/useRBAC";
 import { useDashboardStats, useOrders, useStores } from "@/hooks/useApi";
+import { DashboardStats } from "@/types/api";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { ApiError } from "@/lib/api-client";
 
 export default function DashboardPage() {
   const { user } = useAuth();
-  const { isAdmin, isCustomer } = useRBAC();
+  const { isAdmin } = useRBAC();
   
   // Get user's store ID for customer view
   const userStoreId = user?.stores?.[0]?.id;
@@ -16,14 +17,14 @@ export default function DashboardPage() {
   // Fetch dashboard data
   const { data: stats, isLoading: statsLoading, error: statsError } = useDashboardStats(
     isAdmin() ? undefined : userStoreId
-  );
+  ) as { data: DashboardStats | undefined; isLoading: boolean; error: ApiError | null };
   
   const { data: recentOrders, isLoading: ordersLoading } = useOrders({
     limit: 5,
-    storeId: isAdmin() ? undefined : userStoreId,
-  });
+    ...(isAdmin() ? {} : userStoreId ? { storeId: userStoreId } : {}),
+  }) as { data: { data: Array<{ id: string; orderNumber: string; createdAt: string; status: string; total: number }>; pagination: { total: number; pages: number } } | undefined; isLoading: boolean; error: unknown };
   
-  const { data: stores, isLoading: storesLoading } = useStores();
+  const { data: stores, isLoading: storesLoading } = useStores() as { data: { data: Array<{ id: string; name: string; status: string; url: string }> } | undefined; isLoading: boolean; error: unknown };
 
   if (statsLoading || ordersLoading || (isAdmin() && storesLoading)) {
     return (
@@ -112,8 +113,8 @@ export default function DashboardPage() {
             <div className="bg-card p-6 rounded-lg border border-border">
               <h3 className="text-lg font-semibold text-foreground mb-4">Recent Orders</h3>
               <div className="space-y-3">
-                {recentOrders?.data?.length > 0 ? (
-                  recentOrders.data.map((order: any) => (
+                {recentOrders?.data && recentOrders.data.length > 0 ? (
+                  recentOrders.data.map((order: { id: string; orderNumber: string; createdAt: string; status: string; total: number }) => (
                     <div key={order.id} className="flex justify-between items-center p-3 bg-accent rounded-lg">
                       <div>
                         <div className="font-medium">Order #{order.orderNumber}</div>
@@ -144,33 +145,33 @@ export default function DashboardPage() {
             <div className="bg-card p-6 rounded-lg border border-border">
               <h3 className="text-lg font-semibold text-foreground mb-4">Low Stock Alerts</h3>
               <div className="space-y-3">
-                {stats?.lowStockProducts?.length > 0 ? (
-                  stats.lowStockProducts.map((product: any) => (
+                {stats?.lowStockProducts && stats.lowStockProducts.length > 0 ? (
+                  stats.lowStockProducts.map((product: { id: string; name: string; sku: string; stock: number }) => (
                     <div key={product.id} className={`flex justify-between items-center p-3 rounded-lg ${
-                      product.stockQuantity <= 5 ? 'bg-red-50 border border-red-200' : 'bg-yellow-50 border border-yellow-200'
+                      product.stock <= 5 ? 'bg-red-50 border border-red-200' : 'bg-yellow-50 border border-yellow-200'
                     }`}>
                       <div>
                         <div className={`font-medium ${
-                          product.stockQuantity <= 5 ? 'text-red-800' : 'text-yellow-800'
+                          product.stock <= 5 ? 'text-red-800' : 'text-yellow-800'
                         }`}>
                           {product.name}
                         </div>
                         <div className={`text-sm ${
-                          product.stockQuantity <= 5 ? 'text-red-600' : 'text-yellow-600'
+                          product.stock <= 5 ? 'text-red-600' : 'text-yellow-600'
                         }`}>
                           SKU: {product.sku}
                         </div>
                       </div>
                       <div className="text-right">
                         <div className={`font-medium ${
-                          product.stockQuantity <= 5 ? 'text-red-800' : 'text-yellow-800'
+                          product.stock <= 5 ? 'text-red-800' : 'text-yellow-800'
                         }`}>
-                          {product.stockQuantity} left
+                          {product.stock} left
                         </div>
                         <div className={`text-sm ${
-                          product.stockQuantity <= 5 ? 'text-red-600' : 'text-yellow-600'
+                          product.stock <= 5 ? 'text-red-600' : 'text-yellow-600'
                         }`}>
-                          {product.stockQuantity <= 5 ? 'Critical' : 'Warning'}
+                          {product.stock <= 5 ? 'Critical' : 'Warning'}
                         </div>
                       </div>
                     </div>
@@ -188,7 +189,7 @@ export default function DashboardPage() {
             <div className="bg-card p-6 rounded-lg border border-border">
               <h3 className="text-lg font-semibold text-foreground mb-4">Store Overview</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {stores.data.map((store: any) => (
+                {stores.data.map((store: { id: string; name: string; status: string; url: string; _count?: { orders: number } }) => (
                   <div key={store.id} className="p-4 bg-accent rounded-lg">
                     <div className="font-medium">{store.name}</div>
                     <div className="text-sm text-muted-foreground">

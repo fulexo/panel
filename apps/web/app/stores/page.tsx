@@ -3,14 +3,14 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
-import { useRBAC } from "@/hooks/useRBAC";
+// import { useRBAC } from "@/hooks/useRBAC";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import ProtectedComponent from "@/components/ProtectedComponent";
 
 export default function StoresPage() {
   const router = useRouter();
   const { user } = useAuth();
-  const { isAdmin } = useRBAC();
+  // const { } = useRBAC();
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

@@ -40,7 +40,7 @@ export interface WooCommerceProduct {
   total_sales: number;
   virtual: boolean;
   downloadable: boolean;
-  downloads: any[];
+  downloads: Array<{ id: string; name: string; file: string }>;
   download_limit: number;
   download_expiry: number;
   external_url: string;
@@ -90,8 +90,8 @@ export interface WooCommerceProduct {
     name: string;
     alt: string;
   }>;
-  attributes: any[];
-  default_attributes: any[];
+  attributes: Array<{ id: number; name: string; position: number; visible: boolean; variation: boolean; options: string[] }>;
+  default_attributes: Array<{ id: number; name: string; option: string }>;
   variations: number[];
   grouped_products: number[];
   menu_order: number;
@@ -162,16 +162,16 @@ export interface WooCommerceOrder {
     subtotal_tax: string;
     total: string;
     total_tax: string;
-    taxes: any[];
-    meta_data: any[];
+    taxes: Array<{ id: number; rate_code: string; rate_id: number; label: string; compound: boolean; tax_total: string; shipping_tax_total: string }>;
+    meta_data: Array<{ id: number; key: string; value: string }>;
     sku: string;
     price: number;
   }>;
-  tax_lines: any[];
-  shipping_lines: any[];
-  fee_lines: any[];
-  coupon_lines: any[];
-  refunds: any[];
+  tax_lines: Array<{ id: number; rate_code: string; rate_id: number; label: string; compound: boolean; tax_total: string; shipping_tax_total: string }>;
+  shipping_lines: Array<{ id: number; method_title: string; method_id: string; total: string; total_tax: string; taxes: Array<{ id: number; rate_code: string; rate_id: number; label: string; compound: boolean; tax_total: string; shipping_tax_total: string }> }>;
+  fee_lines: Array<{ id: number; name: string; tax_class: string; tax_status: string; total: string; total_tax: string; taxes: Array<{ id: number; rate_code: string; rate_id: number; label: string; compound: boolean; tax_total: string; shipping_tax_total: string }> }>;
+  coupon_lines: Array<{ id: number; code: string; discount: string; discount_tax: string }>;
+  refunds: Array<{ id: number; reason: string; total: string; total_tax: string }>;
   meta_data: Array<{
     id: number;
     key: string;
@@ -222,7 +222,7 @@ export interface WooCommerceCustomer {
 }
 
 @Injectable()
-export class WooService {
+export class WooCommerceService {
   constructor(private prisma: PrismaService) {}
 
   // New methods for the updated stores system
@@ -249,12 +249,12 @@ export class WooService {
       return { 
         success: false, 
         message: 'Connection failed', 
-        error: error.message 
+        error: (error as Error).message 
       };
     }
   }
 
-  async syncStore(store: any): Promise<{ success: boolean; message: string; syncedItems: any }> {
+  async syncStore(store: { id: string; url: string; consumerKey: string; consumerSecret: string }, tenantId: string): Promise<{ success: boolean; message: string; syncedItems: { products: number; orders: number; customers: number } }> {
     try {
       const config: WooCommerceConfig = {
         url: store.url,
@@ -263,13 +263,13 @@ export class WooService {
       };
 
       // Sync products
-      const products = await this.syncProducts(config, store.id);
+      const products = await this.syncProducts(config, store.id, tenantId);
       
       // Sync orders
-      const orders = await this.syncOrders(config, store.id);
+      const orders = await this.syncOrders(config, store.id, tenantId);
       
       // Sync customers
-      const customers = await this.syncCustomers(config, store.id);
+      const customers = await this.syncCustomers(config, store.id, tenantId);
 
       return {
         success: true,
@@ -280,7 +280,7 @@ export class WooService {
           customers: customers.length,
         },
       };
-    } catch (error) {
+        } catch {
       return {
         success: false,
         message: 'Sync failed',
@@ -289,7 +289,7 @@ export class WooService {
     }
   }
 
-  private async syncProducts(config: WooCommerceConfig, storeId: string): Promise<WooCommerceProduct[]> {
+  private async syncProducts(config: WooCommerceConfig, storeId: string, tenantId: string): Promise<WooCommerceProduct[]> {
     const products: WooCommerceProduct[] = [];
     let page = 1;
     const perPage = 100;
@@ -339,6 +339,7 @@ export class WooService {
           lastSyncedAt: new Date(),
         },
         create: {
+          tenantId,
           wooId: product.id.toString(),
           storeId,
           name: product.name,
@@ -363,7 +364,7 @@ export class WooService {
     return products;
   }
 
-  private async syncOrders(config: WooCommerceConfig, storeId: string): Promise<WooCommerceOrder[]> {
+  private async syncOrders(config: WooCommerceConfig, storeId: string, tenantId: string): Promise<WooCommerceOrder[]> {
     const orders: WooCommerceOrder[] = [];
     let page = 1;
     const perPage = 100;
@@ -413,6 +414,7 @@ export class WooService {
           lastSyncedAt: new Date(),
         },
         create: {
+          tenantId,
           wooId: order.id.toString(),
           storeId,
           orderNumber: order.number,
@@ -437,7 +439,7 @@ export class WooService {
     return orders;
   }
 
-  private async syncCustomers(config: WooCommerceConfig, storeId: string): Promise<WooCommerceCustomer[]> {
+  private async syncCustomers(config: WooCommerceConfig, storeId: string, tenantId: string): Promise<WooCommerceCustomer[]> {
     const customers: WooCommerceCustomer[] = [];
     let page = 1;
     const perPage = 100;
@@ -483,6 +485,7 @@ export class WooService {
           lastSyncedAt: new Date(),
         },
         create: {
+          tenantId,
           wooId: customer.id.toString(),
           storeId,
           email: customer.email,
@@ -549,7 +552,7 @@ export class WooService {
     });
   }
 
-  async testConnection(tenantId: string, id: string){
+  async testStoreConnection(tenantId: string, id: string){
     return this.prisma.withTenant(tenantId, async (tx) => {
       const s = await tx.wooStore.findFirst({ where: { id } });
       if(!s) throw new BadRequestException('Store not found');

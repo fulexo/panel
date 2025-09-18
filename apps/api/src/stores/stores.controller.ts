@@ -1,14 +1,14 @@
 import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
 import { StoresService } from './stores.service';
-import { CreateStoreDto, UpdateStoreDto, StoreResponseDto } from './dto/stores.dto';
-import { JwtAuthGuard } from '../auth/auth.guard';
+import { CreateStoreDto, UpdateStoreDto } from './dto/stores.dto';
+import { AuthGuard } from '../auth/auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { User } from '../users/entities/user.entity';
 
 @Controller('stores')
-@UseGuards(JwtAuthGuard)
+@UseGuards(AuthGuard)
 export class StoresController {
   constructor(private readonly storesService: StoresService) {}
 
@@ -54,8 +54,8 @@ export class StoresController {
   @Post(':id/sync')
   @UseGuards(RolesGuard)
   @Roles('ADMIN')
-  async syncStore(@Param('id') id: string) {
-    return this.storesService.syncStore(id);
+  async syncStore(@Param('id') id: string, @CurrentUser() user: User) {
+    return this.storesService.syncStore(id, user.tenantId || '');
   }
 
   @Post(':id/test-connection')
