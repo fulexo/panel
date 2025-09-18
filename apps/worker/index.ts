@@ -578,7 +578,7 @@ const worker = new Worker('fx-jobs', async (job) => {
     jobProcessedCounter.inc({ job_type: job.name, status: 'failure' });
     
     // Store error details for debugging
-    await storeJobError(job as any, lastError, maxRetries);
+    await storeJobError(job as unknown as Record<string, unknown>, lastError, maxRetries);
     
     throw lastError;
     
@@ -589,7 +589,7 @@ const worker = new Worker('fx-jobs', async (job) => {
     jobProcessedCounter.inc({ job_type: job.name, status: 'failure' });
     
     // Store error details
-    await storeJobError(job as any, error, 0);
+    await storeJobError(job as unknown as Record<string, unknown>, error, 0);
     
     throw error;
   }

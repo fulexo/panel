@@ -38,6 +38,6 @@ export class TenantsController {
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Stop impersonation, revert to original tenant' })
   async stopImpersonation(@CurrentUser() user: AuthenticatedUser) {
-    return this.tenants.stopImpersonation(user as any);
+    return this.tenants.stopImpersonation(user as unknown as Record<string, unknown>);
   }
 }
