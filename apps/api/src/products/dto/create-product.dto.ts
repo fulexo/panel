@@ -45,4 +45,11 @@ export class CreateProductDto {
   @IsString()
   @IsOptional()
   categoryId?: string;
+
+  @IsString()
+  storeId!: string;
+
+  @IsNumber()
+  @IsOptional()
+  regularPrice?: number;
 }

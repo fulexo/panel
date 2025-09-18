@@ -4,6 +4,7 @@ export class User implements PrismaUser {
   id!: string;
   tenantId!: string | null;
   email!: string;
+  name!: string | null;
   firstName!: string | null;
   lastName!: string | null;
   passwordHash!: string;

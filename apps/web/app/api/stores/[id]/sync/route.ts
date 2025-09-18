@@ -21,7 +21,7 @@ export async function POST(
     };
 
     return NextResponse.json({ sync: syncResult });
-  } catch (_error) {
+    } catch {
     return NextResponse.json(
       { error: 'Sync failed' },
       { status: 500 }

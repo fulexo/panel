@@ -71,7 +71,7 @@ export class AuthService {
       await this.auditService.log({
         action: 'login.failed',
         userId: user.id,
-        tenantId: user.tenantId,
+        tenantId: user.tenantId || undefined,
         metadata: { reason: 'invalid_password', attempts: failedAttempts },
         ipAddress: metadata.ipAddress,
         userAgent: metadata.userAgent,
@@ -107,7 +107,7 @@ export class AuthService {
     await this.auditService.log({
       action: 'login.success',
       userId: user.id,
-      tenantId: user.tenantId,
+      tenantId: user.tenantId || undefined,
       ipAddress: metadata.ipAddress,
       userAgent: metadata.userAgent,
     });
@@ -120,7 +120,7 @@ export class AuthService {
         firstName: user.firstName,
         lastName: user.lastName,
         role: user.role,
-        tenantId: user.tenantId,
+        tenantId: user.tenantId || undefined,
         tenantName: user.tenant?.name,
         stores: user.stores || [],
       },
@@ -163,7 +163,7 @@ export class AuthService {
     await this.auditService.log({
       action: 'user.registered',
       userId: user.id,
-      tenantId: user.tenantId,
+      tenantId: user.tenantId || undefined,
       metadata: { email: user.email, role: user.role },
     });
 
@@ -171,8 +171,8 @@ export class AuthService {
       id: user.id,
       email: user.email,
       role: user.role,
-      tenantId: user.tenantId,
-      tenantName: user.tenant.name,
+      tenantId: user.tenantId || undefined,
+      tenantName: user.tenant?.name,
     };
   }
 
@@ -273,7 +273,7 @@ export class AuthService {
       await this.auditService.log({
         action: '2fa.failed',
         userId: user.id,
-        tenantId: user.tenantId,
+        tenantId: user.tenantId || undefined,
         ipAddress: metadata.ipAddress,
         userAgent: metadata.userAgent,
       });
@@ -287,7 +287,7 @@ export class AuthService {
     await this.auditService.log({
       action: '2fa.success',
       userId: user.id,
-      tenantId: user.tenantId,
+      tenantId: user.tenantId || undefined,
       ipAddress: metadata.ipAddress,
       userAgent: metadata.userAgent,
     });
@@ -300,7 +300,7 @@ export class AuthService {
         firstName: user.firstName,
         lastName: user.lastName,
         role: user.role,
-        tenantId: user.tenantId,
+        tenantId: user.tenantId || undefined,
         tenantName: user.tenant?.name,
         stores: user.stores || [],
       },
@@ -344,7 +344,7 @@ export class AuthService {
     return user;
   }
 
-  private async generateTokens(user: { id: string; email: string; role: string; tenantId: string }) {
+  private async generateTokens(user: { id: string; email: string; role: string; tenantId: string | null }) {
     // const payload = {
     //   sub: user.id,
     //   email: user.email,
@@ -352,7 +352,7 @@ export class AuthService {
     //   tenantId: user.tenantId,
     // };
 
-    const tokens = await this.jwtService.issueTokens(user.id, user.email, user.role, user.tenantId);
+    const tokens = await this.jwtService.issueTokens(user.id, user.email, user.role, user.tenantId || '');
     return tokens;
   }
 

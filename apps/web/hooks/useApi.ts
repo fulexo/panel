@@ -101,9 +101,14 @@ export const useDashboardStats = (storeId?: string) => {
 };
 
 export const useOrders = (params: { page?: number; limit?: number; search?: string; status?: string; storeId?: string } = {}) => {
+  // Filter out undefined values to avoid exactOptionalPropertyTypes issues
+  const filteredParams = Object.fromEntries(
+    Object.entries(params).filter(([_, value]) => value !== undefined)
+  );
+  
   return useQuery({
-    queryKey: queryKeys.orders(params),
-    queryFn: () => apiClient.getOrders(params),
+    queryKey: queryKeys.orders(filteredParams),
+    queryFn: () => apiClient.getOrders(filteredParams),
     staleTime: 30 * 1000, // 30 seconds
   });
 };

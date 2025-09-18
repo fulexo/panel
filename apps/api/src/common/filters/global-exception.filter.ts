@@ -7,7 +7,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
-import { PrismaClientKnownRequestError, PrismaClientValidationError, PrismaClientInitializationError, PrismaClientRustPanicError } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
@@ -36,14 +36,14 @@ export class GlobalExceptionFilter implements ExceptionFilter {
         errorCode = responseObj.errorCode || 'HTTP_ERROR';
         details = (responseObj as Record<string, unknown>)['details'] as Record<string, unknown> | null || null;
       }
-    } else if (exception instanceof PrismaClientKnownRequestError) {
+    } else if (exception instanceof Prisma.PrismaClientKnownRequestError) {
       status = HttpStatus.BAD_REQUEST;
       errorCode = 'DATABASE_ERROR';
       
-      switch (exception.code) {
+      switch ((exception as Prisma.PrismaClientKnownRequestError).code) {
         case 'P2002':
           message = 'A record with this data already exists';
-          details = { field: exception.meta?.['target'] };
+          details = { field: (exception as Prisma.PrismaClientKnownRequestError).meta?.['target'] };
           break;
         case 'P2025':
           message = 'Record not found';
@@ -56,18 +56,18 @@ export class GlobalExceptionFilter implements ExceptionFilter {
           break;
         default:
           message = 'Database operation failed';
-          details = { code: exception.code };
+          details = { code: (exception as Prisma.PrismaClientKnownRequestError).code };
       }
-    } else if (exception instanceof PrismaClientValidationError) {
+    } else if (exception instanceof Prisma.PrismaClientValidationError) {
       status = HttpStatus.BAD_REQUEST;
       errorCode = 'VALIDATION_ERROR';
       message = 'Invalid data provided';
-      details = { message: exception.message };
-    } else if (exception instanceof PrismaClientInitializationError) {
+      details = { message: (exception as Prisma.PrismaClientValidationError).message };
+    } else if (exception instanceof Prisma.PrismaClientInitializationError) {
       status = HttpStatus.SERVICE_UNAVAILABLE;
       errorCode = 'DATABASE_CONNECTION_ERROR';
       message = 'Database connection failed';
-    } else if (exception instanceof PrismaClientRustPanicError) {
+    } else if (exception instanceof Prisma.PrismaClientRustPanicError) {
       status = HttpStatus.INTERNAL_SERVER_ERROR;
       errorCode = 'DATABASE_PANIC';
       message = 'Database engine panic';

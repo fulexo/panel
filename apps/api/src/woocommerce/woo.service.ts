@@ -249,12 +249,12 @@ export class WooCommerceService {
       return { 
         success: false, 
         message: 'Connection failed', 
-        error: error.message 
+        error: (error as Error).message 
       };
     }
   }
 
-  async syncStore(store: any): Promise<{ success: boolean; message: string; syncedItems: any }> {
+  async syncStore(store: any, tenantId: string): Promise<{ success: boolean; message: string; syncedItems: any }> {
     try {
       const config: WooCommerceConfig = {
         url: store.url,
@@ -263,13 +263,13 @@ export class WooCommerceService {
       };
 
       // Sync products
-      const products = await this.syncProducts(config, store.id);
+      const products = await this.syncProducts(config, store.id, tenantId);
       
       // Sync orders
-      const orders = await this.syncOrders(config, store.id);
+      const orders = await this.syncOrders(config, store.id, tenantId);
       
       // Sync customers
-      const customers = await this.syncCustomers(config, store.id);
+      const customers = await this.syncCustomers(config, store.id, tenantId);
 
       return {
         success: true,
@@ -280,7 +280,7 @@ export class WooCommerceService {
           customers: customers.length,
         },
       };
-    } catch (_error) {
+        } catch {
       return {
         success: false,
         message: 'Sync failed',
@@ -289,7 +289,7 @@ export class WooCommerceService {
     }
   }
 
-  private async syncProducts(config: WooCommerceConfig, storeId: string): Promise<WooCommerceProduct[]> {
+  private async syncProducts(config: WooCommerceConfig, storeId: string, tenantId: string): Promise<WooCommerceProduct[]> {
     const products: WooCommerceProduct[] = [];
     let page = 1;
     const perPage = 100;
@@ -339,6 +339,7 @@ export class WooCommerceService {
           lastSyncedAt: new Date(),
         },
         create: {
+          tenantId,
           wooId: product.id.toString(),
           storeId,
           name: product.name,
@@ -363,7 +364,7 @@ export class WooCommerceService {
     return products;
   }
 
-  private async syncOrders(config: WooCommerceConfig, storeId: string): Promise<WooCommerceOrder[]> {
+  private async syncOrders(config: WooCommerceConfig, storeId: string, tenantId: string): Promise<WooCommerceOrder[]> {
     const orders: WooCommerceOrder[] = [];
     let page = 1;
     const perPage = 100;
@@ -413,6 +414,7 @@ export class WooCommerceService {
           lastSyncedAt: new Date(),
         },
         create: {
+          tenantId,
           wooId: order.id.toString(),
           storeId,
           orderNumber: order.number,
@@ -437,7 +439,7 @@ export class WooCommerceService {
     return orders;
   }
 
-  private async syncCustomers(config: WooCommerceConfig, storeId: string): Promise<WooCommerceCustomer[]> {
+  private async syncCustomers(config: WooCommerceConfig, storeId: string, tenantId: string): Promise<WooCommerceCustomer[]> {
     const customers: WooCommerceCustomer[] = [];
     let page = 1;
     const perPage = 100;
@@ -483,6 +485,7 @@ export class WooCommerceService {
           lastSyncedAt: new Date(),
         },
         create: {
+          tenantId,
           wooId: customer.id.toString(),
           storeId,
           email: customer.email,

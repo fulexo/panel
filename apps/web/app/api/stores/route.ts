@@ -31,7 +31,7 @@ export async function GET(_request: NextRequest) {
     ];
 
     return NextResponse.json({ stores });
-  } catch (_error) {
+    } catch {
     return NextResponse.json(
       { error: 'Failed to fetch stores' },
       { status: 500 }
@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
     };
 
     return NextResponse.json({ store: newStore }, { status: 201 });
-  } catch (_error) {
+    } catch {
     return NextResponse.json(
       { error: 'Failed to create store' },
       { status: 500 }

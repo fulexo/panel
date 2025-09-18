@@ -40,6 +40,7 @@ model User {
   id            String   @id @default(uuid())
   tenantId      String?
   email         String   @unique
+  name          String?
   firstName     String?
   lastName      String?
   passwordHash  String
@@ -157,9 +158,22 @@ model Customer {
   storeId         String
   wooId           String?  // WooCommerce customer ID
   email           String
+  emailNormalized String?  // Normalized email for searching
+  phoneE164       String?  // International phone number
+  name            String?  // Full name
   firstName       String?
   lastName        String?
   username        String?
+  company         String?  // Company name
+  vatId           String?  // VAT ID
+  addressLine1    String?  // Address line 1
+  addressLine2    String?  // Address line 2
+  city            String?  // City
+  state           String?  // State/Province
+  postalCode      String?  // Postal code
+  country         String?  // Country
+  notes           String?  // Customer notes
+  tags            String[] // Customer tags
   role            String   @default("customer")
   billingInfo     Json?    // Billing information
   shippingInfo    Json?    // Shipping information
@@ -191,16 +205,27 @@ model Order {
   storeId        String
   wooId          String?  // WooCommerce order ID
   orderNumber    String?  // Order number from WooCommerce
+  orderNo        Int?     // Sequential order number
+  externalOrderNo String? // External order number
+  orderSource    String?  // Order source (woocommerce, manual, etc.)
   status         String   @default("pending")
+  mappedStatus   String?  // Mapped status
   currency       String   @default("USD")
   total          Decimal  @db.Decimal(14,2)
   customerId     String?  // WooCommerce customer ID
+  customerEmail  String?  // Customer email
+  customerPhone  String?  // Customer phone
   billingInfo    Json?    // Billing information
+  billingAddress Json?    // Billing address
   shippingInfo   Json?    // Shipping information
+  shippingAddress Json?   // Shipping address
   lineItems      Json?    // Order line items
   paymentMethod  String?
   paymentMethodTitle String?
   transactionId  String?
+  notes          String?  // Order notes
+  tags           String[] // Order tags
+  confirmedAt    DateTime? // Order confirmation date
   datePaid       DateTime?
   dateCompleted  DateTime?
   metaData       Json?    // WooCommerce meta data
@@ -288,8 +313,12 @@ model Product {
   regularPrice    Decimal  @db.Decimal(14,2)
   salePrice       Decimal? @db.Decimal(14,2)
   stockQuantity   Int?
+  stock           Int?     // Alternative stock field
+  weight          Decimal? @db.Decimal(10,3) // Product weight
+  dimensions      Json?    // Product dimensions
   stockStatus     String   @default("instock") // instock, outofstock, onbackorder
   status          String   @default("publish") // publish, draft, private
+  active          Boolean  @default(true) // Product active status
   description     String?
   shortDescription String?
   images          String[] // Array of image URLs
@@ -526,6 +555,7 @@ model Store {
   id             String   @id @default(uuid())
   name           String
   url            String   // https://shop.example.com
+  baseUrl        String?  // Base URL for API calls
   consumerKey    String
   consumerSecret String
   status         String   @default("disconnected") // connected, disconnected, error

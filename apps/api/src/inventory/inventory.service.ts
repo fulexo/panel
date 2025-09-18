@@ -2,6 +2,8 @@ import { Injectable, NotFoundException, BadRequestException, ForbiddenException 
 import { PrismaService } from '../prisma.service';
 import { CreateInventoryApprovalDto } from './dto/inventory.dto';
 import { User } from '../users/entities/user.entity';
+import { toPrismaJsonValue } from '../common/utils/prisma-json.util';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class InventoryService {
@@ -111,7 +113,7 @@ export class InventoryService {
         storeId: createApprovalDto.storeId,
         productId: createApprovalDto.productId,
         changeType: createApprovalDto.changeType,
-        oldValue,
+        oldValue: oldValue ? toPrismaJsonValue(oldValue) : Prisma.JsonNull,
         newValue: createApprovalDto.newValue,
         requestedBy: userId,
         status: 'pending',
@@ -156,18 +158,19 @@ export class InventoryService {
     // Apply the change based on change type
     const updateData: any = {};
     
+    const newValue = approval.newValue as any;
     switch (approval.changeType) {
       case 'stock_update':
-        updateData.stockQuantity = approval.newValue.stockQuantity;
+        updateData.stockQuantity = newValue?.stockQuantity;
         break;
       case 'price_update':
-        updateData.price = approval.newValue.price;
-        if (approval.newValue.salePrice !== undefined) {
-          updateData.salePrice = approval.newValue.salePrice;
+        updateData.price = newValue?.price;
+        if (newValue?.salePrice !== undefined) {
+          updateData.salePrice = newValue.salePrice;
         }
         break;
       case 'status_update':
-        updateData.status = approval.newValue.status;
+        updateData.status = newValue?.status;
         break;
       default:
         throw new BadRequestException('Invalid change type');
@@ -286,7 +289,7 @@ export class InventoryService {
     }
 
     // Check if user has access to this approval
-    if (user.role === 'CUSTOMER' && approval.store.customerId !== user.id) {
+    if (user.role === 'CUSTOMER' && approval.store.customer?.id !== user.id) {
       throw new ForbiddenException('You do not have access to this approval');
     }
 

@@ -21,10 +21,10 @@ export default function DashboardPage() {
   
   const { data: recentOrders, isLoading: ordersLoading } = useOrders({
     limit: 5,
-    storeId: isAdmin() ? undefined : userStoreId,
-  });
+    ...(isAdmin() ? {} : userStoreId ? { storeId: userStoreId } : {}),
+  }) as { data: { data: any[]; pagination: { total: number; pages: number } } | undefined; isLoading: boolean; error: any };
   
-  const { data: stores, isLoading: storesLoading } = useStores();
+  const { data: stores, isLoading: storesLoading } = useStores() as { data: { data: any[] } | undefined; isLoading: boolean; error: any };
 
   if (statsLoading || ordersLoading || (isAdmin() && storesLoading)) {
     return (
@@ -113,7 +113,7 @@ export default function DashboardPage() {
             <div className="bg-card p-6 rounded-lg border border-border">
               <h3 className="text-lg font-semibold text-foreground mb-4">Recent Orders</h3>
               <div className="space-y-3">
-                {recentOrders?.data?.length > 0 ? (
+                {recentOrders?.data && recentOrders.data.length > 0 ? (
                   recentOrders.data.map((order: any) => (
                     <div key={order.id} className="flex justify-between items-center p-3 bg-accent rounded-lg">
                       <div>
@@ -145,7 +145,7 @@ export default function DashboardPage() {
             <div className="bg-card p-6 rounded-lg border border-border">
               <h3 className="text-lg font-semibold text-foreground mb-4">Low Stock Alerts</h3>
               <div className="space-y-3">
-                {stats?.lowStockProducts?.length > 0 ? (
+                {stats?.lowStockProducts && stats.lowStockProducts.length > 0 ? (
                   stats.lowStockProducts.map((product: any) => (
                     <div key={product.id} className={`flex justify-between items-center p-3 rounded-lg ${
                       product.stockQuantity <= 5 ? 'bg-red-50 border border-red-200' : 'bg-yellow-50 border border-yellow-200'

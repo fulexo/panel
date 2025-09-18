@@ -33,7 +33,7 @@ export async function GET(_request: NextRequest) {
     ];
 
     return NextResponse.json({ approvals });
-  } catch (_error) {
+    } catch {
     return NextResponse.json(
       { error: 'Failed to fetch approvals' },
       { status: 500 }
@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
     };
 
     return NextResponse.json({ result });
-  } catch (_error) {
+    } catch {
     return NextResponse.json(
       { error: 'Failed to process approval' },
       { status: 500 }

@@ -54,8 +54,8 @@ export class StoresController {
   @Post(':id/sync')
   @UseGuards(RolesGuard)
   @Roles('ADMIN')
-  async syncStore(@Param('id') id: string) {
-    return this.storesService.syncStore(id);
+  async syncStore(@Param('id') id: string, @CurrentUser() user: User) {
+    return this.storesService.syncStore(id, user.tenantId || '');
   }
 
   @Post(':id/test-connection')

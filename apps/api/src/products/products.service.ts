@@ -75,10 +75,12 @@ export class ProductsService {
         tenant: {
           connect: { id: tenantId }
         },
+        store: { connect: { id: dto.storeId } },
         sku: dto.sku,
-        name: dto.name,
+        name: dto.name || '',
         description: dto.description,
-        price: dto.price !== undefined && dto.price !== null ? new Decimal(dto.price) : null,
+        price: dto.price !== undefined && dto.price !== null ? new Decimal(dto.price) : new Decimal(0),
+        regularPrice: dto.regularPrice !== undefined && dto.regularPrice !== null ? new Decimal(dto.regularPrice) : new Decimal(0),
         stock: dto.stock !== undefined && dto.stock !== null ? parseInt(dto.stock) : null,
         weight: dto.weight !== undefined && dto.weight !== null ? new Decimal(dto.weight) : null,
         dimensions: dto.dimensions ? toPrismaJsonValue(dto.dimensions) : undefined,

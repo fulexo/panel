@@ -233,6 +233,7 @@ export class OrdersService {
         customer = await this.prisma.customer.create({
           data: {
             tenantId,
+            storeId: dto.storeId || 'default-store',
             email: dto.customerEmail,
             emailNormalized: dto.customerEmail.toLowerCase(),
             name: dto.customerName || null,
@@ -260,12 +261,13 @@ export class OrdersService {
     const order = await this.runTenant(tenantId, async (db) => db.order.create({
       data: {
         tenantId,
+        storeId: dto.storeId || 'default-store',
         customerId: customer?.id || null,
         orderNo: nextOrderNo,
         externalOrderNo: dto.externalOrderNo,
         orderSource: dto.orderSource || 'manual',
         status: dto.status || 'pending',
-        total: dto.total,
+        total: dto.total || 0,
         currency: dto.currency || 'TRY',
         customerEmail: dto.customerEmail,
         customerPhone: dto.customerPhone,
