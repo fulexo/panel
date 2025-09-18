@@ -8,11 +8,12 @@ import { useOrder, useUpdateOrderStatus, useUpdateOrderShipping } from "@/hooks/
 import ProtectedRoute from "@/components/ProtectedRoute";
 import ProtectedComponent from "@/components/ProtectedComponent";
 import { ApiError } from "@/lib/api-client";
+import { logger } from "@/lib/logger";
 
 export default function OrderDetailPage() {
   const params = useParams();
-  const { } = useAuth();
-  const { } = useRBAC();
+  useAuth();
+  useRBAC();
   const orderId = params['id'] as string;
   
   const [showStatusModal, setShowStatusModal] = useState(false);
@@ -112,7 +113,7 @@ export default function OrderDetailPage() {
       setShowStatusModal(false);
       setNewStatus("");
     } catch (error) {
-      console.error('Failed to update order status:', error);
+      logger.error('Failed to update order status:', error);
     }
   };
 
@@ -125,7 +126,7 @@ export default function OrderDetailPage() {
       setShowShippingModal(false);
       setShippingData({ trackingNumber: "", carrier: "", status: "" });
     } catch (error) {
-      console.error('Failed to update shipping:', error);
+      logger.error('Failed to update shipping:', error);
     }
   };
 

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import { logger } from "@/lib/logger";
 
 export default function ProfilePage() {
   const { user } = useAuth();
@@ -45,20 +46,20 @@ export default function ProfilePage() {
   ];
 
   const handleSave = (section: string) => {
-    console.log(`Saving ${section} profile:`, profile[section as keyof typeof profile]);
+    logger.info(`Saving ${section} profile:`, profile[section as keyof typeof profile]);
     // API call to save profile
   };
 
   const handlePasswordChange = () => {
     if (profile.security.newPassword !== profile.security.confirmPassword) {
-      alert("Yeni şifreler eşleşmiyor!");
+      logger.error("Yeni şifreler eşleşmiyor!");
       return;
     }
     if (profile.security.newPassword.length < 8) {
-      alert("Şifre en az 8 karakter olmalı!");
+      logger.error("Şifre en az 8 karakter olmalı!");
       return;
     }
-    console.log("Changing password...");
+    logger.info("Changing password...");
     // API call to change password
   };
 

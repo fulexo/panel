@@ -8,11 +8,12 @@ import { useProduct, useUpdateProduct, useDeleteProduct } from "@/hooks/useApi";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import ProtectedComponent from "@/components/ProtectedComponent";
 import { ApiError } from "@/lib/api-client";
+import { logger } from "@/lib/logger";
 
 export default function ProductDetailPage() {
   const params = useParams();
-  const { } = useAuth();
-  const { } = useRBAC();
+  useAuth();
+  useRBAC();
   const productId = params['id'] as string;
   
   const [showEditModal, setShowEditModal] = useState(false);
@@ -101,7 +102,7 @@ export default function ProductDetailPage() {
       });
       setShowEditModal(false);
     } catch (error) {
-      console.error('Failed to update product:', error);
+      logger.error('Failed to update product:', error);
     }
   };
 
@@ -111,7 +112,7 @@ export default function ProductDetailPage() {
       // Redirect to products list
       window.location.href = '/products';
     } catch (error) {
-      console.error('Failed to delete product:', error);
+      logger.error('Failed to delete product:', error);
     }
   };
 

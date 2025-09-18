@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(request: NextRequest) {
@@ -6,8 +7,7 @@ export async function POST(request: NextRequest) {
     
     // Log error to console in development
     if (process.env.NODE_ENV === 'development') {
-      // eslint-disable-next-line no-console
-      console.error('Frontend Error:', errorData);
+      logger.error('Frontend Error:', errorData);
     }
     
     // Send to backend monitoring service
@@ -24,17 +24,14 @@ export async function POST(request: NextRequest) {
       });
       
       if (!response.ok) {
-        // eslint-disable-next-line no-console
-        console.error('Failed to send error to monitoring service');
+        logger.error('Failed to send error to monitoring service');
       }
     } catch (monitoringError) {
-      // eslint-disable-next-line no-console
-      console.error('Error sending to monitoring service:', monitoringError);
+      logger.error('Error sending to monitoring service:', monitoringError);
     }
     
     // Log to console as fallback
-    // eslint-disable-next-line no-console
-    console.error('Frontend Error:', {
+    logger.error('Frontend Error:', {
       type: errorData.type,
       message: errorData.message,
       stack: errorData.stack,

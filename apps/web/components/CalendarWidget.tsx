@@ -1,3 +1,5 @@
+"use client";
+import { logger } from "@/lib/logger";
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -43,8 +45,7 @@ export default function CalendarWidget() {
         setHolidays(holidaysData.holidays || []);
       }
     } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error('Takvim verisi yüklenemedi:', error);
+      logger.error('Takvim verisi yüklenemedi:', error);
       setError('Takvim verisi yüklenirken hata oluştu');
     } finally {
       setLoading(false);

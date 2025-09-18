@@ -37,31 +37,53 @@ class Logger {
     return JSON.stringify(logEntry);
   }
 
-  error(message: string, meta?: Record<string, unknown>): void {
+  error(message: string, meta?: Record<string, unknown> | Error | unknown, additional?: Record<string, unknown>): void {
     if (this.shouldLog(LOG_LEVELS.ERROR)) {
-      // eslint-disable-next-line no-console
-      console.error(this.formatMessage('ERROR', message, meta));
+      let logData: Record<string, unknown> = {};
+      
+      if (meta instanceof Error) {
+        logData = { error: meta.message, stack: meta.stack };
+      } else if (typeof meta === 'object' && meta !== null) {
+        logData = meta as Record<string, unknown>;
+      } else if (meta !== undefined) {
+        logData = { value: meta };
+      }
+      
+      if (additional) {
+        logData = { ...logData, ...additional };
+      }
+      
+      console.error(this.formatMessage('ERROR', message, logData));
     }
   }
 
   warn(message: string, meta?: Record<string, unknown>): void {
     if (this.shouldLog(LOG_LEVELS.WARN)) {
-      // eslint-disable-next-line no-console
       console.warn(this.formatMessage('WARN', message, meta));
     }
   }
 
-  info(message: string, meta?: Record<string, unknown>): void {
+  info(message: string, meta?: Record<string, unknown> | unknown, additional?: Record<string, unknown>): void {
     if (this.shouldLog(LOG_LEVELS.INFO)) {
-      // eslint-disable-next-line no-console
-      console.log(this.formatMessage('INFO', message, meta));
+      let logData: Record<string, unknown> = {};
+      
+      if (typeof meta === 'object' && meta !== null) {
+        logData = meta as Record<string, unknown>;
+      } else if (meta !== undefined) {
+        logData = { value: meta };
+      }
+      
+      if (additional) {
+        logData = { ...logData, ...additional };
+      }
+      
+      console.log(this.formatMessage('INFO', message, logData));
     }
   }
 
   debug(message: string, meta?: Record<string, unknown>): void {
     if (this.shouldLog(LOG_LEVELS.DEBUG)) {
-      // eslint-disable-next-line no-console
-      console.log(this.formatMessage('DEBUG', message, meta));
+      logger.info(this.formatMessage('DEBUG', message, meta));
     }
   }
 }

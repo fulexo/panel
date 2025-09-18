@@ -1,5 +1,7 @@
 "use client";
 
+import { logger } from "@/lib/logger";
+
 import { useState } from "react";
 import { useParams } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
@@ -11,8 +13,8 @@ import { ApiError } from "@/lib/api-client";
 
 export default function StoreDetailPage() {
   const params = useParams();
-  const { } = useAuth();
-  const { } = useRBAC();
+  useAuth();
+  useRBAC();
   const storeId = params['id'] as string;
   
   const [showEditModal, setShowEditModal] = useState(false);
@@ -96,7 +98,7 @@ export default function StoreDetailPage() {
       });
       setShowEditModal(false);
     } catch (error) {
-      console.error('Failed to update store:', error);
+      logger.error('Failed to update store:', error);
     }
   };
 
@@ -106,7 +108,7 @@ export default function StoreDetailPage() {
       // Redirect to stores list
       window.location.href = '/stores';
     } catch (error) {
-      console.error('Failed to delete store:', error);
+      logger.error('Failed to delete store:', error);
     }
   };
 
@@ -114,7 +116,7 @@ export default function StoreDetailPage() {
     try {
       await syncStore.mutateAsync(storeId);
     } catch (error) {
-      console.error('Failed to sync store:', error);
+      logger.error('Failed to sync store:', error);
     }
   };
 
@@ -122,7 +124,7 @@ export default function StoreDetailPage() {
     try {
       await testConnection.mutateAsync(storeId);
     } catch (error) {
-      console.error('Failed to test connection:', error);
+      logger.error('Failed to test connection:', error);
     }
   };
 

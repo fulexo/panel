@@ -41,6 +41,7 @@ export default [
         HeadersInit: 'readonly',
         FormData: 'readonly',
         File: 'readonly',
+        FileList: 'readonly',
         setTimeout: 'readonly',
         clearTimeout: 'readonly',
         setImmediate: 'readonly',

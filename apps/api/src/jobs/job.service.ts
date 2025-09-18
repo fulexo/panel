@@ -273,7 +273,12 @@ export class JobService implements OnModuleInit, OnModuleDestroy {
 
   // Get queue statistics
   async getQueueStats() {
-    const stats: Record<string, any> = {};
+    const stats: Record<string, {
+      waiting: number;
+      active: number;
+      completed: number;
+      failed: number;
+    }> = {};
 
     for (const [name, queue] of this.queues) {
       const waiting = await queue.getWaiting();

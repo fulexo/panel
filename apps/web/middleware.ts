@@ -88,7 +88,6 @@ export function middleware(request: NextRequest) {
     
     // Enhanced CSRF protection
     if (origin && host && !origin.includes(host)) {
-      // eslint-disable-next-line no-console
       console.warn(`CSRF: Origin mismatch - Origin: ${origin}, Host: ${host}`);
       return NextResponse.json(
         { error: 'CSRF protection: Origin mismatch' },
@@ -98,7 +97,6 @@ export function middleware(request: NextRequest) {
     
     // Additional referer check
     if (referer && host && !referer.includes(host)) {
-      // eslint-disable-next-line no-console
       console.warn(`CSRF: Referer mismatch - Referer: ${referer}, Host: ${host}`);
       return NextResponse.json(
         { error: 'CSRF protection: Referer mismatch' },
@@ -110,7 +108,6 @@ export function middleware(request: NextRequest) {
     const userAgent = request.headers.get('user-agent') || '';
     if (userAgent.length < 10 || /bot|crawler|spider|scraper/i.test(userAgent)) {
       // Allow but log suspicious activity
-      // eslint-disable-next-line no-console
       console.warn(`Suspicious user agent detected: ${userAgent}`);
     }
   }

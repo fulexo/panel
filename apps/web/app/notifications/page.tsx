@@ -5,7 +5,7 @@ import { useAuth } from "@/components/AuthProvider";
 import ProtectedRoute from "@/components/ProtectedRoute";
 
 export default function NotificationsPage() {
-  const { } = useAuth();
+  useAuth();
   const [activeTab, setActiveTab] = useState("all");
   const [notifications, setNotifications] = useState([
     {

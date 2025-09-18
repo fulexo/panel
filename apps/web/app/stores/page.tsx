@@ -1,5 +1,7 @@
 "use client";
 
+import { logger } from "@/lib/logger";
+
 import { useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import { useRBAC } from "@/hooks/useRBAC";
@@ -9,8 +11,8 @@ import ProtectedComponent from "@/components/ProtectedComponent";
 import { ApiError } from "@/lib/api-client";
 
 export default function StoresPage() {
-  const { } = useAuth();
-  const { } = useRBAC();
+  useAuth();
+  useRBAC();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -76,7 +78,7 @@ export default function StoresPage() {
     try {
       await syncStore.mutateAsync(storeId);
     } catch (error) {
-      console.error('Failed to sync store:', error);
+      logger.error('Failed to sync store:', error);
     }
   };
 
@@ -85,7 +87,7 @@ export default function StoresPage() {
     try {
       await testConnection.mutateAsync(storeId);
     } catch (error) {
-      console.error('Failed to test connection:', error);
+      logger.error('Failed to test connection:', error);
     } finally {
       setTestingConnection(null);
     }

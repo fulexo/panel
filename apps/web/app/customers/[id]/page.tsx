@@ -8,11 +8,12 @@ import { useCustomer, useUpdateCustomer, useDeleteCustomer } from "@/hooks/useAp
 import ProtectedRoute from "@/components/ProtectedRoute";
 import ProtectedComponent from "@/components/ProtectedComponent";
 import { ApiError } from "@/lib/api-client";
+import { logger } from "@/lib/logger";
 
 export default function CustomerDetailPage() {
   const params = useParams();
-  const { } = useAuth();
-  const { } = useRBAC();
+  useAuth();
+  useRBAC();
   const customerId = params['id'] as string;
   
   const [showEditModal, setShowEditModal] = useState(false);
@@ -106,7 +107,7 @@ export default function CustomerDetailPage() {
       });
       setShowEditModal(false);
     } catch (error) {
-      console.error('Failed to update customer:', error);
+      logger.error('Failed to update customer:', error);
     }
   };
 
@@ -116,7 +117,7 @@ export default function CustomerDetailPage() {
       // Redirect to customers list
       window.location.href = '/customers';
     } catch (error) {
-      console.error('Failed to delete customer:', error);
+      logger.error('Failed to delete customer:', error);
     }
   };
 

@@ -7,6 +7,7 @@ import { useInventory, useUpdateInventory, useInventoryApprovals, useApproveInve
 import ProtectedRoute from "@/components/ProtectedRoute";
 import ProtectedComponent from "@/components/ProtectedComponent";
 import { ApiError } from "@/lib/api-client";
+import { logger } from "@/lib/logger";
 
 export default function InventoryPage() {
   const { user } = useAuth();
@@ -94,7 +95,7 @@ export default function InventoryPage() {
       setNewQuantity("");
       setReason("");
     } catch (error) {
-      console.error('Failed to update stock:', error);
+      logger.error('Failed to update stock:', error);
     }
   };
 
@@ -105,7 +106,7 @@ export default function InventoryPage() {
         approved
       });
     } catch (error) {
-      console.error('Failed to approve change:', error);
+      logger.error('Failed to approve change:', error);
     }
   };
 

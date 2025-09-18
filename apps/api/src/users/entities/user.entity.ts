@@ -17,7 +17,14 @@ export class User implements PrismaUser {
   failedAttempts!: number;
   lockedUntil!: Date | null;
   isActive!: boolean;
-  notificationPreferences!: any;
+  notificationPreferences!: {
+    email: boolean;
+    push: boolean;
+    sms: boolean;
+    orderUpdates: boolean;
+    inventoryAlerts: boolean;
+    systemNotifications: boolean;
+  };
   createdAt!: Date;
   updatedAt!: Date;
   stores?: Array<{ id: string; name: string; status: string }>;

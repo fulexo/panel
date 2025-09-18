@@ -1,12 +1,10 @@
-import { Test, TestingModule } from '@nestjs/testing';
+// import { Test, TestingModule } from '@nestjs/testing';
 import { HealthService } from './health.service';
-import { PrismaService } from '../prisma.service';
-import { EnvService } from '../config/env.service';
+import type { PrismaService } from '../prisma.service';
+import type { EnvService } from '../config/env.service';
 
 describe('HealthService', () => {
   let service: HealthService;
-  let prismaService: PrismaService;
-  let envService: EnvService;
 
   const mockPrismaService = {
     $queryRaw: jest.fn(),
@@ -26,23 +24,8 @@ describe('HealthService', () => {
   };
 
   beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        HealthService,
-        {
-          provide: PrismaService,
-          useValue: mockPrismaService,
-        },
-        {
-          provide: EnvService,
-          useValue: mockEnvService,
-        },
-      ],
-    }).compile();
-
-    service = module.get<HealthService>(HealthService);
-    prismaService = module.get<PrismaService>(PrismaService);
-    envService = module.get<EnvService>(EnvService);
+    // Mock implementation for testing
+    service = new HealthService(mockPrismaService as unknown as PrismaService, mockEnvService as unknown as EnvService);
   });
 
   it('should be defined', () => {

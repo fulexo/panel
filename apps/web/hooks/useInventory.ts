@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
 import { queryKeys } from './useApi';
+import { logger } from '@/lib/logger';
 
 // Inventory approval hooks
 export const useInventoryApprovals = (params?: { 
@@ -34,7 +35,7 @@ export const useRejectInventoryChange = () => {
   return useMutation({
     mutationFn: async ({ id, reason }: { id: string; reason: string }) => {
       // Mock implementation - replace with actual API call
-      console.log('Rejecting inventory change:', id, reason);
+      logger.info('Rejecting inventory change:', { id, reason });
       return Promise.resolve();
     },
     onSuccess: () => {
@@ -47,9 +48,13 @@ export const useRequestInventoryChange = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async (data: any) => {
+    mutationFn: async (data: {
+      productId: string;
+      newQuantity: number;
+      reason: string;
+    }) => {
       // Mock implementation - replace with actual API call
-      console.log('Requesting inventory change:', data);
+      logger.info('Requesting inventory change:', data);
       return Promise.resolve();
     },
     onSuccess: () => {

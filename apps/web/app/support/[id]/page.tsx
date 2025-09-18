@@ -1,5 +1,7 @@
 "use client";
 
+import { logger } from "@/lib/logger";
+
 import { useState } from "react";
 import { useParams } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
@@ -11,8 +13,8 @@ import { ApiError } from "@/lib/api-client";
 
 export default function SupportTicketDetailPage() {
   const params = useParams();
-  const { } = useAuth();
-  const { } = useRBAC();
+  useAuth();
+  useRBAC();
   const ticketId = params['id'] as string;
   
   const [showStatusModal, setShowStatusModal] = useState(false);
@@ -101,7 +103,7 @@ export default function SupportTicketDetailPage() {
       setShowStatusModal(false);
       setNewStatus("");
     } catch (error) {
-      console.error('Failed to update ticket status:', error);
+      logger.error('Failed to update ticket status:', error);
     }
   };
 
@@ -115,7 +117,7 @@ export default function SupportTicketDetailPage() {
       });
       setNewMessage("");
     } catch (error) {
-      console.error('Failed to send message:', error);
+      logger.error('Failed to send message:', error);
     }
   };
 

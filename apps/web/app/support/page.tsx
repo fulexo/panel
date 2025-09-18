@@ -1,5 +1,7 @@
 "use client";
 
+import { logger } from "@/lib/logger";
+
 import { useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import { useRBAC } from "@/hooks/useRBAC";
@@ -98,7 +100,7 @@ export default function SupportPage() {
         data: { status: newStatus }
       });
     } catch (error) {
-      console.error('Failed to update ticket status:', error);
+      logger.error('Failed to update ticket status:', error);
     }
   };
 
@@ -114,7 +116,7 @@ export default function SupportPage() {
       setNewMessage("");
       setAttachments([]);
     } catch (error) {
-      console.error('Failed to send message:', error);
+      logger.error('Failed to send message:', error);
     }
   };
 

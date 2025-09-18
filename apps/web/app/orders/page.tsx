@@ -37,7 +37,7 @@ export default function OrdersPage() {
     try {
       await updateOrderStatus.mutateAsync({ id: orderId, status: newStatus });
     } catch {
-      // console.error('Failed to update order status:', error);
+      // logger.error('Failed to update order status:', error);
     }
   };
 
@@ -45,7 +45,7 @@ export default function OrdersPage() {
   //   try {
   //     await updateOrderShipping.mutateAsync({ id: orderId, data: trackingData });
   //   } catch (error) {
-  //     console.error('Failed to update shipping:', error);
+  //     logger.error('Failed to update shipping:', error);
   //   }
   // };
 

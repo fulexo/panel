@@ -1,28 +1,17 @@
-import { Test, TestingModule } from '@nestjs/testing';
+// import { Test, TestingModule } from '@nestjs/testing';
 import { JobService } from './job.service';
-import { EnvService } from '../config/env.service';
+import type { EnvService } from '../config/env.service';
 
 describe('JobService', () => {
   let service: JobService;
-  let envService: EnvService;
 
   const mockEnvService = {
     redisUrl: 'redis://localhost:6379',
   };
 
   beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        JobService,
-        {
-          provide: EnvService,
-          useValue: mockEnvService,
-        },
-      ],
-    }).compile();
-
-    service = module.get<JobService>(JobService);
-    envService = module.get<EnvService>(EnvService);
+    // Mock implementation for testing
+    service = new JobService(mockEnvService as unknown as EnvService);
   });
 
   it('should be defined', () => {
@@ -40,9 +29,9 @@ describe('JobService', () => {
       };
 
       // Mock the queues map
-      (service as any).queues = new Map([['woo-sync', mockQueue]]);
+      (service as unknown as { queues: Map<string, { add: jest.Mock }> }).queues = new Map([['woo-sync', mockQueue]]);
 
-      const result = await service.addWooSyncProductJob(storeId, tenantId);
+      await service.addWooSyncProductJob(storeId, tenantId);
 
       expect(mockQueue.add).toHaveBeenCalledWith(
         'woo-sync-products',
@@ -74,9 +63,9 @@ describe('JobService', () => {
         add: jest.fn().mockResolvedValue({ id: 'job-123' }),
       };
 
-      (service as any).queues = new Map([['email', mockQueue]]);
+      (service as unknown as { queues: Map<string, { add: jest.Mock }> }).queues = new Map([['email', mockQueue]]);
 
-      const result = await service.addEmailJob(tenantId, to, subject, html);
+      await service.addEmailJob(tenantId, to, subject, html);
 
       expect(mockQueue.add).toHaveBeenCalledWith(
         'send-email',
@@ -112,9 +101,9 @@ describe('JobService', () => {
         add: jest.fn().mockResolvedValue({ id: 'job-123' }),
       };
 
-      (service as any).queues = new Map([['file-cleanup', mockQueue]]);
+      (service as unknown as { queues: Map<string, { add: jest.Mock }> }).queues = new Map([['file-cleanup', mockQueue]]);
 
-      const result = await service.addFileCleanupJob(tenantId, olderThanHours);
+      await service.addFileCleanupJob(tenantId, olderThanHours);
 
       expect(mockQueue.add).toHaveBeenCalledWith(
         'cleanup-expired-files',
@@ -143,7 +132,7 @@ describe('JobService', () => {
         getFailed: jest.fn().mockResolvedValue([]),
       };
 
-      (service as any).queues = new Map([
+      (service as unknown as { queues: Map<string, { add: jest.Mock }> }).queues = new Map([
         ['woo-sync', mockQueue],
         ['email', mockQueue],
         ['file-cleanup', mockQueue],

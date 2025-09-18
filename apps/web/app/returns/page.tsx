@@ -1,5 +1,7 @@
 "use client";
 
+import { logger } from "@/lib/logger";
+
 import { useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import { useRBAC } from "@/hooks/useRBAC";
@@ -81,7 +83,7 @@ export default function ReturnsPage() {
         status: newStatus
       });
     } catch (error) {
-      console.error('Failed to update return status:', error);
+      logger.error('Failed to update return status:', error);
     }
   };
 

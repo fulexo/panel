@@ -1,5 +1,7 @@
 "use client";
 
+import { logger } from "@/lib/logger";
+
 import { useState } from "react";
 import { useParams } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
@@ -11,8 +13,8 @@ import { ApiError } from "@/lib/api-client";
 
 export default function ReturnDetailPage() {
   const params = useParams();
-  const { } = useAuth();
-  const { } = useRBAC();
+  useAuth();
+  useRBAC();
   const returnId = params['id'] as string;
   
   const [showStatusModal, setShowStatusModal] = useState(false);
@@ -89,7 +91,7 @@ export default function ReturnDetailPage() {
       setShowStatusModal(false);
       setNewStatus("");
     } catch (error) {
-      console.error('Failed to update return status:', error);
+      logger.error('Failed to update return status:', error);
     }
   };
 

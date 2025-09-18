@@ -6,7 +6,7 @@ import { useRBAC } from "@/hooks/useRBAC";
 import ProtectedRoute from "@/components/ProtectedRoute";
 
 export default function ReportsPage() {
-  const { } = useAuth();
+  useAuth();
   const { isAdmin } = useRBAC();
   const [activeTab, setActiveTab] = useState("overview");
   const [dateRange, setDateRange] = useState("30d");

@@ -266,7 +266,15 @@ export class FileUploadService {
     search?: string,
   ): Promise<{ files: FileUploadResult[]; total: number; page: number; limit: number }> {
     try {
-      const where: any = {
+      const where: {
+        tenantId: string;
+        status: string;
+        originalName?: { contains: string; mode: 'insensitive' };
+        OR?: Array<{
+          filename?: { contains: string; mode: 'insensitive' };
+          originalName?: { contains: string; mode: 'insensitive' };
+        }>;
+      } = {
         tenantId,
         status: 'COMPLETED',
       };

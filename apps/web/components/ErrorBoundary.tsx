@@ -1,4 +1,6 @@
-'use client';
+"use client";
+
+import { logger } from "@/lib/logger";
 
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 
@@ -49,14 +51,12 @@ export default class ErrorBoundary extends Component<Props, State> {
       tenantId: this.getCurrentTenantId(),
     };
 
-    // eslint-disable-next-line no-console
-    console.error('ErrorBoundary caught an error:', errorData);
+    logger.error('ErrorBoundary caught an error:', errorData);
     
     // Log error to monitoring service
     if (typeof window !== 'undefined') {
       this.logErrorToService(errorData).catch((err) => {
-        // eslint-disable-next-line no-console
-        console.error(err);
+        logger.error(err);
       });
     }
 
@@ -82,8 +82,7 @@ export default class ErrorBoundary extends Component<Props, State> {
         body: JSON.stringify(errorData),
       });
     } catch (logError) {
-      // eslint-disable-next-line no-console
-      console.error('Failed to log error to service:', logError);
+      logger.error('Failed to log error to service:', logError);
     }
   }
 

@@ -1,3 +1,5 @@
+"use client";
+import { logger } from "@/lib/logger";
 'use client';
 
 import React, { Component, ErrorInfo, ReactNode } from 'react';
@@ -24,15 +26,13 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   override componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    // eslint-disable-next-line no-console
-    console.error('ErrorBoundary caught an error:', error, errorInfo);
+    logger.error('ErrorBoundary caught an error:', error, errorInfo as Record<string, unknown>);
     this.setState({ error, errorInfo });
     
     // Log error to monitoring service
     if (typeof window !== 'undefined') {
       // You can integrate with your error reporting service here
-      // eslint-disable-next-line no-console
-      console.error('Error details:', {
+      logger.error('Error details:', {
         error: error.message,
         stack: error.stack,
         componentStack: errorInfo.componentStack,

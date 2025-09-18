@@ -1,13 +1,11 @@
-import { Test, TestingModule } from '@nestjs/testing';
+// import { Test, TestingModule } from '@nestjs/testing';
 import { FileUploadService } from './file-upload.service';
-import { PrismaService } from '../../prisma.service';
-import { EnvService } from '../../config/env.service';
 import { BadRequestException } from '@nestjs/common';
+import type { PrismaService } from '../../prisma.service';
+import type { EnvService } from '../../config/env.service';
 
 describe('FileUploadService', () => {
   let service: FileUploadService;
-  let prismaService: PrismaService;
-  let envService: EnvService;
 
   const mockPrismaService = {
     fileUpload: {
@@ -28,23 +26,8 @@ describe('FileUploadService', () => {
   };
 
   beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        FileUploadService,
-        {
-          provide: PrismaService,
-          useValue: mockPrismaService,
-        },
-        {
-          provide: EnvService,
-          useValue: mockEnvService,
-        },
-      ],
-    }).compile();
-
-    service = module.get<FileUploadService>(FileUploadService);
-    prismaService = module.get<PrismaService>(PrismaService);
-    envService = module.get<EnvService>(EnvService);
+    // Mock implementation for testing
+    service = new FileUploadService(mockPrismaService as unknown as PrismaService, mockEnvService as unknown as EnvService);
   });
 
   it('should be defined', () => {

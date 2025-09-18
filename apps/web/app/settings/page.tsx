@@ -1,13 +1,15 @@
 "use client";
 
+import { logger } from "@/lib/logger";
+
 import { useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import { useRBAC } from "@/hooks/useRBAC";
 import ProtectedRoute from "@/components/ProtectedRoute";
 
 export default function SettingsPage() {
-  const { } = useAuth();
-  const { } = useRBAC();
+  useAuth();
+  useRBAC();
   const [activeTab, setActiveTab] = useState("general");
   const [settings, setSettings] = useState({
     general: {
@@ -56,7 +58,7 @@ export default function SettingsPage() {
   ];
 
   const handleSave = (section: string) => {
-    console.log(`Saving ${section} settings:`, settings[section as keyof typeof settings]);
+    logger.info(`Saving ${section} settings:`, settings[section as keyof typeof settings]);
     // API call to save settings
   };
 
