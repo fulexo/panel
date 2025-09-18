@@ -27,7 +27,9 @@ import { CalendarModule } from './calendar/calendar.module';
 import { InboundModule } from './inbound/inbound.module';
 import { JobsModule } from './jobs/jobs.module';
 import { SyncModule } from './sync/sync.module';
-import { WooModule } from './woocommerce/woo.module';
+import { WooCommerceModule } from './woocommerce/woo.module';
+import { StoresModule } from './stores/stores.module';
+import { InventoryModule } from './inventory/inventory.module';
 import { SecurityModule } from './security/security.module';
 import { RateLimitModule } from './rate-limit/rate-limit.module';
 import { RateLimitGuard } from './rate-limit.guard';
@@ -97,7 +99,9 @@ import { SettingsModule } from './modules/settings/settings.module';
     InboundModule,
     JobsModule,
     SyncModule,
-    WooModule,
+    WooCommerceModule,
+    StoresModule,
+    InventoryModule,
     SecurityModule,
     RateLimitModule,
     CacheModule,

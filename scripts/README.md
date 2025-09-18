@@ -1,19 +1,19 @@
-# Fulexo Platform - Script'ler
+# 🛠️ Fulexo Platform - Management Scripts
 
-Bu dizin, Fulexo Platform'un kurulumu, yönetimi ve bakımı için gerekli script'leri içerir.
+This directory contains essential scripts for installing, managing, and maintaining the Fulexo Platform.
 
-## 📋 Script Listesi
+## 📋 Script Categories
 
-### 🚀 Kurulum Script'leri
+### 🚀 Installation Scripts
 
 #### `quick-install.sh`
-**Hızlı kurulum script'i (Önerilen)**
-- Tüm kurulumu tek seferde yapar
-- Domain bilgilerini interaktif olarak sorar
-- SSL sertifikalarını otomatik kurar
-- Veritabanı yapılandırması dahil
-- Admin kullanıcısı oluşturma dahil
-- Systemd servisi kurulumu dahil
+**Quick installation script (Recommended)**
+- Complete installation in one go
+- Interactive domain configuration
+- Automatic SSL certificate setup
+- Database configuration included
+- Admin user creation included
+- Systemd service installation included
 
 ```bash
 chmod +x scripts/quick-install.sh
@@ -21,74 +21,38 @@ chmod +x scripts/quick-install.sh
 ```
 
 #### `install-from-scratch.sh`
-**Temel kurulum script'i**
-- Sunucuyu sıfırdan kurar
-- Docker, Node.js, gerekli paketleri kurar
-- Environment dosyası oluşturur
-- Systemd servisi oluşturur
+**Basic installation script**
+- Fresh server setup
+- Installs Docker, Node.js, required packages
+- Creates environment file
+- Creates systemd service
 
 ```bash
 chmod +x scripts/install-from-scratch.sh
 ./scripts/install-from-scratch.sh
 ```
 
-#### `complete-setup.sh`
-**Tam kurulum script'i**
-- SSL sertifikalarını kurar
-- Veritabanını kurar
-- Admin kullanıcısını oluşturur
-- Health check yapar
-
-```bash
-chmod +x scripts/complete-setup.sh
-./scripts/complete-setup.sh
-```
-
-#### `install-fulexo-complete.sh`
-**Tam otomatik kurulum script'i**
-- Tüm kurulumu otomatik yapar
-- Domain bilgilerini otomatik ayarlar
-- SSL sertifikalarını kurar
-- Veritabanını yapılandırır
-- Admin kullanıcısını oluşturur
-
-```bash
-chmod +x scripts/install-fulexo-complete.sh
-./scripts/install-fulexo-complete.sh
-```
-
-### 🔧 Yönetim Script'leri
+### 🔧 Management Scripts
 
 #### `health-check.sh`
-**Platform sağlık kontrolü**
-- Servis durumunu kontrol eder
-- Container durumunu kontrol eder
-- Database bağlantısını kontrol eder
-- API/Web servislerini test eder
-- SSL sertifikalarını kontrol eder
+**Platform health monitoring**
+- Checks service status
+- Verifies container health
+- Tests database connectivity
+- Validates API/Web services
+- Checks SSL certificates
 
 ```bash
 chmod +x scripts/health-check.sh
 ./scripts/health-check.sh
 ```
 
-#### `quick-start.sh`
-**Hızlı başlangıç script'i**
-- Kurulum sonrası hızlı başlangıç
-- Servisleri kontrol eder ve başlatır
-- Platform durumunu gösterir
-
-```bash
-chmod +x scripts/quick-start.sh
-./scripts/quick-start.sh
-```
-
 #### `update-platform.sh`
-**Platform güncelleme script'i**
-- Repository'yi günceller
-- Dependencies'leri günceller
-- Database migration'ları çalıştırır
-- Servisleri yeniden başlatır
+**Platform update script**
+- Updates repository
+- Updates dependencies
+- Runs database migrations
+- Restarts services
 
 ```bash
 chmod +x scripts/update-platform.sh
@@ -96,198 +60,243 @@ chmod +x scripts/update-platform.sh
 ```
 
 #### `fix-common-issues.sh`
-**Yaygın sorunları düzeltme script'i**
-- Docker servisini kontrol eder
-- Disk alanını temizler
-- Container'ları yeniden başlatır
-- Database/Redis bağlantısını düzeltir
-- Nginx yapılandırmasını kontrol eder
+**Common issues fix script**
+- Checks Docker service
+- Cleans disk space
+- Restarts containers
+- Fixes database/Redis connectivity
+- Validates Nginx configuration
 
 ```bash
 chmod +x scripts/fix-common-issues.sh
 ./scripts/fix-common-issues.sh
 ```
 
-### 🔐 Güvenlik Script'leri
+### 🔐 Security Scripts
 
-#### `setup-ssl-fulexo.sh`
-**SSL sertifika kurulum script'i**
-- Let's Encrypt sertifikalarını kurar
-- Otomatik yenileme yapılandırır
-- Nginx yapılandırmasını günceller
-
-```bash
-chmod +x scripts/setup-ssl-fulexo.sh
-./scripts/setup-ssl-fulexo.sh
-```
-
-### 💾 Backup Script'leri
-
-#### `backup-restore.sh`
-**Backup ve restore script'i**
-- Platform verilerini yedekler
-- Belirtilen yedekten geri yükler
-- Yedekleri listeler
-- Eski yedekleri temizler
+#### `setup-ssl.sh`
+**SSL certificate setup script**
+- Installs Let's Encrypt certificates
+- Configures automatic renewal
+- Updates Nginx configuration
 
 ```bash
-# Backup oluştur
-chmod +x scripts/backup-restore.sh
-./scripts/backup-restore.sh backup
-
-# Yedekleri listele
-./scripts/backup-restore.sh list
-
-# Geri yükle
-./scripts/backup-restore.sh restore /opt/fulexo/backups/db_20240115_143022.sql.gz
-
-# Eski yedekleri temizle
-./scripts/backup-restore.sh cleanup
+chmod +x scripts/setup-ssl.sh
+./scripts/setup-ssl.sh
 ```
+
+#### `setup-security.sh`
+**Security hardening script**
+- Configures firewall
+- Sets up security headers
+- Implements rate limiting
+- Configures fail2ban
+
+```bash
+chmod +x scripts/setup-security.sh
+./scripts/setup-security.sh
+```
+
+### 💾 Backup Scripts
 
 #### `backup.sh`
-**Otomatik backup script'i**
-- Database'i yedekler
-- Volume'ları yedekler
-- Eski yedekleri temizler
-- Cron job olarak çalışır
+**Automated backup script**
+- Backs up database
+- Backs up volumes
+- Cleans old backups
+- Runs as cron job
 
-### 📊 Monitoring Script'leri
+```bash
+chmod +x scripts/backup.sh
+./scripts/backup.sh --full
+```
+
+#### `backup-restore.sh`
+**Backup and restore script**
+- Creates platform backups
+- Restores from specified backup
+- Lists available backups
+- Cleans old backups
+
+```bash
+# Create backup
+./scripts/backup-restore.sh backup
+
+# List backups
+./scripts/backup-restore.sh list
+
+# Restore backup
+./scripts/backup-restore.sh restore /path/to/backup/file
+```
+
+### 📊 Monitoring Scripts
 
 #### `setup-monitoring.sh`
-**Monitoring kurulum script'i**
-- Grafana dashboard'larını oluşturur
-- Prometheus alert kurallarını günceller
-- Log rotation yapılandırır
-- Monitoring servislerini kurar
+**Monitoring setup script**
+- Creates Grafana dashboards
+- Updates Prometheus alert rules
+- Configures log rotation
+- Installs monitoring services
 
 ```bash
 chmod +x scripts/setup-monitoring.sh
 ./scripts/setup-monitoring.sh
 ```
 
-### 👤 Kullanıcı Script'leri
+#### `monitor.sh`
+**System monitoring script**
+- Displays system metrics
+- Shows service status
+- Monitors resource usage
+- Alerts on issues
+
+```bash
+chmod +x scripts/monitor.sh
+./scripts/monitor.sh
+```
+
+### 👤 User Management Scripts
 
 #### `create-admin-user.js`
-**Admin kullanıcısı oluşturma script'i**
-- Varsayılan admin kullanıcısını oluşturur
-- Eski admin kullanıcısını temizler
-- Tenant oluşturur
+**Admin user creation script**
+- Creates default admin user
+- Cleans old admin users
+- Creates tenant
 
 ```bash
 cd /opt/fulexo/apps/api
 sudo -u fulexo node /opt/fulexo/scripts/create-admin-user.js
 ```
 
-## 🔧 Kullanım Örnekleri
+## 🔧 Usage Examples
 
-### Yeni Kurulum
+### New Installation
 ```bash
-# 1. Repository'yi klonla
+# 1. Clone repository
 git clone https://github.com/fulexo/panel.git /opt/fulexo
 cd /opt/fulexo
 
-# 2. Hızlı kurulum
+# 2. Quick installation
 chmod +x scripts/quick-install.sh
 ./scripts/quick-install.sh
 ```
 
-### Mevcut Kurulumu Güncelleme
+### Update Existing Installation
 ```bash
-# 1. Platform'u güncelle
+# 1. Update platform
 chmod +x scripts/update-platform.sh
 ./scripts/update-platform.sh
 
-# 2. Health check yap
+# 2. Health check
 chmod +x scripts/health-check.sh
 ./scripts/health-check.sh
 ```
 
-### Sorun Giderme
+### Troubleshooting
 ```bash
-# 1. Yaygın sorunları düzelt
+# 1. Fix common issues
 chmod +x scripts/fix-common-issues.sh
 ./scripts/fix-common-issues.sh
 
-# 2. Health check yap
+# 2. Health check
 chmod +x scripts/health-check.sh
 ./scripts/health-check.sh
 ```
 
 ### Backup/Restore
 ```bash
-# 1. Backup oluştur
-chmod +x scripts/backup-restore.sh
-./scripts/backup-restore.sh backup
+# 1. Create backup
+chmod +x scripts/backup.sh
+./scripts/backup.sh --full
 
-# 2. Yedekleri listele
+# 2. List backups
 ./scripts/backup-restore.sh list
 
-# 3. Geri yükle (gerekirse)
+# 3. Restore if needed
 ./scripts/backup-restore.sh restore /path/to/backup/file
 ```
 
-## 📋 Cron Job'ları
+## 📋 Automated Tasks
 
-Script'ler otomatik olarak şu cron job'ları oluşturur:
+Scripts automatically create these cron jobs:
 
 ```bash
-# Health check (her 10 dakikada)
+# Health check (every 10 minutes)
 */10 * * * * root /opt/fulexo/scripts/health-check.sh
 
-# Backup (günlük saat 02:00)
+# Backup (daily at 2:00 AM)
 0 2 * * * fulexo /opt/fulexo/scripts/backup.sh
 
-# Build cleanup (her Pazar 03:00)
+# Build cleanup (every Sunday at 3:00 AM)
 0 3 * * 0 root /opt/fulexo/scripts/cleanup-build.sh
 ```
 
-## 🐛 Sorun Giderme
+## 🐛 Troubleshooting
 
-### Script Çalışmıyor
+### Script Not Working
 ```bash
-# Execute permission ver
+# Give execute permission
 chmod +x scripts/script-name.sh
 
-# Root olarak çalıştır
+# Run as root
 sudo ./scripts/script-name.sh
 ```
 
-### Permission Hatası
+### Permission Error
 ```bash
-# Dosya sahipliğini düzelt
+# Fix file ownership
 sudo chown -R fulexo:fulexo /opt/fulexo
 
-# Permission'ları düzelt
+# Fix permissions
 sudo chmod -R 755 /opt/fulexo
 ```
 
-### Environment Dosyası Bulunamıyor
+### Environment File Not Found
 ```bash
-# Environment dosyasını kontrol et
+# Check environment file
 ls -la /etc/fulexo/fulexo.env
 
-# Varsa kopyala
+# Copy if exists
 sudo cp /opt/fulexo/compose/.env /etc/fulexo/fulexo.env
 ```
 
-## 📞 Destek
+## 📊 Script Status
 
-### Log Dosyaları
+### ✅ Working Scripts
+- `quick-install.sh` - Complete installation
+- `health-check.sh` - System health monitoring
+- `backup.sh` - Automated backups
+- `update-platform.sh` - Platform updates
+- `fix-common-issues.sh` - Issue resolution
+
+### 🔧 Maintenance Scripts
+- `clear-cache.sh` - Cache management
+- `cleanup-build.sh` - Build cleanup
+- `migrate-database.sh` - Database migrations
+- `monitor.sh` - System monitoring
+
+### 🚀 Deployment Scripts
+- `deploy.sh` - Production deployment
+- `rollback.sh` - Rollback procedures
+- `setup-production.sh` - Production setup
+
+## 📞 Support
+
+### Log Files
 ```bash
-# Systemd logları
+# Systemd logs
 journalctl -u fulexo -f
 
-# Docker logları
+# Docker logs
 docker logs -f compose-api-1
 
-# Script logları
+# Script logs
 tail -f /var/log/fulexo-alerts.log
 ```
 
-### Debug Modu
+### Debug Mode
 ```bash
-# Debug modunda çalıştır
+# Run in debug mode
 bash -x scripts/script-name.sh
 
 # Verbose output
@@ -296,4 +305,4 @@ scripts/script-name.sh -v
 
 ---
 
-**🎊 Tüm script'ler kullanıma hazır!**
+**🎊 All scripts are ready to use!**
