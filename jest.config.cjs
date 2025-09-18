@@ -6,15 +6,16 @@ module.exports = {
     '**/?(*.)+(spec|test).{ts,tsx}'
   ],
   transform: {
-    '^.+\\.(ts|tsx)$': ['ts-jest', {
-      tsconfig: {
-        esModuleInterop: true,
-        allowSyntheticDefaultImports: true,
-        jsx: 'react-jsx',
-        experimentalDecorators: true,
-        emitDecoratorMetadata: true
-      },
-      useESM: false
+    '^.+\\.(ts|tsx)$': ['babel-jest', {
+      presets: [
+        ['@babel/preset-env', { targets: { node: 'current' } }],
+        ['@babel/preset-react', { runtime: 'automatic' }],
+        '@babel/preset-typescript',
+      ],
+      plugins: [
+        ['@babel/plugin-proposal-decorators', { legacy: true }],
+        ['@babel/plugin-transform-class-properties', { loose: true }],
+      ],
     }],
     '^.+\\.(js|jsx)$': ['babel-jest'],
   },
