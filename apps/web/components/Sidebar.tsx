@@ -223,28 +223,6 @@ export default function Sidebar({ isOpen, onClose, isDesktopCollapsed = false, o
                 )}
               </div>
 
-              {/* Additional Navigation */}
-              <div>
-                <button
-                  onClick={() => toggleSection('additional')}
-                  className="flex items-center justify-between w-full px-3 py-2 text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  <span>Tools</span>
-                  <svg 
-                    className={`w-4 h-4 transition-transform ${expandedSections.includes('additional') ? 'rotate-180' : ''}`}
-                    fill="none" 
-                    stroke="currentColor" 
-                    viewBox="0 0 24 24"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-                {expandedSections.includes('additional') && (
-                  <div className="mt-2 space-y-1">
-                    {renderNavItems(additionalItems, 'additional')}
-                  </div>
-                )}
-              </div>
             </div>
           </div>
 
