@@ -42,7 +42,7 @@ export const useUpdateOrderShipping = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) => 
+    mutationFn: ({ id, data }: { id: string; data: { trackingNumber: string; carrier: string; status: string } }) => 
       apiClient.updateOrderShipping(id, data),
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.orders() });

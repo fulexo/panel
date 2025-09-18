@@ -285,7 +285,7 @@ class ApiClient {
   async requestInventoryChange(data: {
     productId: string;
     changeType: string;
-    newValue: any;
+    newValue: Record<string, unknown>;
     reason?: string;
   }) {
     return this.request('/inventory/approvals', {

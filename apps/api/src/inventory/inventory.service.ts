@@ -16,7 +16,7 @@ export class InventoryService {
     storeId?: string;
   }) {
     const skip = (page - 1) * limit;
-    const where: any = {};
+    const where: Record<string, unknown> = {};
 
     if (status) {
       where.status = status;
@@ -114,7 +114,7 @@ export class InventoryService {
         productId: createApprovalDto.productId,
         changeType: createApprovalDto.changeType,
         oldValue: oldValue ? toPrismaJsonValue(oldValue) : Prisma.JsonNull,
-        newValue: createApprovalDto.newValue,
+        newValue: toPrismaJsonValue(createApprovalDto.newValue),
         requestedBy: userId,
         status: 'pending',
       },
@@ -156,9 +156,9 @@ export class InventoryService {
     }
 
     // Apply the change based on change type
-    const updateData: any = {};
+    const updateData: Record<string, unknown> = {};
     
-    const newValue = approval.newValue as any;
+    const newValue = approval.newValue as Record<string, unknown>;
     switch (approval.changeType) {
       case 'stock_update':
         updateData.stockQuantity = newValue?.stockQuantity;
@@ -303,7 +303,7 @@ export class InventoryService {
     lowStock?: boolean;
   }) {
     const skip = (page - 1) * limit;
-    const where: any = {};
+    const where: Record<string, unknown> = {};
 
     if (storeId) {
       where.storeId = storeId;

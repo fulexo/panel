@@ -40,7 +40,7 @@ export interface WooCommerceProduct {
   total_sales: number;
   virtual: boolean;
   downloadable: boolean;
-  downloads: any[];
+  downloads: Array<{ id: string; name: string; file: string }>;
   download_limit: number;
   download_expiry: number;
   external_url: string;
@@ -90,8 +90,8 @@ export interface WooCommerceProduct {
     name: string;
     alt: string;
   }>;
-  attributes: any[];
-  default_attributes: any[];
+  attributes: Array<{ id: number; name: string; position: number; visible: boolean; variation: boolean; options: string[] }>;
+  default_attributes: Array<{ id: number; name: string; option: string }>;
   variations: number[];
   grouped_products: number[];
   menu_order: number;
@@ -162,16 +162,16 @@ export interface WooCommerceOrder {
     subtotal_tax: string;
     total: string;
     total_tax: string;
-    taxes: any[];
-    meta_data: any[];
+    taxes: Array<{ id: number; rate_code: string; rate_id: number; label: string; compound: boolean; tax_total: string; shipping_tax_total: string }>;
+    meta_data: Array<{ id: number; key: string; value: string }>;
     sku: string;
     price: number;
   }>;
-  tax_lines: any[];
-  shipping_lines: any[];
-  fee_lines: any[];
-  coupon_lines: any[];
-  refunds: any[];
+  tax_lines: Array<{ id: number; rate_code: string; rate_id: number; label: string; compound: boolean; tax_total: string; shipping_tax_total: string }>;
+  shipping_lines: Array<{ id: number; method_title: string; method_id: string; total: string; total_tax: string; taxes: Array<{ id: number; rate_code: string; rate_id: number; label: string; compound: boolean; tax_total: string; shipping_tax_total: string }> }>;
+  fee_lines: Array<{ id: number; name: string; tax_class: string; tax_status: string; total: string; total_tax: string; taxes: Array<{ id: number; rate_code: string; rate_id: number; label: string; compound: boolean; tax_total: string; shipping_tax_total: string }> }>;
+  coupon_lines: Array<{ id: number; code: string; discount: string; discount_tax: string }>;
+  refunds: Array<{ id: number; reason: string; total: string; total_tax: string }>;
   meta_data: Array<{
     id: number;
     key: string;
@@ -254,7 +254,7 @@ export class WooCommerceService {
     }
   }
 
-  async syncStore(store: any, tenantId: string): Promise<{ success: boolean; message: string; syncedItems: any }> {
+  async syncStore(store: { id: string; url: string; consumerKey: string; consumerSecret: string }, tenantId: string): Promise<{ success: boolean; message: string; syncedItems: { products: number; orders: number; customers: number } }> {
     try {
       const config: WooCommerceConfig = {
         url: store.url,

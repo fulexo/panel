@@ -20,13 +20,13 @@ export class User implements PrismaUser {
   notificationPreferences!: any;
   createdAt!: Date;
   updatedAt!: Date;
-  stores?: any[];
-  tenant?: any;
-  sessions?: any[];
-  auditLogs?: any[];
-  requests?: any[];
-  requestComments?: any[];
-  supportTickets?: any[];
+  stores?: Array<{ id: string; name: string; status: string }>;
+  tenant?: { id: string; name: string; slug: string };
+  sessions?: Array<{ id: string; token: string; createdAt: Date }>;
+  auditLogs?: Array<{ id: string; action: string; createdAt: Date }>;
+  requests?: Array<{ id: string; type: string; createdAt: Date }>;
+  requestComments?: Array<{ id: string; content: string; createdAt: Date }>;
+  supportTickets?: Array<{ id: string; subject: string; status: string }>;
 
   constructor(partial: Partial<User>) {
     Object.assign(this, partial);

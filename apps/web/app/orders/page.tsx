@@ -28,7 +28,7 @@ export default function OrdersPage() {
     ...(search ? { search } : {}),
     ...(statusFilter ? { status: statusFilter } : {}),
     ...(isAdmin() ? {} : userStoreId ? { storeId: userStoreId } : {}),
-  }) as { data: { data: any[]; pagination: { total: number; pages: number } } | undefined; isLoading: boolean; error: any };
+  }) as { data: { data: Array<{ id: string; orderNumber: string; status: string; total: number; createdAt: string; customerEmail: string }>; pagination: { total: number; pages: number } } | undefined; isLoading: boolean; error: unknown };
 
   const updateOrderStatus = useUpdateOrderStatus();
   // const updateOrderShipping = useUpdateOrderShipping();
@@ -41,7 +41,7 @@ export default function OrdersPage() {
     }
   };
 
-  // const handleShippingUpdate = async (orderId: string, trackingData: any) => {
+  // const handleShippingUpdate = async (orderId: string, trackingData: { trackingNumber: string; carrier: string }) => {
   //   try {
   //     await updateOrderShipping.mutateAsync({ id: orderId, data: trackingData });
   //   } catch (error) {
@@ -69,10 +69,10 @@ export default function OrdersPage() {
   const totalPages = ordersData?.pagination?.pages || 1;
 
   // Calculate statistics
-  const statusCounts = orders.reduce((acc: any, order: any) => {
+  const statusCounts = orders.reduce((acc: Record<string, number>, order: { id: string; orderNumber: string; status: string; total: number; createdAt: string; customerEmail: string }) => {
     acc[order.status] = (acc[order.status] || 0) + 1;
     return acc;
-  }, {});
+  }, {} as Record<string, number>);
 
   return (
     <ProtectedRoute>
@@ -118,7 +118,7 @@ export default function OrdersPage() {
             <div className="bg-card p-6 rounded-lg border border-border">
               <h3 className="text-lg font-semibold text-foreground mb-4">Recent Orders</h3>
               <div className="space-y-3">
-                {orders.slice(0, 5).map((order: any) => (
+                {orders.slice(0, 5).map((order: { id: string; orderNumber: string; status: string; total: number; createdAt: string; customerEmail: string; billingInfo?: { first_name: string; last_name: string } }) => (
                   <div key={order.id} className="flex justify-between items-center p-3 bg-accent rounded-lg">
                     <div>
                       <div className="font-medium">Order #{order.orderNumber}</div>
@@ -156,19 +156,19 @@ export default function OrdersPage() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Pending</span>
-                  <span className="font-medium text-yellow-600">{statusCounts.pending || 0}</span>
+                  <span className="font-medium text-yellow-600">{statusCounts['pending'] || 0}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Processing</span>
-                  <span className="font-medium text-blue-600">{statusCounts.processing || 0}</span>
+                  <span className="font-medium text-blue-600">{statusCounts['processing'] || 0}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Completed</span>
-                  <span className="font-medium text-green-600">{statusCounts.completed || 0}</span>
+                  <span className="font-medium text-green-600">{statusCounts['completed'] || 0}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Cancelled</span>
-                  <span className="font-medium text-red-600">{statusCounts.cancelled || 0}</span>
+                  <span className="font-medium text-red-600">{statusCounts['cancelled'] || 0}</span>
                 </div>
               </div>
             </div>
@@ -191,7 +191,7 @@ export default function OrdersPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {orders.map((order: any) => (
+                  {orders.map((order: { id: string; orderNumber: string; status: string; total: number; createdAt: string; customerEmail: string; billingInfo?: { first_name: string; last_name: string } }) => (
                     <tr key={order.id} className="border-b border-border">
                       <td className="p-3">#{order.orderNumber}</td>
                       <td className="p-3">

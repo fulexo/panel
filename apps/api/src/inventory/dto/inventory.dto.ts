@@ -12,7 +12,7 @@ export class CreateInventoryApprovalDto {
   changeType!: string;
 
   @IsObject()
-  newValue!: any;
+  newValue!: Record<string, unknown>;
 
   @IsOptional()
   @IsString()
@@ -34,8 +34,8 @@ export class InventoryApprovalResponseDto {
   storeId!: string;
   productId?: string;
   changeType!: string;
-  oldValue?: any;
-  newValue!: any;
+  oldValue?: Record<string, unknown>;
+  newValue!: Record<string, unknown>;
   requestedBy!: string;
   status!: string;
   reviewedBy?: string;
