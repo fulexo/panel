@@ -586,7 +586,7 @@ export class OrdersService {
         notes: dto['notes'] || null,
       },
     }));
-    await this.audit.log({ action: 'order.charge.added', userId, tenantId, entityType: 'order', entityId: orderId, changes: dto as any });
+    await this.audit.log({ action: 'order.charge.added', userId, tenantId, entityType: 'order', entityId: orderId, changes: dto as unknown as Record<string, unknown> });
     await this.cache.invalidateOrderCache(tenantId, orderId);
     return charge;
   }

@@ -60,7 +60,7 @@ export class SettingsService {
       result[setting['key'] as string] = setting['value'];
     });
     
-    return result as any;
+    return result as Partial<SettingCategory[K]>;
   }
 
   async getSetting(
