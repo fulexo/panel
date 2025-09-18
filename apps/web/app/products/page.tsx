@@ -379,6 +379,164 @@ export default function ProductsPage() {
               </div>
             )}
           </div>
+
+          {/* Create Product Modal */}
+          {showCreateModal && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+              <div className="bg-card p-6 rounded-lg border border-border w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+                <h3 className="text-lg font-semibold text-foreground mb-4">Create Product</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="form-label">Product Name</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      placeholder="Enter product name"
+                    />
+                  </div>
+                  <div>
+                    <label className="form-label">SKU</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      placeholder="Enter SKU"
+                    />
+                  </div>
+                  <div>
+                    <label className="form-label">Price</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      className="form-input"
+                      placeholder="0.00"
+                    />
+                  </div>
+                  <div>
+                    <label className="form-label">Sale Price</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      className="form-input"
+                      placeholder="0.00"
+                    />
+                  </div>
+                  <div>
+                    <label className="form-label">Stock Quantity</label>
+                    <input
+                      type="number"
+                      className="form-input"
+                      placeholder="0"
+                    />
+                  </div>
+                  <div>
+                    <label className="form-label">Category</label>
+                    <select className="form-select">
+                      <option value="">Select category</option>
+                      <option value="electronics">Electronics</option>
+                      <option value="clothing">Clothing</option>
+                      <option value="books">Books</option>
+                      <option value="home">Home & Garden</option>
+                    </select>
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="form-label">Description</label>
+                    <textarea
+                      className="form-textarea"
+                      rows={3}
+                      placeholder="Enter product description"
+                    />
+                  </div>
+                </div>
+                <div className="flex gap-2 mt-6">
+                  <button className="btn btn-primary">Create Product</button>
+                  <button 
+                    onClick={() => setShowCreateModal(false)}
+                    className="btn btn-outline"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Edit Product Modal */}
+          {editingProduct && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+              <div className="bg-card p-6 rounded-lg border border-border w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+                <h3 className="text-lg font-semibold text-foreground mb-4">Edit Product</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="form-label">Product Name</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      placeholder="Enter product name"
+                    />
+                  </div>
+                  <div>
+                    <label className="form-label">SKU</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      placeholder="Enter SKU"
+                    />
+                  </div>
+                  <div>
+                    <label className="form-label">Price</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      className="form-input"
+                      placeholder="0.00"
+                    />
+                  </div>
+                  <div>
+                    <label className="form-label">Sale Price</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      className="form-input"
+                      placeholder="0.00"
+                    />
+                  </div>
+                  <div>
+                    <label className="form-label">Stock Quantity</label>
+                    <input
+                      type="number"
+                      className="form-input"
+                      placeholder="0"
+                    />
+                  </div>
+                  <div>
+                    <label className="form-label">Status</label>
+                    <select className="form-select">
+                      <option value="active">Active</option>
+                      <option value="draft">Draft</option>
+                      <option value="archived">Archived</option>
+                    </select>
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="form-label">Description</label>
+                    <textarea
+                      className="form-textarea"
+                      rows={3}
+                      placeholder="Enter product description"
+                    />
+                  </div>
+                </div>
+                <div className="flex gap-2 mt-6">
+                  <button className="btn btn-primary">Update Product</button>
+                  <button 
+                    onClick={() => setEditingProduct(null)}
+                    className="btn btn-outline"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </main>
       </div>
     </ProtectedRoute>

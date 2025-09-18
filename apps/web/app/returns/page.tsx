@@ -320,6 +320,69 @@ export default function ReturnsPage() {
               </div>
             )}
           </div>
+
+          {/* Create Return Modal */}
+          {showCreateModal && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+              <div className="bg-card p-6 rounded-lg border border-border w-full max-w-2xl">
+                <h3 className="text-lg font-semibold text-foreground mb-4">Create Return</h3>
+                <div className="space-y-4">
+                  <div>
+                    <label className="form-label">Order Number</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      placeholder="Enter order number"
+                    />
+                  </div>
+                  <div>
+                    <label className="form-label">Product</label>
+                    <select className="form-select">
+                      <option value="">Select product</option>
+                      <option value="product1">Product 1</option>
+                      <option value="product2">Product 2</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="form-label">Quantity</label>
+                    <input
+                      type="number"
+                      className="form-input"
+                      placeholder="Enter quantity"
+                    />
+                  </div>
+                  <div>
+                    <label className="form-label">Reason</label>
+                    <select className="form-select">
+                      <option value="">Select reason</option>
+                      <option value="defective">Defective</option>
+                      <option value="wrong_item">Wrong Item</option>
+                      <option value="not_as_described">Not as Described</option>
+                      <option value="changed_mind">Changed Mind</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="form-label">Description</label>
+                    <textarea
+                      className="form-textarea"
+                      rows={3}
+                      placeholder="Enter additional details"
+                    />
+                  </div>
+                </div>
+                <div className="flex gap-2 mt-6">
+                  <button className="btn btn-primary">Create Return</button>
+                  <button 
+                    onClick={() => setShowCreateModal(false)}
+                    className="btn btn-outline"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </main>
       </div>
     </ProtectedRoute>

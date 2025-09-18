@@ -325,6 +325,118 @@ export default function StoresPage() {
                 </div>
               )}
             </div>
+
+            {/* Create Store Modal */}
+            {showCreateModal && (
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                <div className="bg-card p-6 rounded-lg border border-border w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+                  <h3 className="text-lg font-semibold text-foreground mb-4">Add Store</h3>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="form-label">Store Name</label>
+                      <input
+                        type="text"
+                        className="form-input"
+                        placeholder="Enter store name"
+                      />
+                    </div>
+                    <div>
+                      <label className="form-label">Store URL</label>
+                      <input
+                        type="url"
+                        className="form-input"
+                        placeholder="https://example.com"
+                      />
+                    </div>
+                    <div>
+                      <label className="form-label">Customer Email</label>
+                      <input
+                        type="email"
+                        className="form-input"
+                        placeholder="customer@example.com"
+                      />
+                    </div>
+                    <div>
+                      <label className="form-label">WooCommerce Consumer Key</label>
+                      <input
+                        type="text"
+                        className="form-input"
+                        placeholder="Enter consumer key"
+                      />
+                    </div>
+                    <div>
+                      <label className="form-label">WooCommerce Consumer Secret</label>
+                      <input
+                        type="password"
+                        className="form-input"
+                        placeholder="Enter consumer secret"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex gap-2 mt-6">
+                    <button className="btn btn-primary">Add Store</button>
+                    <button 
+                      onClick={() => setShowCreateModal(false)}
+                      className="btn btn-outline"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Edit Store Modal */}
+            {editingStore && (
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                <div className="bg-card p-6 rounded-lg border border-border w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+                  <h3 className="text-lg font-semibold text-foreground mb-4">Edit Store</h3>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="form-label">Store Name</label>
+                      <input
+                        type="text"
+                        className="form-input"
+                        placeholder="Enter store name"
+                      />
+                    </div>
+                    <div>
+                      <label className="form-label">Store URL</label>
+                      <input
+                        type="url"
+                        className="form-input"
+                        placeholder="https://example.com"
+                      />
+                    </div>
+                    <div>
+                      <label className="form-label">WooCommerce Consumer Key</label>
+                      <input
+                        type="text"
+                        className="form-input"
+                        placeholder="Enter consumer key"
+                      />
+                    </div>
+                    <div>
+                      <label className="form-label">WooCommerce Consumer Secret</label>
+                      <input
+                        type="password"
+                        className="form-input"
+                        placeholder="Enter consumer secret"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex gap-2 mt-6">
+                    <button className="btn btn-primary">Update Store</button>
+                    <button 
+                      onClick={() => setEditingStore(null)}
+                      className="btn btn-outline"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </main>
         </div>
       </ProtectedComponent>

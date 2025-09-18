@@ -397,6 +397,59 @@ export default function SupportPage() {
               )}
             </div>
           </div>
+
+          {/* Create Ticket Modal */}
+          {showCreateModal && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+              <div className="bg-card p-6 rounded-lg border border-border w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+                <h3 className="text-lg font-semibold text-foreground mb-4">Create Support Ticket</h3>
+                <div className="space-y-4">
+                  <div>
+                    <label className="form-label">Subject</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      placeholder="Enter ticket subject"
+                    />
+                  </div>
+                  <div>
+                    <label className="form-label">Priority</label>
+                    <select className="form-select">
+                      <option value="low">Low</option>
+                      <option value="medium">Medium</option>
+                      <option value="high">High</option>
+                      <option value="urgent">Urgent</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="form-label">Description</label>
+                    <textarea
+                      className="form-textarea"
+                      rows={6}
+                      placeholder="Describe your issue in detail"
+                    />
+                  </div>
+                  <div>
+                    <label className="form-label">Attachments</label>
+                    <input
+                      type="file"
+                      multiple
+                      className="form-input"
+                    />
+                  </div>
+                </div>
+                <div className="flex gap-2 mt-6">
+                  <button className="btn btn-primary">Create Ticket</button>
+                  <button 
+                    onClick={() => setShowCreateModal(false)}
+                    className="btn btn-outline"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </main>
       </div>
     </ProtectedRoute>

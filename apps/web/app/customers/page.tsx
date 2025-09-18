@@ -257,6 +257,110 @@ export default function CustomersPage() {
               </div>
             )}
           </div>
+
+          {/* Create Customer Modal */}
+          {showCreateModal && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+              <div className="bg-card p-6 rounded-lg border border-border w-full max-w-2xl">
+                <h3 className="text-lg font-semibold text-foreground mb-4">Create Customer</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="form-label">First Name</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      placeholder="Enter first name"
+                    />
+                  </div>
+                  <div>
+                    <label className="form-label">Last Name</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      placeholder="Enter last name"
+                    />
+                  </div>
+                  <div>
+                    <label className="form-label">Email</label>
+                    <input
+                      type="email"
+                      className="form-input"
+                      placeholder="Enter email"
+                    />
+                  </div>
+                  <div>
+                    <label className="form-label">Phone</label>
+                    <input
+                      type="tel"
+                      className="form-input"
+                      placeholder="Enter phone number"
+                    />
+                  </div>
+                </div>
+                <div className="flex gap-2 mt-6">
+                  <button className="btn btn-primary">Create Customer</button>
+                  <button 
+                    onClick={() => setShowCreateModal(false)}
+                    className="btn btn-outline"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Edit Customer Modal */}
+          {editingCustomer && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+              <div className="bg-card p-6 rounded-lg border border-border w-full max-w-2xl">
+                <h3 className="text-lg font-semibold text-foreground mb-4">Edit Customer</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="form-label">First Name</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      placeholder="Enter first name"
+                    />
+                  </div>
+                  <div>
+                    <label className="form-label">Last Name</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      placeholder="Enter last name"
+                    />
+                  </div>
+                  <div>
+                    <label className="form-label">Email</label>
+                    <input
+                      type="email"
+                      className="form-input"
+                      placeholder="Enter email"
+                    />
+                  </div>
+                  <div>
+                    <label className="form-label">Phone</label>
+                    <input
+                      type="tel"
+                      className="form-input"
+                      placeholder="Enter phone number"
+                    />
+                  </div>
+                </div>
+                <div className="flex gap-2 mt-6">
+                  <button className="btn btn-primary">Update Customer</button>
+                  <button 
+                    onClick={() => setEditingCustomer(null)}
+                    className="btn btn-outline"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </main>
       </div>
     </ProtectedRoute>
