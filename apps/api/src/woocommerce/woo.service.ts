@@ -222,7 +222,7 @@ export interface WooCommerceCustomer {
 }
 
 @Injectable()
-export class WooService {
+export class WooCommerceService {
   constructor(private prisma: PrismaService) {}
 
   // New methods for the updated stores system
@@ -280,7 +280,7 @@ export class WooService {
           customers: customers.length,
         },
       };
-    } catch (error) {
+    } catch (_error) {
       return {
         success: false,
         message: 'Sync failed',
@@ -549,7 +549,7 @@ export class WooService {
     });
   }
 
-  async testConnection(tenantId: string, id: string){
+  async testStoreConnection(tenantId: string, id: string){
     return this.prisma.withTenant(tenantId, async (tx) => {
       const s = await tx.wooStore.findFirst({ where: { id } });
       if(!s) throw new BadRequestException('Store not found');

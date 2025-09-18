@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { PrismaClient } from '@prisma/client';
-import { Prisma } from '@prisma/client';
+import { Decimal } from 'decimal.js';
 
 @Injectable()
 export class BillingService {
@@ -35,12 +35,12 @@ export class BillingService {
   async addInvoices(tenantId: string, batchId: string, invoiceIds: string[]) {
     const batch = await this.runTenant(tenantId, async (db) => db.billingBatch.findFirst({ where: { id: batchId, tenantId } }));
     if (!batch) throw new NotFoundException('Batch not found');
-    let total = new Prisma.Decimal(batch.total || 0);
+    let total = new Decimal(batch.total || 0);
     for (const invoiceId of invoiceIds) {
       const inv = await this.runTenant(tenantId, async (db) => db.invoice.findFirst({ where: { id: invoiceId, order: { tenantId } } }));
       if (!inv) continue;
-      await this.runTenant(tenantId, async (db) => db.billingBatchItem.create({ data: { batchId, invoiceId, amount: inv.total || new Prisma.Decimal(0) } }));
-      total = total.add(inv.total || new Prisma.Decimal(0));
+      await this.runTenant(tenantId, async (db) => db.billingBatchItem.create({ data: { batchId, invoiceId, amount: inv.total || new Decimal(0) } }));
+      total = total.add(inv.total || new Decimal(0));
     }
     await this.runTenant(tenantId, async (db) => db.billingBatch.update({ where: { id: batchId }, data: { total } }));
     return this.getBatch(tenantId, batchId);
@@ -54,7 +54,7 @@ export class BillingService {
     await this.runTenant(tenantId, async (db) => db.billingBatchItem.delete({ where: { id: itemId } }));
     // Recalculate total
     const sum = await this.runTenant(tenantId, async (db) => db.billingBatchItem.aggregate({ where: { batchId }, _sum: { amount: true } }));
-    await this.runTenant(tenantId, async (db) => db.billingBatch.update({ where: { id: batchId }, data: { total: sum._sum.amount || new Prisma.Decimal(0) } }));
+    await this.runTenant(tenantId, async (db) => db.billingBatch.update({ where: { id: batchId }, data: { total: sum._sum.amount || new Decimal(0) } }));
     return this.getBatch(tenantId, batchId);
   }
 
@@ -149,7 +149,7 @@ export class BillingService {
           connect: { id: dto['orderId'] as string }
         },
         number: dto['number'] as string,
-        total: new Prisma.Decimal(dto['total'] as string),
+        total: new Decimal(dto['total'] as string),
         currency: (dto['currency'] as string) || 'USD',
         status: 'draft',
         dueDate: dto['dueDate'] ? new Date(dto['dueDate'] as string) : null,
@@ -179,7 +179,7 @@ export class BillingService {
       data: {
         status: dto['status'] || undefined,
         number: dto['number'] || undefined,
-        total: dto['total'] ? new Prisma.Decimal(dto['total'] as string) : undefined,
+        total: dto['total'] ? new Decimal(dto['total'] as string) : undefined,
         currency: dto['currency'] || undefined,
         dueDate: dto['dueDate'] ? new Date(dto['dueDate'] as string) : undefined,
         ...(dto['status'] === 'issued' && { issuedAt: new Date() }),

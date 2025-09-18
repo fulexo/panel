@@ -159,7 +159,7 @@ export function useWooCommerce() {
     
     // For customers, return only their assigned store
     // This would be determined by the user's store_id in the backend
-    return stores.filter(store => {
+    return stores.filter(_store => {
       // This logic would be implemented based on your user-store relationship
       return true; // Placeholder
     });

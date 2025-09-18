@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiClient, ApiError } from '@/lib/api-client';
+import { apiClient } from '@/lib/api-client';
 
 // Query keys
 export const queryKeys = {
@@ -97,5 +97,13 @@ export const useDashboardStats = (storeId?: string) => {
     queryKey: queryKeys.dashboardStats(storeId),
     queryFn: () => apiClient.getDashboardStats(storeId),
     staleTime: 2 * 60 * 1000, // 2 minutes
+  });
+};
+
+export const useOrders = (params: { page?: number; limit?: number; search?: string; status?: string; storeId?: string } = {}) => {
+  return useQuery({
+    queryKey: queryKeys.orders(params),
+    queryFn: () => apiClient.getOrders(params),
+    staleTime: 30 * 1000, // 30 seconds
   });
 };

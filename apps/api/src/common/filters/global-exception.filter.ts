@@ -7,7 +7,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
-import { Prisma } from '@prisma/client';
+import { PrismaClientKnownRequestError, PrismaClientValidationError, PrismaClientInitializationError, PrismaClientRustPanicError } from '@prisma/client';
 
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
@@ -36,7 +36,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
         errorCode = responseObj.errorCode || 'HTTP_ERROR';
         details = (responseObj as Record<string, unknown>)['details'] as Record<string, unknown> | null || null;
       }
-    } else if (exception instanceof Prisma.PrismaClientKnownRequestError) {
+    } else if (exception instanceof PrismaClientKnownRequestError) {
       status = HttpStatus.BAD_REQUEST;
       errorCode = 'DATABASE_ERROR';
       
@@ -58,16 +58,16 @@ export class GlobalExceptionFilter implements ExceptionFilter {
           message = 'Database operation failed';
           details = { code: exception.code };
       }
-    } else if (exception instanceof Prisma.PrismaClientValidationError) {
+    } else if (exception instanceof PrismaClientValidationError) {
       status = HttpStatus.BAD_REQUEST;
       errorCode = 'VALIDATION_ERROR';
       message = 'Invalid data provided';
       details = { message: exception.message };
-    } else if (exception instanceof Prisma.PrismaClientInitializationError) {
+    } else if (exception instanceof PrismaClientInitializationError) {
       status = HttpStatus.SERVICE_UNAVAILABLE;
       errorCode = 'DATABASE_CONNECTION_ERROR';
       message = 'Database connection failed';
-    } else if (exception instanceof Prisma.PrismaClientRustPanicError) {
+    } else if (exception instanceof PrismaClientRustPanicError) {
       status = HttpStatus.INTERNAL_SERVER_ERROR;
       errorCode = 'DATABASE_PANIC';
       message = 'Database engine panic';

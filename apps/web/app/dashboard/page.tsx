@@ -3,12 +3,13 @@
 import { useAuth } from "@/components/AuthProvider";
 import { useRBAC } from "@/hooks/useRBAC";
 import { useDashboardStats, useOrders, useStores } from "@/hooks/useApi";
+import { DashboardStats } from "@/types/api";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { ApiError } from "@/lib/api-client";
 
 export default function DashboardPage() {
   const { user } = useAuth();
-  const { isAdmin, isCustomer } = useRBAC();
+  const { isAdmin } = useRBAC();
   
   // Get user's store ID for customer view
   const userStoreId = user?.stores?.[0]?.id;
@@ -16,7 +17,7 @@ export default function DashboardPage() {
   // Fetch dashboard data
   const { data: stats, isLoading: statsLoading, error: statsError } = useDashboardStats(
     isAdmin() ? undefined : userStoreId
-  );
+  ) as { data: DashboardStats | undefined; isLoading: boolean; error: ApiError | null };
   
   const { data: recentOrders, isLoading: ordersLoading } = useOrders({
     limit: 5,

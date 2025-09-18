@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     // This would typically fetch from your backend API
     // For now, returning mock data
@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
     ];
 
     return NextResponse.json({ stores });
-  } catch (error) {
+  } catch (_error) {
     return NextResponse.json(
       { error: 'Failed to fetch stores' },
       { status: 500 }
@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
     };
 
     return NextResponse.json({ store: newStore }, { status: 201 });
-  } catch (error) {
+  } catch (_error) {
     return NextResponse.json(
       { error: 'Failed to create store' },
       { status: 500 }

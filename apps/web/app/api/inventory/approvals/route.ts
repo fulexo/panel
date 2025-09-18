@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     // This would typically fetch pending approvals from your backend
     const approvals = [
@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
     ];
 
     return NextResponse.json({ approvals });
-  } catch (error) {
+  } catch (_error) {
     return NextResponse.json(
       { error: 'Failed to fetch approvals' },
       { status: 500 }
@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
     };
 
     return NextResponse.json({ result });
-  } catch (error) {
+  } catch (_error) {
     return NextResponse.json(
       { error: 'Failed to process approval' },
       { status: 500 }

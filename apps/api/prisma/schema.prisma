@@ -153,6 +153,7 @@ model RemoteEntityMap {
 
 model Customer {
   id              String   @id @default(uuid())
+  tenantId        String
   storeId         String
   wooId           String?  // WooCommerce customer ID
   email           String
@@ -169,10 +170,12 @@ model Customer {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
   
+  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   store           Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
   orders          Order[]
 
   @@unique([wooId, storeId])
+  @@index([tenantId])
   @@index([storeId])
   @@index([email])
   @@index([firstName])
@@ -184,6 +187,7 @@ model Customer {
 
 model Order {
   id             String   @id @default(uuid())
+  tenantId       String
   storeId        String
   wooId          String?  // WooCommerce order ID
   orderNumber    String?  // Order number from WooCommerce
@@ -204,7 +208,9 @@ model Order {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
   
+  tenant         Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   store          Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  customer       Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
   items          OrderItem[]
   shipments      Shipment[]
   returns        Return[]
@@ -212,6 +218,7 @@ model Order {
   serviceCharges OrderServiceCharge[]
 
   @@unique([wooId, storeId])
+  @@index([tenantId])
   @@index([storeId])
   @@index([status])
   @@index([orderNumber])
@@ -272,6 +279,7 @@ model Shipment {
 
 model Product {
   id              String   @id @default(uuid())
+  tenantId        String
   storeId         String
   wooId           String?  // WooCommerce product ID
   name            String
@@ -292,12 +300,14 @@ model Product {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
   
+  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   store           Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
   inboundItems    InboundItem[]
   stockMovements  StockMovement[]
   inventoryApprovals InventoryApproval[]
 
   @@unique([wooId, storeId])
+  @@index([tenantId])
   @@index([storeId])
   @@index([sku])
   @@index([status])

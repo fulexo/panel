@@ -6,7 +6,8 @@ import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
 import { OrderQueryDto } from './dto/order-query.dto';
 import { CreateChargeDto } from './dto/create-charge.dto';
-import { Prisma, PrismaClient } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
+import { Decimal } from 'decimal.js';
 import * as jose from 'jose';
 import { toPrismaJsonValue } from '../common/utils/prisma-json.util';
 
@@ -581,7 +582,7 @@ export class OrdersService {
       data: {
         orderId,
         type: dto['type'] || 'service',
-        amount: new Prisma.Decimal(dto.amount),
+        amount: new Decimal(dto.amount),
         currency: dto.currency || order.currency || 'TRY',
         notes: dto['notes'] || null,
       },

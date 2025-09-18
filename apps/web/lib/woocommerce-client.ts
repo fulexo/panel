@@ -112,7 +112,6 @@ export interface WooCommerceOrder {
   total: string;
   total_tax: string;
   customer_id: number;
-  order_key: string;
   billing: {
     first_name: string;
     last_name: string;

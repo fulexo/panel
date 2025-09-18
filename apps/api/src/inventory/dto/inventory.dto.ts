@@ -2,17 +2,17 @@ import { IsString, IsOptional, IsUUID, IsEnum, IsObject, IsNumber } from 'class-
 
 export class CreateInventoryApprovalDto {
   @IsUUID()
-  storeId: string;
+  storeId!: string;
 
   @IsOptional()
   @IsUUID()
   productId?: string;
 
   @IsEnum(['stock_update', 'price_update', 'status_update'])
-  changeType: string;
+  changeType!: string;
 
   @IsObject()
-  newValue: any;
+  newValue!: any;
 
   @IsOptional()
   @IsString()
@@ -30,20 +30,20 @@ export class UpdateInventoryApprovalDto {
 }
 
 export class InventoryApprovalResponseDto {
-  id: string;
-  storeId: string;
+  id!: string;
+  storeId!: string;
   productId?: string;
-  changeType: string;
+  changeType!: string;
   oldValue?: any;
-  newValue: any;
-  requestedBy: string;
-  status: string;
+  newValue!: any;
+  requestedBy!: string;
+  status!: string;
   reviewedBy?: string;
   reviewedAt?: Date;
   reason?: string;
-  createdAt: Date;
-  updatedAt: Date;
-  store: {
+  createdAt!: Date;
+  updatedAt!: Date;
+  store!: {
     id: string;
     name: string;
     customer?: {
@@ -62,10 +62,10 @@ export class InventoryApprovalResponseDto {
 
 export class StockUpdateRequestDto {
   @IsUUID()
-  productId: string;
+  productId!: string;
 
   @IsNumber()
-  newQuantity: number;
+  newQuantity!: number;
 
   @IsOptional()
   @IsString()

@@ -450,6 +450,20 @@ export interface ApiError {
   stack?: string;
 }
 
+// Dashboard Types
+export interface DashboardStats {
+  totalOrders: number;
+  totalProducts: number;
+  totalCustomers: number;
+  totalRevenue: number;
+  lowStockProducts: Array<{
+    id: string;
+    name: string;
+    sku: string;
+    stock: number;
+  }>;
+}
+
 // Query Types
 export interface PaginationQuery {
   page?: number;

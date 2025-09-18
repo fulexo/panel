@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { CreateStoreDto, UpdateStoreDto } from './dto/stores.dto';
-import { WooCommerceService } from '../woocommerce/woocommerce.service';
+import { WooCommerceService } from '../woocommerce/woo.service';
 
 @Injectable()
 export class StoresService {

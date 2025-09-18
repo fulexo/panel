@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
@@ -21,7 +21,7 @@ export async function POST(
     };
 
     return NextResponse.json({ sync: syncResult });
-  } catch (error) {
+  } catch (_error) {
     return NextResponse.json(
       { error: 'Sync failed' },
       { status: 500 }

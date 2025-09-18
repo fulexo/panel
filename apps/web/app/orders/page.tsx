@@ -10,7 +10,7 @@ import { ApiError } from "@/lib/api-client";
 
 export default function OrdersPage() {
   const { user } = useAuth();
-  const { isAdmin, isCustomer } = useRBAC();
+  const { isAdmin } = useRBAC();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
@@ -29,26 +29,26 @@ export default function OrdersPage() {
     search: search || undefined,
     status: statusFilter || undefined,
     storeId: isAdmin() ? undefined : userStoreId,
-  });
+  }) as { data: { data: any[]; pagination: { total: number; pages: number } } | undefined; isLoading: boolean; error: any };
 
   const updateOrderStatus = useUpdateOrderStatus();
-  const updateOrderShipping = useUpdateOrderShipping();
+  // const updateOrderShipping = useUpdateOrderShipping();
 
   const handleStatusUpdate = async (orderId: string, newStatus: string) => {
     try {
       await updateOrderStatus.mutateAsync({ id: orderId, status: newStatus });
     } catch (error) {
-      console.error('Failed to update order status:', error);
+      // console.error('Failed to update order status:', error);
     }
   };
 
-  const handleShippingUpdate = async (orderId: string, trackingData: any) => {
-    try {
-      await updateOrderShipping.mutateAsync({ id: orderId, data: trackingData });
-    } catch (error) {
-      console.error('Failed to update shipping:', error);
-    }
-  };
+  // const handleShippingUpdate = async (orderId: string, trackingData: any) => {
+  //   try {
+  //     await updateOrderShipping.mutateAsync({ id: orderId, data: trackingData });
+  //   } catch (error) {
+  //     console.error('Failed to update shipping:', error);
+  //   }
+  // };
 
   if (isLoading) {
     return (

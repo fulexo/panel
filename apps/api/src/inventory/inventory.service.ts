@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
-import { CreateInventoryApprovalDto, UpdateInventoryApprovalDto } from './dto/inventory.dto';
+import { CreateInventoryApprovalDto } from './dto/inventory.dto';
 import { User } from '../users/entities/user.entity';
 
 @Injectable()
@@ -154,7 +154,7 @@ export class InventoryService {
     }
 
     // Apply the change based on change type
-    let updateData: any = {};
+    const updateData: any = {};
     
     switch (approval.changeType) {
       case 'stock_update':
@@ -395,11 +395,4 @@ export class InventoryService {
     return approval;
   }
 
-  // Helper method to sync changes to WooCommerce
-  private async syncToWooCommerce(store: any, product: any, updateData: any) {
-    // This would integrate with the WooCommerce service
-    // to push changes back to the WooCommerce store
-    console.log('Syncing to WooCommerce:', { store, product, updateData });
-    // Implementation would go here
-  }
 }
