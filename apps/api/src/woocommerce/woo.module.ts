@@ -8,4 +8,4 @@ import { WooController } from './woo.controller';
   controllers: [WooController],
   exports: [WooService],
 })
-export class WooModule {}
+export class WooCommerceModule {}

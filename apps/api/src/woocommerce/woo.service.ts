@@ -9,9 +9,499 @@ function buildAuthHeader(ck: string, cs: string){
   return `Basic ${token}`;
 }
 
+export interface WooCommerceConfig {
+  url: string;
+  consumerKey: string;
+  consumerSecret: string;
+  apiVersion?: string;
+}
+
+export interface WooCommerceProduct {
+  id: number;
+  name: string;
+  slug: string;
+  permalink: string;
+  date_created: string;
+  date_modified: string;
+  type: string;
+  status: string;
+  featured: boolean;
+  catalog_visibility: string;
+  description: string;
+  short_description: string;
+  sku: string;
+  price: string;
+  regular_price: string;
+  sale_price: string;
+  date_on_sale_from: string | null;
+  date_on_sale_to: string | null;
+  on_sale: boolean;
+  purchasable: boolean;
+  total_sales: number;
+  virtual: boolean;
+  downloadable: boolean;
+  downloads: any[];
+  download_limit: number;
+  download_expiry: number;
+  external_url: string;
+  button_text: string;
+  tax_status: string;
+  tax_class: string;
+  manage_stock: boolean;
+  stock_quantity: number | null;
+  stock_status: string;
+  backorders: string;
+  backorders_allowed: boolean;
+  backordered: boolean;
+  sold_individually: boolean;
+  weight: string;
+  dimensions: {
+    length: string;
+    width: string;
+    height: string;
+  };
+  shipping_required: boolean;
+  shipping_taxable: boolean;
+  shipping_class: string;
+  shipping_class_id: number;
+  reviews_allowed: boolean;
+  average_rating: string;
+  rating_count: number;
+  related_ids: number[];
+  upsell_ids: number[];
+  cross_sell_ids: number[];
+  parent_id: number;
+  purchase_note: string;
+  categories: Array<{
+    id: number;
+    name: string;
+    slug: string;
+  }>;
+  tags: Array<{
+    id: number;
+    name: string;
+    slug: string;
+  }>;
+  images: Array<{
+    id: number;
+    date_created: string;
+    date_modified: string;
+    src: string;
+    name: string;
+    alt: string;
+  }>;
+  attributes: any[];
+  default_attributes: any[];
+  variations: number[];
+  grouped_products: number[];
+  menu_order: number;
+  meta_data: Array<{
+    id: number;
+    key: string;
+    value: string;
+  }>;
+}
+
+export interface WooCommerceOrder {
+  id: number;
+  parent_id: number;
+  number: string;
+  order_key: string;
+  created_via: string;
+  version: string;
+  status: string;
+  currency: string;
+  date_created: string;
+  date_modified: string;
+  discount_total: string;
+  discount_tax: string;
+  shipping_total: string;
+  shipping_tax: string;
+  cart_tax: string;
+  total: string;
+  total_tax: string;
+  customer_id: number;
+  billing: {
+    first_name: string;
+    last_name: string;
+    company: string;
+    address_1: string;
+    address_2: string;
+    city: string;
+    state: string;
+    postcode: string;
+    country: string;
+    email: string;
+    phone: string;
+  };
+  shipping: {
+    first_name: string;
+    last_name: string;
+    company: string;
+    address_1: string;
+    address_2: string;
+    city: string;
+    state: string;
+    postcode: string;
+    country: string;
+  };
+  payment_method: string;
+  payment_method_title: string;
+  transaction_id: string;
+  date_paid: string | null;
+  date_completed: string | null;
+  cart_hash: string;
+  line_items: Array<{
+    id: number;
+    name: string;
+    product_id: number;
+    variation_id: number;
+    quantity: number;
+    tax_class: string;
+    subtotal: string;
+    subtotal_tax: string;
+    total: string;
+    total_tax: string;
+    taxes: any[];
+    meta_data: any[];
+    sku: string;
+    price: number;
+  }>;
+  tax_lines: any[];
+  shipping_lines: any[];
+  fee_lines: any[];
+  coupon_lines: any[];
+  refunds: any[];
+  meta_data: Array<{
+    id: number;
+    key: string;
+    value: string;
+  }>;
+}
+
+export interface WooCommerceCustomer {
+  id: number;
+  date_created: string;
+  date_modified: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  role: string;
+  username: string;
+  billing: {
+    first_name: string;
+    last_name: string;
+    company: string;
+    address_1: string;
+    address_2: string;
+    city: string;
+    state: string;
+    postcode: string;
+    country: string;
+    email: string;
+    phone: string;
+  };
+  shipping: {
+    first_name: string;
+    last_name: string;
+    company: string;
+    address_1: string;
+    address_2: string;
+    city: string;
+    state: string;
+    postcode: string;
+    country: string;
+  };
+  is_paying_customer: boolean;
+  avatar_url: string;
+  meta_data: Array<{
+    id: number;
+    key: string;
+    value: string;
+  }>;
+}
+
 @Injectable()
 export class WooService {
   constructor(private prisma: PrismaService) {}
+
+  // New methods for the updated stores system
+  async testConnection(config: WooCommerceConfig): Promise<{ success: boolean; message: string; error?: string }> {
+    try {
+      const url = `${config.url}/wp-json/wc/v3/system_status`;
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': buildAuthHeader(config.consumerKey, config.consumerSecret),
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        return { success: true, message: 'Connection successful' };
+      } else {
+        return { 
+          success: false, 
+          message: 'Connection failed', 
+          error: `HTTP ${response.status}: ${response.statusText}` 
+        };
+      }
+    } catch (error) {
+      return { 
+        success: false, 
+        message: 'Connection failed', 
+        error: error.message 
+      };
+    }
+  }
+
+  async syncStore(store: any): Promise<{ success: boolean; message: string; syncedItems: any }> {
+    try {
+      const config: WooCommerceConfig = {
+        url: store.url,
+        consumerKey: store.consumerKey,
+        consumerSecret: store.consumerSecret,
+      };
+
+      // Sync products
+      const products = await this.syncProducts(config, store.id);
+      
+      // Sync orders
+      const orders = await this.syncOrders(config, store.id);
+      
+      // Sync customers
+      const customers = await this.syncCustomers(config, store.id);
+
+      return {
+        success: true,
+        message: 'Sync completed successfully',
+        syncedItems: {
+          products: products.length,
+          orders: orders.length,
+          customers: customers.length,
+        },
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Sync failed',
+        syncedItems: { products: 0, orders: 0, customers: 0 },
+      };
+    }
+  }
+
+  private async syncProducts(config: WooCommerceConfig, storeId: string): Promise<WooCommerceProduct[]> {
+    const products: WooCommerceProduct[] = [];
+    let page = 1;
+    const perPage = 100;
+
+    while (true) {
+      const url = `${config.url}/wp-json/wc/v3/products?page=${page}&per_page=${perPage}`;
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': buildAuthHeader(config.consumerKey, config.consumerSecret),
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) break;
+
+      const data = await response.json();
+      if (data.length === 0) break;
+
+      products.push(...data);
+      page++;
+    }
+
+    // Store products in database
+    for (const product of products) {
+      await this.prisma.product.upsert({
+        where: { 
+          wooId_storeId: { 
+            wooId: product.id.toString(), 
+            storeId 
+          } 
+        },
+        update: {
+          name: product.name,
+          sku: product.sku,
+          price: parseFloat(product.price) || 0,
+          regularPrice: parseFloat(product.regular_price) || 0,
+          salePrice: parseFloat(product.sale_price) || null,
+          stockQuantity: product.stock_quantity,
+          stockStatus: product.stock_status,
+          status: product.status,
+          description: product.description,
+          shortDescription: product.short_description,
+          images: product.images.map(img => img.src),
+          categories: product.categories.map(cat => cat.name),
+          tags: product.tags.map(tag => tag.name),
+          metaData: product.meta_data,
+          lastSyncedAt: new Date(),
+        },
+        create: {
+          wooId: product.id.toString(),
+          storeId,
+          name: product.name,
+          sku: product.sku,
+          price: parseFloat(product.price) || 0,
+          regularPrice: parseFloat(product.regular_price) || 0,
+          salePrice: parseFloat(product.sale_price) || null,
+          stockQuantity: product.stock_quantity,
+          stockStatus: product.stock_status,
+          status: product.status,
+          description: product.description,
+          shortDescription: product.short_description,
+          images: product.images.map(img => img.src),
+          categories: product.categories.map(cat => cat.name),
+          tags: product.tags.map(tag => tag.name),
+          metaData: product.meta_data,
+          lastSyncedAt: new Date(),
+        },
+      });
+    }
+
+    return products;
+  }
+
+  private async syncOrders(config: WooCommerceConfig, storeId: string): Promise<WooCommerceOrder[]> {
+    const orders: WooCommerceOrder[] = [];
+    let page = 1;
+    const perPage = 100;
+
+    while (true) {
+      const url = `${config.url}/wp-json/wc/v3/orders?page=${page}&per_page=${perPage}`;
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': buildAuthHeader(config.consumerKey, config.consumerSecret),
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) break;
+
+      const data = await response.json();
+      if (data.length === 0) break;
+
+      orders.push(...data);
+      page++;
+    }
+
+    // Store orders in database
+    for (const order of orders) {
+      await this.prisma.order.upsert({
+        where: { 
+          wooId_storeId: { 
+            wooId: order.id.toString(), 
+            storeId 
+          } 
+        },
+        update: {
+          orderNumber: order.number,
+          status: order.status,
+          currency: order.currency,
+          total: parseFloat(order.total) || 0,
+          customerId: order.customer_id?.toString(),
+          billingInfo: order.billing,
+          shippingInfo: order.shipping,
+          lineItems: order.line_items,
+          paymentMethod: order.payment_method,
+          paymentMethodTitle: order.payment_method_title,
+          transactionId: order.transaction_id,
+          datePaid: order.date_paid ? new Date(order.date_paid) : null,
+          dateCompleted: order.date_completed ? new Date(order.date_completed) : null,
+          metaData: order.meta_data,
+          lastSyncedAt: new Date(),
+        },
+        create: {
+          wooId: order.id.toString(),
+          storeId,
+          orderNumber: order.number,
+          status: order.status,
+          currency: order.currency,
+          total: parseFloat(order.total) || 0,
+          customerId: order.customer_id?.toString(),
+          billingInfo: order.billing,
+          shippingInfo: order.shipping,
+          lineItems: order.line_items,
+          paymentMethod: order.payment_method,
+          paymentMethodTitle: order.payment_method_title,
+          transactionId: order.transaction_id,
+          datePaid: order.date_paid ? new Date(order.date_paid) : null,
+          dateCompleted: order.date_completed ? new Date(order.date_completed) : null,
+          metaData: order.meta_data,
+          lastSyncedAt: new Date(),
+        },
+      });
+    }
+
+    return orders;
+  }
+
+  private async syncCustomers(config: WooCommerceConfig, storeId: string): Promise<WooCommerceCustomer[]> {
+    const customers: WooCommerceCustomer[] = [];
+    let page = 1;
+    const perPage = 100;
+
+    while (true) {
+      const url = `${config.url}/wp-json/wc/v3/customers?page=${page}&per_page=${perPage}`;
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': buildAuthHeader(config.consumerKey, config.consumerSecret),
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) break;
+
+      const data = await response.json();
+      if (data.length === 0) break;
+
+      customers.push(...data);
+      page++;
+    }
+
+    // Store customers in database
+    for (const customer of customers) {
+      await this.prisma.customer.upsert({
+        where: { 
+          wooId_storeId: { 
+            wooId: customer.id.toString(), 
+            storeId 
+          } 
+        },
+        update: {
+          email: customer.email,
+          firstName: customer.first_name,
+          lastName: customer.last_name,
+          username: customer.username,
+          role: customer.role,
+          billingInfo: customer.billing,
+          shippingInfo: customer.shipping,
+          isPayingCustomer: customer.is_paying_customer,
+          avatarUrl: customer.avatar_url,
+          metaData: customer.meta_data,
+          lastSyncedAt: new Date(),
+        },
+        create: {
+          wooId: customer.id.toString(),
+          storeId,
+          email: customer.email,
+          firstName: customer.first_name,
+          lastName: customer.last_name,
+          username: customer.username,
+          role: customer.role,
+          billingInfo: customer.billing,
+          shippingInfo: customer.shipping,
+          isPayingCustomer: customer.is_paying_customer,
+          avatarUrl: customer.avatar_url,
+          metaData: customer.meta_data,
+          lastSyncedAt: new Date(),
+        },
+      });
+    }
+
+    return customers;
+  }
 
   async listStores(tenantId: string){
     return this.prisma.withTenant(tenantId, async (tx) => 

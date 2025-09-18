@@ -1,44 +1,37 @@
-interface ApiResponse<T = unknown> {
-  success: boolean;
-  data?: T;
-  message?: string;
-  error?: string;
-  statusCode: number;
-  timestamp: string;
-  path: string;
-}
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
-interface ApiError {
-  success: false;
-  error: string;
-  message: string;
-  statusCode: number;
-  timestamp: string;
-  path: string;
-  details?: Record<string, unknown>;
+class ApiError extends Error {
+  constructor(
+    message: string,
+    public status: number,
+    public statusText: string
+  ) {
+    super(message);
+    this.name = 'ApiError';
+  }
 }
 
 class ApiClient {
   private baseUrl: string;
-  private defaultHeaders: Record<string, string>;
 
-  constructor() {
-    this.baseUrl = process.env['NEXT_PUBLIC_API_BASE'] || 'http://localhost:3000/api';
-    this.defaultHeaders = {
-      'Content-Type': 'application/json',
-    };
+  constructor(baseUrl: string = API_BASE_URL) {
+    this.baseUrl = baseUrl;
   }
 
   private async request<T>(
     endpoint: string,
     options: RequestInit = {}
-  ): Promise<ApiResponse<T>> {
+  ): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
     
+    const defaultHeaders: HeadersInit = {
+      'Content-Type': 'application/json',
+    };
+
     const config: RequestInit = {
       ...options,
       headers: {
-        ...this.defaultHeaders,
+        ...defaultHeaders,
         ...options.headers,
       },
       credentials: 'include', // Include cookies for authentication
@@ -46,146 +39,355 @@ class ApiClient {
 
     try {
       const response = await fetch(url, config);
-      
-      // Handle different response types
+
       if (!response.ok) {
-        let errorData: ApiError;
+        const errorText = await response.text();
+        let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        
         try {
-          errorData = await response.json();
+          const errorData = JSON.parse(errorText);
+          errorMessage = errorData.message || errorMessage;
         } catch {
-          errorData = {
-            success: false,
-            error: 'Network Error',
-            message: `HTTP ${response.status}: ${response.statusText}`,
-            statusCode: response.status,
-            timestamp: new Date().toISOString(),
-            path: endpoint,
-          };
+          // Use default error message if JSON parsing fails
         }
-        throw new Error(errorData.message || errorData.error || 'Request failed');
+
+        throw new ApiError(errorMessage, response.status, response.statusText);
       }
 
-      const data: ApiResponse<T> = await response.json();
-      
-      if (!data.success) {
-        throw new Error(data.message || data.error || 'Request failed');
+      // Handle empty responses
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        return await response.json();
+      } else {
+        return {} as T;
       }
-
-      return data;
     } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error('API request failed:', error);
-      throw error;
+      if (error instanceof ApiError) {
+        throw error;
+      }
+      throw new ApiError(
+        error instanceof Error ? error.message : 'Network error',
+        0,
+        'Network Error'
+      );
     }
   }
 
-  // GET request
-  async get<T>(endpoint: string, headers?: Record<string, string>): Promise<ApiResponse<T>> {
-    return this.request<T>(endpoint, {
-      method: 'GET',
-      headers: headers || {},
-    });
-  }
-
-  // POST request
-  async post<T>(
-    endpoint: string,
-    data?: Record<string, unknown>,
-    headers?: Record<string, string>
-  ): Promise<ApiResponse<T>> {
-    return this.request<T>(endpoint, {
+  // Auth endpoints
+  async login(email: string, password: string) {
+    return this.request('/auth/login', {
       method: 'POST',
-      body: data ? JSON.stringify(data) : null,
-      headers: headers || {},
+      body: JSON.stringify({ email, password }),
     });
   }
 
-  // PUT request
-  async put<T>(
-    endpoint: string,
-    data?: Record<string, unknown>,
-    headers?: Record<string, string>
-  ): Promise<ApiResponse<T>> {
-    return this.request<T>(endpoint, {
-      method: 'PUT',
-      body: data ? JSON.stringify(data) : null,
-      headers: headers || {},
+  async logout() {
+    return this.request('/auth/logout', {
+      method: 'POST',
     });
   }
 
-  // DELETE request
-  async delete<T>(endpoint: string, headers?: Record<string, string>): Promise<ApiResponse<T>> {
-    return this.request<T>(endpoint, {
-      method: 'DELETE',
-      headers: headers || {},
-    });
+  async getMe() {
+    return this.request('/auth/me');
   }
 
-  // PATCH request
-  async patch<T>(
-    endpoint: string,
-    data?: Record<string, unknown>,
-    headers?: Record<string, string>
-  ): Promise<ApiResponse<T>> {
-    return this.request<T>(endpoint, {
-      method: 'PATCH',
-      body: data ? JSON.stringify(data) : null,
-      headers: headers || {},
-    });
-  }
-
-  // Upload file
-  async upload<T>(
-    endpoint: string,
-    file: File,
-    additionalData?: Record<string, unknown>,
-    headers?: Record<string, string>
-  ): Promise<ApiResponse<T>> {
-    const formData = new FormData();
-    formData.append('file', file);
+  // Stores endpoints
+  async getStores(params?: { page?: number; limit?: number; search?: string }) {
+    const searchParams = new URLSearchParams();
+    if (params?.page) searchParams.set('page', params.page.toString());
+    if (params?.limit) searchParams.set('limit', params.limit.toString());
+    if (params?.search) searchParams.set('search', params.search);
     
-    if (additionalData) {
-      Object.entries(additionalData).forEach(([key, value]) => {
-        formData.append(key, value as string);
-      });
-    }
+    const queryString = searchParams.toString();
+    return this.request(`/stores${queryString ? `?${queryString}` : ''}`);
+  }
 
-    return this.request<T>(endpoint, {
+  async getStore(id: string) {
+    return this.request(`/stores/${id}`);
+  }
+
+  async createStore(data: {
+    name: string;
+    url: string;
+    consumerKey: string;
+    consumerSecret: string;
+    customerId: string;
+  }) {
+    return this.request('/stores', {
       method: 'POST',
-      body: formData,
-      headers: {
-        ...headers,
-        // Don't set Content-Type for FormData, let browser set it
-      },
+      body: JSON.stringify(data),
     });
   }
 
-  // Set authentication token
-  setAuthToken(token: string) {
-    this.defaultHeaders['Authorization'] = `Bearer ${token}`;
+  async updateStore(id: string, data: {
+    name?: string;
+    url?: string;
+    consumerKey?: string;
+    consumerSecret?: string;
+  }) {
+    return this.request(`/stores/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
   }
 
-  // Remove authentication token
-  removeAuthToken() {
-    delete this.defaultHeaders['Authorization'];
+  async deleteStore(id: string) {
+    return this.request(`/stores/${id}`, {
+      method: 'DELETE',
+    });
   }
 
-  // Set custom header
-  setHeader(key: string, value: string) {
-    this.defaultHeaders[key] = value;
+  async syncStore(id: string) {
+    return this.request(`/stores/${id}/sync`, {
+      method: 'POST',
+    });
   }
 
-  // Remove custom header
-  removeHeader(key: string) {
-    delete this.defaultHeaders[key];
+  async testStoreConnection(id: string) {
+    return this.request(`/stores/${id}/test-connection`, {
+      method: 'POST',
+    });
+  }
+
+  async getStoreStatus(id: string) {
+    return this.request(`/stores/${id}/status`);
+  }
+
+  // Orders endpoints
+  async getOrders(params?: { 
+    page?: number; 
+    limit?: number; 
+    search?: string; 
+    status?: string;
+    storeId?: string;
+  }) {
+    const searchParams = new URLSearchParams();
+    if (params?.page) searchParams.set('page', params.page.toString());
+    if (params?.limit) searchParams.set('limit', params.limit.toString());
+    if (params?.search) searchParams.set('search', params.search);
+    if (params?.status) searchParams.set('status', params.status);
+    if (params?.storeId) searchParams.set('storeId', params.storeId);
+    
+    const queryString = searchParams.toString();
+    return this.request(`/orders${queryString ? `?${queryString}` : ''}`);
+  }
+
+  async getOrder(id: string) {
+    return this.request(`/orders/${id}`);
+  }
+
+  async updateOrderStatus(id: string, status: string) {
+    return this.request(`/orders/${id}/status`, {
+      method: 'PUT',
+      body: JSON.stringify({ status }),
+    });
+  }
+
+  async updateOrderShipping(id: string, data: {
+    trackingNumber?: string;
+    carrier?: string;
+    status?: string;
+  }) {
+    return this.request(`/orders/${id}/shipping`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  // Products endpoints
+  async getProducts(params?: { 
+    page?: number; 
+    limit?: number; 
+    search?: string; 
+    storeId?: string;
+    status?: string;
+  }) {
+    const searchParams = new URLSearchParams();
+    if (params?.page) searchParams.set('page', params.page.toString());
+    if (params?.limit) searchParams.set('limit', params.limit.toString());
+    if (params?.search) searchParams.set('search', params.search);
+    if (params?.storeId) searchParams.set('storeId', params.storeId);
+    if (params?.status) searchParams.set('status', params.status);
+    
+    const queryString = searchParams.toString();
+    return this.request(`/products${queryString ? `?${queryString}` : ''}`);
+  }
+
+  async getProduct(id: string) {
+    return this.request(`/products/${id}`);
+  }
+
+  async updateProductStock(id: string, stockQuantity: number) {
+    return this.request(`/products/${id}/stock`, {
+      method: 'PUT',
+      body: JSON.stringify({ stockQuantity }),
+    });
+  }
+
+  async updateProductPrice(id: string, price: number, salePrice?: number) {
+    return this.request(`/products/${id}/price`, {
+      method: 'PUT',
+      body: JSON.stringify({ price, salePrice }),
+    });
+  }
+
+  // Customers endpoints
+  async getCustomers(params?: { 
+    page?: number; 
+    limit?: number; 
+    search?: string; 
+    storeId?: string;
+  }) {
+    const searchParams = new URLSearchParams();
+    if (params?.page) searchParams.set('page', params.page.toString());
+    if (params?.limit) searchParams.set('limit', params.limit.toString());
+    if (params?.search) searchParams.set('search', params.search);
+    if (params?.storeId) searchParams.set('storeId', params.storeId);
+    
+    const queryString = searchParams.toString();
+    return this.request(`/customers${queryString ? `?${queryString}` : ''}`);
+  }
+
+  async getCustomer(id: string) {
+    return this.request(`/customers/${id}`);
+  }
+
+  // Inventory endpoints
+  async getInventoryApprovals(params?: { 
+    page?: number; 
+    limit?: number; 
+    status?: string;
+    storeId?: string;
+  }) {
+    const searchParams = new URLSearchParams();
+    if (params?.page) searchParams.set('page', params.page.toString());
+    if (params?.limit) searchParams.set('limit', params.limit.toString());
+    if (params?.status) searchParams.set('status', params.status);
+    if (params?.storeId) searchParams.set('storeId', params.storeId);
+    
+    const queryString = searchParams.toString();
+    return this.request(`/inventory/approvals${queryString ? `?${queryString}` : ''}`);
+  }
+
+  async approveInventoryChange(id: string) {
+    return this.request(`/inventory/approvals/${id}/approve`, {
+      method: 'POST',
+    });
+  }
+
+  async rejectInventoryChange(id: string, reason: string) {
+    return this.request(`/inventory/approvals/${id}/reject`, {
+      method: 'POST',
+      body: JSON.stringify({ reason }),
+    });
+  }
+
+  async requestInventoryChange(data: {
+    productId: string;
+    changeType: string;
+    newValue: any;
+    reason?: string;
+  }) {
+    return this.request('/inventory/approvals', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  // Returns endpoints
+  async getReturns(params?: { 
+    page?: number; 
+    limit?: number; 
+    status?: string;
+    storeId?: string;
+  }) {
+    const searchParams = new URLSearchParams();
+    if (params?.page) searchParams.set('page', params.page.toString());
+    if (params?.limit) searchParams.set('limit', params.limit.toString());
+    if (params?.status) searchParams.set('status', params.status);
+    if (params?.storeId) searchParams.set('storeId', params.storeId);
+    
+    const queryString = searchParams.toString();
+    return this.request(`/returns${queryString ? `?${queryString}` : ''}`);
+  }
+
+  async getReturn(id: string) {
+    return this.request(`/returns/${id}`);
+  }
+
+  async updateReturnStatus(id: string, status: string, notes?: string) {
+    return this.request(`/returns/${id}/status`, {
+      method: 'PUT',
+      body: JSON.stringify({ status, notes }),
+    });
+  }
+
+  // Support endpoints
+  async getSupportTickets(params?: { 
+    page?: number; 
+    limit?: number; 
+    status?: string;
+    priority?: string;
+    storeId?: string;
+  }) {
+    const searchParams = new URLSearchParams();
+    if (params?.page) searchParams.set('page', params.page.toString());
+    if (params?.limit) searchParams.set('limit', params.limit.toString());
+    if (params?.status) searchParams.set('status', params.status);
+    if (params?.priority) searchParams.set('priority', params.priority);
+    if (params?.storeId) searchParams.set('storeId', params.storeId);
+    
+    const queryString = searchParams.toString();
+    return this.request(`/support/tickets${queryString ? `?${queryString}` : ''}`);
+  }
+
+  async getSupportTicket(id: string) {
+    return this.request(`/support/tickets/${id}`);
+  }
+
+  async createSupportTicket(data: {
+    subject: string;
+    description: string;
+    priority?: string;
+    storeId?: string;
+  }) {
+    return this.request('/support/tickets', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateSupportTicket(id: string, data: {
+    status?: string;
+    priority?: string;
+    assignedTo?: string;
+  }) {
+    return this.request(`/support/tickets/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getSupportTicketMessages(ticketId: string) {
+    return this.request(`/support/tickets/${ticketId}/messages`);
+  }
+
+  async sendSupportMessage(ticketId: string, message: string, isInternal: boolean = false) {
+    return this.request(`/support/tickets/${ticketId}/messages`, {
+      method: 'POST',
+      body: JSON.stringify({ message, isInternal }),
+    });
+  }
+
+  // Dashboard endpoints
+  async getDashboardStats(storeId?: string) {
+    const searchParams = new URLSearchParams();
+    if (storeId) searchParams.set('storeId', storeId);
+    
+    const queryString = searchParams.toString();
+    return this.request(`/dashboard/stats${queryString ? `?${queryString}` : ''}`);
   }
 }
 
-// Create singleton instance
 export const apiClient = new ApiClient();
-
-// Export types
-export type { ApiResponse, ApiError };
-
-// Export individual methods for convenience
-export const { get, post, put, delete: del, patch, upload, setAuthToken, removeAuthToken } = apiClient;
+export { ApiError };

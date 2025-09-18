@@ -1,137 +1,101 @@
-import { useState, useCallback } from 'react';
-import { ApiResponse, ApiError } from '@/types/api';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { apiClient, ApiError } from '@/lib/api-client';
 
-interface UseApiState<T> {
-  data: T | null;
-  loading: boolean;
-  error: string | null;
-}
+// Query keys
+export const queryKeys = {
+  stores: ['stores'] as const,
+  store: (id: string) => ['stores', id] as const,
+  orders: (params?: any) => ['orders', params] as const,
+  order: (id: string) => ['orders', id] as const,
+  products: (params?: any) => ['products', params] as const,
+  product: (id: string) => ['products', id] as const,
+  customers: (params?: any) => ['customers', params] as const,
+  customer: (id: string) => ['customers', id] as const,
+  inventoryApprovals: (params?: any) => ['inventory-approvals', params] as const,
+  returns: (params?: any) => ['returns', params] as const,
+  return: (id: string) => ['returns', id] as const,
+  supportTickets: (params?: any) => ['support-tickets', params] as const,
+  supportTicket: (id: string) => ['support-tickets', id] as const,
+  supportTicketMessages: (ticketId: string) => ['support-tickets', ticketId, 'messages'] as const,
+  dashboardStats: (storeId?: string) => ['dashboard-stats', storeId] as const,
+  me: ['me'] as const,
+};
 
-interface UseApiReturn<T> extends UseApiState<T> {
-  execute: (endpoint: string, options?: RequestInit) => Promise<T | null>;
-  reset: () => void;
-  setData: (data: T | null) => void;
-}
-
-export function useApi<T = unknown>(
-  apiFunction: (endpoint: string, options?: RequestInit) => Promise<Response>
-): UseApiReturn<T> {
-  const [state, setState] = useState<UseApiState<T>>({
-    data: null,
-    loading: false,
-    error: null,
+// Stores hooks
+export const useStores = (params?: { page?: number; limit?: number; search?: string }) => {
+  return useQuery({
+    queryKey: queryKeys.stores,
+    queryFn: () => apiClient.getStores(params),
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
+};
 
-  const execute = useCallback(async (endpoint: string, options?: RequestInit): Promise<T | null> => {
-    setState(prev => ({ ...prev, loading: true, error: null }));
+export const useStore = (id: string) => {
+  return useQuery({
+    queryKey: queryKeys.store(id),
+    queryFn: () => apiClient.getStore(id),
+    enabled: !!id,
+  });
+};
 
-    try {
-      const response = await apiFunction(endpoint, options);
-      
-      if (!response.ok) {
-        const errorData: ApiError = await response.json();
-        const errorMessage = errorData.message || 'API request failed';
-        const errorCode = errorData.errorCode || 'UNKNOWN_ERROR';
-        throw new Error(`${errorCode}: ${errorMessage}`);
-      }
+export const useCreateStore = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: apiClient.createStore,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.stores });
+    },
+  });
+};
 
-      const result: ApiResponse<T> = await response.json();
-      setState({
-        data: result.data,
-        loading: false,
-        error: null,
-      });
-      
-      return result.data;
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      setState({
-        data: null,
-        loading: false,
-        error: errorMessage,
-      });
-      
-      // Log error to monitoring service
-      if (typeof window !== 'undefined') {
-        fetch('/api/errors', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            type: 'api_error',
-            message: errorMessage,
-            stack: error instanceof Error ? error.stack : undefined,
-            timestamp: new Date().toISOString(),
-            url: window.location.href,
-          }),
-        }).catch(() => {}); // Silent fail for error logging
-      }
-      
-      return null;
-    }
-  }, [apiFunction]);
+export const useUpdateStore = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) => 
+      apiClient.updateStore(id, data),
+    onSuccess: (_, { id }) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.stores });
+      queryClient.invalidateQueries({ queryKey: queryKeys.store(id) });
+    },
+  });
+};
 
-  const reset = useCallback(() => {
-    setState({
-      data: null,
-      loading: false,
-      error: null,
-    });
-  }, []);
+export const useDeleteStore = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: apiClient.deleteStore,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.stores });
+    },
+  });
+};
 
-  const setData = useCallback((data: T | null) => {
-    setState(prev => ({ ...prev, data }));
-  }, []);
+export const useSyncStore = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: apiClient.syncStore,
+    onSuccess: (_, storeId) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.stores });
+      queryClient.invalidateQueries({ queryKey: queryKeys.store(storeId) });
+    },
+  });
+};
 
-  return {
-    ...state,
-    execute,
-    reset,
-    setData,
-  };
-}
+export const useTestStoreConnection = () => {
+  return useMutation({
+    mutationFn: apiClient.testStoreConnection,
+  });
+};
 
-// Specialized hooks for common operations
-export function useOrders() {
-  const apiCall = useCallback(async (endpoint: string, options?: RequestInit) => {
-    return fetch(`/api${endpoint}`, {
-      credentials: 'include', // Include httpOnly cookies
-      headers: {
-        'Content-Type': 'application/json',
-        ...options?.headers,
-      },
-      ...options,
-    });
-  }, []);
-
-  return useApi(apiCall);
-}
-
-export function useProducts() {
-  const apiCall = useCallback(async (endpoint: string, options?: RequestInit) => {
-    return fetch(`/api${endpoint}`, {
-      credentials: 'include', // Include httpOnly cookies
-      headers: {
-        'Content-Type': 'application/json',
-        ...options?.headers,
-      },
-      ...options,
-    });
-  }, []);
-
-  return useApi(apiCall);
-}
-
-export function useCustomers() {
-  const apiCall = useCallback(async (endpoint: string, options?: RequestInit) => {
-    return fetch(`/api${endpoint}`, {
-      credentials: 'include', // Include httpOnly cookies
-      headers: {
-        'Content-Type': 'application/json',
-        ...options?.headers,
-      },
-      ...options,
-    });
-  }, []);
-
-  return useApi(apiCall);
-}
+// Dashboard hooks
+export const useDashboardStats = (storeId?: string) => {
+  return useQuery({
+    queryKey: queryKeys.dashboardStats(storeId),
+    queryFn: () => apiClient.getDashboardStats(storeId),
+    staleTime: 2 * 60 * 1000, // 2 minutes
+  });
+};

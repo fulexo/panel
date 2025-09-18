@@ -38,11 +38,12 @@ model Tenant {
 
 model User {
   id            String   @id @default(uuid())
-  tenantId      String
+  tenantId      String?
   email         String   @unique
-  name          String?
+  firstName     String?
+  lastName      String?
   passwordHash  String
-  role          String
+  role          String   @default("CUSTOMER") // ADMIN, CUSTOMER
   twofaSecret   String?
   twofaEnabled  Boolean  @default(false)
   temp2faToken  String?
@@ -54,11 +55,13 @@ model User {
   notificationPreferences Json?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
-  tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant        Tenant?  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   sessions      Session[]
   auditLogs     AuditLog[]
   requests      Request[]
   requestComments RequestComment[]
+  stores        Store[]  // Customer can have stores
+  supportTickets SupportTicket[] // Customer support tickets
 
   @@index([tenantId])
   @@index([tenantId, role])
@@ -149,94 +152,74 @@ model RemoteEntityMap {
 }
 
 model Customer {
-  id             String   @id @default(uuid())
-  tenantId       String
-  storeId        String?
-  email          String?
-  emailNormalized String?
-  phoneE164      String?
-  name           String?
-  company        String?
-  vatId          String?
-  addressLine1   String?
-  addressLine2   String?
-  city           String?
-  state          String?
-  postalCode     String?
-  country        String?
-  notes          String?
-  tags           String[]
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-  tenant         Tenant   @relation(fields: [tenantId], references: [id])
-  store          WooStore? @relation(fields: [storeId], references: [id])
-  orders         Order[]
+  id              String   @id @default(uuid())
+  storeId         String
+  wooId           String?  // WooCommerce customer ID
+  email           String
+  firstName       String?
+  lastName        String?
+  username        String?
+  role            String   @default("customer")
+  billingInfo     Json?    // Billing information
+  shippingInfo    Json?    // Shipping information
+  isPayingCustomer Boolean @default(false)
+  avatarUrl       String?
+  metaData        Json?    // WooCommerce meta data
+  lastSyncedAt    DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  store           Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  orders          Order[]
 
-  @@unique([tenantId, emailNormalized])
-  @@index([tenantId, phoneE164])
-  @@index([tenantId, storeId])
-  @@index([tenantId, createdAt])
-  @@index([tenantId, name])
-  @@index([tenantId, company])
-  @@index([tenantId, country])
-  @@index([tenantId, city])
+  @@unique([wooId, storeId])
+  @@index([storeId])
+  @@index([email])
+  @@index([firstName])
+  @@index([lastName])
+  @@index([role])
+  @@index([lastSyncedAt])
   @@index([createdAt])
 }
 
 model Order {
   id             String   @id @default(uuid())
-  tenantId       String
-  customerId     String?
-  storeId        String?
-  
-  orderNo        Int?
-  
-  externalOrderNo String?
-  orderSource    String?
-  status         String?
-  mappedStatus   String?
-  total          Decimal? @db.Decimal(14,2)
-  currency       String?
-  customerEmail  String?
-  customerPhone  String?
-  shippingAddress Json?
-  billingAddress Json?
+  storeId        String
+  wooId          String?  // WooCommerce order ID
+  orderNumber    String?  // Order number from WooCommerce
+  status         String   @default("pending")
+  currency       String   @default("USD")
+  total          Decimal  @db.Decimal(14,2)
+  customerId     String?  // WooCommerce customer ID
+  billingInfo    Json?    // Billing information
+  shippingInfo   Json?    // Shipping information
+  lineItems      Json?    // Order line items
   paymentMethod  String?
-  notes          String?
-  tags           String[]
-  confirmedAt    DateTime?
+  paymentMethodTitle String?
+  transactionId  String?
+  datePaid       DateTime?
+  dateCompleted  DateTime?
+  metaData       Json?    // WooCommerce meta data
+  lastSyncedAt   DateTime?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
-  tenant         Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  customer       Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
-  store          WooStore? @relation(fields: [storeId], references: [id], onDelete: SetNull)
   
+  store          Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
   items          OrderItem[]
   shipments      Shipment[]
   returns        Return[]
   invoices       Invoice[]
   serviceCharges OrderServiceCharge[]
 
-  
-  @@unique([tenantId, orderNo])
-  @@index([tenantId, status, confirmedAt])
-  @@index([tenantId, customerEmail])
-  @@index([tenantId, externalOrderNo])
-  @@index([tenantId, storeId])
-  @@index([tenantId, createdAt])
-  @@index([tenantId, customerEmail, createdAt])
-  @@index([tenantId, status, createdAt])
-  @@index([tenantId, total])
-  @@index([tenantId, paymentMethod])
-  @@index([tenantId, orderSource])
-  @@index([tenantId, status, total])
-  @@index([tenantId, createdAt, status])
-  @@index([tenantId, customerId])
-  @@index([tenantId, status, total, createdAt])
+  @@unique([wooId, storeId])
+  @@index([storeId])
+  @@index([status])
+  @@index([orderNumber])
+  @@index([customerId])
   @@index([createdAt])
-  @@index([confirmedAt])
-  @@index([externalOrderNo])
-  @@index([orderSource])
+  @@index([datePaid])
+  @@index([dateCompleted])
+  @@index([lastSyncedAt])
 }
 
 model OrderItem {
@@ -288,38 +271,41 @@ model Shipment {
 }
 
 model Product {
-  id          String   @id @default(uuid())
-  tenantId    String
-  storeId     String?
-  sku         String
-  name        String?
-  description String?
-  price       Decimal? @db.Decimal(14,2)
-  stock       Int?
-  weight      Decimal? @db.Decimal(10,3)
-  dimensions  Json?
-  images      String[]
-  tags        String[]
-  active      Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  store       WooStore? @relation(fields: [storeId], references: [id], onDelete: SetNull)
-  inboundItems InboundItem[]
-  stockMovements StockMovement[]
+  id              String   @id @default(uuid())
+  storeId         String
+  wooId           String?  // WooCommerce product ID
+  name            String
+  sku             String?
+  price           Decimal  @db.Decimal(14,2)
+  regularPrice    Decimal  @db.Decimal(14,2)
+  salePrice       Decimal? @db.Decimal(14,2)
+  stockQuantity   Int?
+  stockStatus     String   @default("instock") // instock, outofstock, onbackorder
+  status          String   @default("publish") // publish, draft, private
+  description     String?
+  shortDescription String?
+  images          String[] // Array of image URLs
+  categories      String[] // Array of category names
+  tags            String[] // Array of tag names
+  metaData        Json?    // WooCommerce meta data
+  lastSyncedAt    DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  store           Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  inboundItems    InboundItem[]
+  stockMovements  StockMovement[]
+  inventoryApprovals InventoryApproval[]
 
-  @@unique([tenantId, sku])
-  @@index([tenantId, active])
-  @@index([tenantId, storeId])
-  @@index([tenantId, createdAt])
-  @@index([tenantId, name])
-  @@index([tenantId, price])
-  @@index([tenantId, stock])
-  @@index([tenantId, tags])
-  @@index([tenantId, active, stock])
-  @@index([tenantId, active, price])
+  @@unique([wooId, storeId])
+  @@index([storeId])
   @@index([sku])
-  @@index([active])
+  @@index([status])
+  @@index([stockStatus])
+  @@index([name])
+  @@index([price])
+  @@index([stockQuantity])
+  @@index([lastSyncedAt])
   @@index([createdAt])
   @@index([updatedAt])
 }
@@ -525,7 +511,35 @@ model OAuthCredential {
   @@index([keyVersion])
 }
 
-// WooCommerce store connection per tenant
+// Store model for multi-tenant stores
+model Store {
+  id             String   @id @default(uuid())
+  name           String
+  url            String   // https://shop.example.com
+  consumerKey    String
+  consumerSecret String
+  status         String   @default("disconnected") // connected, disconnected, error
+  lastSyncAt     DateTime?
+  syncStatus     String?  // success, error, pending
+  lastError      String?
+  customerId     String   // Links to User (customer)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  
+  customer       User     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  orders         Order[]
+  products       Product[]
+  customers      Customer[]
+  inventoryApprovals InventoryApproval[]
+  supportTickets SupportTicket[]
+
+  @@index([customerId])
+  @@index([status])
+  @@index([lastSyncAt])
+  @@index([createdAt])
+}
+
+// WooCommerce store connection per tenant (legacy)
 model WooStore {
   id             String   @id @default(uuid())
   tenantId       String
@@ -540,9 +554,6 @@ model WooStore {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
   tenant         Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  orders         Order[]
-  products       Product[]
-  customers      Customer[]
 
   @@index([tenantId, active])
   @@index([tenantId, active, createdAt])
@@ -812,6 +823,76 @@ model Settings {
   @@index([isSecret])
   @@index([updatedBy])
   @@index([updatedAt])
+}
+
+// Inventory approval system
+model InventoryApproval {
+  id          String   @id @default(uuid())
+  storeId     String
+  productId   String?
+  changeType  String   // stock_update, price_update, status_update
+  oldValue    Json?
+  newValue    Json?
+  requestedBy String   // User ID who requested the change
+  status      String   @default("pending") // pending, approved, rejected
+  reviewedBy  String?  // User ID who reviewed the change
+  reviewedAt  DateTime?
+  reason      String?  // Reason for approval/rejection
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  store       Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  product     Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+  @@index([storeId])
+  @@index([productId])
+  @@index([changeType])
+  @@index([status])
+  @@index([requestedBy])
+  @@index([reviewedBy])
+  @@index([createdAt])
+  @@index([reviewedAt])
+}
+
+// Support tickets
+model SupportTicket {
+  id          String   @id @default(uuid())
+  storeId     String?
+  customerId  String?  // User ID who created the ticket
+  subject     String
+  description String
+  status      String   @default("open") // open, in_progress, resolved, closed
+  priority    String   @default("normal") // low, normal, high, urgent
+  assignedTo  String?  // User ID who is assigned to the ticket
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  store       Store?   @relation(fields: [storeId], references: [id], onDelete: SetNull)
+  customer    User?    @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  messages    SupportMessage[]
+
+  @@index([storeId])
+  @@index([customerId])
+  @@index([status])
+  @@index([priority])
+  @@index([assignedTo])
+  @@index([createdAt])
+}
+
+model SupportMessage {
+  id        String   @id @default(uuid())
+  ticketId  String
+  authorId  String   // User ID who wrote the message
+  message   String
+  isInternal Boolean @default(false) // Internal note vs customer message
+  createdAt DateTime @default(now())
+  
+  ticket    SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  @@index([ticketId])
+  @@index([authorId])
+  @@index([isInternal])
+  @@index([createdAt])
 }
 
 // Order number sequence per tenant

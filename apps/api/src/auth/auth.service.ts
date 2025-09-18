@@ -24,7 +24,16 @@ export class AuthService {
   async login(dto: LoginDto, metadata: { ipAddress?: string; userAgent?: string }) {
     const user = await this.prisma.user.findUnique({
       where: { email: dto.email },
-      include: { tenant: true },
+      include: { 
+        tenant: true,
+        stores: {
+          select: {
+            id: true,
+            name: true,
+            status: true,
+          },
+        },
+      },
     });
 
     if (!user) {
@@ -108,9 +117,12 @@ export class AuthService {
       user: {
         id: user.id,
         email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
         role: user.role,
         tenantId: user.tenantId,
-        tenantName: user.tenant.name,
+        tenantName: user.tenant?.name,
+        stores: user.stores || [],
       },
     };
   }
@@ -167,10 +179,19 @@ export class AuthService {
   async refreshToken(refreshToken: string) {
     try {
       const payload = await this.jwtService.verifyRefreshToken(refreshToken);
-      const user = await this.prisma.user.findUnique({
-        where: { id: payload.sub },
-        include: { tenant: true },
-      });
+    const user = await this.prisma.user.findUnique({
+      where: { id: payload.sub },
+      include: { 
+        tenant: true,
+        stores: {
+          select: {
+            id: true,
+            name: true,
+            status: true,
+          },
+        },
+      },
+    });
 
       if (!user) {
         throw new UnauthorizedException('Invalid refresh token');
@@ -223,7 +244,16 @@ export class AuthService {
 
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      include: { tenant: true },
+      include: { 
+        tenant: true,
+        stores: {
+          select: {
+            id: true,
+            name: true,
+            status: true,
+          },
+        },
+      },
     });
 
     if (!user || !user.twofaEnabled || !user.twofaSecret) {
@@ -267,9 +297,12 @@ export class AuthService {
       user: {
         id: user.id,
         email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
         role: user.role,
         tenantId: user.tenantId,
-        tenantName: user.tenant.name,
+        tenantName: user.tenant?.name,
+        stores: user.stores || [],
       },
     };
   }
@@ -280,11 +313,20 @@ export class AuthService {
       select: {
         id: true,
         email: true,
+        firstName: true,
+        lastName: true,
         role: true,
         tenantId: true,
         twofaEnabled: true,
         createdAt: true,
         lastLoginAt: true,
+        stores: {
+          select: {
+            id: true,
+            name: true,
+            status: true,
+          },
+        },
         tenant: {
           select: {
             id: true,

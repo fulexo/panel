@@ -1,0 +1,280 @@
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { PrismaService } from '../prisma.service';
+import { CreateStoreDto, UpdateStoreDto } from './dto/stores.dto';
+import { WooCommerceService } from '../woocommerce/woocommerce.service';
+
+@Injectable()
+export class StoresService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly wooCommerceService: WooCommerceService,
+  ) {}
+
+  async findAll({ page, limit, search }: { page: number; limit: number; search?: string }) {
+    const skip = (page - 1) * limit;
+    const where = search ? {
+      OR: [
+        { name: { contains: search, mode: 'insensitive' } },
+        { url: { contains: search, mode: 'insensitive' } },
+        { customer: { email: { contains: search, mode: 'insensitive' } } },
+      ],
+    } : {};
+
+    const [stores, total] = await Promise.all([
+      this.prisma.store.findMany({
+        where,
+        skip,
+        take: limit,
+        include: {
+          customer: {
+            select: {
+              id: true,
+              email: true,
+              firstName: true,
+              lastName: true,
+            },
+          },
+          _count: {
+            select: {
+              orders: true,
+              products: true,
+              customers: true,
+            },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.store.count({ where }),
+    ]);
+
+    return {
+      data: stores,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  async findOne(id: string) {
+    const store = await this.prisma.store.findUnique({
+      where: { id },
+      include: {
+        customer: {
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+          },
+        },
+        _count: {
+          select: {
+            orders: true,
+            products: true,
+            customers: true,
+          },
+        },
+      },
+    });
+
+    if (!store) {
+      throw new NotFoundException('Store not found');
+    }
+
+    return store;
+  }
+
+  async create(createStoreDto: CreateStoreDto) {
+    // Check if customer exists
+    const customer = await this.prisma.user.findUnique({
+      where: { id: createStoreDto.customerId },
+    });
+
+    if (!customer) {
+      throw new BadRequestException('Customer not found');
+    }
+
+    // Check if customer already has a store
+    const existingStore = await this.prisma.store.findFirst({
+      where: { customerId: createStoreDto.customerId },
+    });
+
+    if (existingStore) {
+      throw new BadRequestException('Customer already has a store');
+    }
+
+    // Test WooCommerce connection
+    const connectionTest = await this.wooCommerceService.testConnection({
+      url: createStoreDto.url,
+      consumerKey: createStoreDto.consumerKey,
+      consumerSecret: createStoreDto.consumerSecret,
+    });
+
+    if (!connectionTest.success) {
+      throw new BadRequestException('WooCommerce connection failed');
+    }
+
+    const store = await this.prisma.store.create({
+      data: {
+        name: createStoreDto.name,
+        url: createStoreDto.url,
+        consumerKey: createStoreDto.consumerKey,
+        consumerSecret: createStoreDto.consumerSecret,
+        customerId: createStoreDto.customerId,
+        status: 'connected',
+        lastSyncAt: new Date(),
+      },
+      include: {
+        customer: {
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+          },
+        },
+      },
+    });
+
+    return store;
+  }
+
+  async update(id: string, updateStoreDto: UpdateStoreDto) {
+    const store = await this.findOne(id);
+
+    // If updating connection details, test the connection
+    if (updateStoreDto.url || updateStoreDto.consumerKey || updateStoreDto.consumerSecret) {
+      const connectionTest = await this.wooCommerceService.testConnection({
+        url: updateStoreDto.url || store.url,
+        consumerKey: updateStoreDto.consumerKey || store.consumerKey,
+        consumerSecret: updateStoreDto.consumerSecret || store.consumerSecret,
+      });
+
+      if (!connectionTest.success) {
+        throw new BadRequestException('WooCommerce connection failed');
+      }
+    }
+
+    const updatedStore = await this.prisma.store.update({
+      where: { id },
+      data: {
+        ...updateStoreDto,
+        status: 'connected',
+        lastSyncAt: new Date(),
+      },
+      include: {
+        customer: {
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+          },
+        },
+      },
+    });
+
+    return updatedStore;
+  }
+
+  async remove(id: string) {
+    await this.findOne(id);
+
+    await this.prisma.store.delete({
+      where: { id },
+    });
+
+    return { message: 'Store deleted successfully' };
+  }
+
+  async syncStore(id: string) {
+    const store = await this.findOne(id);
+
+    if (store.status !== 'connected') {
+      throw new BadRequestException('Store is not connected');
+    }
+
+    try {
+      const syncResult = await this.wooCommerceService.syncStore(store);
+      
+      await this.prisma.store.update({
+        where: { id },
+        data: {
+          lastSyncAt: new Date(),
+          syncStatus: 'success',
+        },
+      });
+
+      return syncResult;
+    } catch (error) {
+      await this.prisma.store.update({
+        where: { id },
+        data: {
+          syncStatus: 'error',
+          lastError: error.message,
+        },
+      });
+
+      throw new BadRequestException(`Sync failed: ${error.message}`);
+    }
+  }
+
+  async testConnection(id: string) {
+    const store = await this.findOne(id);
+
+    const result = await this.wooCommerceService.testConnection({
+      url: store.url,
+      consumerKey: store.consumerKey,
+      consumerSecret: store.consumerSecret,
+    });
+
+    // Update store status based on test result
+    await this.prisma.store.update({
+      where: { id },
+      data: {
+        status: result.success ? 'connected' : 'disconnected',
+        lastError: result.success ? null : result.error,
+      },
+    });
+
+    return result;
+  }
+
+  async getStoreStatus(id: string) {
+    const store = await this.findOne(id);
+
+    return {
+      id: store.id,
+      name: store.name,
+      status: store.status,
+      lastSyncAt: store.lastSyncAt,
+      syncStatus: store.syncStatus,
+      lastError: store.lastError,
+      connectionTest: await this.testConnection(id),
+    };
+  }
+
+  async findByCustomerId(customerId: string) {
+    const store = await this.prisma.store.findFirst({
+      where: { customerId },
+      include: {
+        _count: {
+          select: {
+            orders: true,
+            products: true,
+            customers: true,
+          },
+        },
+      },
+    });
+
+    if (!store) {
+      throw new NotFoundException('Store not found for customer');
+    }
+
+    return store;
+  }
+}
