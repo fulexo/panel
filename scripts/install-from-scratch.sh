@@ -40,7 +40,7 @@ GIT_REPO="https://github.com/fulexo/panel.git"
 # Domain ayarları (otomatik)
 DOMAIN_API="api.fulexo.com"
 DOMAIN_APP="panel.fulexo.com"
-ADMIN_EMAIL="fulexo@fulexo.com"
+ADMIN_EMAIL="admin@fulexo.com"
 
 echo "📋 Kurulum bilgileri:"
 echo "  API Domain: $DOMAIN_API"
@@ -191,6 +191,8 @@ GF_SECURITY_ADMIN_PASSWORD=$GRAFANA_PASS
 # Additional Configuration
 SHARE_TOKEN_SECRET=$SHARE_SECRET
 NEXT_PUBLIC_APP_URL=https://panel.fulexo.com
+NEXT_PUBLIC_API_BASE=https://api.fulexo.com
+SHARE_BASE_URL=https://panel.fulexo.com
 PORT=3000
 ENV_FILE=$ENV_FILE
 EOF
@@ -306,7 +308,7 @@ echo "   - API: https://api.fulexo.com"
 echo "   - API Docs: https://api.fulexo.com/docs"
 echo ""
 echo "👤 Varsayılan Admin:"
-echo "   - Email: fulexo@fulexo.com"
+echo "   - Email: admin@fulexo.com"
 echo "   - Şifre: demo123"
 echo ""
 echo "📊 Monitoring (SSH tüneli gerekli):"

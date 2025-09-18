@@ -56,7 +56,7 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full px-4 py-3 bg-input border border-border rounded-lg text-foreground placeholder-muted-foreground form-input"
-                placeholder="fulexo@fulexo.com"
+                placeholder="admin@fulexo.com"
                 required
                 autoComplete="email"
               />
@@ -127,7 +127,7 @@ export default function LoginPage() {
           <div className="mt-6 p-4 bg-accent/50 rounded-lg">
             <h3 className="text-sm font-medium text-primary mb-2">Demo Credentials</h3>
             <div className="text-xs text-muted space-y-1">
-              <div><strong>Email:</strong> fulexo@fulexo.com</div>
+              <div><strong>Email:</strong> admin@fulexo.com</div>
               <div><strong>Password:</strong> demo123</div>
             </div>
           </div>

@@ -45,7 +45,7 @@ REDIS_PASSWORD=strong-redis-password-here
 ### SSL/TLS Configuration
 ```bash
 # Let's Encrypt SSL Setup
-sudo certbot --nginx -d api.yourdomain.com -d panel.yourdomain.com
+sudo certbot --nginx -d api.fulexo.com -d panel.fulexo.com
 
 # SSL Certificate Renewal
 sudo certbot renew --dry-run

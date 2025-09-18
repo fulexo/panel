@@ -271,10 +271,10 @@ chmod +x /usr/local/bin/docker-compose
 nano .env
 
 # Set your domains
-DOMAIN_API=api.yourdomain.com
-DOMAIN_APP=panel.yourdomain.com
-NEXT_PUBLIC_API_BASE=https://api.yourdomain.com
-NEXT_PUBLIC_APP_URL=https://panel.yourdomain.com
+DOMAIN_API=api.fulexo.com
+DOMAIN_APP=panel.fulexo.com
+NEXT_PUBLIC_API_BASE=https://api.fulexo.com
+NEXT_PUBLIC_APP_URL=https://panel.fulexo.com
 ```
 
 ### 3. SSL Setup
@@ -283,7 +283,7 @@ NEXT_PUBLIC_APP_URL=https://panel.yourdomain.com
 snap install --classic certbot
 
 # Generate certificates
-certbot --nginx -d api.yourdomain.com -d panel.yourdomain.com
+certbot --nginx -d api.fulexo.com -d panel.fulexo.com
 ```
 
 ### 4. Start Production
@@ -341,7 +341,7 @@ docker-compose -f docker-compose.prod.yml logs -f
 The API documentation is automatically generated using Swagger/OpenAPI:
 
 - **Development**: http://localhost:3001/docs
-- **Production**: https://api.yourdomain.com/docs
+- **Production**: https://api.fulexo.com/docs
 
 ### Main Endpoints
 
