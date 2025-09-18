@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import { useRBAC } from "@/hooks/useRBAC";
-import { useReturns, useCreateReturn, useUpdateReturnStatus } from "@/hooks/useApi";
+import { useReturns, useUpdateReturnStatus } from "@/hooks/useApi";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import ProtectedComponent from "@/components/ProtectedComponent";
 import { ApiError } from "@/lib/api-client";
@@ -15,7 +15,6 @@ export default function ReturnsPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [selectedReturn, setSelectedReturn] = useState<string | null>(null);
   
   // Get user's store ID for customer view
   const userStoreId = user?.stores?.[0]?.id;
@@ -33,7 +32,6 @@ export default function ReturnsPage() {
     ...(isAdmin() ? {} : userStoreId ? { storeId: userStoreId } : {}),
   }) as { data: { data: Array<{ id: string; orderNumber: string; productName: string; quantity: number; reason: string; status: string; requestedAt: string; processedAt?: string; notes?: string; store?: { name: string } }>; pagination: { total: number; pages: number } } | undefined; isLoading: boolean; error: ApiError | null };
 
-  const createReturn = useCreateReturn();
   const updateReturnStatus = useUpdateReturnStatus();
 
   if (isLoading) {
@@ -75,8 +73,6 @@ export default function ReturnsPage() {
   }, {} as Record<string, number>);
 
   const pendingReturns = returns.filter((returnItem: { id: string; orderNumber: string; productName: string; quantity: number; reason: string; status: string; requestedAt: string; processedAt?: string; notes?: string; store?: { name: string } }) => returnItem.status === 'pending');
-  const approvedReturns = returns.filter((returnItem: { id: string; orderNumber: string; productName: string; quantity: number; reason: string; status: string; requestedAt: string; processedAt?: string; notes?: string; store?: { name: string } }) => returnItem.status === 'approved');
-  const rejectedReturns = returns.filter((returnItem: { id: string; orderNumber: string; productName: string; quantity: number; reason: string; status: string; requestedAt: string; processedAt?: string; notes?: string; store?: { name: string } }) => returnItem.status === 'rejected');
 
   const handleStatusUpdate = async (returnId: string, newStatus: string) => {
     try {
@@ -260,7 +256,7 @@ export default function ReturnsPage() {
                         <td className="p-3">
                           <div className="flex gap-2">
                             <button 
-                              onClick={() => setSelectedReturn(returnItem.id)}
+                              onClick={() => window.location.href = `/returns/${returnItem.id}`}
                               className="btn btn-sm btn-outline"
                             >
                               View

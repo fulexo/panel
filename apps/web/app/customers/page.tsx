@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import { useRBAC } from "@/hooks/useRBAC";
-import { useCustomers, useCreateCustomer, useUpdateCustomer, useDeleteCustomer } from "@/hooks/useApi";
+import { useCustomers, useDeleteCustomer } from "@/hooks/useApi";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import ProtectedComponent from "@/components/ProtectedComponent";
 import { ApiError } from "@/lib/api-client";
@@ -31,8 +31,6 @@ export default function CustomersPage() {
     ...(isAdmin() ? {} : userStoreId ? { storeId: userStoreId } : {}),
   }) as { data: { data: Array<{ id: string; firstName: string; lastName: string; email: string; phone?: string; totalOrders: number; totalSpent: number; createdAt: string; store?: { name: string } }>; pagination: { total: number; pages: number } } | undefined; isLoading: boolean; error: ApiError | null };
 
-  const createCustomer = useCreateCustomer();
-  const updateCustomer = useUpdateCustomer();
   const deleteCustomer = useDeleteCustomer();
 
   if (isLoading) {

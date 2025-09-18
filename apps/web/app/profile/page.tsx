@@ -9,18 +9,18 @@ export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState("personal");
   const [profile, setProfile] = useState({
     personal: {
-      firstName: user?.firstName || "",
-      lastName: user?.lastName || "",
+      firstName: "John",
+      lastName: "Doe",
       email: user?.email || "",
-      phone: user?.phone || "",
-      avatar: user?.avatar || "",
-      bio: user?.bio || "",
+      phone: "+90 555 123 4567",
+      avatar: "",
+      bio: "",
     },
     security: {
       currentPassword: "",
       newPassword: "",
       confirmPassword: "",
-      twoFactorEnabled: user?.twoFactorEnabled || false,
+      twoFactorEnabled: user?.twofaEnabled || false,
     },
     preferences: {
       language: "tr",

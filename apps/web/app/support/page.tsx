@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import { useRBAC } from "@/hooks/useRBAC";
-import { useSupportTickets, useCreateSupportTicket, useUpdateSupportTicket, useSupportTicketMessages, useSendSupportMessage } from "@/hooks/useApi";
+import { useSupportTickets, useUpdateSupportTicket, useSupportTicketMessages, useSendSupportMessage } from "@/hooks/useApi";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import ProtectedComponent from "@/components/ProtectedComponent";
 import { ApiError } from "@/lib/api-client";
@@ -43,7 +43,6 @@ export default function SupportPage() {
     isLoading: messagesLoading
   } = useSupportTicketMessages(selectedTicket || '') as { data: Array<{ id: string; message: string; isInternal: boolean; createdAt: string; author: { name: string; role: string } }> | undefined; isLoading: boolean; error: ApiError | null };
 
-  const createTicket = useCreateSupportTicket();
   const updateTicket = useUpdateSupportTicket();
   const sendMessage = useSendSupportMessage();
 
@@ -91,8 +90,6 @@ export default function SupportPage() {
     return acc;
   }, {} as Record<string, number>);
 
-  const openTickets = tickets.filter((ticket: { id: string; subject: string; description: string; status: string; priority: string; createdAt: string; updatedAt: string; assignedTo?: string; store?: { name: string } }) => ticket.status === 'open');
-  const closedTickets = tickets.filter((ticket: { id: string; subject: string; description: string; status: string; priority: string; createdAt: string; updatedAt: string; assignedTo?: string; store?: { name: string } }) => ticket.status === 'closed');
 
   const handleStatusUpdate = async (ticketId: string, newStatus: string) => {
     try {

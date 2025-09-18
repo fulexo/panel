@@ -30,7 +30,7 @@ export const useUpdateProductStock = () => {
   
   return useMutation({
     mutationFn: ({ id, stockQuantity }: { id: string; stockQuantity: number }) => 
-      apiClient.updateProductStock(id, stockQuantity),
+      apiClient.updateProduct(id, { stockQuantity }),
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.products() });
       queryClient.invalidateQueries({ queryKey: queryKeys.product(id) });
@@ -43,7 +43,7 @@ export const useUpdateProductPrice = () => {
   
   return useMutation({
     mutationFn: ({ id, price, salePrice }: { id: string; price: number; salePrice?: number }) => 
-      apiClient.updateProductPrice(id, price, salePrice),
+      apiClient.updateProduct(id, { price, ...(salePrice !== undefined && { salePrice }) }),
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.products() });
       queryClient.invalidateQueries({ queryKey: queryKeys.product(id) });

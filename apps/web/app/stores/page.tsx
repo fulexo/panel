@@ -3,14 +3,14 @@
 import { useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import { useRBAC } from "@/hooks/useRBAC";
-import { useStores, useCreateStore, useUpdateStore, useDeleteStore, useSyncStore, useTestStoreConnection } from "@/hooks/useApi";
+import { useStores, useDeleteStore, useSyncStore, useTestStoreConnection } from "@/hooks/useApi";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import ProtectedComponent from "@/components/ProtectedComponent";
 import { ApiError } from "@/lib/api-client";
 
 export default function StoresPage() {
-  const { user } = useAuth();
-  const { isAdmin } = useRBAC();
+  const { } = useAuth();
+  const { } = useRBAC();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -28,8 +28,6 @@ export default function StoresPage() {
     ...(search ? { search } : {}),
   }) as { data: { data: Array<{ id: string; name: string; url: string; status: string; lastSync?: string; customer?: { email: string; firstName: string; lastName: string } }>; pagination: { total: number; pages: number } } | undefined; isLoading: boolean; error: ApiError | null };
 
-  const createStore = useCreateStore();
-  const updateStore = useUpdateStore();
   const deleteStore = useDeleteStore();
   const syncStore = useSyncStore();
   const testConnection = useTestStoreConnection();
@@ -72,8 +70,6 @@ export default function StoresPage() {
     return acc;
   }, {} as Record<string, number>);
 
-  const connectedStores = stores.filter((store: { id: string; name: string; url: string; status: string; lastSync?: string; customer?: { email: string; firstName: string; lastName: string } }) => store.status === 'connected');
-  const disconnectedStores = stores.filter((store: { id: string; name: string; url: string; status: string; lastSync?: string; customer?: { email: string; firstName: string; lastName: string } }) => store.status === 'disconnected');
   const errorStores = stores.filter((store: { id: string; name: string; url: string; status: string; lastSync?: string; customer?: { email: string; firstName: string; lastName: string } }) => store.status === 'error');
 
   const handleSyncStore = async (storeId: string) => {

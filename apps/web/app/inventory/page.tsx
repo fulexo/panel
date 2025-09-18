@@ -37,8 +37,7 @@ export default function InventoryPage() {
 
   // Fetch pending approvals (admin only)
   const { 
-    data: approvalsData, 
-    isLoading: approvalsLoading
+    data: approvalsData
   } = useInventoryApprovals({
     status: 'pending'
   }) as { data: { data: Array<{ id: string; productName: string; sku: string; currentStock: number; requestedStock: number; reason: string; requestedBy: string; requestedAt: string; store?: { name: string } }>; pagination: { total: number; pages: number } } | undefined; isLoading: boolean; error: ApiError | null };

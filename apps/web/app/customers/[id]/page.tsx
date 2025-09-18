@@ -11,9 +11,9 @@ import { ApiError } from "@/lib/api-client";
 
 export default function CustomerDetailPage() {
   const params = useParams();
-  const { user } = useAuth();
-  const { isAdmin } = useRBAC();
-  const customerId = params.id as string;
+  const { } = useAuth();
+  const { } = useRBAC();
+  const customerId = params['id'] as string;
   
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -235,7 +235,7 @@ export default function CustomerDetailPage() {
                     <div className="text-sm text-muted-foreground space-y-1">
                       <p>Email: {customer.email}</p>
                       <p>Phone: {customer.phone}</p>
-                      <p>Member since: {new Date(customer.memberSince).toLocaleDateString()}</p>
+                      <p>Member since: {new Date(customer.createdAt).toLocaleDateString()}</p>
                     </div>
                   </div>
                 </div>

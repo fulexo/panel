@@ -11,9 +11,9 @@ import { ApiError } from "@/lib/api-client";
 
 export default function ReturnDetailPage() {
   const params = useParams();
-  const { user } = useAuth();
-  const { isAdmin } = useRBAC();
-  const returnId = params.id as string;
+  const { } = useAuth();
+  const { } = useRBAC();
+  const returnId = params['id'] as string;
   
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [newStatus, setNewStatus] = useState("");

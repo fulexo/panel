@@ -11,9 +11,9 @@ import { ApiError } from "@/lib/api-client";
 
 export default function OrderDetailPage() {
   const params = useParams();
-  const { user } = useAuth();
-  const { isAdmin } = useRBAC();
-  const orderId = params.id as string;
+  const { } = useAuth();
+  const { } = useRBAC();
+  const orderId = params['id'] as string;
   
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [showShippingModal, setShowShippingModal] = useState(false);

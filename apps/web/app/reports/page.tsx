@@ -4,14 +4,12 @@ import { useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import { useRBAC } from "@/hooks/useRBAC";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import ProtectedComponent from "@/components/ProtectedComponent";
 
 export default function ReportsPage() {
-  const { user } = useAuth();
+  const { } = useAuth();
   const { isAdmin } = useRBAC();
   const [activeTab, setActiveTab] = useState("overview");
   const [dateRange, setDateRange] = useState("30d");
-  const [selectedStore, setSelectedStore] = useState("all");
 
   const tabs = [
     { id: "overview", label: "Genel Bakış", icon: "📊" },

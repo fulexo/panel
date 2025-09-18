@@ -11,9 +11,9 @@ import { ApiError } from "@/lib/api-client";
 
 export default function StoreDetailPage() {
   const params = useParams();
-  const { user } = useAuth();
-  const { isAdmin } = useRBAC();
-  const storeId = params.id as string;
+  const { } = useAuth();
+  const { } = useRBAC();
+  const storeId = params['id'] as string;
   
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);

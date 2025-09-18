@@ -4,11 +4,10 @@ import { useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import { useRBAC } from "@/hooks/useRBAC";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import ProtectedComponent from "@/components/ProtectedComponent";
 
 export default function SettingsPage() {
-  const { user } = useAuth();
-  const { isAdmin } = useRBAC();
+  const { } = useAuth();
+  const { } = useRBAC();
   const [activeTab, setActiveTab] = useState("general");
   const [settings, setSettings] = useState({
     general: {

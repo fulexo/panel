@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import { useRBAC } from "@/hooks/useRBAC";
-import { useProducts, useCreateProduct, useUpdateProduct, useDeleteProduct, useBulkUpdateProducts } from "@/hooks/useApi";
+import { useProducts, useDeleteProduct, useBulkUpdateProducts } from "@/hooks/useApi";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import ProtectedComponent from "@/components/ProtectedComponent";
 import { ApiError } from "@/lib/api-client";
@@ -34,8 +34,6 @@ export default function ProductsPage() {
     ...(isAdmin() ? {} : userStoreId ? { storeId: userStoreId } : {}),
   }) as { data: { data: Array<{ id: string; name: string; sku: string; price: number; salePrice?: number; stockQuantity: number; category?: string; status: string; createdAt: string; store?: { name: string } }>; pagination: { total: number; pages: number } } | undefined; isLoading: boolean; error: ApiError | null };
 
-  const createProduct = useCreateProduct();
-  const updateProduct = useUpdateProduct();
   const deleteProduct = useDeleteProduct();
   const bulkUpdateProducts = useBulkUpdateProducts();
 
