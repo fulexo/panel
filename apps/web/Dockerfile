@@ -11,7 +11,7 @@ COPY package*.json ./
 COPY apps/web/package*.json ./apps/web/
 
 # Install dependencies
-RUN npm ci --only=production
+RUN cd apps/web && npm ci --only=production
 
 # Rebuild the source code only when needed
 FROM base AS builder

@@ -274,7 +274,7 @@ const jobProcessors = {
           tenantId: store.tenantId,
           sku: p.sku || String(p.id),
           name: p.name || null,
-          price: p.price ? new PrismaClient.Decimal(p.price) : null,
+          price: p.price ? new Decimal(p.price) : null,
           stock: (typeof p.stock_quantity==='number') ? p.stock_quantity : null,
           images: Array.isArray(p.images) ? p.images.map((i: Record<string, unknown>)=>i['src']).filter(Boolean) : [],
           tags: Array.isArray(p.tags) ? p.tags.map((t: Record<string, unknown>)=>t['name']).filter(Boolean) : [],

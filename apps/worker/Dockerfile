@@ -11,7 +11,7 @@ COPY package*.json ./
 COPY apps/worker/package*.json ./apps/worker/
 
 # Install dependencies
-RUN npm ci --only=production
+RUN cd apps/worker && npm ci --only=production
 
 # Rebuild the source code only when needed
 FROM base AS builder

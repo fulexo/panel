@@ -10,10 +10,18 @@ module.exports = {
       tsconfig: {
         esModuleInterop: true,
         allowSyntheticDefaultImports: true,
-        jsx: 'react-jsx'
-      }
+        jsx: 'react-jsx',
+        experimentalDecorators: true,
+        emitDecoratorMetadata: true
+      },
+      useESM: false
     }],
     '^.+\\.(js|jsx)$': ['babel-jest'],
+  },
+  globals: {
+    'ts-jest': {
+      useESM: false
+    }
   },
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
   testEnvironment: 'node',
