@@ -112,3 +112,322 @@ export const useOrders = (params: { page?: number; limit?: number; search?: stri
     staleTime: 30 * 1000, // 30 seconds
   });
 };
+
+export const useOrder = (id: string) => {
+  return useQuery({
+    queryKey: queryKeys.order(id),
+    queryFn: () => apiClient.getOrder(id),
+    enabled: !!id,
+  });
+};
+
+export const useUpdateOrderStatus = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: ({ id, status }: { id: string; status: string }) => 
+      apiClient.updateOrderStatus(id, status),
+    onSuccess: (_, { id }) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.orders() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.order(id) });
+    },
+  });
+};
+
+export const useUpdateOrderShipping = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: { trackingNumber: string; carrier: string } }) => 
+      apiClient.updateOrderShipping(id, data),
+    onSuccess: (_, { id }) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.orders() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.order(id) });
+    },
+  });
+};
+
+// Products hooks
+export const useProducts = (params: { page?: number; limit?: number; search?: string; category?: string; storeId?: string } = {}) => {
+  const filteredParams = Object.fromEntries(
+    Object.entries(params).filter(([_, value]) => value !== undefined)
+  );
+  
+  return useQuery({
+    queryKey: queryKeys.products(filteredParams),
+    queryFn: () => apiClient.getProducts(filteredParams),
+    staleTime: 2 * 60 * 1000, // 2 minutes
+  });
+};
+
+export const useProduct = (id: string) => {
+  return useQuery({
+    queryKey: queryKeys.product(id),
+    queryFn: () => apiClient.getProduct(id),
+    enabled: !!id,
+  });
+};
+
+export const useCreateProduct = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: apiClient.createProduct,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.products() });
+    },
+  });
+};
+
+export const useUpdateProduct = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Record<string, unknown> }) => 
+      apiClient.updateProduct(id, data),
+    onSuccess: (_, { id }) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.products() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.product(id) });
+    },
+  });
+};
+
+export const useDeleteProduct = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: apiClient.deleteProduct,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.products() });
+    },
+  });
+};
+
+export const useBulkUpdateProducts = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: apiClient.bulkUpdateProducts,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.products() });
+    },
+  });
+};
+
+// Customers hooks
+export const useCustomers = (params: { page?: number; limit?: number; search?: string; storeId?: string } = {}) => {
+  const filteredParams = Object.fromEntries(
+    Object.entries(params).filter(([_, value]) => value !== undefined)
+  );
+  
+  return useQuery({
+    queryKey: queryKeys.customers(filteredParams),
+    queryFn: () => apiClient.getCustomers(filteredParams),
+    staleTime: 2 * 60 * 1000, // 2 minutes
+  });
+};
+
+export const useCustomer = (id: string) => {
+  return useQuery({
+    queryKey: queryKeys.customer(id),
+    queryFn: () => apiClient.getCustomer(id),
+    enabled: !!id,
+  });
+};
+
+export const useCreateCustomer = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: apiClient.createCustomer,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.customers() });
+    },
+  });
+};
+
+export const useUpdateCustomer = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Record<string, unknown> }) => 
+      apiClient.updateCustomer(id, data),
+    onSuccess: (_, { id }) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.customers() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.customer(id) });
+    },
+  });
+};
+
+export const useDeleteCustomer = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: apiClient.deleteCustomer,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.customers() });
+    },
+  });
+};
+
+// Inventory hooks
+export const useInventory = (params: { page?: number; limit?: number; search?: string; storeId?: string; lowStock?: boolean } = {}) => {
+  const filteredParams = Object.fromEntries(
+    Object.entries(params).filter(([_, value]) => value !== undefined)
+  );
+  
+  return useQuery({
+    queryKey: ['inventory', filteredParams],
+    queryFn: () => apiClient.getInventory(filteredParams),
+    staleTime: 30 * 1000, // 30 seconds
+  });
+};
+
+export const useUpdateInventory = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: { quantity: number; reason?: string } }) => 
+      apiClient.updateInventory(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['inventory'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.inventoryApprovals() });
+    },
+  });
+};
+
+export const useInventoryApprovals = (params: { page?: number; limit?: number; status?: string } = {}) => {
+  const filteredParams = Object.fromEntries(
+    Object.entries(params).filter(([_, value]) => value !== undefined)
+  );
+  
+  return useQuery({
+    queryKey: queryKeys.inventoryApprovals(filteredParams),
+    queryFn: () => apiClient.getInventoryApprovals(filteredParams),
+    staleTime: 30 * 1000, // 30 seconds
+  });
+};
+
+export const useApproveInventoryChange = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: ({ id, approved }: { id: string; approved: boolean }) => 
+      apiClient.approveInventoryChange(id, approved),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.inventoryApprovals() });
+      queryClient.invalidateQueries({ queryKey: ['inventory'] });
+    },
+  });
+};
+
+// Returns hooks
+export const useReturns = (params: { page?: number; limit?: number; search?: string; status?: string; storeId?: string } = {}) => {
+  const filteredParams = Object.fromEntries(
+    Object.entries(params).filter(([_, value]) => value !== undefined)
+  );
+  
+  return useQuery({
+    queryKey: queryKeys.returns(filteredParams),
+    queryFn: () => apiClient.getReturns(filteredParams),
+    staleTime: 30 * 1000, // 30 seconds
+  });
+};
+
+export const useReturn = (id: string) => {
+  return useQuery({
+    queryKey: queryKeys.return(id),
+    queryFn: () => apiClient.getReturn(id),
+    enabled: !!id,
+  });
+};
+
+export const useCreateReturn = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: apiClient.createReturn,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.returns() });
+    },
+  });
+};
+
+export const useUpdateReturnStatus = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: ({ id, status }: { id: string; status: string }) => 
+      apiClient.updateReturnStatus(id, status),
+    onSuccess: (_, { id }) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.returns() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.return(id) });
+    },
+  });
+};
+
+// Support hooks
+export const useSupportTickets = (params: { page?: number; limit?: number; search?: string; status?: string; priority?: string; storeId?: string } = {}) => {
+  const filteredParams = Object.fromEntries(
+    Object.entries(params).filter(([_, value]) => value !== undefined)
+  );
+  
+  return useQuery({
+    queryKey: queryKeys.supportTickets(filteredParams),
+    queryFn: () => apiClient.getSupportTickets(filteredParams),
+    staleTime: 30 * 1000, // 30 seconds
+  });
+};
+
+export const useSupportTicket = (id: string) => {
+  return useQuery({
+    queryKey: queryKeys.supportTicket(id),
+    queryFn: () => apiClient.getSupportTicket(id),
+    enabled: !!id,
+  });
+};
+
+export const useCreateSupportTicket = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: apiClient.createSupportTicket,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.supportTickets() });
+    },
+  });
+};
+
+export const useUpdateSupportTicket = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Record<string, unknown> }) => 
+      apiClient.updateSupportTicket(id, data),
+    onSuccess: (_, { id }) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.supportTickets() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.supportTicket(id) });
+    },
+  });
+};
+
+export const useSupportTicketMessages = (ticketId: string) => {
+  return useQuery({
+    queryKey: queryKeys.supportTicketMessages(ticketId),
+    queryFn: () => apiClient.getSupportTicketMessages(ticketId),
+    enabled: !!ticketId,
+    staleTime: 10 * 1000, // 10 seconds
+  });
+};
+
+export const useSendSupportMessage = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: ({ ticketId, message, attachments }: { ticketId: string; message: string; attachments?: File[] }) => 
+      apiClient.sendSupportMessage(ticketId, message, attachments),
+    onSuccess: (_, { ticketId }) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.supportTicketMessages(ticketId) });
+    },
+  });
+};

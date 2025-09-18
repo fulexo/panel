@@ -32,6 +32,10 @@ export default function Sidebar({ isOpen, onClose, isDesktopCollapsed = false, o
   const userItems = [
     { href: '/returns', label: 'Returns', icon: '↩️' },
     { href: '/support', label: 'Support', icon: '🆘' },
+    { href: '/notifications', label: 'Notifications', icon: '🔔' },
+    { href: '/reports', label: 'Reports', icon: '📊' },
+    { href: '/profile', label: 'Profile', icon: '👤' },
+    { href: '/settings', label: 'Settings', icon: '⚙️' },
   ];
 
   const getRoleColor = (role: string) => {

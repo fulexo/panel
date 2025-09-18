@@ -200,14 +200,14 @@ class ApiClient {
     limit?: number; 
     search?: string; 
     storeId?: string;
-    status?: string;
+    category?: string;
   }) {
     const searchParams = new URLSearchParams();
     if (params?.page) searchParams.set('page', params.page.toString());
     if (params?.limit) searchParams.set('limit', params.limit.toString());
     if (params?.search) searchParams.set('search', params.search);
     if (params?.storeId) searchParams.set('storeId', params.storeId);
-    if (params?.status) searchParams.set('status', params.status);
+    if (params?.category) searchParams.set('category', params.category);
     
     const queryString = searchParams.toString();
     return this.request(`/products${queryString ? `?${queryString}` : ''}`);
@@ -217,17 +217,53 @@ class ApiClient {
     return this.request(`/products/${id}`);
   }
 
-  async updateProductStock(id: string, stockQuantity: number) {
-    return this.request(`/products/${id}/stock`, {
-      method: 'PUT',
-      body: JSON.stringify({ stockQuantity }),
+  async createProduct(data: {
+    name: string;
+    description?: string;
+    price: number;
+    salePrice?: number;
+    sku: string;
+    stockQuantity: number;
+    category?: string;
+    images?: string[];
+    storeId: string;
+  }) {
+    return this.request('/products', {
+      method: 'POST',
+      body: JSON.stringify(data),
     });
   }
 
-  async updateProductPrice(id: string, price: number, salePrice?: number) {
-    return this.request(`/products/${id}/price`, {
+  async updateProduct(id: string, data: {
+    name?: string;
+    description?: string;
+    price?: number;
+    salePrice?: number;
+    sku?: string;
+    stockQuantity?: number;
+    category?: string;
+    images?: string[];
+    status?: string;
+  }) {
+    return this.request(`/products/${id}`, {
       method: 'PUT',
-      body: JSON.stringify({ price, salePrice }),
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteProduct(id: string) {
+    return this.request(`/products/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async bulkUpdateProducts(data: {
+    productIds: string[];
+    updates: Record<string, unknown>;
+  }) {
+    return this.request('/products/bulk-update', {
+      method: 'POST',
+      body: JSON.stringify(data),
     });
   }
 
@@ -252,45 +288,84 @@ class ApiClient {
     return this.request(`/customers/${id}`);
   }
 
+  async createCustomer(data: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone?: string;
+    storeId: string;
+  }) {
+    return this.request('/customers', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateCustomer(id: string, data: {
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+    phone?: string;
+  }) {
+    return this.request(`/customers/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteCustomer(id: string) {
+    return this.request(`/customers/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
   // Inventory endpoints
+  async getInventory(params?: { 
+    page?: number; 
+    limit?: number; 
+    search?: string;
+    storeId?: string;
+    lowStock?: boolean;
+  }) {
+    const searchParams = new URLSearchParams();
+    if (params?.page) searchParams.set('page', params.page.toString());
+    if (params?.limit) searchParams.set('limit', params.limit.toString());
+    if (params?.search) searchParams.set('search', params.search);
+    if (params?.storeId) searchParams.set('storeId', params.storeId);
+    if (params?.lowStock) searchParams.set('lowStock', params.lowStock.toString());
+    
+    const queryString = searchParams.toString();
+    return this.request(`/inventory${queryString ? `?${queryString}` : ''}`);
+  }
+
+  async updateInventory(id: string, data: {
+    quantity: number;
+    reason?: string;
+  }) {
+    return this.request(`/inventory/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
   async getInventoryApprovals(params?: { 
     page?: number; 
     limit?: number; 
     status?: string;
-    storeId?: string;
   }) {
     const searchParams = new URLSearchParams();
     if (params?.page) searchParams.set('page', params.page.toString());
     if (params?.limit) searchParams.set('limit', params.limit.toString());
     if (params?.status) searchParams.set('status', params.status);
-    if (params?.storeId) searchParams.set('storeId', params.storeId);
     
     const queryString = searchParams.toString();
     return this.request(`/inventory/approvals${queryString ? `?${queryString}` : ''}`);
   }
 
-  async approveInventoryChange(id: string) {
-    return this.request(`/inventory/approvals/${id}/approve`, {
-      method: 'POST',
-    });
-  }
-
-  async rejectInventoryChange(id: string, reason: string) {
-    return this.request(`/inventory/approvals/${id}/reject`, {
-      method: 'POST',
-      body: JSON.stringify({ reason }),
-    });
-  }
-
-  async requestInventoryChange(data: {
-    productId: string;
-    changeType: string;
-    newValue: Record<string, unknown>;
-    reason?: string;
-  }) {
-    return this.request('/inventory/approvals', {
-      method: 'POST',
-      body: JSON.stringify(data),
+  async approveInventoryChange(id: string, approved: boolean) {
+    return this.request(`/inventory/approvals/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify({ approved }),
     });
   }
 
@@ -298,12 +373,14 @@ class ApiClient {
   async getReturns(params?: { 
     page?: number; 
     limit?: number; 
+    search?: string;
     status?: string;
     storeId?: string;
   }) {
     const searchParams = new URLSearchParams();
     if (params?.page) searchParams.set('page', params.page.toString());
     if (params?.limit) searchParams.set('limit', params.limit.toString());
+    if (params?.search) searchParams.set('search', params.search);
     if (params?.status) searchParams.set('status', params.status);
     if (params?.storeId) searchParams.set('storeId', params.storeId);
     
@@ -315,10 +392,24 @@ class ApiClient {
     return this.request(`/returns/${id}`);
   }
 
-  async updateReturnStatus(id: string, status: string, notes?: string) {
+  async createReturn(data: {
+    orderId: string;
+    productId: string;
+    quantity: number;
+    reason: string;
+    description?: string;
+    storeId: string;
+  }) {
+    return this.request('/returns', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateReturnStatus(id: string, status: string) {
     return this.request(`/returns/${id}/status`, {
       method: 'PUT',
-      body: JSON.stringify({ status, notes }),
+      body: JSON.stringify({ status }),
     });
   }
 
@@ -326,6 +417,7 @@ class ApiClient {
   async getSupportTickets(params?: { 
     page?: number; 
     limit?: number; 
+    search?: string;
     status?: string;
     priority?: string;
     storeId?: string;
@@ -333,6 +425,7 @@ class ApiClient {
     const searchParams = new URLSearchParams();
     if (params?.page) searchParams.set('page', params.page.toString());
     if (params?.limit) searchParams.set('limit', params.limit.toString());
+    if (params?.search) searchParams.set('search', params.search);
     if (params?.status) searchParams.set('status', params.status);
     if (params?.priority) searchParams.set('priority', params.priority);
     if (params?.storeId) searchParams.set('storeId', params.storeId);
@@ -372,10 +465,19 @@ class ApiClient {
     return this.request(`/support/tickets/${ticketId}/messages`);
   }
 
-  async sendSupportMessage(ticketId: string, message: string, isInternal: boolean = false) {
+  async sendSupportMessage(ticketId: string, message: string, attachments?: File[]) {
+    const formData = new FormData();
+    formData.append('message', message);
+    if (attachments) {
+      attachments.forEach((file, index) => {
+        formData.append(`attachment_${index}`, file);
+      });
+    }
+    
     return this.request(`/support/tickets/${ticketId}/messages`, {
       method: 'POST',
-      body: JSON.stringify({ message, isInternal }),
+      body: formData,
+      headers: {}, // Let browser set Content-Type for FormData
     });
   }
 
