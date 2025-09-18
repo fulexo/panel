@@ -1,27 +1,45 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import { useRBAC } from "@/hooks/useRBAC";
+import { useProducts, useCreateProduct, useUpdateProduct, useDeleteProduct, useBulkUpdateProducts } from "@/hooks/useApi";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import ProtectedComponent from "@/components/ProtectedComponent";
+import { ApiError } from "@/lib/api-client";
 
 export default function ProductsPage() {
-  const router = useRouter();
   const { user } = useAuth();
   const { isAdmin } = useRBAC();
-  const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState("");
+  const [category, setCategory] = useState("");
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<string | null>(null);
+  const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
+  
+  // Get user's store ID for customer view
+  const userStoreId = user?.stores?.[0]?.id;
+  
+  // Fetch products data
+  const { 
+    data: productsData, 
+    isLoading,
+    error
+  } = useProducts({
+    page,
+    limit: 10,
+    ...(search ? { search } : {}),
+    ...(category ? { category } : {}),
+    ...(isAdmin() ? {} : userStoreId ? { storeId: userStoreId } : {}),
+  }) as { data: { data: Array<{ id: string; name: string; sku: string; price: number; salePrice?: number; stockQuantity: number; category?: string; status: string; createdAt: string; store?: { name: string } }>; pagination: { total: number; pages: number } } | undefined; isLoading: boolean; error: ApiError | null };
 
-  useEffect(() => {
-    if (user) {
-      setLoading(false);
-    } else {
-      router.push('/login');
-    }
-  }, [user, router]);
+  const createProduct = useCreateProduct();
+  const updateProduct = useUpdateProduct();
+  const deleteProduct = useDeleteProduct();
+  const bulkUpdateProducts = useBulkUpdateProducts();
 
-  if (loading) {
+  if (isLoading) {
     return (
       <ProtectedRoute>
         <div className="min-h-screen bg-background flex items-center justify-center">
@@ -33,6 +51,53 @@ export default function ProductsPage() {
       </ProtectedRoute>
     );
   }
+
+  if (error) {
+    return (
+      <ProtectedRoute>
+        <div className="min-h-screen bg-background flex items-center justify-center">
+          <div className="flex flex-col items-center gap-4">
+            <div className="text-red-500 text-lg">Error loading products</div>
+            <div className="text-muted-foreground">
+              {error instanceof ApiError ? error.message : 'Unknown error'}
+            </div>
+          </div>
+        </div>
+      </ProtectedRoute>
+    );
+  }
+
+  const products = productsData?.data || [];
+  const totalProducts = productsData?.pagination?.total || 0;
+  const totalPages = productsData?.pagination?.pages || 1;
+
+  // Calculate statistics
+  const statusCounts = products.reduce((acc: Record<string, number>, product: { id: string; name: string; sku: string; price: number; salePrice?: number; stockQuantity: number; category?: string; status: string; createdAt: string; store?: { name: string } }) => {
+    acc[product.status] = (acc[product.status] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const lowStockProducts = products.filter((product: { id: string; name: string; sku: string; price: number; salePrice?: number; stockQuantity: number; category?: string; status: string; createdAt: string; store?: { name: string } }) => product.stockQuantity <= 10);
+
+  const handleBulkAction = async (action: string) => {
+    if (selectedProducts.length === 0) return;
+    
+    try {
+      if (action === 'delete') {
+        for (const productId of selectedProducts) {
+          await deleteProduct.mutateAsync(productId);
+        }
+      } else {
+        await bulkUpdateProducts.mutateAsync({
+          productIds: selectedProducts,
+          updates: { status: action }
+        });
+      }
+      setSelectedProducts([]);
+    } catch (error) {
+      console.error('Bulk action failed:', error);
+    }
+  };
 
   return (
     <ProtectedRoute>
@@ -46,33 +111,273 @@ export default function ProductsPage() {
               </p>
             </div>
             <ProtectedComponent permission="products.manage">
-              <button className="btn btn-primary">
+              <button 
+                onClick={() => setShowCreateModal(true)}
+                className="btn btn-primary"
+              >
                 Add Product
               </button>
             </ProtectedComponent>
           </div>
 
-          <div className="bg-card p-8 rounded-lg border border-border">
+          {/* Filters */}
+          <div className="flex flex-col sm:flex-row gap-4">
+            <input
+              type="text"
+              placeholder="Search products..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="flex-1 px-3 py-2 border border-border rounded-lg bg-background text-foreground"
+            />
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="px-3 py-2 border border-border rounded-lg bg-background text-foreground"
+            >
+              <option value="">All Categories</option>
+              <option value="electronics">Electronics</option>
+              <option value="clothing">Clothing</option>
+              <option value="books">Books</option>
+              <option value="home">Home & Garden</option>
+            </select>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="bg-card p-6 rounded-lg border border-border">
+              <h3 className="text-lg font-semibold text-foreground mb-2">Total Products</h3>
+              <div className="text-3xl font-bold text-primary">
+                {totalProducts}
+              </div>
+              <p className="text-sm text-muted-foreground">
+                {isAdmin() ? 'Across all stores' : 'In your store'}
+              </p>
+            </div>
+
+            <div className="bg-card p-6 rounded-lg border border-border">
+              <h3 className="text-lg font-semibold text-foreground mb-2">Active</h3>
+              <div className="text-3xl font-bold text-green-600">
+                {statusCounts['active'] || 0}
+              </div>
+              <p className="text-sm text-muted-foreground">Currently active</p>
+            </div>
+
+            <div className="bg-card p-6 rounded-lg border border-border">
+              <h3 className="text-lg font-semibold text-foreground mb-2">Draft</h3>
+              <div className="text-3xl font-bold text-yellow-600">
+                {statusCounts['draft'] || 0}
+              </div>
+              <p className="text-sm text-muted-foreground">Draft products</p>
+            </div>
+
+            <div className="bg-card p-6 rounded-lg border border-border">
+              <h3 className="text-lg font-semibold text-foreground mb-2">Low Stock</h3>
+              <div className="text-3xl font-bold text-red-600">
+                {lowStockProducts.length}
+              </div>
+              <p className="text-sm text-muted-foreground">≤ 10 units</p>
+            </div>
+          </div>
+
+          {/* Low Stock Alerts */}
+          {lowStockProducts.length > 0 && (
+            <div className="bg-card p-6 rounded-lg border border-red-200">
+              <h3 className="text-lg font-semibold text-red-800 mb-4">Low Stock Alerts</h3>
+              <div className="space-y-3">
+                {lowStockProducts.slice(0, 5).map((product: { id: string; name: string; sku: string; price: number; salePrice?: number; stockQuantity: number; category?: string; status: string; createdAt: string; store?: { name: string } }) => (
+                  <div key={product.id} className="flex justify-between items-center p-3 bg-red-50 rounded-lg">
+                    <div>
+                      <div className="font-medium text-red-800">{product.name}</div>
+                      <div className="text-sm text-red-600">SKU: {product.sku}</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-medium text-red-800">{product.stockQuantity} left</div>
+                      <div className="text-sm text-red-600">Critical</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Bulk Actions */}
+          {selectedProducts.length > 0 && (
+            <div className="bg-accent p-4 rounded-lg border border-border">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">
+                  {selectedProducts.length} product(s) selected
+                </span>
+                <div className="flex gap-2">
+                  <ProtectedComponent permission="products.manage">
+                    <button
+                      onClick={() => handleBulkAction('active')}
+                      className="btn btn-sm btn-outline"
+                    >
+                      Activate
+                    </button>
+                    <button
+                      onClick={() => handleBulkAction('draft')}
+                      className="btn btn-sm btn-outline"
+                    >
+                      Draft
+                    </button>
+                    <button
+                      onClick={() => handleBulkAction('delete')}
+                      className="btn btn-sm btn-destructive"
+                    >
+                      Delete
+                    </button>
+                  </ProtectedComponent>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="bg-card p-6 rounded-lg border border-border">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-foreground">Products</h3>
+              <h3 className="text-lg font-semibold text-foreground">All Products</h3>
               <ProtectedComponent permission="products.manage">
                 <div className="flex gap-2">
                   <button className="btn btn-outline btn-sm">Export</button>
-                  <button className="btn btn-outline btn-sm">Bulk Edit</button>
+                  <button className="btn btn-outline btn-sm">Import</button>
                 </div>
               </ProtectedComponent>
             </div>
             
-            <div className="text-center py-8">
-              <div className="text-6xl mb-4">📱</div>
-              <h3 className="text-lg font-semibold text-foreground mb-2">Products Management</h3>
-              <p className="text-muted-foreground">
-                {isAdmin() 
-                  ? 'This page is under development. Product management functionality will be available soon.'
-                  : 'You can view your products here. Management functions are not available for customers.'
-                }
-              </p>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-border">
+                    <th className="text-left p-3">
+                      <input
+                        type="checkbox"
+                        checked={selectedProducts.length === products.length && products.length > 0}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedProducts(products.map((p: { id: string }) => p.id));
+                          } else {
+                            setSelectedProducts([]);
+                          }
+                        }}
+                        className="form-checkbox"
+                      />
+                    </th>
+                    <th className="text-left p-3">Product</th>
+                    <th className="text-left p-3">SKU</th>
+                    <th className="text-left p-3">Price</th>
+                    <th className="text-left p-3">Stock</th>
+                    <th className="text-left p-3">Status</th>
+                    {isAdmin() && <th className="text-left p-3">Store</th>}
+                    <ProtectedComponent permission="products.manage">
+                      <th className="text-left p-3">Actions</th>
+                    </ProtectedComponent>
+                  </tr>
+                </thead>
+                <tbody>
+                  {products.map((product: { id: string; name: string; sku: string; price: number; salePrice?: number; stockQuantity: number; category?: string; status: string; createdAt: string; store?: { name: string } }) => (
+                    <tr key={product.id} className="border-b border-border">
+                      <td className="p-3">
+                        <input
+                          type="checkbox"
+                          checked={selectedProducts.includes(product.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedProducts([...selectedProducts, product.id]);
+                            } else {
+                              setSelectedProducts(selectedProducts.filter(id => id !== product.id));
+                            }
+                          }}
+                          className="form-checkbox"
+                        />
+                      </td>
+                      <td className="p-3">
+                        <div>
+                          <div className="font-medium">{product.name}</div>
+                          <div className="text-sm text-muted-foreground">{product.category}</div>
+                        </div>
+                      </td>
+                      <td className="p-3">{product.sku}</td>
+                      <td className="p-3">
+                        <div>
+                          <div className="font-medium">${product.price}</div>
+                          {product.salePrice && (
+                            <div className="text-sm text-green-600">Sale: ${product.salePrice}</div>
+                          )}
+                        </div>
+                      </td>
+                      <td className="p-3">
+                        <div className={`font-medium ${
+                          product.stockQuantity <= 10 ? 'text-red-600' : 
+                          product.stockQuantity <= 50 ? 'text-yellow-600' : 
+                          'text-green-600'
+                        }`}>
+                          {product.stockQuantity}
+                        </div>
+                      </td>
+                      <td className="p-3">
+                        <span className={`px-2 py-1 rounded-full text-sm ${
+                          product.status === 'active' ? 'bg-green-100 text-green-800' :
+                          product.status === 'draft' ? 'bg-yellow-100 text-yellow-800' :
+                          'bg-gray-100 text-gray-800'
+                        }`}>
+                          {product.status}
+                        </span>
+                      </td>
+                      {isAdmin() && (
+                        <td className="p-3">{product.store?.name || 'N/A'}</td>
+                      )}
+                      <ProtectedComponent permission="products.manage">
+                        <td className="p-3">
+                          <div className="flex gap-2">
+                            <button 
+                              onClick={() => setEditingProduct(product.id)}
+                              className="btn btn-sm btn-outline"
+                            >
+                              Edit
+                            </button>
+                            <button 
+                              onClick={() => deleteProduct.mutate(product.id)}
+                              className="btn btn-sm btn-destructive"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </td>
+                      </ProtectedComponent>
+                    </tr>
+                  ))}
+                  {products.length === 0 && (
+                    <tr>
+                      <td colSpan={isAdmin() ? 8 : 7} className="p-8 text-center text-muted-foreground">
+                        No products found
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
             </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex justify-center mt-6 gap-2">
+                <button
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                  className="btn btn-outline btn-sm"
+                >
+                  Previous
+                </button>
+                <span className="px-4 py-2 text-sm text-muted-foreground">
+                  Page {page} of {totalPages}
+                </span>
+                <button
+                  onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                  disabled={page === totalPages}
+                  className="btn btn-outline btn-sm"
+                >
+                  Next
+                </button>
+              </div>
+            )}
           </div>
         </main>
       </div>
