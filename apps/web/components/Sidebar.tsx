@@ -23,10 +23,15 @@ export default function Sidebar({ isOpen, onClose, isDesktopCollapsed = false, o
     { href: '/products', label: 'Products', icon: '📱' },
     { href: '/customers', label: 'Customers', icon: '👥' },
     { href: '/inventory', label: 'Inventory', icon: '📦' },
+    { href: '/cart', label: 'Shopping Cart', icon: '🛒' },
   ];
 
   const adminItems = [
     { href: '/stores', label: 'Stores', icon: '🏪', roles: ['ADMIN'] },
+    { href: '/shipping', label: 'Shipping', icon: '🚚', roles: ['ADMIN'] },
+    { href: '/fulfillment', label: 'Fulfillment', icon: '📋', roles: ['ADMIN'] },
+    { href: '/orders/approvals', label: 'Order Approvals', icon: '✅', roles: ['ADMIN'] },
+    { href: '/inventory/approvals', label: 'Inventory Approvals', icon: '📝', roles: ['ADMIN'] },
   ];
 
   const userItems = [

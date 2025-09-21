@@ -19,6 +19,18 @@ export const queryKeys = {
   supportTicketMessages: (ticketId: string) => ['support-tickets', ticketId, 'messages'] as const,
   dashboardStats: (storeId?: string) => ['dashboard-stats', storeId] as const,
   me: ['me'] as const,
+  // New features query keys
+  cart: (storeId: string) => ['cart', storeId] as const,
+  shippingZones: (includeInactive?: boolean) => ['shipping', 'zones', { includeInactive }] as const,
+  shippingPrices: (zoneId?: string) => ['shipping', 'prices', { zoneId }] as const,
+  shippingOptions: (customerId?: string) => ['shipping', 'options', { customerId }] as const,
+  inventoryRequests: (params?: Record<string, unknown>) => ['inventory-requests', params] as const,
+  inventoryRequest: (id: string) => ['inventory-requests', id] as const,
+  fulfillmentServices: (includeInactive?: boolean) => ['fulfillment-services', { includeInactive }] as const,
+  fulfillmentBillingItems: (params?: Record<string, unknown>) => ['fulfillment-billing-items', params] as const,
+  fulfillmentBillingItem: (id: string) => ['fulfillment-billing-items', id] as const,
+  fulfillmentInvoices: (params?: Record<string, unknown>) => ['fulfillment-invoices', params] as const,
+  fulfillmentInvoice: (id: string) => ['fulfillment-invoices', id] as const,
 };
 
 // Stores hooks

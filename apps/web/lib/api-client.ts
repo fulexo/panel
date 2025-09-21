@@ -517,6 +517,222 @@ class ApiClient {
     
     return this.request(`/file-upload/files/${id}/download-url?${searchParams.toString()}`);
   }
+
+  // Cart endpoints
+  async getCart(storeId: string) {
+    return this.request(`/orders/cart/${storeId}`);
+  }
+
+  async getCartSummary(storeId: string) {
+    return this.request(`/orders/cart/${storeId}/summary`);
+  }
+
+  async addToCart(storeId: string, data: { productId: string; quantity: number }) {
+    return this.request(`/orders/cart/${storeId}/items`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateCartItem(storeId: string, productId: string, data: { quantity: number }) {
+    return this.request(`/orders/cart/${storeId}/items/${productId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async removeFromCart(storeId: string, productId: string) {
+    return this.request(`/orders/cart/${storeId}/items/${productId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async clearCart(storeId: string) {
+    return this.request(`/orders/cart/${storeId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Customer order creation
+  async createCustomerOrder(data: any) {
+    return this.request('/orders/customer', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  // Order approvals
+  async getPendingApprovals() {
+    return this.request('/orders/pending-approvals');
+  }
+
+  async approveOrder(id: string, data: { notes?: string }) {
+    return this.request(`/orders/${id}/approve`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async rejectOrder(id: string, data: { reason: string; notes?: string }) {
+    return this.request(`/orders/${id}/reject`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  // Shipping endpoints
+  async getShippingZones(includeInactive = false) {
+    const searchParams = new URLSearchParams();
+    if (includeInactive) searchParams.set('includeInactive', 'true');
+    const queryString = searchParams.toString();
+    return this.request(`/shipping/zones${queryString ? `?${queryString}` : ''}`);
+  }
+
+  async getShippingPrices(zoneId?: string) {
+    const searchParams = new URLSearchParams();
+    if (zoneId) searchParams.set('zoneId', zoneId);
+    const queryString = searchParams.toString();
+    return this.request(`/shipping/prices${queryString ? `?${queryString}` : ''}`);
+  }
+
+  async getShippingOptions(customerId?: string) {
+    const searchParams = new URLSearchParams();
+    if (customerId) searchParams.set('customerId', customerId);
+    const queryString = searchParams.toString();
+    return this.request(`/shipping/options${queryString ? `?${queryString}` : ''}`);
+  }
+
+  async calculateShipping(data: { zoneId: string; customerId?: string; orderTotal: number }) {
+    return this.request('/shipping/calculate', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  // Inventory request endpoints
+  async getInventoryRequests(params?: any) {
+    const searchParams = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          searchParams.set(key, value.toString());
+        }
+      });
+    }
+    const queryString = searchParams.toString();
+    return this.request(`/inventory-requests${queryString ? `?${queryString}` : ''}`);
+  }
+
+  async getInventoryRequest(id: string) {
+    return this.request(`/inventory-requests/${id}`);
+  }
+
+  async createInventoryRequest(data: any) {
+    return this.request('/inventory-requests', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateInventoryRequest(id: string, data: any) {
+    return this.request(`/inventory-requests/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteInventoryRequest(id: string) {
+    return this.request(`/inventory-requests/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async getInventoryRequestStats() {
+    return this.request('/inventory-requests/stats');
+  }
+
+  // Fulfillment billing endpoints
+  async getFulfillmentServices(includeInactive = false) {
+    const searchParams = new URLSearchParams();
+    if (includeInactive) searchParams.set('includeInactive', 'true');
+    const queryString = searchParams.toString();
+    return this.request(`/fulfillment-billing/services${queryString ? `?${queryString}` : ''}`);
+  }
+
+  async getFulfillmentBillingItems(params?: any) {
+    const searchParams = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          searchParams.set(key, value.toString());
+        }
+      });
+    }
+    const queryString = searchParams.toString();
+    return this.request(`/fulfillment-billing/billing-items${queryString ? `?${queryString}` : ''}`);
+  }
+
+  async getFulfillmentBillingItem(id: string) {
+    return this.request(`/fulfillment-billing/billing-items/${id}`);
+  }
+
+  async createFulfillmentBillingItem(data: any) {
+    return this.request('/fulfillment-billing/billing-items', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateFulfillmentBillingItem(id: string, data: any) {
+    return this.request(`/fulfillment-billing/billing-items/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteFulfillmentBillingItem(id: string) {
+    return this.request(`/fulfillment-billing/billing-items/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async getFulfillmentInvoices(params?: any) {
+    const searchParams = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          searchParams.set(key, value.toString());
+        }
+      });
+    }
+    const queryString = searchParams.toString();
+    return this.request(`/fulfillment-billing/invoices${queryString ? `?${queryString}` : ''}`);
+  }
+
+  async getFulfillmentInvoice(id: string) {
+    return this.request(`/fulfillment-billing/invoices/${id}`);
+  }
+
+  async generateMonthlyInvoice(data: any) {
+    return this.request('/fulfillment-billing/invoices/generate', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateFulfillmentInvoice(id: string, data: any) {
+    return this.request(`/fulfillment-billing/invoices/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getFulfillmentBillingStats(customerId?: string) {
+    const searchParams = new URLSearchParams();
+    if (customerId) searchParams.set('customerId', customerId);
+    const queryString = searchParams.toString();
+    return this.request(`/fulfillment-billing/stats${queryString ? `?${queryString}` : ''}`);
+  }
 }
 
 export const apiClient = new ApiClient();
