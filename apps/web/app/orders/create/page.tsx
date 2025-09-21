@@ -594,7 +594,7 @@ export default function CreateOrderPage() {
                         className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground"
                       >
                         <option value="">Bölge Seçin</option>
-                        {shippingOptions?.map((option: any) => (
+                        {(shippingOptions as any)?.map((option: any) => (
                           <option key={option.zone.id} value={option.zone.id}>
                             {option.zone.name}
                           </option>
@@ -608,7 +608,7 @@ export default function CreateOrderPage() {
                           Kargo Türü *
                         </label>
                         <div className="space-y-2">
-                          {calculatedShipping.options.map((option: any) => (
+                          {(calculatedShipping as any)?.options?.map((option: any) => (
                             <div key={option.id} className="border border-border rounded-lg p-3">
                               <label className="flex items-center justify-between cursor-pointer">
                                 <div className="flex items-center gap-3">

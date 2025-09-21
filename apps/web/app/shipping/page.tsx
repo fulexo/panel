@@ -239,7 +239,7 @@ export default function ShippingPage() {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {zones?.map((zone: any) => (
+                  {(zones as any)?.map((zone: any) => (
                     <div key={zone.id} className="bg-card p-4 rounded-lg border border-border">
                       <div className="flex justify-between items-start mb-2">
                         <h3 className="font-medium text-foreground">{zone.name}</h3>
@@ -306,7 +306,7 @@ export default function ShippingPage() {
                   className="px-3 py-2 border border-border rounded-lg bg-background text-foreground"
                 >
                   <option value="">Tüm Bölgeler</option>
-                  {zones?.map((zone: any) => (
+                  {(zones as any)?.map((zone: any) => (
                     <option key={zone.id} value={zone.id}>
                       {zone.name}
                     </option>
@@ -321,7 +321,7 @@ export default function ShippingPage() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {prices?.map((price: any) => (
+                  {(prices as any)?.map((price: any) => (
                     <div key={price.id} className="bg-card p-4 rounded-lg border border-border">
                       <div className="flex justify-between items-start mb-2">
                         <div>
@@ -383,7 +383,7 @@ export default function ShippingPage() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {customerPrices?.map((customerPrice: any) => (
+                  {(customerPrices as any)?.map((customerPrice: any) => (
                     <div key={customerPrice.id} className="bg-card p-4 rounded-lg border border-border">
                       <div className="flex justify-between items-start mb-2">
                         <div>
@@ -569,7 +569,7 @@ export default function ShippingPage() {
                       className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground"
                     >
                       <option value="">Bölge Seçin</option>
-                      {zones?.map((zone: any) => (
+                      {(zones as any)?.map((zone: any) => (
                         <option key={zone.id} value={zone.id}>
                           {zone.name}
                         </option>
@@ -699,7 +699,7 @@ export default function ShippingPage() {
                       className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground"
                     >
                       <option value="">Bölge Seçin</option>
-                      {zones?.map((zone: any) => (
+                      {(zones as any)?.map((zone: any) => (
                         <option key={zone.id} value={zone.id}>
                           {zone.name}
                         </option>
@@ -717,7 +717,7 @@ export default function ShippingPage() {
                       className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground"
                     >
                       <option value="">Fiyat Seçin</option>
-                      {prices?.map((price: any) => (
+                      {(prices as any)?.map((price: any) => (
                         <option key={price.id} value={price.id}>
                           {price.name} - ₺{price.basePrice.toFixed(2)}
                         </option>

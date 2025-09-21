@@ -680,6 +680,13 @@ class ApiClient {
     return this.request(`/shipping/options${queryString ? `?${queryString}` : ''}`);
   }
 
+  async getCustomerShippingPrices(customerId?: string) {
+    const searchParams = new URLSearchParams();
+    if (customerId) searchParams.set('customerId', customerId);
+    const queryString = searchParams.toString();
+    return this.request(`/shipping/customer-prices${queryString ? `?${queryString}` : ''}`);
+  }
+
   async calculateShipping(data: { zoneId: string; customerId?: string; orderTotal: number }) {
     return this.request('/shipping/calculate', {
       method: 'POST',
