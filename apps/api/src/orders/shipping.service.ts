@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { PrismaClient } from '@prisma/client';
 import { Decimal } from 'decimal.js';
@@ -403,7 +403,7 @@ export class ShippingService {
   }
 
   // Get shipping options for customer display
-  async getShippingOptions(tenantId: string, customerId?: string) {
+  async getShippingOptions(tenantId: string, _customerId?: string) {
     const zones = await this.getZones(tenantId);
     const options = [];
 

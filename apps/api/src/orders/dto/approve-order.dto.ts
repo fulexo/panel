@@ -8,7 +8,7 @@ export class ApproveOrderDto {
 
 export class RejectOrderDto {
   @IsString()
-  reason: string;
+  reason!: string;
 
   @IsOptional()
   @IsString()

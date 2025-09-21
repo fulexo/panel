@@ -8,7 +8,7 @@ import { OrderQueryDto } from './dto/order-query.dto';
 import { CreateChargeDto } from './dto/create-charge.dto';
 import { CreateCustomerOrderDto } from './dto/create-customer-order.dto';
 import { ApproveOrderDto, RejectOrderDto } from './dto/approve-order.dto';
-import { AddToCartDto, UpdateCartItemDto } from './dto/cart.dto';
+// import { AddToCartDto, UpdateCartItemDto } from './dto/cart.dto';
 import { PrismaClient } from '@prisma/client';
 import { Decimal } from 'decimal.js';
 import * as jose from 'jose';

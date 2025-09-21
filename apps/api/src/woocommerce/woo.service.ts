@@ -568,7 +568,7 @@ export class WooCommerceService {
     });
 
     if (!bundleProduct) {
-      console.warn(`Bundle product not found for WooCommerce ID: ${bundleWooId}`);
+      // Bundle product not found for WooCommerce ID
       return;
     }
 
@@ -606,7 +606,7 @@ export class WooCommerceService {
           }
         });
       } else {
-        console.warn(`Child product not found for WooCommerce ID: ${item.product_id}`);
+        // Child product not found for WooCommerce ID
       }
     }
   }

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
-import { toPrismaJson } from '../common/utils/prisma-json.util';
+import { toPrismaJsonValue } from '../common/utils/prisma-json.util';
 import { LoggerService } from '../logger/logger.service';
 
 export interface AuditLogData {

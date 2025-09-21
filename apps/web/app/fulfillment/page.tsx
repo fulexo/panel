@@ -1,31 +1,31 @@
 "use client";
 
 import { useState } from "react";
-import { useAuth } from "@/components/AuthProvider";
+// import { useAuth } from "@/components/AuthProvider";
 import { useRBAC } from "@/hooks/useRBAC";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import { useApp } from "@/contexts/AppContext";
 import { 
   useFulfillmentServices,
   useFulfillmentBillingItems,
   useFulfillmentInvoices,
   useFulfillmentBillingStats,
   useCreateFulfillmentService,
-  useUpdateFulfillmentService,
+  // useUpdateFulfillmentService,
   useDeleteFulfillmentService,
   useGenerateMonthlyInvoice,
   useUpdateFulfillmentInvoice
 } from "@/hooks/useFulfillmentBilling";
 
 export default function FulfillmentPage() {
-  const { user } = useAuth();
   const { isAdmin } = useRBAC();
+  const { addNotification } = useApp();
   const [activeTab, setActiveTab] = useState<'services' | 'billing' | 'invoices'>('services');
   const [showCreateService, setShowCreateService] = useState(false);
   const [showGenerateInvoice, setShowGenerateInvoice] = useState(false);
-  const [editingService, setEditingService] = useState<string | null>(null);
+  // const [editingService, setEditingService] = useState<string | null>(null);
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
-  const [selectedCustomer, setSelectedCustomer] = useState<string>("");
 
   // Form states
   const [serviceForm, setServiceForm] = useState({
@@ -56,7 +56,7 @@ export default function FulfillmentPage() {
   const { data: stats } = useFulfillmentBillingStats();
 
   const createServiceMutation = useCreateFulfillmentService();
-  const updateServiceMutation = useUpdateFulfillmentService();
+  // const updateServiceMutation = useUpdateFulfillmentService();
   const deleteServiceMutation = useDeleteFulfillmentService();
   const generateInvoiceMutation = useGenerateMonthlyInvoice();
   const updateInvoiceMutation = useUpdateFulfillmentInvoice();
@@ -65,7 +65,11 @@ export default function FulfillmentPage() {
     e.preventDefault();
     
     if (!serviceForm.name || !serviceForm.unit || serviceForm.basePrice <= 0) {
-      alert("Lütfen gerekli alanları doldurun");
+      addNotification({
+        type: 'warning',
+        title: 'Eksik Bilgi',
+        message: 'Lütfen gerekli alanları doldurun'
+      });
       return;
     }
 
@@ -79,46 +83,36 @@ export default function FulfillmentPage() {
         isActive: true,
       });
       setShowCreateService(false);
-      alert("Fulfillment hizmeti oluşturuldu");
-    } catch (error) {
-      console.error("Hizmet oluşturma hatası:", error);
-      alert("Hizmet oluşturulurken bir hata oluştu");
+      addNotification({
+        type: 'success',
+        title: 'Başarılı',
+        message: 'Fulfillment hizmeti oluşturuldu'
+      });
+    } catch {
+      addNotification({
+        type: 'error',
+        title: 'Hata',
+        message: 'Hizmet oluşturulurken bir hata oluştu'
+      });
     }
   };
 
-  const handleUpdateService = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!editingService) return;
-
-    try {
-      await updateServiceMutation.mutateAsync({
-        id: editingService,
-        data: serviceForm,
-      });
-      setEditingService(null);
-      setServiceForm({
-        name: '',
-        description: '',
-        unit: 'adet',
-        basePrice: 0,
-        isActive: true,
-      });
-      alert("Hizmet güncellendi");
-    } catch (error) {
-      console.error("Hizmet güncelleme hatası:", error);
-      alert("Hizmet güncellenirken bir hata oluştu");
-    }
-  };
 
   const handleDeleteService = async (id: string) => {
     if (confirm("Bu hizmeti silmek istediğinizden emin misiniz?")) {
       try {
         await deleteServiceMutation.mutateAsync(id);
-        alert("Hizmet silindi");
-      } catch (error) {
-        console.error("Hizmet silme hatası:", error);
-        alert("Hizmet silinirken bir hata oluştu");
+        addNotification({
+          type: 'success',
+          title: 'Başarılı',
+          message: 'Hizmet silindi'
+        });
+      } catch {
+        addNotification({
+          type: 'error',
+          title: 'Hata',
+          message: 'Hizmet silinirken bir hata oluştu'
+        });
       }
     }
   };
@@ -127,7 +121,11 @@ export default function FulfillmentPage() {
     e.preventDefault();
     
     if (!invoiceForm.customerId) {
-      alert("Lütfen müşteri seçin");
+      addNotification({
+        type: 'warning',
+        title: 'Eksik Bilgi',
+        message: 'Lütfen müşteri seçin'
+      });
       return;
     }
 
@@ -147,10 +145,17 @@ export default function FulfillmentPage() {
         dueDate: '',
       });
       setShowGenerateInvoice(false);
-      alert("Aylık fatura oluşturuldu");
-    } catch (error) {
-      console.error("Fatura oluşturma hatası:", error);
-      alert("Fatura oluşturulurken bir hata oluştu");
+      addNotification({
+        type: 'success',
+        title: 'Başarılı',
+        message: 'Aylık fatura oluşturuldu'
+      });
+    } catch {
+      addNotification({
+        type: 'error',
+        title: 'Hata',
+        message: 'Fatura oluşturulurken bir hata oluştu'
+      });
     }
   };
 
@@ -158,12 +163,19 @@ export default function FulfillmentPage() {
     try {
       await updateInvoiceMutation.mutateAsync({
         id: invoiceId,
-        data: { status: status as any },
+        data: { status: status as string },
       });
-      alert("Fatura durumu güncellendi");
-    } catch (error) {
-      console.error("Fatura güncelleme hatası:", error);
-      alert("Fatura güncellenirken bir hata oluştu");
+      addNotification({
+        type: 'success',
+        title: 'Başarılı',
+        message: 'Fatura durumu güncellendi'
+      });
+    } catch {
+      addNotification({
+        type: 'error',
+        title: 'Hata',
+        message: 'Fatura güncellenirken bir hata oluştu'
+      });
     }
   };
 
@@ -277,7 +289,7 @@ export default function FulfillmentPage() {
                       <div className="flex justify-between items-start mb-2">
                         <h3 className="font-medium text-foreground">{service.name}</h3>
                         <div className="flex gap-1">
-                          <button
+                          {/* <button
                             onClick={() => {
                               setEditingService(service.id);
                               setServiceForm({
@@ -291,7 +303,7 @@ export default function FulfillmentPage() {
                             className="btn btn-sm btn-outline"
                           >
                             Düzenle
-                          </button>
+                          </button> */}
                           <button
                             onClick={() => handleDeleteService(service.id)}
                             className="btn btn-sm btn-danger"

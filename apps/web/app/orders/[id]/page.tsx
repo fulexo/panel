@@ -1,11 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useParams } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
 import { useRBAC } from "@/hooks/useRBAC";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import { useApp } from "@/contexts/AppContext";
 import { useOrder } from "@/hooks/useOrders";
+import { OrderItem } from "@/types/api";
 import { 
   useFulfillmentServices,
   useFulfillmentBillingItems,
@@ -18,7 +20,8 @@ export default function OrderDetailPage() {
   const params = useParams();
   const orderId = params.id as string;
   const { user } = useAuth();
-  const { isAdmin, isCustomer } = useRBAC();
+  const { isCustomer } = useRBAC();
+  const { addNotification } = useApp();
   const [activeTab, setActiveTab] = useState<'details' | 'fulfillment'>('details');
   const [showAddFulfillment, setShowAddFulfillment] = useState(false);
   const [editingItem, setEditingItem] = useState<string | null>(null);
@@ -33,7 +36,7 @@ export default function OrderDetailPage() {
   });
 
   const { data: order, isLoading: orderLoading } = useOrder(orderId);
-  const { data: services, isLoading: servicesLoading } = useFulfillmentServices();
+  const { data: services } = useFulfillmentServices();
   const { data: billingItems, isLoading: billingItemsLoading } = useFulfillmentBillingItems({
     orderId,
   });
@@ -46,7 +49,11 @@ export default function OrderDetailPage() {
     e.preventDefault();
     
     if (!fulfillmentForm.serviceId) {
-      alert("Lütfen hizmet seçin");
+      addNotification({
+        type: 'warning',
+        title: 'Eksik Bilgi',
+        message: 'Lütfen hizmet seçin'
+      });
       return;
     }
 
@@ -68,10 +75,17 @@ export default function OrderDetailPage() {
         serviceDate: new Date().toISOString().split('T')[0],
       });
       setShowAddFulfillment(false);
-      alert("Fulfillment hizmeti eklendi");
-    } catch (error) {
-      console.error("Fulfillment ekleme hatası:", error);
-      alert("Fulfillment hizmeti eklenirken bir hata oluştu");
+      addNotification({
+        type: 'success',
+        title: 'Başarılı',
+        message: 'Fulfillment hizmeti eklendi'
+      });
+    } catch {
+      addNotification({
+        type: 'error',
+        title: 'Hata',
+        message: 'Fulfillment hizmeti eklenirken bir hata oluştu'
+      });
     }
   };
 
@@ -99,10 +113,17 @@ export default function OrderDetailPage() {
         description: '',
         serviceDate: new Date().toISOString().split('T')[0],
       });
-      alert("Fulfillment hizmeti güncellendi");
-    } catch (error) {
-      console.error("Fulfillment güncelleme hatası:", error);
-      alert("Fulfillment hizmeti güncellenirken bir hata oluştu");
+      addNotification({
+        type: 'success',
+        title: 'Başarılı',
+        message: 'Fulfillment hizmeti güncellendi'
+      });
+    } catch {
+      addNotification({
+        type: 'error',
+        title: 'Hata',
+        message: 'Fulfillment hizmeti güncellenirken bir hata oluştu'
+      });
     }
   };
 
@@ -110,15 +131,22 @@ export default function OrderDetailPage() {
     if (confirm("Bu fulfillment hizmetini silmek istediğinizden emin misiniz?")) {
       try {
         await deleteBillingItemMutation.mutateAsync(id);
-        alert("Fulfillment hizmeti silindi");
-      } catch (error) {
-        console.error("Fulfillment silme hatası:", error);
-        alert("Fulfillment hizmeti silinirken bir hata oluştu");
+        addNotification({
+          type: 'success',
+          title: 'Başarılı',
+          message: 'Fulfillment hizmeti silindi'
+        });
+      } catch {
+        addNotification({
+          type: 'error',
+          title: 'Hata',
+          message: 'Fulfillment hizmeti silinirken bir hata oluştu'
+        });
       }
     }
   };
 
-  const openEditModal = (item: any) => {
+  const openEditModal = (item: { id: string; serviceId: string; quantity: number; unitPrice: number; description?: string; serviceDate: string }) => {
     setEditingItem(item.id);
     setFulfillmentForm({
       serviceId: item.serviceId,
@@ -266,7 +294,7 @@ export default function OrderDetailPage() {
               <div className="bg-card p-6 rounded-lg border border-border">
                 <h2 className="text-xl font-semibold text-foreground mb-4">Sipariş Ürünleri</h2>
                 <div className="space-y-4">
-                  {order.items?.map((item: any) => (
+                  {order.items?.map((item: OrderItem) => (
                     <div key={item.id} className="flex justify-between items-center p-4 bg-accent rounded-lg">
                       <div>
                         <p className="font-medium text-foreground">{item.product.name}</p>

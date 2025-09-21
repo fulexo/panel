@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { useAuth } from "@/components/AuthProvider";
+// import { useAuth } from "@/components/AuthProvider";
 import { useRBAC } from "@/hooks/useRBAC";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import { useApp } from "@/contexts/AppContext";
 import { 
   useInventoryRequests, 
   useInventoryRequestStats,
@@ -11,8 +12,9 @@ import {
 } from "@/hooks/useInventoryRequests";
 
 export default function InventoryApprovalsPage() {
-  const { user } = useAuth();
+  // const { user } = useAuth();
   const { isAdmin } = useRBAC();
+  const { addNotification } = useApp();
   const [selectedRequest, setSelectedRequest] = useState<string | null>(null);
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [reviewForm, setReviewForm] = useState({
@@ -51,10 +53,17 @@ export default function InventoryApprovalsPage() {
         rejectionReason: '',
         adminNotes: '',
       });
-      alert(`Talep ${reviewForm.status === 'approved' ? 'onaylandı' : 'reddedildi'}`);
-    } catch (error) {
-      console.error("Talep inceleme hatası:", error);
-      alert("Talep incelenirken bir hata oluştu");
+      addNotification({
+        type: 'success',
+        title: 'Başarılı',
+        message: `Talep ${reviewForm.status === 'approved' ? 'onaylandı' : 'reddedildi'}`
+      });
+    } catch {
+      addNotification({
+        type: 'error',
+        title: 'Hata',
+        message: 'Talep incelenirken bir hata oluştu'
+      });
     }
   };
 

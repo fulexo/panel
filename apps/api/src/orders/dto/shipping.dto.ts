@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsNumber, IsBoolean, IsEnum, Min, Max } from 'class-validator';
+import { IsString, IsOptional, IsNumber, IsBoolean, IsEnum, Min } from 'class-validator';
 
 export enum AdjustmentType {
   PERCENTAGE = 'percentage',

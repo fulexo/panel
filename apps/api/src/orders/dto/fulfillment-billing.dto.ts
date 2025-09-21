@@ -9,18 +9,18 @@ export enum FulfillmentInvoiceStatus {
 
 export class CreateFulfillmentServiceDto {
   @IsString()
-  name: string;
+  name!: string;
 
   @IsOptional()
   @IsString()
   description?: string;
 
   @IsString()
-  unit: string; // "adet", "kg", "m3", "saat"
+  unit!: string; // "adet", "kg", "m3", "saat"
 
   @IsNumber()
   @Min(0)
-  basePrice: number;
+  basePrice!: number;
 
   @IsOptional()
   @IsBoolean()
@@ -52,14 +52,14 @@ export class UpdateFulfillmentServiceDto {
 
 export class CreateFulfillmentBillingItemDto {
   @IsString()
-  orderId: string;
+  orderId!: string;
 
   @IsString()
-  serviceId: string;
+  serviceId!: string;
 
   @IsNumber()
   @Min(0)
-  quantity: number;
+  quantity!: number;
 
   @IsOptional()
   @IsNumber()

@@ -406,7 +406,7 @@ export class ProductsService {
       });
 
       let totalPrice = 0;
-      let items: Array<{
+      const items: Array<{
         productId: string;
         quantity: number;
         unitPrice: number;
