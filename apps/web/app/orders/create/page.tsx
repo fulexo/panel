@@ -92,8 +92,8 @@ export default function CreateOrderPage() {
   const calculateShippingMutation = useCalculateShipping();
 
   useEffect(() => {
-    if (cartData?.cart?.items) {
-      setCartItems(cartData.cart.items);
+    if ((cartData as any)?.cart?.items) {
+      setCartItems((cartData as any).cart.items);
     }
   }, [cartData]);
 

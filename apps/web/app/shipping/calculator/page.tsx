@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import { useRBAC } from "@/hooks/useRBAC";
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -27,7 +27,7 @@ export default function ShippingCalculatorPage() {
     try {
       const result = await calculateShippingMutation.mutateAsync({
         zoneId: selectedZone,
-        customerId: user?.id,
+        ...(user?.id && { customerId: user.id }),
         orderTotal,
       });
       setCalculatedPrices(result);
@@ -87,7 +87,7 @@ export default function ShippingCalculatorPage() {
                     className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground"
                   >
                     <option value="">Bölge Seçin</option>
-                    {shippingOptions?.map((option) => (
+                    {shippingOptions?.map((option: any) => (
                       <option key={option.zone.id} value={option.zone.id}>
                         {option.zone.name}
                       </option>
@@ -172,7 +172,7 @@ export default function ShippingCalculatorPage() {
                 </p>
               ) : (
                 <div className="space-y-6">
-                  {shippingOptions?.map((option) => (
+                  {shippingOptions?.map((option: any) => (
                     <div key={option.zone.id} className="border border-border rounded-lg p-4">
                       <h3 className="font-medium text-foreground mb-3">{option.zone.name}</h3>
                       {option.zone.description && (
@@ -180,7 +180,7 @@ export default function ShippingCalculatorPage() {
                       )}
                       
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {option.prices.map((price) => (
+                        {option.prices.map((price: any) => (
                           <div key={price.id} className="bg-accent p-3 rounded-lg">
                             <div className="flex justify-between items-start mb-2">
                               <h4 className="font-medium text-foreground">{price.name}</h4>

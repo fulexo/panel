@@ -56,7 +56,7 @@ export const useCreateCustomerOrder = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: (data: any) => apiClient.post('/orders/customer', data),
+    mutationFn: (data: any) => apiClient.createCustomerOrder(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.orders() });
     },
@@ -71,7 +71,7 @@ export const usePendingApprovals = (params?: {
 }) => {
   return useQuery({
     queryKey: ['orders', 'pending-approvals', params],
-    queryFn: () => apiClient.get('/orders/pending-approvals', { params }),
+    queryFn: () => apiClient.getPendingApprovals(),
     staleTime: 2 * 60 * 1000, // 2 minutes
   });
 };
@@ -81,7 +81,7 @@ export const useApproveOrder = () => {
   
   return useMutation({
     mutationFn: ({ id, notes }: { id: string; notes?: string }) => 
-      apiClient.put(`/orders/${id}/approve`, { notes }),
+      apiClient.approveOrder(id, { ...(notes && { notes }) }),
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.orders() });
       queryClient.invalidateQueries({ queryKey: queryKeys.order(id) });
@@ -95,7 +95,7 @@ export const useRejectOrder = () => {
   
   return useMutation({
     mutationFn: ({ id, reason, notes }: { id: string; reason: string; notes?: string }) => 
-      apiClient.put(`/orders/${id}/reject`, { reason, notes }),
+      apiClient.rejectOrder(id, { reason, ...(notes && { notes }) }),
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.orders() });
       queryClient.invalidateQueries({ queryKey: queryKeys.order(id) });

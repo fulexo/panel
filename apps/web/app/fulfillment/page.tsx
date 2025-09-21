@@ -192,8 +192,8 @@ export default function FulfillmentPage() {
     );
   }
 
-  const billingItemsData = billingItems?.data || [];
-  const invoicesData = invoices?.data || [];
+  const billingItemsData = (billingItems as any)?.data || [];
+  const invoicesData = (invoices as any)?.data || [];
 
   return (
     <ProtectedRoute>
@@ -209,22 +209,22 @@ export default function FulfillmentPage() {
           </div>
 
           {/* Stats Cards */}
-          {stats && (
+          {(stats as any) && (
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="bg-card p-4 rounded-lg border border-border">
-                <div className="text-2xl font-bold text-foreground">{stats.totalItems}</div>
+                <div className="text-2xl font-bold text-foreground">{(stats as any).totalItems}</div>
                 <div className="text-sm text-muted-foreground">Toplam Hizmet</div>
               </div>
               <div className="bg-card p-4 rounded-lg border border-border">
-                <div className="text-2xl font-bold text-yellow-600">{stats.unbilledItems}</div>
+                <div className="text-2xl font-bold text-yellow-600">{(stats as any).unbilledItems}</div>
                 <div className="text-sm text-muted-foreground">Faturalanmamış</div>
               </div>
               <div className="bg-card p-4 rounded-lg border border-border">
-                <div className="text-2xl font-bold text-foreground">₺{stats.totalAmount.toFixed(2)}</div>
+                <div className="text-2xl font-bold text-foreground">₺{(stats as any).totalAmount.toFixed(2)}</div>
                 <div className="text-sm text-muted-foreground">Toplam Tutar</div>
               </div>
               <div className="bg-card p-4 rounded-lg border border-border">
-                <div className="text-2xl font-bold text-yellow-600">₺{stats.unbilledAmount.toFixed(2)}</div>
+                <div className="text-2xl font-bold text-yellow-600">₺{(stats as any).unbilledAmount.toFixed(2)}</div>
                 <div className="text-sm text-muted-foreground">Faturalanmamış Tutar</div>
               </div>
             </div>
@@ -284,7 +284,7 @@ export default function FulfillmentPage() {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {services?.map((service: any) => (
+                  {(services as any)?.map((service: any) => (
                     <div key={service.id} className="bg-card p-4 rounded-lg border border-border">
                       <div className="flex justify-between items-start mb-2">
                         <h3 className="font-medium text-foreground">{service.name}</h3>
@@ -352,7 +352,7 @@ export default function FulfillmentPage() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {billingItemsData.map((item: any) => (
+                  {(billingItemsData as any)?.map((item: any) => (
                     <div key={item.id} className="bg-card p-4 rounded-lg border border-border">
                       <div className="flex justify-between items-start mb-2">
                         <div>
@@ -430,7 +430,7 @@ export default function FulfillmentPage() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {invoicesData.map((invoice: any) => (
+                  {(invoicesData as any)?.map((invoice: any) => (
                     <div key={invoice.id} className="bg-card p-6 rounded-lg border border-border">
                       <div className="flex justify-between items-start mb-4">
                         <div>

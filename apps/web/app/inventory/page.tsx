@@ -200,7 +200,7 @@ export default function InventoryPage() {
     );
   }
 
-  const requests = requestsData?.data || [];
+  const requests = (requestsData as any)?.data || [];
   const products = (productsData as any)?.data || [];
   const stats = statsData || { total: 0, pending: 0, approved: 0, rejected: 0 };
 
@@ -220,19 +220,19 @@ export default function InventoryPage() {
           {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="bg-card p-4 rounded-lg border border-border">
-              <div className="text-2xl font-bold text-foreground">{stats.total}</div>
+              <div className="text-2xl font-bold text-foreground">{(stats as any)?.total}</div>
               <div className="text-sm text-muted-foreground">Toplam Talep</div>
             </div>
             <div className="bg-card p-4 rounded-lg border border-border">
-              <div className="text-2xl font-bold text-yellow-600">{stats.pending}</div>
+              <div className="text-2xl font-bold text-yellow-600">{(stats as any)?.pending}</div>
               <div className="text-sm text-muted-foreground">Bekleyen</div>
             </div>
             <div className="bg-card p-4 rounded-lg border border-border">
-              <div className="text-2xl font-bold text-green-600">{stats.approved}</div>
+              <div className="text-2xl font-bold text-green-600">{(stats as any)?.approved}</div>
               <div className="text-sm text-muted-foreground">Onaylanan</div>
             </div>
             <div className="bg-card p-4 rounded-lg border border-border">
-              <div className="text-2xl font-bold text-red-600">{stats.rejected}</div>
+              <div className="text-2xl font-bold text-red-600">{(stats as any)?.rejected}</div>
               <div className="text-sm text-muted-foreground">Reddedilen</div>
             </div>
           </div>

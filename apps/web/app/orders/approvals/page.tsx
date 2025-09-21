@@ -111,8 +111,8 @@ export default function OrderApprovalsPage() {
     );
   }
 
-  const orders = approvalsData?.data || [];
-  const totalPages = approvalsData?.pagination?.totalPages || 1;
+  const orders = (approvalsData as any)?.data || [];
+  const totalPages = (approvalsData as any)?.pagination?.totalPages || 1;
 
   return (
     <ProtectedRoute>

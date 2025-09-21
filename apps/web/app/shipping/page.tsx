@@ -1,10 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useAuth } from "@/components/AuthProvider";
 import { useRBAC } from "@/hooks/useRBAC";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import ProtectedComponent from "@/components/ProtectedComponent";
 import { 
   useShippingZones, 
   useShippingPrices, 
@@ -13,15 +11,12 @@ import {
   useUpdateShippingZone,
   useDeleteShippingZone,
   useCreateShippingPrice,
-  useUpdateShippingPrice,
   useDeleteShippingPrice,
   useCreateCustomerShippingPrice,
-  useUpdateCustomerShippingPrice,
   useDeleteCustomerShippingPrice
 } from "@/hooks/useShipping";
 
 export default function ShippingPage() {
-  const { user } = useAuth();
   const { isAdmin } = useRBAC();
   const [activeTab, setActiveTab] = useState<'zones' | 'prices' | 'customer-prices'>('zones');
   const [selectedZone, setSelectedZone] = useState<string>("");
@@ -29,8 +24,6 @@ export default function ShippingPage() {
   const [showCreatePrice, setShowCreatePrice] = useState(false);
   const [showCreateCustomerPrice, setShowCreateCustomerPrice] = useState(false);
   const [editingZone, setEditingZone] = useState<string | null>(null);
-  const [editingPrice, setEditingPrice] = useState<string | null>(null);
-  const [editingCustomerPrice, setEditingCustomerPrice] = useState<string | null>(null);
 
   // Form states
   const [zoneForm, setZoneForm] = useState({ name: '', description: '', isActive: true });
@@ -61,10 +54,8 @@ export default function ShippingPage() {
   const updateZoneMutation = useUpdateShippingZone();
   const deleteZoneMutation = useDeleteShippingZone();
   const createPriceMutation = useCreateShippingPrice();
-  const updatePriceMutation = useUpdateShippingPrice();
   const deletePriceMutation = useDeleteShippingPrice();
   const createCustomerPriceMutation = useCreateCustomerShippingPrice();
-  const updateCustomerPriceMutation = useUpdateCustomerShippingPrice();
   const deleteCustomerPriceMutation = useDeleteCustomerShippingPrice();
 
   if (!isAdmin()) {
@@ -138,28 +129,6 @@ export default function ShippingPage() {
     }
   };
 
-  const handleUpdatePrice = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingPrice) return;
-    
-    try {
-      await updatePriceMutation.mutateAsync({ id: editingPrice, data: priceForm });
-      setEditingPrice(null);
-      setPriceForm({ 
-        zoneId: '', 
-        name: '', 
-        description: '', 
-        basePrice: 0, 
-        freeShippingThreshold: 0, 
-        estimatedDays: '', 
-        priority: 0, 
-        isActive: true 
-      });
-    } catch (error) {
-      console.error('Price update error:', error);
-      alert('Fiyat güncellenirken bir hata oluştu');
-    }
-  };
 
   const handleDeletePrice = async (id: string) => {
     if (confirm('Bu fiyatı silmek istediğinizden emin misiniz?')) {
@@ -191,26 +160,6 @@ export default function ShippingPage() {
     }
   };
 
-  const handleUpdateCustomerPrice = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingCustomerPrice) return;
-    
-    try {
-      await updateCustomerPriceMutation.mutateAsync({ id: editingCustomerPrice, data: customerPriceForm });
-      setEditingCustomerPrice(null);
-      setCustomerPriceForm({ 
-        zoneId: '', 
-        priceId: '', 
-        customerId: '', 
-        adjustmentType: 'percentage', 
-        adjustmentValue: 0, 
-        isActive: true 
-      });
-    } catch (error) {
-      console.error('Customer price update error:', error);
-      alert('Müşteri fiyatı güncellenirken bir hata oluştu');
-    }
-  };
 
   const handleDeleteCustomerPrice = async (id: string) => {
     if (confirm('Bu müşteri fiyatını silmek istediğinizden emin misiniz?')) {
@@ -290,7 +239,7 @@ export default function ShippingPage() {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {zones?.map((zone) => (
+                  {zones?.map((zone: any) => (
                     <div key={zone.id} className="bg-card p-4 rounded-lg border border-border">
                       <div className="flex justify-between items-start mb-2">
                         <h3 className="font-medium text-foreground">{zone.name}</h3>
@@ -357,7 +306,7 @@ export default function ShippingPage() {
                   className="px-3 py-2 border border-border rounded-lg bg-background text-foreground"
                 >
                   <option value="">Tüm Bölgeler</option>
-                  {zones?.map((zone) => (
+                  {zones?.map((zone: any) => (
                     <option key={zone.id} value={zone.id}>
                       {zone.name}
                     </option>
@@ -372,7 +321,7 @@ export default function ShippingPage() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {prices?.map((price) => (
+                  {prices?.map((price: any) => (
                     <div key={price.id} className="bg-card p-4 rounded-lg border border-border">
                       <div className="flex justify-between items-start mb-2">
                         <div>
@@ -385,24 +334,6 @@ export default function ShippingPage() {
                           )}
                         </div>
                         <div className="flex gap-1">
-                          <button
-                            onClick={() => {
-                              setEditingPrice(price.id);
-                              setPriceForm({
-                                zoneId: price.zoneId,
-                                name: price.name,
-                                description: price.description || '',
-                                basePrice: price.basePrice,
-                                freeShippingThreshold: price.freeShippingThreshold || 0,
-                                estimatedDays: price.estimatedDays || '',
-                                priority: price.priority,
-                                isActive: price.isActive,
-                              });
-                            }}
-                            className="btn btn-sm btn-outline"
-                          >
-                            Düzenle
-                          </button>
                           <button
                             onClick={() => handleDeletePrice(price.id)}
                             className="btn btn-sm btn-danger"
@@ -452,7 +383,7 @@ export default function ShippingPage() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {customerPrices?.map((customerPrice) => (
+                  {customerPrices?.map((customerPrice: any) => (
                     <div key={customerPrice.id} className="bg-card p-4 rounded-lg border border-border">
                       <div className="flex justify-between items-start mb-2">
                         <div>
@@ -467,22 +398,6 @@ export default function ShippingPage() {
                           </p>
                         </div>
                         <div className="flex gap-1">
-                          <button
-                            onClick={() => {
-                              setEditingCustomerPrice(customerPrice.id);
-                              setCustomerPriceForm({
-                                zoneId: customerPrice.zoneId,
-                                priceId: customerPrice.priceId,
-                                customerId: customerPrice.customerId || '',
-                                adjustmentType: customerPrice.adjustmentType,
-                                adjustmentValue: customerPrice.adjustmentValue,
-                                isActive: customerPrice.isActive,
-                              });
-                            }}
-                            className="btn btn-sm btn-outline"
-                          >
-                            Düzenle
-                          </button>
                           <button
                             onClick={() => handleDeleteCustomerPrice(customerPrice.id)}
                             className="btn btn-sm btn-danger"
@@ -654,7 +569,7 @@ export default function ShippingPage() {
                       className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground"
                     >
                       <option value="">Bölge Seçin</option>
-                      {zones?.map((zone) => (
+                      {zones?.map((zone: any) => (
                         <option key={zone.id} value={zone.id}>
                           {zone.name}
                         </option>
@@ -784,7 +699,7 @@ export default function ShippingPage() {
                       className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground"
                     >
                       <option value="">Bölge Seçin</option>
-                      {zones?.map((zone) => (
+                      {zones?.map((zone: any) => (
                         <option key={zone.id} value={zone.id}>
                           {zone.name}
                         </option>
@@ -802,7 +717,7 @@ export default function ShippingPage() {
                       className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground"
                     >
                       <option value="">Fiyat Seçin</option>
-                      {prices?.map((price) => (
+                      {prices?.map((price: any) => (
                         <option key={price.id} value={price.id}>
                           {price.name} - ₺{price.basePrice.toFixed(2)}
                         </option>

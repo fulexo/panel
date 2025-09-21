@@ -129,7 +129,7 @@ export default function CartPage() {
     );
   }
 
-  const cartItems = cartData?.cart?.items || [];
+  const cartItems = (cartData as any)?.cart?.items || [];
   const products = (productsData as any)?.data || [];
 
   const calculateTotal = () => {

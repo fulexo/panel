@@ -120,9 +120,7 @@ export interface UpdateFulfillmentInvoiceData {
 export function useFulfillmentServices(includeInactive = false) {
   return useQuery({
     queryKey: ['fulfillment-services', { includeInactive }],
-    queryFn: () => apiClient.get<FulfillmentService[]>('/fulfillment-billing/services', { 
-      params: { includeInactive } 
-    }),
+    queryFn: () => apiClient.getFulfillmentServices(includeInactive),
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }
@@ -130,7 +128,9 @@ export function useFulfillmentServices(includeInactive = false) {
 export function useFulfillmentService(id: string) {
   return useQuery({
     queryKey: ['fulfillment-services', id],
-    queryFn: () => apiClient.get<FulfillmentService>(`/fulfillment-billing/services/${id}`),
+    queryFn: () => apiClient.getFulfillmentServices().then((services: any) => 
+      services.find((service: any) => service.id === id)
+    ),
     enabled: !!id,
   });
 }
@@ -140,7 +140,7 @@ export function useCreateFulfillmentService() {
 
   return useMutation({
     mutationFn: (data: CreateFulfillmentServiceData) => 
-      apiClient.post<FulfillmentService>('/fulfillment-billing/services', data),
+      apiClient.createFulfillmentService(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['fulfillment-services'] });
     },
@@ -152,7 +152,7 @@ export function useUpdateFulfillmentService() {
 
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: UpdateFulfillmentServiceData }) => 
-      apiClient.put<FulfillmentService>(`/fulfillment-billing/services/${id}`, data),
+      apiClient.updateFulfillmentService(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['fulfillment-services'] });
     },
@@ -164,7 +164,7 @@ export function useDeleteFulfillmentService() {
 
   return useMutation({
     mutationFn: (id: string) => 
-      apiClient.delete(`/fulfillment-billing/services/${id}`),
+      apiClient.deleteFulfillmentService(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['fulfillment-services'] });
     },
@@ -184,15 +184,7 @@ export function useFulfillmentBillingItems(params?: {
 }) {
   return useQuery({
     queryKey: ['fulfillment-billing-items', params],
-    queryFn: () => apiClient.get<{
-      data: FulfillmentBillingItem[];
-      pagination: {
-        page: number;
-        limit: number;
-        total: number;
-        totalPages: number;
-      };
-    }>('/fulfillment-billing/billing-items', { params }),
+    queryFn: () => apiClient.getFulfillmentBillingItems(params),
     staleTime: 2 * 60 * 1000, // 2 minutes
   });
 }
@@ -200,7 +192,7 @@ export function useFulfillmentBillingItems(params?: {
 export function useFulfillmentBillingItem(id: string) {
   return useQuery({
     queryKey: ['fulfillment-billing-items', id],
-    queryFn: () => apiClient.get<FulfillmentBillingItem>(`/fulfillment-billing/billing-items/${id}`),
+    queryFn: () => apiClient.getFulfillmentBillingItem(id),
     enabled: !!id,
   });
 }
@@ -210,7 +202,7 @@ export function useCreateFulfillmentBillingItem() {
 
   return useMutation({
     mutationFn: (data: CreateFulfillmentBillingItemData) => 
-      apiClient.post<FulfillmentBillingItem>('/fulfillment-billing/billing-items', data),
+      apiClient.createFulfillmentBillingItem(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['fulfillment-billing-items'] });
       queryClient.invalidateQueries({ queryKey: ['fulfillment-billing-stats'] });
@@ -223,7 +215,7 @@ export function useUpdateFulfillmentBillingItem() {
 
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: UpdateFulfillmentBillingItemData }) => 
-      apiClient.put<FulfillmentBillingItem>(`/fulfillment-billing/billing-items/${id}`, data),
+      apiClient.updateFulfillmentBillingItem(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['fulfillment-billing-items'] });
       queryClient.invalidateQueries({ queryKey: ['fulfillment-billing-stats'] });
@@ -236,7 +228,7 @@ export function useDeleteFulfillmentBillingItem() {
 
   return useMutation({
     mutationFn: (id: string) => 
-      apiClient.delete(`/fulfillment-billing/billing-items/${id}`),
+      apiClient.deleteFulfillmentBillingItem(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['fulfillment-billing-items'] });
       queryClient.invalidateQueries({ queryKey: ['fulfillment-billing-stats'] });
@@ -255,15 +247,7 @@ export function useFulfillmentInvoices(params?: {
 }) {
   return useQuery({
     queryKey: ['fulfillment-invoices', params],
-    queryFn: () => apiClient.get<{
-      data: FulfillmentInvoice[];
-      pagination: {
-        page: number;
-        limit: number;
-        total: number;
-        totalPages: number;
-      };
-    }>('/fulfillment-billing/invoices', { params }),
+    queryFn: () => apiClient.getFulfillmentInvoices(params),
     staleTime: 2 * 60 * 1000, // 2 minutes
   });
 }
@@ -271,7 +255,7 @@ export function useFulfillmentInvoices(params?: {
 export function useFulfillmentInvoice(id: string) {
   return useQuery({
     queryKey: ['fulfillment-invoices', id],
-    queryFn: () => apiClient.get<FulfillmentInvoice>(`/fulfillment-billing/invoices/${id}`),
+    queryFn: () => apiClient.getFulfillmentInvoice(id),
     enabled: !!id,
   });
 }
@@ -281,7 +265,7 @@ export function useGenerateMonthlyInvoice() {
 
   return useMutation({
     mutationFn: (data: GenerateMonthlyInvoiceData) => 
-      apiClient.post<FulfillmentInvoice>('/fulfillment-billing/invoices/generate', data),
+      apiClient.generateMonthlyInvoice(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['fulfillment-invoices'] });
       queryClient.invalidateQueries({ queryKey: ['fulfillment-billing-items'] });
@@ -295,7 +279,7 @@ export function useUpdateFulfillmentInvoice() {
 
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: UpdateFulfillmentInvoiceData }) => 
-      apiClient.put<FulfillmentInvoice>(`/fulfillment-billing/invoices/${id}`, data),
+      apiClient.updateFulfillmentInvoice(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['fulfillment-invoices'] });
     },
@@ -306,9 +290,7 @@ export function useUpdateFulfillmentInvoice() {
 export function useFulfillmentBillingStats(customerId?: string) {
   return useQuery({
     queryKey: ['fulfillment-billing-stats', { customerId }],
-    queryFn: () => apiClient.get<FulfillmentBillingStats>('/fulfillment-billing/stats', { 
-      params: customerId ? { customerId } : {} 
-    }),
+    queryFn: () => apiClient.getFulfillmentBillingStats(customerId),
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }

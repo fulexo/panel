@@ -99,9 +99,7 @@ export interface CalculateShippingResponse {
 export function useShippingZones(includeInactive = false) {
   return useQuery({
     queryKey: ['shipping', 'zones', { includeInactive }],
-    queryFn: () => apiClient.get<ShippingZone[]>('/shipping/zones', { 
-      params: { includeInactive } 
-    }),
+    queryFn: () => apiClient.getShippingZones(includeInactive),
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }
@@ -109,7 +107,9 @@ export function useShippingZones(includeInactive = false) {
 export function useShippingZone(id: string) {
   return useQuery({
     queryKey: ['shipping', 'zones', id],
-    queryFn: () => apiClient.get<ShippingZone>(`/shipping/zones/${id}`),
+    queryFn: () => apiClient.getShippingZones().then((zones: any) => 
+      zones.find((zone: any) => zone.id === id)
+    ),
     enabled: !!id,
   });
 }
@@ -119,7 +119,7 @@ export function useCreateShippingZone() {
 
   return useMutation({
     mutationFn: (data: Partial<ShippingZone>) => 
-      apiClient.post<ShippingZone>('/shipping/zones', data),
+      apiClient.createShippingZone(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['shipping', 'zones'] });
     },
@@ -131,7 +131,7 @@ export function useUpdateShippingZone() {
 
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: Partial<ShippingZone> }) => 
-      apiClient.put<ShippingZone>(`/shipping/zones/${id}`, data),
+      apiClient.updateShippingZone(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['shipping', 'zones'] });
     },
@@ -143,7 +143,7 @@ export function useDeleteShippingZone() {
 
   return useMutation({
     mutationFn: (id: string) => 
-      apiClient.delete(`/shipping/zones/${id}`),
+      apiClient.deleteShippingZone(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['shipping', 'zones'] });
     },

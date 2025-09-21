@@ -11,9 +11,9 @@ export const useProducts = (params?: {
   storeId?: string;
   status?: string;
 }) => {
-  return useQuery<PaginatedResponse<Product>>({
+  return useQuery<PaginatedResponse<Product[]>>({
     queryKey: queryKeys.products(params),
-    queryFn: () => apiClient.getProducts(params),
+    queryFn: () => apiClient.getProducts(params) as Promise<PaginatedResponse<Product[]>>,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 };

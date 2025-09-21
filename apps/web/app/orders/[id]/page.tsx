@@ -196,7 +196,7 @@ export default function OrderDetailPage() {
     );
   }
 
-  const items = billingItems?.data || [];
+  const items = (billingItems as any)?.data || [];
   const totalFulfillmentCost = items.reduce((sum: number, item: any) => sum + item.totalPrice, 0);
 
   return (
@@ -424,7 +424,7 @@ export default function OrderDetailPage() {
                     <select
                       value={fulfillmentForm.serviceId}
                       onChange={(e) => {
-                        const service = services?.find((s: any) => s.id === e.target.value);
+                        const service = (services as any)?.find((s: any) => s.id === e.target.value);
                         setFulfillmentForm(prev => ({
                           ...prev,
                           serviceId: e.target.value,
@@ -435,7 +435,7 @@ export default function OrderDetailPage() {
                       className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground"
                     >
                       <option value="">Hizmet Seçin</option>
-                      {services?.map((service: any) => (
+                      {(services as any)?.map((service: any) => (
                         <option key={service.id} value={service.id}>
                           {service.name} - ₺{service.basePrice.toFixed(2)}/{service.unit}
                         </option>
