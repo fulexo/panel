@@ -76,4 +76,62 @@ export class ProductsController {
   ) {
     return this.products.bulkDelete(user.tenantId, body.productIds, user.id);
   }
+
+  // Bundle product endpoints
+  @Get(':id/bundle-items')
+  @ApiOperation({ summary: 'Get bundle items' })
+  async getBundleItems(
+    @CurrentUser() user: { id: string; email: string; role: string; tenantId: string },
+    @Param('id') id: string,
+  ) {
+    return this.products.getBundleItems(user.tenantId, id);
+  }
+
+  @Post(':id/bundle-items')
+  @ApiOperation({ summary: 'Add item to bundle' })
+  async addBundleItem(
+    @CurrentUser() user: { id: string; email: string; role: string; tenantId: string },
+    @Param('id') id: string,
+    @Body() body: { productId: string; quantity?: number; isOptional?: boolean },
+  ) {
+    return this.products.addBundleItem(user.tenantId, id, body.productId, body.quantity, body.isOptional);
+  }
+
+  @Put(':id/bundle-items/:productId')
+  @ApiOperation({ summary: 'Update bundle item' })
+  async updateBundleItem(
+    @CurrentUser() user: { id: string; email: string; role: string; tenantId: string },
+    @Param('id') id: string,
+    @Param('productId') productId: string,
+    @Body() body: {
+      quantity?: number;
+      isOptional?: boolean;
+      minQuantity?: number;
+      maxQuantity?: number;
+      discount?: number;
+      sortOrder?: number;
+    },
+  ) {
+    return this.products.updateBundleItem(user.tenantId, id, productId, body);
+  }
+
+  @Delete(':id/bundle-items/:productId')
+  @ApiOperation({ summary: 'Remove item from bundle' })
+  async removeBundleItem(
+    @CurrentUser() user: { id: string; email: string; role: string; tenantId: string },
+    @Param('id') id: string,
+    @Param('productId') productId: string,
+  ) {
+    return this.products.removeBundleItem(user.tenantId, id, productId);
+  }
+
+  @Post(':id/calculate-bundle-price')
+  @ApiOperation({ summary: 'Calculate bundle price' })
+  async calculateBundlePrice(
+    @CurrentUser() user: { id: string; email: string; role: string; tenantId: string },
+    @Param('id') id: string,
+    @Body() body: { selectedItems?: { productId: string; quantity: number }[] },
+  ) {
+    return this.products.calculateBundlePrice(user.tenantId, id, body.selectedItems);
+  }
 }

@@ -136,21 +136,89 @@ export interface Product {
   id: string;
   tenantId: string;
   storeId?: string;
+  wooId?: string;
   sku: string;
   name?: string;
   description?: string;
+  shortDescription?: string;
   price?: number;
+  regularPrice?: number;
+  salePrice?: number;
   stock?: number;
+  stockQuantity?: number;
+  stockStatus?: string;
   weight?: number;
   dimensions?: ProductDimensions;
   images: string[];
+  categories: string[];
   tags: string[];
   active: boolean;
+  status?: string;
+  metaData?: Record<string, unknown>;
+  lastSyncedAt?: string;
+  // Bundle product fields
+  productType?: ProductType;
+  isBundle?: boolean;
+  bundleItems?: BundleItem[];
+  bundlePricing?: BundlePricing;
+  bundleDiscount?: number;
+  minBundleItems?: number;
+  maxBundleItems?: number;
+  bundleStock?: BundleStock;
   createdAt: string;
   updatedAt: string;
   store?: WooStore;
   inboundItems: InboundItem[];
   stockMovements: StockMovement[];
+  bundleProducts?: BundleProduct[];
+  parentBundles?: BundleProduct[];
+}
+
+export type ProductType = 'simple' | 'variable' | 'bundle' | 'grouped' | 'external';
+export type BundlePricing = 'fixed' | 'dynamic';
+export type BundleStock = 'parent' | 'children' | 'both';
+
+export interface BundleItem {
+  productId: string;
+  quantity: number;
+  isOptional?: boolean;
+  minQuantity?: number;
+  maxQuantity?: number;
+  discount?: number;
+  sortOrder?: number;
+}
+
+export interface BundleProduct {
+  id: string;
+  tenantId: string;
+  bundleId: string;
+  productId: string;
+  quantity: number;
+  isOptional: boolean;
+  minQuantity?: number;
+  maxQuantity?: number;
+  discount?: number;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+  product: Product;
+}
+
+export interface BundlePriceCalculation {
+  bundleId: string;
+  bundlePricing: BundlePricing;
+  bundleDiscount: number;
+  items: Array<{
+    productId: string;
+    quantity: number;
+    unitPrice: number;
+    discount: number;
+    discountedPrice: number;
+    total: number;
+    isOptional: boolean;
+  }>;
+  totalPrice: number;
+  originalPrice: number;
 }
 
 export interface ProductDimensions {

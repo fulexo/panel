@@ -19,6 +19,8 @@ export default function ProductsPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState<string | null>(null);
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
+  const [showBundleModal, setShowBundleModal] = useState<string | null>(null);
+  const [bundleItems, setBundleItems] = useState<any[]>([]);
   
   // Get user's store ID for customer view
   const userStoreId = user?.stores?.[0]?.id;
@@ -291,8 +293,22 @@ export default function ProductsPage() {
                       </td>
                       <td className="p-3">
                         <div>
-                          <div className="font-medium">{product.name}</div>
-                          <div className="text-sm text-muted-foreground">{product.category}</div>
+                          <div className="font-medium flex items-center gap-2">
+                            {product.name}
+                            {product.isBundle && (
+                              <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
+                                Bundle
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            {product.category}
+                            {product.isBundle && product.bundleProducts && (
+                              <span className="ml-2">
+                                ({product.bundleProducts.length} items)
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </td>
                       <td className="p-3">{product.sku}</td>
@@ -334,6 +350,14 @@ export default function ProductsPage() {
                             >
                               Edit
                             </button>
+                            {product.isBundle && (
+                              <button 
+                                onClick={() => setShowBundleModal(product.id)}
+                                className="btn btn-sm btn-outline"
+                              >
+                                Manage Bundle
+                              </button>
+                            )}
                             <button 
                               onClick={() => deleteProduct.mutate(product.id)}
                               className="btn btn-sm btn-destructive"
@@ -438,6 +462,16 @@ export default function ProductsPage() {
                       <option value="home">Home & Garden</option>
                     </select>
                   </div>
+                  <div>
+                    <label className="form-label">Product Type</label>
+                    <select className="form-select">
+                      <option value="simple">Simple</option>
+                      <option value="bundle">Bundle</option>
+                      <option value="variable">Variable</option>
+                      <option value="grouped">Grouped</option>
+                      <option value="external">External</option>
+                    </select>
+                  </div>
                   <div className="md:col-span-2">
                     <label className="form-label">Description</label>
                     <textarea
@@ -529,6 +563,119 @@ export default function ProductsPage() {
                   <button className="btn btn-primary">Update Product</button>
                   <button 
                     onClick={() => setEditingProduct(null)}
+                    className="btn btn-outline"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Bundle Management Modal */}
+          {showBundleModal && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+              <div className="bg-card p-6 rounded-lg border border-border w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+                <h3 className="text-lg font-semibold text-foreground mb-4">Manage Bundle Items</h3>
+                
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <h4 className="text-md font-medium">Bundle Items</h4>
+                    <button className="btn btn-sm btn-primary">
+                      Add Product
+                    </button>
+                  </div>
+                  
+                  <div className="border border-border rounded-lg overflow-hidden">
+                    <table className="w-full">
+                      <thead className="bg-muted">
+                        <tr>
+                          <th className="text-left p-3">Product</th>
+                          <th className="text-left p-3">Quantity</th>
+                          <th className="text-left p-3">Optional</th>
+                          <th className="text-left p-3">Discount</th>
+                          <th className="text-left p-3">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {bundleItems.map((item, index) => (
+                          <tr key={index} className="border-b border-border">
+                            <td className="p-3">
+                              <div>
+                                <div className="font-medium">{item.product?.name || 'Unknown Product'}</div>
+                                <div className="text-sm text-muted-foreground">SKU: {item.product?.sku || 'N/A'}</div>
+                              </div>
+                            </td>
+                            <td className="p-3">
+                              <input
+                                type="number"
+                                min="1"
+                                value={item.quantity}
+                                onChange={(e) => {
+                                  const newItems = [...bundleItems];
+                                  newItems[index].quantity = parseInt(e.target.value) || 1;
+                                  setBundleItems(newItems);
+                                }}
+                                className="w-20 px-2 py-1 border border-border rounded bg-background text-foreground"
+                              />
+                            </td>
+                            <td className="p-3">
+                              <input
+                                type="checkbox"
+                                checked={item.isOptional}
+                                onChange={(e) => {
+                                  const newItems = [...bundleItems];
+                                  newItems[index].isOptional = e.target.checked;
+                                  setBundleItems(newItems);
+                                }}
+                                className="form-checkbox"
+                              />
+                            </td>
+                            <td className="p-3">
+                              <input
+                                type="number"
+                                min="0"
+                                max="100"
+                                step="0.1"
+                                value={item.discount || 0}
+                                onChange={(e) => {
+                                  const newItems = [...bundleItems];
+                                  newItems[index].discount = parseFloat(e.target.value) || 0;
+                                  setBundleItems(newItems);
+                                }}
+                                className="w-20 px-2 py-1 border border-border rounded bg-background text-foreground"
+                              />
+                              <span className="text-sm text-muted-foreground ml-1">%</span>
+                            </td>
+                            <td className="p-3">
+                              <button
+                                onClick={() => {
+                                  const newItems = bundleItems.filter((_, i) => i !== index);
+                                  setBundleItems(newItems);
+                                }}
+                                className="btn btn-sm btn-destructive"
+                              >
+                                Remove
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                        {bundleItems.length === 0 && (
+                          <tr>
+                            <td colSpan={5} className="p-8 text-center text-muted-foreground">
+                              No items in bundle
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+                
+                <div className="flex gap-2 mt-6">
+                  <button className="btn btn-primary">Save Bundle</button>
+                  <button 
+                    onClick={() => setShowBundleModal(null)}
                     className="btn btn-outline"
                   >
                     Cancel

@@ -41,6 +41,7 @@ model Tenant {
   fulfillmentServices FulfillmentService[]
   fulfillmentBillingItems FulfillmentBillingItem[]
   fulfillmentInvoices FulfillmentInvoice[]
+  bundleProducts BundleProduct[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -351,6 +352,17 @@ model Product {
   tags            String[] // Array of tag names
   metaData        Json?    // WooCommerce meta data
   lastSyncedAt    DateTime?
+  
+  // Bundle product fields
+  productType     String   @default("simple") // simple, variable, bundle, grouped, external
+  isBundle        Boolean  @default(false) // Whether this is a bundle product
+  bundleItems     Json?    // Bundle items configuration
+  bundlePricing   String   @default("fixed") // fixed, dynamic (pricing strategy)
+  bundleDiscount  Decimal? @db.Decimal(5,2) // Bundle discount percentage
+  minBundleItems  Int?     // Minimum items required in bundle
+  maxBundleItems  Int?     // Maximum items allowed in bundle
+  bundleStock     String   @default("parent") // parent, children, both (stock management)
+  
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
   
@@ -361,6 +373,8 @@ model Product {
   inventoryApprovals InventoryApproval[]
   cartItems       CartItem[]
   inventoryRequests InventoryRequest[]
+  bundleProducts  BundleProduct[] @relation("BundleParent")
+  parentBundles   BundleProduct[] @relation("BundleChild")
 
   @@unique([wooId, storeId])
   @@index([tenantId])
@@ -374,6 +388,35 @@ model Product {
   @@index([lastSyncedAt])
   @@index([createdAt])
   @@index([updatedAt])
+  @@index([productType])
+  @@index([isBundle])
+}
+
+// Bundle product relationships
+model BundleProduct {
+  id              String   @id @default(uuid())
+  tenantId        String
+  bundleId        String   // Parent bundle product ID
+  productId       String   // Child product ID
+  quantity        Int      @default(1) // Quantity of this product in the bundle
+  isOptional      Boolean  @default(false) // Whether this item is optional in the bundle
+  minQuantity     Int?     // Minimum quantity required
+  maxQuantity     Int?     // Maximum quantity allowed
+  discount        Decimal? @db.Decimal(5,2) // Item-specific discount
+  sortOrder       Int      @default(0) // Display order in bundle
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  bundle          Product  @relation("BundleParent", fields: [bundleId], references: [id], onDelete: Cascade)
+  product         Product  @relation("BundleChild", fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([bundleId, productId])
+  @@index([tenantId])
+  @@index([bundleId])
+  @@index([productId])
+  @@index([isOptional])
+  @@index([sortOrder])
 }
 
 model Invoice {
@@ -1195,6 +1238,7 @@ model FulfillmentBillingItem {
   tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   service     FulfillmentService @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  invoice     FulfillmentInvoice? @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
   
   @@index([tenantId])
   @@index([orderId])
