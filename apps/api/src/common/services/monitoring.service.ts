@@ -57,7 +57,7 @@ export class MonitoringService {
         data: {
           action: 'PERFORMANCE_LOG',
           entityType: 'PERFORMANCE',
-          changes: toPrismaJson({
+          changes: toPrismaJsonValue({
             operation,
             duration,
             metadata,
@@ -81,7 +81,7 @@ export class MonitoringService {
         data: {
           action: `USER_${action}`,
           entityType: 'USER_ACTIVITY',
-          changes: toPrismaJson({
+          changes: toPrismaJsonValue({
             action,
             metadata,
           }),

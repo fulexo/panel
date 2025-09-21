@@ -33,29 +33,29 @@ export default function ReportsPage() {
   
   // Fetch real data from API
   const { data: dashboardStats, isLoading: isLoadingDashboard } = useDashboardStats(userStoreId);
-  const { data: salesData, isLoading: isLoadingSales } = useSalesReport({ 
+  const { data: salesData, isLoading: isLoadingSales } = useSalesReport({
     startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] as string,
     endDate: new Date().toISOString().split('T')[0] as string,
-    storeId: userStoreId 
+    ...(userStoreId && { storeId: userStoreId })
   });
   const { data: productData, isLoading: isLoadingProducts } = useProductReport({ 
     startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] as string,
     endDate: new Date().toISOString().split('T')[0] as string,
-    storeId: userStoreId 
+    ...(userStoreId && { storeId: userStoreId })
   });
   const { data: customerData, isLoading: isLoadingCustomers } = useCustomerReport({ 
     startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] as string,
     endDate: new Date().toISOString().split('T')[0] as string,
-    storeId: userStoreId 
+    ...(userStoreId && { storeId: userStoreId })
   });
   const { data: inventoryData, isLoading: isLoadingInventory } = useInventoryReport({ 
-    storeId: userStoreId,
+    ...(userStoreId && { storeId: userStoreId }),
     lowStock: true 
   });
   const { data: financialData, isLoading: isLoadingFinancial } = useFinancialReport({ 
     startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] as string,
     endDate: new Date().toISOString().split('T')[0] as string,
-    storeId: userStoreId 
+    ...(userStoreId && { storeId: userStoreId })
   });
 
   // Use real data or fallback to empty data
@@ -163,7 +163,7 @@ export default function ReportsPage() {
             <div className="lg:col-span-1">
               <div className="bg-card p-4 rounded-lg border border-border">
                 <nav className="space-y-2">
-                  {tabs.map((tab) => (
+                  {tabs.map((tab: any) => (
                     <button
                       key={tab.id}
                       onClick={() => setActiveTab(tab.id)}
@@ -193,37 +193,37 @@ export default function ReportsPage() {
                       <div className="bg-card p-6 rounded-lg border border-border">
                         <h3 className="text-lg font-semibold text-foreground mb-2">Toplam Gelir</h3>
                         <div className="text-3xl font-bold text-primary">
-                          {formatCurrency(data.overview.totalRevenue)}
+                          {formatCurrency((data.overview as any).totalRevenue)}
                         </div>
                         <p className="text-sm text-green-600 mt-1">
-                          +{data.overview.revenueGrowth}% bu ay
+                          +{(data.overview as any).revenueGrowth}% bu ay
                         </p>
                       </div>
                       <div className="bg-card p-6 rounded-lg border border-border">
                         <h3 className="text-lg font-semibold text-foreground mb-2">Toplam Sipariş</h3>
                         <div className="text-3xl font-bold text-blue-600">
-                          {formatNumber(data.overview.totalOrders)}
+                          {formatNumber((data.overview as any).totalOrders)}
                         </div>
                         <p className="text-sm text-green-600 mt-1">
-                          +{data.overview.orderGrowth}% bu ay
+                          +{(data.overview as any).orderGrowth}% bu ay
                         </p>
                       </div>
                       <div className="bg-card p-6 rounded-lg border border-border">
                         <h3 className="text-lg font-semibold text-foreground mb-2">Toplam Ürün</h3>
                         <div className="text-3xl font-bold text-green-600">
-                          {formatNumber(data.overview.totalProducts)}
+                          {formatNumber((data.overview as any).totalProducts)}
                         </div>
                         <p className="text-sm text-green-600 mt-1">
-                          +{data.overview.productGrowth}% bu ay
+                          +{(data.overview as any).productGrowth}% bu ay
                         </p>
                       </div>
                       <div className="bg-card p-6 rounded-lg border border-border">
                         <h3 className="text-lg font-semibold text-foreground mb-2">Toplam Müşteri</h3>
                         <div className="text-3xl font-bold text-purple-600">
-                          {formatNumber(data.overview.totalCustomers)}
+                          {formatNumber((data.overview as any).totalCustomers)}
                         </div>
                         <p className="text-sm text-green-600 mt-1">
-                          +{data.overview.customerGrowth}% bu ay
+                          +{(data.overview as any).customerGrowth}% bu ay
                         </p>
                       </div>
                     </div>
@@ -232,7 +232,7 @@ export default function ReportsPage() {
                       <div className="bg-card p-6 rounded-lg border border-border">
                         <h3 className="text-lg font-semibold text-foreground mb-4">Günlük Satışlar</h3>
                         <div className="space-y-3">
-                          {data.sales.dailySales.map((day, index) => (
+                          {(data.sales as any).dailySales.map((day: any, index: number) => (
                             <div key={index} className="flex justify-between items-center">
                               <span className="text-sm text-muted-foreground">
                                 {new Date(day.date).toLocaleDateString('tr-TR')}
@@ -245,7 +245,7 @@ export default function ReportsPage() {
                       <div className="bg-card p-6 rounded-lg border border-border">
                         <h3 className="text-lg font-semibold text-foreground mb-4">Kategori Dağılımı</h3>
                         <div className="space-y-3">
-                          {data.sales.salesByCategory.map((category, index) => (
+                          {(data.sales as any).salesByCategory.map((category: any, index: number) => (
                             <div key={index} className="space-y-2">
                               <div className="flex justify-between items-center">
                                 <span className="text-sm">{category.category}</span>
@@ -274,7 +274,7 @@ export default function ReportsPage() {
                       <div className="bg-card p-6 rounded-lg border border-border">
                         <h3 className="text-lg font-semibold text-foreground mb-4">En Çok Satan Ürünler</h3>
                         <div className="space-y-4">
-                          {data.sales.topProducts.map((product, index) => (
+                          {(data.sales as any).topProducts.map((product: any, index: number) => (
                             <div key={index} className="flex justify-between items-center">
                               <div>
                                 <p className="font-medium">{product.name}</p>
@@ -306,7 +306,7 @@ export default function ReportsPage() {
                       <div className="bg-card p-6 rounded-lg border border-border">
                         <h3 className="text-lg font-semibold text-foreground mb-4">Düşük Stok Uyarıları</h3>
                         <div className="space-y-3">
-                          {data.products.lowStock.map((item, index) => (
+                          {(data.products as any).lowStock.map((item: any, index: number) => (
                             <div key={index} className="flex justify-between items-center p-3 bg-red-50 rounded-lg">
                               <div>
                                 <p className="font-medium">{item.name}</p>
@@ -326,7 +326,7 @@ export default function ReportsPage() {
                       <div className="bg-card p-6 rounded-lg border border-border">
                         <h3 className="text-lg font-semibold text-foreground mb-4">Kategori Performansı</h3>
                         <div className="space-y-4">
-                          {data.products.categoryPerformance.map((category, index) => (
+                          {(data.products as any).categoryPerformance.map((category: any, index: number) => (
                             <div key={index} className="space-y-2">
                               <div className="flex justify-between items-center">
                                 <span className="font-medium">{category.category}</span>
@@ -352,7 +352,7 @@ export default function ReportsPage() {
                       <div className="bg-card p-6 rounded-lg border border-border">
                         <h3 className="text-lg font-semibold text-foreground mb-4">En Değerli Müşteriler</h3>
                         <div className="space-y-4">
-                          {data.customers.topCustomers.map((customer, index) => (
+                          {(data.customers as any).topCustomers.map((customer: any, index: number) => (
                             <div key={index} className="flex justify-between items-center">
                               <div>
                                 <p className="font-medium">{customer.name}</p>
@@ -369,7 +369,7 @@ export default function ReportsPage() {
                       <div className="bg-card p-6 rounded-lg border border-border">
                         <h3 className="text-lg font-semibold text-foreground mb-4">Müşteri Segmentleri</h3>
                         <div className="space-y-4">
-                          {data.customers.customerSegments.map((segment, index) => (
+                          {(data.customers as any).customerSegments.map((segment: any, index: number) => (
                             <div key={index} className="space-y-2">
                               <div className="flex justify-between items-center">
                                 <span className="font-medium">{segment.segment}</span>
@@ -395,19 +395,19 @@ export default function ReportsPage() {
                       <div className="bg-card p-6 rounded-lg border border-border">
                         <h3 className="text-lg font-semibold text-foreground mb-2">Toplam Stok Değeri</h3>
                         <div className="text-3xl font-bold text-primary">
-                          {formatCurrency(data.inventory.totalValue)}
+                          {formatCurrency((data.inventory as any).totalValue)}
                         </div>
                       </div>
                       <div className="bg-card p-6 rounded-lg border border-border">
                         <h3 className="text-lg font-semibold text-foreground mb-2">Düşük Stok</h3>
                         <div className="text-3xl font-bold text-yellow-600">
-                          {data.inventory.lowStockItems}
+                          {(data.inventory as any).lowStockItems}
                         </div>
                       </div>
                       <div className="bg-card p-6 rounded-lg border border-border">
                         <h3 className="text-lg font-semibold text-foreground mb-2">Stok Devir Hızı</h3>
                         <div className="text-3xl font-bold text-blue-600">
-                          {data.inventory.inventoryTurnover}x
+                          {(data.inventory as any).inventoryTurnover}x
                         </div>
                       </div>
                     </div>
@@ -416,7 +416,7 @@ export default function ReportsPage() {
                       <div className="bg-card p-6 rounded-lg border border-border">
                         <h3 className="text-lg font-semibold text-foreground mb-4">En Hızlı Hareket Eden Ürünler</h3>
                         <div className="space-y-4">
-                          {data.inventory.topMovingItems.map((item, index) => (
+                          {(data.inventory as any).topMovingItems.map((item: any, index: number) => (
                             <div key={index} className="flex justify-between items-center">
                               <div>
                                 <p className="font-medium">{item.name}</p>
@@ -432,7 +432,7 @@ export default function ReportsPage() {
                       <div className="bg-card p-6 rounded-lg border border-border">
                         <h3 className="text-lg font-semibold text-foreground mb-4">Stok Uyarıları</h3>
                         <div className="space-y-3">
-                          {data.inventory.stockAlerts.map((alert, index) => (
+                          {(data.inventory as any).stockAlerts.map((alert: any, index: number) => (
                             <div key={index} className="flex justify-between items-center p-3 bg-yellow-50 rounded-lg">
                               <div>
                                 <p className="font-medium">{alert.name}</p>
@@ -458,25 +458,25 @@ export default function ReportsPage() {
                       <div className="bg-card p-6 rounded-lg border border-border">
                         <h3 className="text-lg font-semibold text-foreground mb-2">Toplam Gelir</h3>
                         <div className="text-3xl font-bold text-green-600">
-                          {formatCurrency(data.financial.totalRevenue)}
+                          {formatCurrency((data.financial as any).totalRevenue)}
                         </div>
                       </div>
                       <div className="bg-card p-6 rounded-lg border border-border">
                         <h3 className="text-lg font-semibold text-foreground mb-2">Toplam Maliyet</h3>
                         <div className="text-3xl font-bold text-red-600">
-                          {formatCurrency(data.financial.totalCosts)}
+                          {formatCurrency((data.financial as any).totalCosts)}
                         </div>
                       </div>
                       <div className="bg-card p-6 rounded-lg border border-border">
                         <h3 className="text-lg font-semibold text-foreground mb-2">Brüt Kar</h3>
                         <div className="text-3xl font-bold text-blue-600">
-                          {formatCurrency(data.financial.grossProfit)}
+                          {formatCurrency((data.financial as any).grossProfit)}
                         </div>
                       </div>
                       <div className="bg-card p-6 rounded-lg border border-border">
                         <h3 className="text-lg font-semibold text-foreground mb-2">Net Kar</h3>
                         <div className="text-3xl font-bold text-purple-600">
-                          {formatCurrency(data.financial.netProfit)}
+                          {formatCurrency((data.financial as any).netProfit)}
                         </div>
                       </div>
                     </div>
@@ -485,7 +485,7 @@ export default function ReportsPage() {
                       <div className="bg-card p-6 rounded-lg border border-border">
                         <h3 className="text-lg font-semibold text-foreground mb-4">Gider Dağılımı</h3>
                         <div className="space-y-4">
-                          {data.financial.expenses.map((expense, index) => (
+                          {(data.financial as any).expenses.map((expense: any, index: number) => (
                             <div key={index} className="space-y-2">
                               <div className="flex justify-between items-center">
                                 <span className="font-medium">{expense.category}</span>
@@ -508,7 +508,7 @@ export default function ReportsPage() {
                         <h3 className="text-lg font-semibold text-foreground mb-4">Kar Marjı</h3>
                         <div className="text-center">
                           <div className="text-6xl font-bold text-primary mb-2">
-                            {data.financial.profitMargin}%
+                            {(data.financial as any).profitMargin}%
                           </div>
                           <p className="text-muted-foreground">Net Kar Marjı</p>
                         </div>

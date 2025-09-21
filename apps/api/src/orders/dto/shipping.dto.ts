@@ -7,7 +7,7 @@ export enum AdjustmentType {
 
 export class CreateShippingZoneDto {
   @IsString()
-  name: string;
+  name!: string;
 
   @IsOptional()
   @IsString()
@@ -34,10 +34,10 @@ export class UpdateShippingZoneDto {
 
 export class CreateShippingPriceDto {
   @IsString()
-  zoneId: string;
+  zoneId!: string;
 
   @IsString()
-  name: string;
+  name!: string;
 
   @IsOptional()
   @IsString()
@@ -45,7 +45,7 @@ export class CreateShippingPriceDto {
 
   @IsNumber()
   @Min(0)
-  basePrice: number;
+  basePrice!: number;
 
   @IsOptional()
   @IsNumber()
@@ -99,20 +99,20 @@ export class UpdateShippingPriceDto {
 
 export class CreateCustomerShippingPriceDto {
   @IsString()
-  zoneId: string;
+  zoneId!: string;
 
   @IsString()
-  priceId: string;
+  priceId!: string;
 
   @IsOptional()
   @IsString()
   customerId?: string; // null for all customers
 
   @IsEnum(AdjustmentType)
-  adjustmentType: AdjustmentType;
+  adjustmentType!: AdjustmentType;
 
   @IsNumber()
-  adjustmentValue: number; // +10 for 10% increase, -10 for 10% decrease
+  adjustmentValue!: number; // +10 for 10% increase, -10 for 10% decrease
 
   @IsOptional()
   @IsBoolean()
@@ -135,7 +135,7 @@ export class UpdateCustomerShippingPriceDto {
 
 export class CalculateShippingDto {
   @IsString()
-  zoneId: string;
+  zoneId!: string;
 
   @IsOptional()
   @IsString()
@@ -143,5 +143,5 @@ export class CalculateShippingDto {
 
   @IsNumber()
   @Min(0)
-  orderTotal: number;
+  orderTotal!: number;
 }

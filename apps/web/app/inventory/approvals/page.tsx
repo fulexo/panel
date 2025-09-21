@@ -41,8 +41,8 @@ export default function InventoryApprovalsPage() {
         id: selectedRequest,
         data: {
           status: reviewForm.status,
-          rejectionReason: reviewForm.rejectionReason || undefined,
-          adminNotes: reviewForm.adminNotes || undefined,
+          ...(reviewForm.rejectionReason && { rejectionReason: reviewForm.rejectionReason }),
+          ...(reviewForm.adminNotes && { adminNotes: reviewForm.adminNotes }),
         },
       });
       
@@ -132,7 +132,7 @@ export default function InventoryApprovalsPage() {
               </div>
             ) : (
               <div className="space-y-4">
-                {requests.map((request) => (
+                {requests.map((request: any) => (
                   <div key={request.id} className="bg-card p-6 rounded-lg border border-border">
                     <div className="flex justify-between items-start mb-4">
                       <div>

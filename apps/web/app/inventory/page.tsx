@@ -81,7 +81,7 @@ export default function InventoryPage() {
       await createRequestMutation.mutateAsync({
         storeId: selectedStore,
         type: 'stock_adjustment',
-        title: `Stok Düzenleme - ${productsData?.data.find(p => p.id === stockForm.productId)?.name}`,
+        title: `Stok Düzenleme - ${(productsData as any)?.data?.find((p: any) => p.id === stockForm.productId)?.name}`,
         description: stockForm.adjustmentReason,
         productId: stockForm.productId,
         currentStock: stockForm.currentStock,
@@ -136,7 +136,6 @@ export default function InventoryPage() {
           description: productForm.description,
           shortDescription: productForm.shortDescription,
           weight: productForm.weight || 0,
-          stockQuantity: productForm.stockQuantity,
           categories: productForm.categories,
           tags: productForm.tags,
         },
@@ -202,7 +201,7 @@ export default function InventoryPage() {
   }
 
   const requests = requestsData?.data || [];
-  const products = productsData?.data || [];
+  const products = (productsData as any)?.data || [];
   const stats = statsData || { total: 0, pending: 0, approved: 0, rejected: 0 };
 
   return (
@@ -284,7 +283,7 @@ export default function InventoryPage() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {requests.map((request) => (
+                  {requests.map((request: any) => (
                     <div key={request.id} className="bg-card p-4 rounded-lg border border-border">
                       <div className="flex justify-between items-start mb-2">
                         <div>
@@ -378,7 +377,7 @@ export default function InventoryPage() {
                   <select
                     value={stockForm.productId}
                     onChange={(e) => {
-                      const product = products.find(p => p.id === e.target.value);
+                      const product = products.find((p: any) => p.id === e.target.value);
                       setStockForm(prev => ({
                         ...prev,
                         productId: e.target.value,
@@ -389,7 +388,7 @@ export default function InventoryPage() {
                     className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground"
                   >
                     <option value="">Ürün Seçin</option>
-                    {products.map((product) => (
+                    {products.map((product: any) => (
                       <option key={product.id} value={product.id}>
                         {product.name} (SKU: {product.sku}) - Mevcut: {product.stockQuantity || 0}
                       </option>

@@ -82,7 +82,7 @@ export default function CreateOrderPage() {
 
   // Get cart data
   const { data: cartData, isLoading: cartLoading } = useCart(storeId);
-  const { data: productsData, isLoading: productsLoading } = useProducts({
+  const { isLoading: productsLoading } = useProducts({
     storeId,
     limit: 100,
   });
@@ -128,7 +128,7 @@ export default function CreateOrderPage() {
     try {
       const result = await calculateShippingMutation.mutateAsync({
         zoneId: selectedShippingZone,
-        customerId: user?.id,
+        ...(user?.id && { customerId: user.id }),
         orderTotal,
       });
       setCalculatedShipping(result);
@@ -172,7 +172,7 @@ export default function CreateOrderPage() {
     try {
       const orderData = {
         storeId,
-        items: cartItems.map(item => ({
+        items: cartItems.map((item: any) => ({
           productId: item.productId,
           quantity: item.quantity,
           price: item.product.price,
@@ -241,7 +241,7 @@ export default function CreateOrderPage() {
                   <p className="text-muted-foreground">Sepetinizde ürün bulunmuyor</p>
                 ) : (
                   <div className="space-y-4">
-                    {cartItems.map((item) => (
+                    {cartItems.map((item: any) => (
                       <div key={item.id} className="flex items-center justify-between p-4 bg-accent rounded-lg">
                         <div className="flex items-center gap-4">
                           {item.product.images[0] && (
@@ -594,7 +594,7 @@ export default function CreateOrderPage() {
                         className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground"
                       >
                         <option value="">Bölge Seçin</option>
-                        {shippingOptions?.map((option) => (
+                        {shippingOptions?.map((option: any) => (
                           <option key={option.zone.id} value={option.zone.id}>
                             {option.zone.name}
                           </option>

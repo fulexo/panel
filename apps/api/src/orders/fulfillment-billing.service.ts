@@ -192,10 +192,10 @@ export class FulfillmentBillingService {
     if (query.startDate || query.endDate) {
       where.serviceDate = {};
       if (query.startDate) {
-        where.serviceDate.gte = new Date(query.startDate);
+        (where as any).serviceDate.gte = new Date(query.startDate);
       }
       if (query.endDate) {
-        where.serviceDate.lte = new Date(query.endDate);
+        (where as any).serviceDate.lte = new Date(query.endDate);
       }
     }
 

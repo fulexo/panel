@@ -67,10 +67,10 @@ export class ErrorHandlerService {
         data: {
           action: 'ERROR_OCCURRED',
           entityType: 'ERROR',
-          changes: toPrismaJson({
+          changes: toPrismaJsonValue({
             error: errorInfo,
           }),
-          metadata: toPrismaJson({
+          metadata: toPrismaJsonValue({
             severity: errorInfo['severity'],
             context: errorInfo['context'],
           }),

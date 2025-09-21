@@ -97,16 +97,16 @@ export class UpdateFulfillmentBillingItemDto {
 
 export class CreateFulfillmentInvoiceDto {
   @IsString()
-  customerId: string;
+  customerId!: string;
 
   @IsNumber()
   @Min(1)
   @Min(12)
-  month: number;
+  month!: number;
 
   @IsNumber()
   @Min(2020)
-  year: number;
+  year!: number;
 
   @IsOptional()
   @IsString()
@@ -204,16 +204,16 @@ export class FulfillmentInvoiceQueryDto {
 
 export class GenerateMonthlyInvoiceDto {
   @IsString()
-  customerId: string;
+  customerId!: string;
 
   @IsNumber()
   @Min(1)
   @Min(12)
-  month: number;
+  month!: number;
 
   @IsNumber()
   @Min(2020)
-  year: number;
+  year!: number;
 
   @IsOptional()
   @IsString()

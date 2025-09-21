@@ -134,8 +134,8 @@ export default function FulfillmentPage() {
         customerId: invoiceForm.customerId,
         month: invoiceForm.month,
         year: invoiceForm.year,
-        notes: invoiceForm.notes || undefined,
-        dueDate: invoiceForm.dueDate || undefined,
+        ...(invoiceForm.notes && { notes: invoiceForm.notes }),
+        ...(invoiceForm.dueDate && { dueDate: invoiceForm.dueDate }),
       });
       setInvoiceForm({
         customerId: '',
@@ -163,7 +163,7 @@ export default function FulfillmentPage() {
     try {
       await updateInvoiceMutation.mutateAsync({
         id: invoiceId,
-        data: { status: status as string },
+        data: { status: status as "draft" | "sent" | "paid" | "overdue" },
       });
       addNotification({
         type: 'success',
@@ -284,7 +284,7 @@ export default function FulfillmentPage() {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {services?.map((service) => (
+                  {services?.map((service: any) => (
                     <div key={service.id} className="bg-card p-4 rounded-lg border border-border">
                       <div className="flex justify-between items-start mb-2">
                         <h3 className="font-medium text-foreground">{service.name}</h3>
@@ -352,7 +352,7 @@ export default function FulfillmentPage() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {billingItemsData.map((item) => (
+                  {billingItemsData.map((item: any) => (
                     <div key={item.id} className="bg-card p-4 rounded-lg border border-border">
                       <div className="flex justify-between items-start mb-2">
                         <div>
@@ -430,7 +430,7 @@ export default function FulfillmentPage() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {invoicesData.map((invoice) => (
+                  {invoicesData.map((invoice: any) => (
                     <div key={invoice.id} className="bg-card p-6 rounded-lg border border-border">
                       <div className="flex justify-between items-start mb-4">
                         <div>
@@ -465,7 +465,7 @@ export default function FulfillmentPage() {
 
                       <div className="space-y-2">
                         <h4 className="font-medium text-foreground">Fatura Detayları:</h4>
-                        {invoice.items.map((item) => (
+                        {invoice.items.map((item: any) => (
                           <div key={item.id} className="flex justify-between items-center p-2 bg-accent rounded">
                             <div>
                               <p className="text-sm font-medium text-foreground">{item.service.name}</p>

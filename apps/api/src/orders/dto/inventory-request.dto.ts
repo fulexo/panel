@@ -14,13 +14,13 @@ export enum InventoryRequestStatus {
 
 export class CreateInventoryRequestDto {
   @IsString()
-  storeId: string;
+  storeId!: string;
 
   @IsEnum(InventoryRequestType)
-  type: InventoryRequestType;
+  type!: InventoryRequestType;
 
   @IsString()
-  title: string;
+  title!: string;
 
   @IsOptional()
   @IsString()
@@ -106,7 +106,7 @@ export class UpdateInventoryRequestDto {
 
 export class ReviewInventoryRequestDto {
   @IsEnum(InventoryRequestStatus)
-  status: InventoryRequestStatus;
+  status!: InventoryRequestStatus;
 
   @IsOptional()
   @IsString()

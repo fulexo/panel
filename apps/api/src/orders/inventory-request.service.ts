@@ -58,8 +58,8 @@ export class InventoryRequestService {
           currentStock: dto.currentStock,
           requestedStock: dto.requestedStock,
           adjustmentReason: dto.adjustmentReason,
-          productData: dto.productData ? toPrismaJsonValue(dto.productData) : null,
-          updateData: dto.updateData ? toPrismaJsonValue(dto.updateData) : null,
+          productData: dto.productData ? toPrismaJsonValue(dto.productData) : undefined,
+          updateData: dto.updateData ? toPrismaJsonValue(dto.updateData) : undefined,
         },
         include: {
           product: {
@@ -410,7 +410,7 @@ export class InventoryRequestService {
           description: productData.description,
           shortDescription: productData.shortDescription,
           weight: productData.weight ? new Decimal(productData.weight) : null,
-          dimensions: productData.dimensions ? toPrismaJsonValue(productData.dimensions) : null,
+          dimensions: productData.dimensions ? toPrismaJsonValue(productData.dimensions) : undefined,
           images: productData.images || [],
           categories: productData.categories || [],
           tags: productData.tags || [],

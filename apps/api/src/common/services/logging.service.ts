@@ -116,7 +116,7 @@ export class LoggingService implements LoggerService {
             action: `LOG_${entry.level.toUpperCase()}`,
             entityType: 'LOG_ENTRY',
             entityId: entry.requestId,
-            changes: toPrismaJson({
+            changes: toPrismaJsonValue({
               message: entry.message,
               context: entry.context,
               metadata: entry.metadata,
@@ -191,8 +191,8 @@ export class LoggingService implements LoggerService {
         action,
         entityType,
         entityId,
-        changes: toPrismaJson(changes),
-        metadata: toPrismaJson(metadata),
+        changes: toPrismaJsonValue(changes),
+        metadata: toPrismaJsonValue(metadata),
         ipAddress: metadata?.['ipAddress'] as string,
         userAgent: metadata?.['userAgent'] as string,
       },
@@ -218,7 +218,7 @@ export class LoggingService implements LoggerService {
       data: {
         action: `SECURITY_${event.toUpperCase()}`,
         entityType: 'SECURITY_EVENT',
-        changes: toPrismaJson({
+        changes: toPrismaJsonValue({
           event,
           severity,
           metadata,

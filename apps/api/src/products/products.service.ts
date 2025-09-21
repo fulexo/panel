@@ -419,9 +419,10 @@ export class ProductsService {
       for (const item of bundleItems) {
         const quantity = selectedItems?.find(si => si.productId === item.productId)?.quantity || item.quantity;
         const itemPrice = item.product.salePrice || item.product.price;
+        const itemPriceNumber = itemPrice.toNumber();
         const discountedPrice = item.discount ? 
-          itemPrice * (1 - (item.discount.toNumber() || 0) / 100) : 
-          itemPrice;
+          itemPriceNumber * (1 - (item.discount.toNumber() || 0) / 100) : 
+          itemPriceNumber;
         
         const itemTotal = discountedPrice * quantity;
         totalPrice += itemTotal;
@@ -429,7 +430,7 @@ export class ProductsService {
         items.push({
           productId: item.productId,
           quantity,
-          unitPrice: itemPrice,
+          unitPrice: itemPriceNumber,
           discount: item.discount ? (item.discount.toNumber() || 0) : 0,
           discountedPrice,
           total: itemTotal,

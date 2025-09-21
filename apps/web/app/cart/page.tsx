@@ -130,16 +130,16 @@ export default function CartPage() {
   }
 
   const cartItems = cartData?.cart?.items || [];
-  const products = productsData?.data || [];
+  const products = (productsData as any)?.data || [];
 
   const calculateTotal = () => {
-    return cartItems.reduce((total, item) => {
+    return cartItems.reduce((total: number, item: any) => {
       return total + (item.product.price * item.quantity);
     }, 0);
   };
 
   const getTotalItems = () => {
-    return cartItems.reduce((total, item) => total + item.quantity, 0);
+    return cartItems.reduce((total: number, item: any) => total + item.quantity, 0);
   };
 
   return (
@@ -182,7 +182,7 @@ export default function CartPage() {
                     </div>
                   ) : (
                     <div className="space-y-4">
-                      {cartItems.map((item) => (
+                      {cartItems.map((item: any) => (
                         <div key={item.id} className="flex items-center gap-4 p-4 bg-accent rounded-lg">
                           {item.product.images[0] && (
                             <img
@@ -285,9 +285,9 @@ export default function CartPage() {
                 <h2 className="text-xl font-semibold text-foreground mb-4">Mevcut Ürünler</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {products.slice(0, 6).map((product: Product) => {
-                    const cartItem = cartItems.find(item => item.productId === product.id);
+                    const cartItem = cartItems.find((item: any) => item.productId === product.id);
                     const isInCart = !!cartItem;
-                    const isOutOfStock = product.stockQuantity !== null && product.stockQuantity <= 0;
+                    const isOutOfStock = product.stockQuantity !== null && product.stockQuantity !== undefined && product.stockQuantity <= 0;
 
                     return (
                       <div key={product.id} className="bg-card p-4 rounded-lg border border-border">
