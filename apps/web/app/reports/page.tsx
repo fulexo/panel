@@ -1,12 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import { useRBAC } from "@/hooks/useRBAC";
+import { 
+  useDashboardStats, 
+  useSalesReport, 
+  useProductReport, 
+  useCustomerReport, 
+  useInventoryReport, 
+  useFinancialReport 
+} from "@/hooks/useApi";
 import ProtectedRoute from "@/components/ProtectedRoute";
 
 export default function ReportsPage() {
-  useAuth();
+  const { user } = useAuth();
   const { isAdmin } = useRBAC();
   const [activeTab, setActiveTab] = useState("overview");
   const [dateRange, setDateRange] = useState("30d");
@@ -20,103 +28,85 @@ export default function ReportsPage() {
     { id: "financial", label: "Mali Raporlar", icon: "💳" },
   ];
 
-  // Mock data - gerçek uygulamada API'den gelecek
-  const mockData = {
-    overview: {
-      totalRevenue: 125000,
-      totalOrders: 1250,
-      totalProducts: 450,
-      totalCustomers: 320,
-      revenueGrowth: 12.5,
-      orderGrowth: 8.3,
-      productGrowth: 15.2,
-      customerGrowth: 6.7,
+  // Get user's store ID for customer view
+  const userStoreId = user?.stores?.[0]?.id;
+  
+  // Fetch real data from API
+  const { data: dashboardStats, isLoading: isLoadingDashboard } = useDashboardStats(userStoreId);
+  const { data: salesData, isLoading: isLoadingSales } = useSalesReport({ 
+    startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] as string,
+    endDate: new Date().toISOString().split('T')[0] as string,
+    storeId: userStoreId 
+  });
+  const { data: productData, isLoading: isLoadingProducts } = useProductReport({ 
+    startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] as string,
+    endDate: new Date().toISOString().split('T')[0] as string,
+    storeId: userStoreId 
+  });
+  const { data: customerData, isLoading: isLoadingCustomers } = useCustomerReport({ 
+    startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] as string,
+    endDate: new Date().toISOString().split('T')[0] as string,
+    storeId: userStoreId 
+  });
+  const { data: inventoryData, isLoading: isLoadingInventory } = useInventoryReport({ 
+    storeId: userStoreId,
+    lowStock: true 
+  });
+  const { data: financialData, isLoading: isLoadingFinancial } = useFinancialReport({ 
+    startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] as string,
+    endDate: new Date().toISOString().split('T')[0] as string,
+    storeId: userStoreId 
+  });
+
+  // Use real data or fallback to empty data
+  const data = {
+    overview: dashboardStats || {
+      totalRevenue: 0,
+      totalOrders: 0,
+      totalProducts: 0,
+      totalCustomers: 0,
+      revenueGrowth: 0,
+      orderGrowth: 0,
+      productGrowth: 0,
+      customerGrowth: 0,
     },
-    sales: {
-      dailySales: [
-        { date: "2024-01-01", sales: 4500 },
-        { date: "2024-01-02", sales: 5200 },
-        { date: "2024-01-03", sales: 3800 },
-        { date: "2024-01-04", sales: 6100 },
-        { date: "2024-01-05", sales: 4900 },
-        { date: "2024-01-06", sales: 7200 },
-        { date: "2024-01-07", sales: 6800 },
-      ],
-      topProducts: [
-        { name: "iPhone 15 Pro", sales: 45, revenue: 45000 },
-        { name: "Samsung Galaxy S24", sales: 32, revenue: 32000 },
-        { name: "MacBook Air M2", sales: 18, revenue: 18000 },
-        { name: "iPad Pro", sales: 25, revenue: 15000 },
-        { name: "AirPods Pro", sales: 67, revenue: 13400 },
-      ],
-      salesByCategory: [
-        { category: "Electronics", sales: 85000, percentage: 68 },
-        { category: "Clothing", sales: 25000, percentage: 20 },
-        { category: "Books", sales: 15000, percentage: 12 },
-      ],
+    sales: salesData || {
+      dailySales: [],
+      topProducts: [],
+      salesByCategory: [],
     },
-    products: {
-      topSelling: [
-        { name: "iPhone 15 Pro", quantity: 45, revenue: 45000 },
-        { name: "Samsung Galaxy S24", quantity: 32, revenue: 32000 },
-        { name: "MacBook Air M2", quantity: 18, revenue: 18000 },
-      ],
-      lowStock: [
-        { name: "iPhone 15 Pro", current: 5, min: 10, status: "critical" },
-        { name: "Samsung Galaxy S24", current: 8, min: 15, status: "low" },
-        { name: "MacBook Air M2", current: 12, min: 20, status: "low" },
-      ],
-      categoryPerformance: [
-        { category: "Electronics", products: 150, revenue: 85000, growth: 15.2 },
-        { category: "Clothing", products: 200, revenue: 25000, growth: 8.5 },
-        { category: "Books", products: 100, revenue: 15000, growth: 12.3 },
-      ],
+    products: productData || {
+      topSelling: [],
+      lowStock: [],
+      categoryPerformance: [],
     },
-    customers: {
-      newCustomers: 45,
-      returningCustomers: 275,
-      customerLifetimeValue: 1250,
-      topCustomers: [
-        { name: "Ahmet Yılmaz", email: "ahmet@example.com", orders: 12, total: 15000 },
-        { name: "Ayşe Demir", email: "ayse@example.com", orders: 8, total: 12000 },
-        { name: "Mehmet Kaya", email: "mehmet@example.com", orders: 15, total: 18000 },
-      ],
-      customerSegments: [
-        { segment: "VIP", count: 25, revenue: 75000 },
-        { segment: "Regular", count: 200, revenue: 40000 },
-        { segment: "New", count: 95, revenue: 10000 },
-      ],
+    customers: customerData || {
+      newCustomers: 0,
+      returningCustomers: 0,
+      customerLifetimeValue: 0,
+      topCustomers: [],
+      customerSegments: [],
     },
-    inventory: {
-      totalValue: 250000,
-      lowStockItems: 15,
-      outOfStockItems: 3,
-      inventoryTurnover: 4.2,
-      topMovingItems: [
-        { name: "iPhone 15 Pro", turnover: 8.5, value: 45000 },
-        { name: "Samsung Galaxy S24", turnover: 6.2, value: 32000 },
-        { name: "MacBook Air M2", turnover: 4.8, value: 18000 },
-      ],
-      stockAlerts: [
-        { name: "iPhone 15 Pro", current: 5, min: 10, daysLeft: 2 },
-        { name: "Samsung Galaxy S24", current: 8, min: 15, daysLeft: 5 },
-        { name: "MacBook Air M2", current: 12, min: 20, daysLeft: 8 },
-      ],
+    inventory: inventoryData || {
+      totalValue: 0,
+      lowStockItems: 0,
+      outOfStockItems: 0,
+      inventoryTurnover: 0,
+      topMovingItems: [],
+      stockAlerts: [],
     },
-    financial: {
-      totalRevenue: 125000,
-      totalCosts: 75000,
-      grossProfit: 50000,
-      netProfit: 35000,
-      profitMargin: 28,
-      expenses: [
-        { category: "Inventory", amount: 45000, percentage: 60 },
-        { category: "Marketing", amount: 15000, percentage: 20 },
-        { category: "Operations", amount: 10000, percentage: 13.3 },
-        { category: "Other", amount: 5000, percentage: 6.7 },
-      ],
+    financial: financialData || {
+      totalRevenue: 0,
+      totalCosts: 0,
+      grossProfit: 0,
+      netProfit: 0,
+      profitMargin: 0,
+      expenses: [],
     },
   };
+
+  const isLoading = isLoadingDashboard || isLoadingSales || isLoadingProducts || 
+                   isLoadingCustomers || isLoadingInventory || isLoadingFinancial;
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('tr-TR', {
@@ -128,6 +118,19 @@ export default function ReportsPage() {
   const formatNumber = (num: number) => {
     return new Intl.NumberFormat('tr-TR').format(num);
   };
+
+  if (isLoading) {
+    return (
+      <ProtectedRoute>
+        <div className="min-h-screen bg-background flex items-center justify-center">
+          <div className="flex flex-col items-center gap-4">
+            <div className="spinner"></div>
+            <div className="text-lg text-foreground">Loading reports...</div>
+          </div>
+        </div>
+      </ProtectedRoute>
+    );
+  }
 
   return (
     <ProtectedRoute>
@@ -190,37 +193,37 @@ export default function ReportsPage() {
                       <div className="bg-card p-6 rounded-lg border border-border">
                         <h3 className="text-lg font-semibold text-foreground mb-2">Toplam Gelir</h3>
                         <div className="text-3xl font-bold text-primary">
-                          {formatCurrency(mockData.overview.totalRevenue)}
+                          {formatCurrency(data.overview.totalRevenue)}
                         </div>
                         <p className="text-sm text-green-600 mt-1">
-                          +{mockData.overview.revenueGrowth}% bu ay
+                          +{data.overview.revenueGrowth}% bu ay
                         </p>
                       </div>
                       <div className="bg-card p-6 rounded-lg border border-border">
                         <h3 className="text-lg font-semibold text-foreground mb-2">Toplam Sipariş</h3>
                         <div className="text-3xl font-bold text-blue-600">
-                          {formatNumber(mockData.overview.totalOrders)}
+                          {formatNumber(data.overview.totalOrders)}
                         </div>
                         <p className="text-sm text-green-600 mt-1">
-                          +{mockData.overview.orderGrowth}% bu ay
+                          +{data.overview.orderGrowth}% bu ay
                         </p>
                       </div>
                       <div className="bg-card p-6 rounded-lg border border-border">
                         <h3 className="text-lg font-semibold text-foreground mb-2">Toplam Ürün</h3>
                         <div className="text-3xl font-bold text-green-600">
-                          {formatNumber(mockData.overview.totalProducts)}
+                          {formatNumber(data.overview.totalProducts)}
                         </div>
                         <p className="text-sm text-green-600 mt-1">
-                          +{mockData.overview.productGrowth}% bu ay
+                          +{data.overview.productGrowth}% bu ay
                         </p>
                       </div>
                       <div className="bg-card p-6 rounded-lg border border-border">
                         <h3 className="text-lg font-semibold text-foreground mb-2">Toplam Müşteri</h3>
                         <div className="text-3xl font-bold text-purple-600">
-                          {formatNumber(mockData.overview.totalCustomers)}
+                          {formatNumber(data.overview.totalCustomers)}
                         </div>
                         <p className="text-sm text-green-600 mt-1">
-                          +{mockData.overview.customerGrowth}% bu ay
+                          +{data.overview.customerGrowth}% bu ay
                         </p>
                       </div>
                     </div>
@@ -229,7 +232,7 @@ export default function ReportsPage() {
                       <div className="bg-card p-6 rounded-lg border border-border">
                         <h3 className="text-lg font-semibold text-foreground mb-4">Günlük Satışlar</h3>
                         <div className="space-y-3">
-                          {mockData.sales.dailySales.map((day, index) => (
+                          {data.sales.dailySales.map((day, index) => (
                             <div key={index} className="flex justify-between items-center">
                               <span className="text-sm text-muted-foreground">
                                 {new Date(day.date).toLocaleDateString('tr-TR')}
@@ -242,7 +245,7 @@ export default function ReportsPage() {
                       <div className="bg-card p-6 rounded-lg border border-border">
                         <h3 className="text-lg font-semibold text-foreground mb-4">Kategori Dağılımı</h3>
                         <div className="space-y-3">
-                          {mockData.sales.salesByCategory.map((category, index) => (
+                          {data.sales.salesByCategory.map((category, index) => (
                             <div key={index} className="space-y-2">
                               <div className="flex justify-between items-center">
                                 <span className="text-sm">{category.category}</span>
@@ -271,7 +274,7 @@ export default function ReportsPage() {
                       <div className="bg-card p-6 rounded-lg border border-border">
                         <h3 className="text-lg font-semibold text-foreground mb-4">En Çok Satan Ürünler</h3>
                         <div className="space-y-4">
-                          {mockData.sales.topProducts.map((product, index) => (
+                          {data.sales.topProducts.map((product, index) => (
                             <div key={index} className="flex justify-between items-center">
                               <div>
                                 <p className="font-medium">{product.name}</p>
@@ -303,7 +306,7 @@ export default function ReportsPage() {
                       <div className="bg-card p-6 rounded-lg border border-border">
                         <h3 className="text-lg font-semibold text-foreground mb-4">Düşük Stok Uyarıları</h3>
                         <div className="space-y-3">
-                          {mockData.products.lowStock.map((item, index) => (
+                          {data.products.lowStock.map((item, index) => (
                             <div key={index} className="flex justify-between items-center p-3 bg-red-50 rounded-lg">
                               <div>
                                 <p className="font-medium">{item.name}</p>
@@ -323,7 +326,7 @@ export default function ReportsPage() {
                       <div className="bg-card p-6 rounded-lg border border-border">
                         <h3 className="text-lg font-semibold text-foreground mb-4">Kategori Performansı</h3>
                         <div className="space-y-4">
-                          {mockData.products.categoryPerformance.map((category, index) => (
+                          {data.products.categoryPerformance.map((category, index) => (
                             <div key={index} className="space-y-2">
                               <div className="flex justify-between items-center">
                                 <span className="font-medium">{category.category}</span>
@@ -349,7 +352,7 @@ export default function ReportsPage() {
                       <div className="bg-card p-6 rounded-lg border border-border">
                         <h3 className="text-lg font-semibold text-foreground mb-4">En Değerli Müşteriler</h3>
                         <div className="space-y-4">
-                          {mockData.customers.topCustomers.map((customer, index) => (
+                          {data.customers.topCustomers.map((customer, index) => (
                             <div key={index} className="flex justify-between items-center">
                               <div>
                                 <p className="font-medium">{customer.name}</p>
@@ -366,7 +369,7 @@ export default function ReportsPage() {
                       <div className="bg-card p-6 rounded-lg border border-border">
                         <h3 className="text-lg font-semibold text-foreground mb-4">Müşteri Segmentleri</h3>
                         <div className="space-y-4">
-                          {mockData.customers.customerSegments.map((segment, index) => (
+                          {data.customers.customerSegments.map((segment, index) => (
                             <div key={index} className="space-y-2">
                               <div className="flex justify-between items-center">
                                 <span className="font-medium">{segment.segment}</span>
@@ -392,19 +395,19 @@ export default function ReportsPage() {
                       <div className="bg-card p-6 rounded-lg border border-border">
                         <h3 className="text-lg font-semibold text-foreground mb-2">Toplam Stok Değeri</h3>
                         <div className="text-3xl font-bold text-primary">
-                          {formatCurrency(mockData.inventory.totalValue)}
+                          {formatCurrency(data.inventory.totalValue)}
                         </div>
                       </div>
                       <div className="bg-card p-6 rounded-lg border border-border">
                         <h3 className="text-lg font-semibold text-foreground mb-2">Düşük Stok</h3>
                         <div className="text-3xl font-bold text-yellow-600">
-                          {mockData.inventory.lowStockItems}
+                          {data.inventory.lowStockItems}
                         </div>
                       </div>
                       <div className="bg-card p-6 rounded-lg border border-border">
                         <h3 className="text-lg font-semibold text-foreground mb-2">Stok Devir Hızı</h3>
                         <div className="text-3xl font-bold text-blue-600">
-                          {mockData.inventory.inventoryTurnover}x
+                          {data.inventory.inventoryTurnover}x
                         </div>
                       </div>
                     </div>
@@ -413,7 +416,7 @@ export default function ReportsPage() {
                       <div className="bg-card p-6 rounded-lg border border-border">
                         <h3 className="text-lg font-semibold text-foreground mb-4">En Hızlı Hareket Eden Ürünler</h3>
                         <div className="space-y-4">
-                          {mockData.inventory.topMovingItems.map((item, index) => (
+                          {data.inventory.topMovingItems.map((item, index) => (
                             <div key={index} className="flex justify-between items-center">
                               <div>
                                 <p className="font-medium">{item.name}</p>
@@ -429,7 +432,7 @@ export default function ReportsPage() {
                       <div className="bg-card p-6 rounded-lg border border-border">
                         <h3 className="text-lg font-semibold text-foreground mb-4">Stok Uyarıları</h3>
                         <div className="space-y-3">
-                          {mockData.inventory.stockAlerts.map((alert, index) => (
+                          {data.inventory.stockAlerts.map((alert, index) => (
                             <div key={index} className="flex justify-between items-center p-3 bg-yellow-50 rounded-lg">
                               <div>
                                 <p className="font-medium">{alert.name}</p>
@@ -455,25 +458,25 @@ export default function ReportsPage() {
                       <div className="bg-card p-6 rounded-lg border border-border">
                         <h3 className="text-lg font-semibold text-foreground mb-2">Toplam Gelir</h3>
                         <div className="text-3xl font-bold text-green-600">
-                          {formatCurrency(mockData.financial.totalRevenue)}
+                          {formatCurrency(data.financial.totalRevenue)}
                         </div>
                       </div>
                       <div className="bg-card p-6 rounded-lg border border-border">
                         <h3 className="text-lg font-semibold text-foreground mb-2">Toplam Maliyet</h3>
                         <div className="text-3xl font-bold text-red-600">
-                          {formatCurrency(mockData.financial.totalCosts)}
+                          {formatCurrency(data.financial.totalCosts)}
                         </div>
                       </div>
                       <div className="bg-card p-6 rounded-lg border border-border">
                         <h3 className="text-lg font-semibold text-foreground mb-2">Brüt Kar</h3>
                         <div className="text-3xl font-bold text-blue-600">
-                          {formatCurrency(mockData.financial.grossProfit)}
+                          {formatCurrency(data.financial.grossProfit)}
                         </div>
                       </div>
                       <div className="bg-card p-6 rounded-lg border border-border">
                         <h3 className="text-lg font-semibold text-foreground mb-2">Net Kar</h3>
                         <div className="text-3xl font-bold text-purple-600">
-                          {formatCurrency(mockData.financial.netProfit)}
+                          {formatCurrency(data.financial.netProfit)}
                         </div>
                       </div>
                     </div>
@@ -482,7 +485,7 @@ export default function ReportsPage() {
                       <div className="bg-card p-6 rounded-lg border border-border">
                         <h3 className="text-lg font-semibold text-foreground mb-4">Gider Dağılımı</h3>
                         <div className="space-y-4">
-                          {mockData.financial.expenses.map((expense, index) => (
+                          {data.financial.expenses.map((expense, index) => (
                             <div key={index} className="space-y-2">
                               <div className="flex justify-between items-center">
                                 <span className="font-medium">{expense.category}</span>
@@ -505,7 +508,7 @@ export default function ReportsPage() {
                         <h3 className="text-lg font-semibold text-foreground mb-4">Kar Marjı</h3>
                         <div className="text-center">
                           <div className="text-6xl font-bold text-primary mb-2">
-                            {mockData.financial.profitMargin}%
+                            {data.financial.profitMargin}%
                           </div>
                           <p className="text-muted-foreground">Net Kar Marjı</p>
                         </div>

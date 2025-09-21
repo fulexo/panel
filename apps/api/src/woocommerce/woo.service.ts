@@ -1,7 +1,8 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
-import { toPrismaJsonValue } from '../common/utils/json-utils';
+import { toPrismaJsonValue } from '../common/utils/prisma-json.util';
 import { Prisma } from '@prisma/client';
+import { Decimal } from 'decimal.js';
 import * as crypto from 'crypto';
 
 function buildAuthHeader(ck: string, cs: string){
@@ -100,6 +101,22 @@ export interface WooCommerceProduct {
     key: string;
     value: string;
   }>;
+  // Bundle product specific fields
+  bundle_items?: Array<{
+    id: number;
+    product_id: number;
+    quantity: number;
+    optional: boolean;
+    min_quantity?: number;
+    max_quantity?: number;
+    discount?: number;
+    sort_order?: number;
+  }>;
+  bundle_pricing?: string;
+  bundle_discount?: number;
+  min_bundle_items?: number;
+  max_bundle_items?: number;
+  bundle_stock?: string;
 }
 
 export interface WooCommerceOrder {
@@ -314,6 +331,8 @@ export class WooCommerceService {
 
     // Store products in database
     for (const product of products) {
+      const isBundle = product.type === 'bundle' || product.type === 'woosb';
+      
       await this.prisma.product.upsert({
         where: { 
           wooId_storeId: { 
@@ -336,6 +355,15 @@ export class WooCommerceService {
           categories: product.categories.map(cat => cat.name),
           tags: product.tags.map(tag => tag.name),
           metaData: product.meta_data,
+          // Bundle product fields
+          productType: product.type,
+          isBundle: isBundle,
+          bundleItems: product.bundle_items ? toPrismaJsonValue(product.bundle_items) : undefined,
+          bundlePricing: product.bundle_pricing || 'fixed',
+          bundleDiscount: product.bundle_discount !== undefined ? new Decimal(product.bundle_discount) : null,
+          minBundleItems: product.min_bundle_items,
+          maxBundleItems: product.max_bundle_items,
+          bundleStock: product.bundle_stock || 'parent',
           lastSyncedAt: new Date(),
         },
         create: {
@@ -356,9 +384,23 @@ export class WooCommerceService {
           categories: product.categories.map(cat => cat.name),
           tags: product.tags.map(tag => tag.name),
           metaData: product.meta_data,
+          // Bundle product fields
+          productType: product.type,
+          isBundle: isBundle,
+          bundleItems: product.bundle_items ? toPrismaJsonValue(product.bundle_items) : undefined,
+          bundlePricing: product.bundle_pricing || 'fixed',
+          bundleDiscount: product.bundle_discount !== undefined ? new Decimal(product.bundle_discount) : null,
+          minBundleItems: product.min_bundle_items,
+          maxBundleItems: product.max_bundle_items,
+          bundleStock: product.bundle_stock || 'parent',
           lastSyncedAt: new Date(),
         },
       });
+
+      // If this is a bundle product, sync bundle items
+      if (isBundle && product.bundle_items && product.bundle_items.length > 0) {
+        await this.syncBundleItems(tenantId, product.id.toString(), storeId, product.bundle_items);
+      }
     }
 
     return products;
@@ -504,6 +546,69 @@ export class WooCommerceService {
     }
 
     return customers;
+  }
+
+  private async syncBundleItems(tenantId: string, bundleWooId: string, storeId: string, bundleItems: Array<{
+    id: number;
+    product_id: number;
+    quantity: number;
+    optional: boolean;
+    min_quantity?: number;
+    max_quantity?: number;
+    discount?: number;
+    sort_order?: number;
+  }>) {
+    // Find the bundle product in our database
+    const bundleProduct = await this.prisma.product.findFirst({
+      where: { 
+        wooId: bundleWooId, 
+        storeId, 
+        tenantId 
+      }
+    });
+
+    if (!bundleProduct) {
+      console.warn(`Bundle product not found for WooCommerce ID: ${bundleWooId}`);
+      return;
+    }
+
+    // Delete existing bundle items
+    await this.prisma.bundleProduct.deleteMany({
+      where: { 
+        bundleId: bundleProduct.id, 
+        tenantId 
+      }
+    });
+
+    // Create new bundle items
+    for (const item of bundleItems) {
+      // Find the child product by WooCommerce ID
+      const childProduct = await this.prisma.product.findFirst({
+        where: { 
+          wooId: item.product_id.toString(), 
+          storeId, 
+          tenantId 
+        }
+      });
+
+      if (childProduct) {
+        await this.prisma.bundleProduct.create({
+          data: {
+            tenantId,
+            bundleId: bundleProduct.id,
+            productId: childProduct.id,
+            quantity: item.quantity || 1,
+            isOptional: item.optional || false,
+            minQuantity: item.min_quantity,
+            maxQuantity: item.max_quantity,
+            discount: item.discount !== undefined ? new Decimal(item.discount) : null,
+            sortOrder: item.sort_order || 0,
+          }
+        });
+      } else {
+        console.warn(`Child product not found for WooCommerce ID: ${item.product_id}`);
+      }
+    }
   }
 
   async listStores(tenantId: string){
