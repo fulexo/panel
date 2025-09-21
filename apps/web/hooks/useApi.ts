@@ -226,6 +226,62 @@ export const useBulkUpdateProducts = () => {
   });
 };
 
+// Bundle Product hooks
+export const useBundleItems = (bundleId: string) => {
+  return useQuery({
+    queryKey: ['bundle-items', bundleId],
+    queryFn: () => apiClient.getBundleItems(bundleId),
+    enabled: !!bundleId,
+    staleTime: 2 * 60 * 1000, // 2 minutes
+  });
+};
+
+export const useAddBundleItem = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: ({ bundleId, data }: { bundleId: string; data: Record<string, unknown> }) => 
+      apiClient.addBundleItem(bundleId, data),
+    onSuccess: (_, { bundleId }) => {
+      queryClient.invalidateQueries({ queryKey: ['bundle-items', bundleId] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.products() });
+    },
+  });
+};
+
+export const useUpdateBundleItem = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: ({ bundleId, productId, data }: { bundleId: string; productId: string; data: Record<string, unknown> }) => 
+      apiClient.updateBundleItem(bundleId, productId, data),
+    onSuccess: (_, { bundleId }) => {
+      queryClient.invalidateQueries({ queryKey: ['bundle-items', bundleId] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.products() });
+    },
+  });
+};
+
+export const useRemoveBundleItem = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: ({ bundleId, productId }: { bundleId: string; productId: string }) => 
+      apiClient.removeBundleItem(bundleId, productId),
+    onSuccess: (_, { bundleId }) => {
+      queryClient.invalidateQueries({ queryKey: ['bundle-items', bundleId] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.products() });
+    },
+  });
+};
+
+export const useCalculateBundlePrice = () => {
+  return useMutation({
+    mutationFn: ({ bundleId, data }: { bundleId: string; data: Record<string, unknown> }) => 
+      apiClient.calculateBundlePrice(bundleId, data),
+  });
+};
+
 // Customers hooks
 export const useCustomers = (params: { page?: number; limit?: number; search?: string; storeId?: string } = {}) => {
   const filteredParams = Object.fromEntries(
@@ -441,5 +497,76 @@ export const useSendSupportMessage = () => {
     onSuccess: (_, { ticketId }) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.supportTicketMessages(ticketId) });
     },
+  });
+};
+
+// Reports hooks
+export const useDashboardStats = (storeId?: string) => {
+  return useQuery({
+    queryKey: queryKeys.dashboardStats(storeId),
+    queryFn: () => apiClient.getDashboardStats(storeId),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+};
+
+export const useSalesReport = (params?: {
+  startDate?: string;
+  endDate?: string;
+  storeId?: string;
+  groupBy?: 'day' | 'week' | 'month';
+}) => {
+  return useQuery({
+    queryKey: ['sales-report', params],
+    queryFn: () => apiClient.getSalesReport(params),
+    staleTime: 10 * 60 * 1000, // 10 minutes
+  });
+};
+
+export const useProductReport = (params?: {
+  startDate?: string;
+  endDate?: string;
+  storeId?: string;
+  category?: string;
+}) => {
+  return useQuery({
+    queryKey: ['product-report', params],
+    queryFn: () => apiClient.getProductReport(params),
+    staleTime: 10 * 60 * 1000, // 10 minutes
+  });
+};
+
+export const useCustomerReport = (params?: {
+  startDate?: string;
+  endDate?: string;
+  storeId?: string;
+}) => {
+  return useQuery({
+    queryKey: ['customer-report', params],
+    queryFn: () => apiClient.getCustomerReport(params),
+    staleTime: 10 * 60 * 1000, // 10 minutes
+  });
+};
+
+export const useInventoryReport = (params?: {
+  storeId?: string;
+  category?: string;
+  lowStock?: boolean;
+}) => {
+  return useQuery({
+    queryKey: ['inventory-report', params],
+    queryFn: () => apiClient.getInventoryReport(params),
+    staleTime: 10 * 60 * 1000, // 10 minutes
+  });
+};
+
+export const useFinancialReport = (params?: {
+  startDate?: string;
+  endDate?: string;
+  storeId?: string;
+}) => {
+  return useQuery({
+    queryKey: ['financial-report', params],
+    queryFn: () => apiClient.getFinancialReport(params),
+    staleTime: 10 * 60 * 1000, // 10 minutes
   });
 };

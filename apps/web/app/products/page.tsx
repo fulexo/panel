@@ -5,7 +5,18 @@ import { logger } from "@/lib/logger";
 import { useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import { useRBAC } from "@/hooks/useRBAC";
-import { useProducts, useDeleteProduct, useBulkUpdateProducts } from "@/hooks/useApi";
+import { 
+  useProducts, 
+  useDeleteProduct, 
+  useBulkUpdateProducts,
+  useCreateProduct,
+  useUpdateProduct,
+  useBundleItems,
+  useAddBundleItem,
+  useUpdateBundleItem,
+  useRemoveBundleItem,
+  useCalculateBundlePrice
+} from "@/hooks/useApi";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import ProtectedComponent from "@/components/ProtectedComponent";
 import { ApiError } from "@/lib/api-client";
@@ -36,20 +47,261 @@ export default function ProductsPage() {
       price: number;
     };
   }>>([]);
+  
+  // Form states
+  const [formData, setFormData] = useState({
+    name: '',
+    description: '',
+    price: 0,
+    salePrice: 0,
+    sku: '',
+    stockQuantity: 0,
+    category: '',
+    productType: 'simple' as 'simple' | 'variable' | 'bundle' | 'grouped' | 'external',
+    isBundle: false,
+    bundleDiscount: 0,
+    minBundleItems: 0,
+    maxBundleItems: 0,
+    bundleStock: 'parent' as 'parent' | 'children' | 'both',
+  });
+  
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+
+  // API hooks
+  const createProduct = useCreateProduct();
+  const updateProduct = useUpdateProduct();
+  const addBundleItem = useAddBundleItem();
+  const updateBundleItem = useUpdateBundleItem();
+  const removeBundleItem = useRemoveBundleItem();
+  const calculateBundlePrice = useCalculateBundlePrice();
 
   // Load bundle items when modal opens
   const handleOpenBundleModal = async (productId: string) => {
     setShowBundleModal(productId);
     try {
-      // TODO: Implement API call to load bundle items
-      // const response = await fetch(`/api/products/${productId}/bundle-items`);
-      // const items = await response.json();
-      // setBundleItems(items);
-      setBundleItems([]);
+      const response = await fetch(`/api/products/${productId}/bundle-items`);
+      if (response.ok) {
+        const items = await response.json();
+        setBundleItems(items);
+      } else {
+        setBundleItems([]);
+      }
     } catch (error) {
       console.error('Failed to load bundle items:', error);
       setBundleItems([]);
     }
+  };
+
+  // Form handlers
+  const handleInputChange = (field: string, value: any) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    // Clear error when user starts typing
+    if (formErrors[field]) {
+      setFormErrors(prev => ({ ...prev, [field]: '' }));
+    }
+  };
+
+  const validateForm = () => {
+    const errors: Record<string, string> = {};
+    
+    if (!formData.name.trim()) errors.name = 'Product name is required';
+    if (!formData.sku.trim()) errors.sku = 'SKU is required';
+    if (formData.price <= 0) errors.price = 'Price must be greater than 0';
+    if (formData.stockQuantity < 0) errors.stockQuantity = 'Stock quantity cannot be negative';
+    
+    if (formData.isBundle) {
+      if (formData.minBundleItems && formData.maxBundleItems && formData.minBundleItems > formData.maxBundleItems) {
+        errors.maxBundleItems = 'Max bundle items must be greater than min bundle items';
+      }
+    }
+    
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleCreateProduct = async () => {
+    if (!validateForm()) return;
+    
+    setIsSubmitting(true);
+    setError(null);
+    setSuccess(null);
+    
+    try {
+      const productData = {
+        ...formData,
+        storeId: userStoreId || '',
+        images: [], // TODO: Add image upload
+      };
+      
+      await createProduct.mutateAsync(productData);
+      setSuccess('Product created successfully!');
+      setShowCreateModal(false);
+      setFormData({
+        name: '',
+        description: '',
+        price: 0,
+        salePrice: 0,
+        sku: '',
+        stockQuantity: 0,
+        category: '',
+        productType: 'simple',
+        isBundle: false,
+        bundleDiscount: 0,
+        minBundleItems: 0,
+        maxBundleItems: 0,
+        bundleStock: 'parent',
+      });
+      setFormErrors({});
+    } catch (error: any) {
+      console.error('Failed to create product:', error);
+      setError(error?.message || 'Failed to create product. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleUpdateProduct = async (productId: string) => {
+    if (!validateForm()) return;
+    
+    setIsSubmitting(true);
+    setError(null);
+    setSuccess(null);
+    
+    try {
+      await updateProduct.mutateAsync({ id: productId, data: formData });
+      setSuccess('Product updated successfully!');
+      setEditingProduct(null);
+      setFormData({
+        name: '',
+        description: '',
+        price: 0,
+        salePrice: 0,
+        sku: '',
+        stockQuantity: 0,
+        category: '',
+        productType: 'simple',
+        isBundle: false,
+        bundleDiscount: 0,
+        minBundleItems: 0,
+        maxBundleItems: 0,
+        bundleStock: 'parent',
+      });
+      setFormErrors({});
+    } catch (error: any) {
+      console.error('Failed to update product:', error);
+      setError(error?.message || 'Failed to update product. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleEditProduct = (product: any) => {
+    setEditingProduct(product.id);
+    setFormData({
+      name: product.name || '',
+      description: product.description || '',
+      price: product.price || 0,
+      salePrice: product.salePrice || 0,
+      sku: product.sku || '',
+      stockQuantity: product.stockQuantity || 0,
+      category: product.category || '',
+      productType: product.productType || 'simple',
+      isBundle: product.isBundle || false,
+      bundleDiscount: product.bundleDiscount || 0,
+      minBundleItems: product.minBundleItems || 0,
+      maxBundleItems: product.maxBundleItems || 0,
+      bundleStock: product.bundleStock || 'parent',
+    });
+  };
+
+  const handleSaveBundle = async () => {
+    if (!showBundleModal) return;
+    
+    setIsSubmitting(true);
+    setError(null);
+    setSuccess(null);
+    
+    try {
+      // Save bundle items
+      for (const item of bundleItems) {
+        if (item.id) {
+          // Update existing item
+          await updateBundleItem.mutateAsync({
+            bundleId: showBundleModal,
+            productId: item.productId,
+            data: {
+              quantity: item.quantity,
+              isOptional: item.isOptional,
+              minQuantity: item.minQuantity,
+              maxQuantity: item.maxQuantity,
+              discount: item.discount,
+              sortOrder: item.sortOrder,
+            }
+          });
+        } else {
+          // Add new item
+          await addBundleItem.mutateAsync({
+            bundleId: showBundleModal,
+            data: {
+              productId: item.productId,
+              quantity: item.quantity,
+              isOptional: item.isOptional,
+              minQuantity: item.minQuantity,
+              maxQuantity: item.maxQuantity,
+              discount: item.discount,
+              sortOrder: item.sortOrder,
+            }
+          });
+        }
+      }
+      
+      setSuccess('Bundle items saved successfully!');
+      setShowBundleModal(null);
+      setBundleItems([]);
+    } catch (error: any) {
+      console.error('Failed to save bundle:', error);
+      setError(error?.message || 'Failed to save bundle items. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleAddBundleItem = () => {
+    const newItem = {
+      id: '',
+      productId: '',
+      quantity: 1,
+      isOptional: false,
+      minQuantity: 1,
+      maxQuantity: 1,
+      discount: 0,
+      sortOrder: bundleItems.length,
+      product: {
+        id: '',
+        name: '',
+        sku: '',
+        price: 0,
+      }
+    };
+    setBundleItems([...bundleItems, newItem]);
+  };
+
+  const handleRemoveBundleItem = async (index: number) => {
+    const item = bundleItems[index];
+    if (item.id && showBundleModal) {
+      try {
+        await removeBundleItem.mutateAsync({
+          bundleId: showBundleModal,
+          productId: item.productId
+        });
+      } catch (error) {
+        console.error('Failed to remove bundle item:', error);
+      }
+    }
+    setBundleItems(bundleItems.filter((_, i) => i !== index));
   };
   
   // Get user's store ID for customer view
@@ -151,6 +403,41 @@ export default function ProductsPage() {
               </button>
             </ProtectedComponent>
           </div>
+
+          {/* Error/Success Messages */}
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+              <div className="flex items-center">
+                <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+                {error}
+                <button 
+                  onClick={() => setError(null)}
+                  className="ml-auto text-red-500 hover:text-red-700"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+          )}
+
+          {success && (
+            <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg">
+              <div className="flex items-center">
+                <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+                {success}
+                <button 
+                  onClick={() => setSuccess(null)}
+                  className="ml-auto text-green-500 hover:text-green-700"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Filters */}
           <div className="flex flex-col sm:flex-row gap-4">
@@ -375,7 +662,7 @@ export default function ProductsPage() {
                         <td className="p-3">
                           <div className="flex gap-2">
                             <button 
-                              onClick={() => setEditingProduct(product.id)}
+                              onClick={() => handleEditProduct(product)}
                               className="btn btn-sm btn-outline"
                             >
                               Edit
@@ -441,29 +728,38 @@ export default function ProductsPage() {
                 <h3 className="text-lg font-semibold text-foreground mb-4">Create Product</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="form-label">Product Name</label>
+                    <label className="form-label">Product Name *</label>
                     <input
                       type="text"
-                      className="form-input"
+                      className={`form-input ${formErrors.name ? 'border-red-500' : ''}`}
                       placeholder="Enter product name"
+                      value={formData.name}
+                      onChange={(e) => handleInputChange('name', e.target.value)}
                     />
+                    {formErrors.name && <p className="text-red-500 text-sm mt-1">{formErrors.name}</p>}
                   </div>
                   <div>
-                    <label className="form-label">SKU</label>
+                    <label className="form-label">SKU *</label>
                     <input
                       type="text"
-                      className="form-input"
+                      className={`form-input ${formErrors.sku ? 'border-red-500' : ''}`}
                       placeholder="Enter SKU"
+                      value={formData.sku}
+                      onChange={(e) => handleInputChange('sku', e.target.value)}
                     />
+                    {formErrors.sku && <p className="text-red-500 text-sm mt-1">{formErrors.sku}</p>}
                   </div>
                   <div>
-                    <label className="form-label">Price</label>
+                    <label className="form-label">Price *</label>
                     <input
                       type="number"
                       step="0.01"
-                      className="form-input"
+                      className={`form-input ${formErrors.price ? 'border-red-500' : ''}`}
                       placeholder="0.00"
+                      value={formData.price}
+                      onChange={(e) => handleInputChange('price', parseFloat(e.target.value) || 0)}
                     />
+                    {formErrors.price && <p className="text-red-500 text-sm mt-1">{formErrors.price}</p>}
                   </div>
                   <div>
                     <label className="form-label">Sale Price</label>
@@ -472,19 +768,28 @@ export default function ProductsPage() {
                       step="0.01"
                       className="form-input"
                       placeholder="0.00"
+                      value={formData.salePrice}
+                      onChange={(e) => handleInputChange('salePrice', parseFloat(e.target.value) || 0)}
                     />
                   </div>
                   <div>
-                    <label className="form-label">Stock Quantity</label>
+                    <label className="form-label">Stock Quantity *</label>
                     <input
                       type="number"
-                      className="form-input"
+                      className={`form-input ${formErrors.stockQuantity ? 'border-red-500' : ''}`}
                       placeholder="0"
+                      value={formData.stockQuantity}
+                      onChange={(e) => handleInputChange('stockQuantity', parseInt(e.target.value) || 0)}
                     />
+                    {formErrors.stockQuantity && <p className="text-red-500 text-sm mt-1">{formErrors.stockQuantity}</p>}
                   </div>
                   <div>
                     <label className="form-label">Category</label>
-                    <select className="form-select">
+                    <select 
+                      className="form-select"
+                      value={formData.category}
+                      onChange={(e) => handleInputChange('category', e.target.value)}
+                    >
                       <option value="">Select category</option>
                       <option value="electronics">Electronics</option>
                       <option value="clothing">Clothing</option>
@@ -494,7 +799,11 @@ export default function ProductsPage() {
                   </div>
                   <div>
                     <label className="form-label">Product Type</label>
-                    <select className="form-select" id="productType">
+                    <select 
+                      className="form-select"
+                      value={formData.productType}
+                      onChange={(e) => handleInputChange('productType', e.target.value)}
+                    >
                       <option value="simple">Simple</option>
                       <option value="bundle">Bundle</option>
                       <option value="variable">Variable</option>
@@ -502,31 +811,97 @@ export default function ProductsPage() {
                       <option value="external">External</option>
                     </select>
                   </div>
-                  <div>
-                    <label className="form-label">Bundle Discount (%)</label>
-                    <input
-                      type="number"
-                      min="0"
-                      max="100"
-                      step="0.1"
-                      className="form-input"
-                      placeholder="0"
-                      id="bundleDiscount"
-                    />
-                  </div>
+                  {formData.productType === 'bundle' && (
+                    <>
+                      <div>
+                        <label className="form-label">Bundle Discount (%)</label>
+                        <input
+                          type="number"
+                          min="0"
+                          max="100"
+                          step="0.1"
+                          className="form-input"
+                          placeholder="0"
+                          value={formData.bundleDiscount}
+                          onChange={(e) => handleInputChange('bundleDiscount', parseFloat(e.target.value) || 0)}
+                        />
+                      </div>
+                      <div>
+                        <label className="form-label">Min Bundle Items</label>
+                        <input
+                          type="number"
+                          min="0"
+                          className="form-input"
+                          placeholder="0"
+                          value={formData.minBundleItems}
+                          onChange={(e) => handleInputChange('minBundleItems', parseInt(e.target.value) || 0)}
+                        />
+                      </div>
+                      <div>
+                        <label className="form-label">Max Bundle Items</label>
+                        <input
+                          type="number"
+                          min="0"
+                          className={`form-input ${formErrors.maxBundleItems ? 'border-red-500' : ''}`}
+                          placeholder="0"
+                          value={formData.maxBundleItems}
+                          onChange={(e) => handleInputChange('maxBundleItems', parseInt(e.target.value) || 0)}
+                        />
+                        {formErrors.maxBundleItems && <p className="text-red-500 text-sm mt-1">{formErrors.maxBundleItems}</p>}
+                      </div>
+                      <div>
+                        <label className="form-label">Bundle Stock Management</label>
+                        <select 
+                          className="form-select"
+                          value={formData.bundleStock}
+                          onChange={(e) => handleInputChange('bundleStock', e.target.value)}
+                        >
+                          <option value="parent">Parent Only</option>
+                          <option value="children">Children Only</option>
+                          <option value="both">Both</option>
+                        </select>
+                      </div>
+                    </>
+                  )}
                   <div className="md:col-span-2">
                     <label className="form-label">Description</label>
                     <textarea
                       className="form-textarea"
                       rows={3}
                       placeholder="Enter product description"
+                      value={formData.description}
+                      onChange={(e) => handleInputChange('description', e.target.value)}
                     />
                   </div>
                 </div>
                 <div className="flex gap-2 mt-6">
-                  <button className="btn btn-primary">Create Product</button>
                   <button 
-                    onClick={() => setShowCreateModal(false)}
+                    onClick={handleCreateProduct}
+                    disabled={isSubmitting || createProduct.isPending}
+                    className="btn btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isSubmitting || createProduct.isPending ? 'Creating...' : 'Create Product'}
+                  </button>
+                  <button 
+                    onClick={() => {
+                      setShowCreateModal(false);
+                      setFormData({
+                        name: '',
+                        description: '',
+                        price: 0,
+                        salePrice: 0,
+                        sku: '',
+                        stockQuantity: 0,
+                        category: '',
+                        productType: 'simple',
+                        isBundle: false,
+                        bundleDiscount: 0,
+                        minBundleItems: 0,
+                        maxBundleItems: 0,
+                        bundleStock: 'parent',
+                      });
+                      setFormErrors({});
+                    }}
                     className="btn btn-outline"
                   >
                     Cancel
@@ -543,29 +918,38 @@ export default function ProductsPage() {
                 <h3 className="text-lg font-semibold text-foreground mb-4">Edit Product</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="form-label">Product Name</label>
+                    <label className="form-label">Product Name *</label>
                     <input
                       type="text"
-                      className="form-input"
+                      className={`form-input ${formErrors.name ? 'border-red-500' : ''}`}
                       placeholder="Enter product name"
+                      value={formData.name}
+                      onChange={(e) => handleInputChange('name', e.target.value)}
                     />
+                    {formErrors.name && <p className="text-red-500 text-sm mt-1">{formErrors.name}</p>}
                   </div>
                   <div>
-                    <label className="form-label">SKU</label>
+                    <label className="form-label">SKU *</label>
                     <input
                       type="text"
-                      className="form-input"
+                      className={`form-input ${formErrors.sku ? 'border-red-500' : ''}`}
                       placeholder="Enter SKU"
+                      value={formData.sku}
+                      onChange={(e) => handleInputChange('sku', e.target.value)}
                     />
+                    {formErrors.sku && <p className="text-red-500 text-sm mt-1">{formErrors.sku}</p>}
                   </div>
                   <div>
-                    <label className="form-label">Price</label>
+                    <label className="form-label">Price *</label>
                     <input
                       type="number"
                       step="0.01"
-                      className="form-input"
+                      className={`form-input ${formErrors.price ? 'border-red-500' : ''}`}
                       placeholder="0.00"
+                      value={formData.price}
+                      onChange={(e) => handleInputChange('price', parseFloat(e.target.value) || 0)}
                     />
+                    {formErrors.price && <p className="text-red-500 text-sm mt-1">{formErrors.price}</p>}
                   </div>
                   <div>
                     <label className="form-label">Sale Price</label>
@@ -574,37 +958,140 @@ export default function ProductsPage() {
                       step="0.01"
                       className="form-input"
                       placeholder="0.00"
+                      value={formData.salePrice}
+                      onChange={(e) => handleInputChange('salePrice', parseFloat(e.target.value) || 0)}
                     />
                   </div>
                   <div>
-                    <label className="form-label">Stock Quantity</label>
+                    <label className="form-label">Stock Quantity *</label>
                     <input
                       type="number"
-                      className="form-input"
+                      className={`form-input ${formErrors.stockQuantity ? 'border-red-500' : ''}`}
                       placeholder="0"
+                      value={formData.stockQuantity}
+                      onChange={(e) => handleInputChange('stockQuantity', parseInt(e.target.value) || 0)}
                     />
+                    {formErrors.stockQuantity && <p className="text-red-500 text-sm mt-1">{formErrors.stockQuantity}</p>}
                   </div>
                   <div>
-                    <label className="form-label">Status</label>
-                    <select className="form-select">
-                      <option value="active">Active</option>
-                      <option value="draft">Draft</option>
-                      <option value="archived">Archived</option>
+                    <label className="form-label">Category</label>
+                    <select 
+                      className="form-select"
+                      value={formData.category}
+                      onChange={(e) => handleInputChange('category', e.target.value)}
+                    >
+                      <option value="">Select category</option>
+                      <option value="electronics">Electronics</option>
+                      <option value="clothing">Clothing</option>
+                      <option value="books">Books</option>
+                      <option value="home">Home & Garden</option>
                     </select>
                   </div>
+                  <div>
+                    <label className="form-label">Product Type</label>
+                    <select 
+                      className="form-select"
+                      value={formData.productType}
+                      onChange={(e) => handleInputChange('productType', e.target.value)}
+                    >
+                      <option value="simple">Simple</option>
+                      <option value="bundle">Bundle</option>
+                      <option value="variable">Variable</option>
+                      <option value="grouped">Grouped</option>
+                      <option value="external">External</option>
+                    </select>
+                  </div>
+                  {formData.productType === 'bundle' && (
+                    <>
+                      <div>
+                        <label className="form-label">Bundle Discount (%)</label>
+                        <input
+                          type="number"
+                          min="0"
+                          max="100"
+                          step="0.1"
+                          className="form-input"
+                          placeholder="0"
+                          value={formData.bundleDiscount}
+                          onChange={(e) => handleInputChange('bundleDiscount', parseFloat(e.target.value) || 0)}
+                        />
+                      </div>
+                      <div>
+                        <label className="form-label">Min Bundle Items</label>
+                        <input
+                          type="number"
+                          min="0"
+                          className="form-input"
+                          placeholder="0"
+                          value={formData.minBundleItems}
+                          onChange={(e) => handleInputChange('minBundleItems', parseInt(e.target.value) || 0)}
+                        />
+                      </div>
+                      <div>
+                        <label className="form-label">Max Bundle Items</label>
+                        <input
+                          type="number"
+                          min="0"
+                          className={`form-input ${formErrors.maxBundleItems ? 'border-red-500' : ''}`}
+                          placeholder="0"
+                          value={formData.maxBundleItems}
+                          onChange={(e) => handleInputChange('maxBundleItems', parseInt(e.target.value) || 0)}
+                        />
+                        {formErrors.maxBundleItems && <p className="text-red-500 text-sm mt-1">{formErrors.maxBundleItems}</p>}
+                      </div>
+                      <div>
+                        <label className="form-label">Bundle Stock Management</label>
+                        <select 
+                          className="form-select"
+                          value={formData.bundleStock}
+                          onChange={(e) => handleInputChange('bundleStock', e.target.value)}
+                        >
+                          <option value="parent">Parent Only</option>
+                          <option value="children">Children Only</option>
+                          <option value="both">Both</option>
+                        </select>
+                      </div>
+                    </>
+                  )}
                   <div className="md:col-span-2">
                     <label className="form-label">Description</label>
                     <textarea
                       className="form-textarea"
                       rows={3}
                       placeholder="Enter product description"
+                      value={formData.description}
+                      onChange={(e) => handleInputChange('description', e.target.value)}
                     />
                   </div>
                 </div>
                 <div className="flex gap-2 mt-6">
-                  <button className="btn btn-primary">Update Product</button>
                   <button 
-                    onClick={() => setEditingProduct(null)}
+                    onClick={() => handleUpdateProduct(editingProduct)}
+                    disabled={isSubmitting || updateProduct.isPending}
+                    className="btn btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isSubmitting || updateProduct.isPending ? 'Updating...' : 'Update Product'}
+                  </button>
+                  <button 
+                    onClick={() => {
+                      setEditingProduct(null);
+                      setFormData({
+                        name: '',
+                        description: '',
+                        price: 0,
+                        salePrice: 0,
+                        sku: '',
+                        stockQuantity: 0,
+                        category: '',
+                        productType: 'simple',
+                        isBundle: false,
+                        bundleDiscount: 0,
+                        minBundleItems: 0,
+                        maxBundleItems: 0,
+                        bundleStock: 'parent',
+                      });
+                      setFormErrors({});
+                    }}
                     className="btn btn-outline"
                   >
                     Cancel
@@ -624,10 +1111,7 @@ export default function ProductsPage() {
                   <div className="flex justify-between items-center">
                     <h4 className="text-md font-medium">Bundle Items</h4>
                     <button 
-                      onClick={() => {
-                        // TODO: Implement add product to bundle functionality
-                        console.log('Add product to bundle');
-                      }}
+                      onClick={handleAddBundleItem}
                       className="btn btn-sm btn-primary"
                     >
                       Add Product
@@ -697,10 +1181,7 @@ export default function ProductsPage() {
                             </td>
                             <td className="p-3">
                               <button
-                                onClick={() => {
-                                  const newItems = bundleItems.filter((_, i) => i !== index);
-                                  setBundleItems(newItems);
-                                }}
+                                onClick={() => handleRemoveBundleItem(index)}
                                 className="btn btn-sm btn-destructive"
                               >
                                 Remove
@@ -722,26 +1203,17 @@ export default function ProductsPage() {
                 
                 <div className="flex gap-2 mt-6">
                   <button 
-                    onClick={async () => {
-                      try {
-                        // TODO: Implement API call to save bundle items
-                        // await fetch(`/api/products/${showBundleModal}/bundle-items`, {
-                        //   method: 'PUT',
-                        //   headers: { 'Content-Type': 'application/json' },
-                        //   body: JSON.stringify({ bundleItems })
-                        // });
-                        console.log('Saving bundle items:', bundleItems);
-                        setShowBundleModal(null);
-                      } catch (error) {
-                        console.error('Failed to save bundle items:', error);
-                      }
-                    }}
-                    className="btn btn-primary"
+                    onClick={handleSaveBundle}
+                    disabled={isSubmitting}
+                    className="btn btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Save Bundle
+                    {isSubmitting ? 'Saving...' : 'Save Bundle'}
                   </button>
                   <button 
-                    onClick={() => setShowBundleModal(null)}
+                    onClick={() => {
+                      setShowBundleModal(null);
+                      setBundleItems([]);
+                    }}
                     className="btn btn-outline"
                   >
                     Cancel

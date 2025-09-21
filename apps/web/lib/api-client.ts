@@ -227,6 +227,23 @@ class ApiClient {
     category?: string;
     images?: string[];
     storeId: string;
+    // Bundle product fields
+    productType?: 'simple' | 'variable' | 'bundle' | 'grouped' | 'external';
+    isBundle?: boolean;
+    bundleItems?: Array<{
+      productId: string;
+      quantity: number;
+      isOptional?: boolean;
+      minQuantity?: number;
+      maxQuantity?: number;
+      discount?: number;
+      sortOrder?: number;
+    }>;
+    bundlePricing?: 'fixed' | 'dynamic';
+    bundleDiscount?: number;
+    minBundleItems?: number;
+    maxBundleItems?: number;
+    bundleStock?: 'parent' | 'children' | 'both';
   }) {
     return this.request('/products', {
       method: 'POST',
@@ -244,6 +261,23 @@ class ApiClient {
     category?: string;
     images?: string[];
     status?: string;
+    // Bundle product fields
+    productType?: 'simple' | 'variable' | 'bundle' | 'grouped' | 'external';
+    isBundle?: boolean;
+    bundleItems?: Array<{
+      productId: string;
+      quantity: number;
+      isOptional?: boolean;
+      minQuantity?: number;
+      maxQuantity?: number;
+      discount?: number;
+      sortOrder?: number;
+    }>;
+    bundlePricing?: 'fixed' | 'dynamic';
+    bundleDiscount?: number;
+    minBundleItems?: number;
+    maxBundleItems?: number;
+    bundleStock?: 'parent' | 'children' | 'both';
   }) {
     return this.request(`/products/${id}`, {
       method: 'PUT',
@@ -262,6 +296,58 @@ class ApiClient {
     updates: Record<string, unknown>;
   }) {
     return this.request('/products/bulk-update', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  // Bundle Product endpoints
+  async getBundleItems(bundleId: string) {
+    return this.request(`/products/${bundleId}/bundle-items`);
+  }
+
+  async addBundleItem(bundleId: string, data: {
+    productId: string;
+    quantity: number;
+    isOptional?: boolean;
+    minQuantity?: number;
+    maxQuantity?: number;
+    discount?: number;
+    sortOrder?: number;
+  }) {
+    return this.request(`/products/${bundleId}/bundle-items`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateBundleItem(bundleId: string, productId: string, data: {
+    quantity?: number;
+    isOptional?: boolean;
+    minQuantity?: number;
+    maxQuantity?: number;
+    discount?: number;
+    sortOrder?: number;
+  }) {
+    return this.request(`/products/${bundleId}/bundle-items/${productId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async removeBundleItem(bundleId: string, productId: string) {
+    return this.request(`/products/${bundleId}/bundle-items/${productId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async calculateBundlePrice(bundleId: string, data: {
+    items: Array<{
+      productId: string;
+      quantity: number;
+    }>;
+  }) {
+    return this.request(`/products/${bundleId}/calculate-bundle-price`, {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -732,6 +818,101 @@ class ApiClient {
     if (customerId) searchParams.set('customerId', customerId);
     const queryString = searchParams.toString();
     return this.request(`/fulfillment-billing/stats${queryString ? `?${queryString}` : ''}`);
+  }
+
+  // Reports endpoints
+  async getDashboardStats(storeId?: string) {
+    const searchParams = new URLSearchParams();
+    if (storeId) searchParams.set('storeId', storeId);
+    const queryString = searchParams.toString();
+    return this.request(`/reports/dashboard${queryString ? `?${queryString}` : ''}`);
+  }
+
+  async getSalesReport(params?: {
+    startDate?: string;
+    endDate?: string;
+    storeId?: string;
+    groupBy?: 'day' | 'week' | 'month';
+  }) {
+    const searchParams = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          searchParams.set(key, value.toString());
+        }
+      });
+    }
+    const queryString = searchParams.toString();
+    return this.request(`/reports/sales${queryString ? `?${queryString}` : ''}`);
+  }
+
+  async getProductReport(params?: {
+    startDate?: string;
+    endDate?: string;
+    storeId?: string;
+    category?: string;
+  }) {
+    const searchParams = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          searchParams.set(key, value.toString());
+        }
+      });
+    }
+    const queryString = searchParams.toString();
+    return this.request(`/reports/products${queryString ? `?${queryString}` : ''}`);
+  }
+
+  async getCustomerReport(params?: {
+    startDate?: string;
+    endDate?: string;
+    storeId?: string;
+  }) {
+    const searchParams = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          searchParams.set(key, value.toString());
+        }
+      });
+    }
+    const queryString = searchParams.toString();
+    return this.request(`/reports/customers${queryString ? `?${queryString}` : ''}`);
+  }
+
+  async getInventoryReport(params?: {
+    storeId?: string;
+    category?: string;
+    lowStock?: boolean;
+  }) {
+    const searchParams = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          searchParams.set(key, value.toString());
+        }
+      });
+    }
+    const queryString = searchParams.toString();
+    return this.request(`/reports/inventory${queryString ? `?${queryString}` : ''}`);
+  }
+
+  async getFinancialReport(params?: {
+    startDate?: string;
+    endDate?: string;
+    storeId?: string;
+  }) {
+    const searchParams = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          searchParams.set(key, value.toString());
+        }
+      });
+    }
+    const queryString = searchParams.toString();
+    return this.request(`/reports/financial${queryString ? `?${queryString}` : ''}`);
   }
 }
 
