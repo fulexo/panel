@@ -1,6 +1,6 @@
 import { Injectable, LoggerService } from '@nestjs/common';
 import { PrismaService } from '../../prisma.service';
-import { toPrismaJson } from '../utils/json-utils';
+import { toPrismaJson } from '../utils/prisma-json.util';
 
 export interface LogEntry {
   level: 'debug' | 'info' | 'warn' | 'error' | 'fatal';

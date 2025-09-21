@@ -25,8 +25,16 @@ export default function ProductsPage() {
   // Load bundle items when modal opens
   const handleOpenBundleModal = async (productId: string) => {
     setShowBundleModal(productId);
-    // TODO: Load bundle items from API
-    setBundleItems([]);
+    try {
+      // TODO: Implement API call to load bundle items
+      // const response = await fetch(`/api/products/${productId}/bundle-items`);
+      // const items = await response.json();
+      // setBundleItems(items);
+      setBundleItems([]);
+    } catch (error) {
+      console.error('Failed to load bundle items:', error);
+      setBundleItems([]);
+    }
   };
   
   // Get user's store ID for customer view
@@ -600,7 +608,13 @@ export default function ProductsPage() {
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
                     <h4 className="text-md font-medium">Bundle Items</h4>
-                    <button className="btn btn-sm btn-primary">
+                    <button 
+                      onClick={() => {
+                        // TODO: Implement add product to bundle functionality
+                        console.log('Add product to bundle');
+                      }}
+                      className="btn btn-sm btn-primary"
+                    >
                       Add Product
                     </button>
                   </div>
@@ -692,7 +706,25 @@ export default function ProductsPage() {
                 </div>
                 
                 <div className="flex gap-2 mt-6">
-                  <button className="btn btn-primary">Save Bundle</button>
+                  <button 
+                    onClick={async () => {
+                      try {
+                        // TODO: Implement API call to save bundle items
+                        // await fetch(`/api/products/${showBundleModal}/bundle-items`, {
+                        //   method: 'PUT',
+                        //   headers: { 'Content-Type': 'application/json' },
+                        //   body: JSON.stringify({ bundleItems })
+                        // });
+                        console.log('Saving bundle items:', bundleItems);
+                        setShowBundleModal(null);
+                      } catch (error) {
+                        console.error('Failed to save bundle items:', error);
+                      }
+                    }}
+                    className="btn btn-primary"
+                  >
+                    Save Bundle
+                  </button>
                   <button 
                     onClick={() => setShowBundleModal(null)}
                     className="btn btn-outline"

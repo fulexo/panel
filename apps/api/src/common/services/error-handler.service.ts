@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../prisma.service';
-import { toPrismaJson } from '../utils/json-utils';
+import { toPrismaJson } from '../utils/prisma-json.util';
 
 export interface ErrorContext {
   userId?: string;

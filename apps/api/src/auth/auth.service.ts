@@ -1,7 +1,7 @@
 import { Injectable, UnauthorizedException, BadRequestException, ConflictException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma.service';
-import { toPrismaJsonValue } from '../common/utils/json-utils';
+import { toPrismaJsonValue } from '../common/utils/prisma-json.util';
 import { JwtService } from '../jwt';
 import { SessionService } from './session.service';
 import { AuditService } from '../audit/audit.service';

@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../prisma.service';
-import { toPrismaJson, toPrismaJsonValue } from '../utils/json-utils';
+import { toPrismaJson, toPrismaJsonValue } from '../utils/prisma-json.util';
 
 export interface ErrorLogData {
   type: string;

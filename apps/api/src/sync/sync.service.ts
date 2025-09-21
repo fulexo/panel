@@ -4,7 +4,7 @@ import { PrismaService } from '../prisma.service';
 // import { EncryptionService } from '../crypto';
 import Redis from 'ioredis';
 import { Queue } from 'bullmq';
-import { toPrismaJsonValue } from '../common/utils/json-utils';
+import { toPrismaJsonValue } from '../common/utils/prisma-json.util';
 
 interface RemoteOrder {
   external_order_id?: string;
