@@ -21,6 +21,13 @@ export default function ProductsPage() {
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   const [showBundleModal, setShowBundleModal] = useState<string | null>(null);
   const [bundleItems, setBundleItems] = useState<any[]>([]);
+
+  // Load bundle items when modal opens
+  const handleOpenBundleModal = async (productId: string) => {
+    setShowBundleModal(productId);
+    // TODO: Load bundle items from API
+    setBundleItems([]);
+  };
   
   // Get user's store ID for customer view
   const userStoreId = user?.stores?.[0]?.id;
@@ -352,7 +359,7 @@ export default function ProductsPage() {
                             </button>
                             {product.isBundle && (
                               <button 
-                                onClick={() => setShowBundleModal(product.id)}
+                                onClick={() => handleOpenBundleModal(product.id)}
                                 className="btn btn-sm btn-outline"
                               >
                                 Manage Bundle
@@ -464,13 +471,25 @@ export default function ProductsPage() {
                   </div>
                   <div>
                     <label className="form-label">Product Type</label>
-                    <select className="form-select">
+                    <select className="form-select" id="productType">
                       <option value="simple">Simple</option>
                       <option value="bundle">Bundle</option>
                       <option value="variable">Variable</option>
                       <option value="grouped">Grouped</option>
                       <option value="external">External</option>
                     </select>
+                  </div>
+                  <div>
+                    <label className="form-label">Bundle Discount (%)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="0.1"
+                      className="form-input"
+                      placeholder="0"
+                      id="bundleDiscount"
+                    />
                   </div>
                   <div className="md:col-span-2">
                     <label className="form-label">Description</label>
