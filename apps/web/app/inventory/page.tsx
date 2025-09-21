@@ -4,22 +4,24 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import { useRBAC } from "@/hooks/useRBAC";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import { useApp } from "@/contexts/AppContext";
 import { useProducts } from "@/hooks/useProducts";
 import { 
   useInventoryRequests, 
   useInventoryRequestStats,
   useCreateInventoryRequest,
-  useUpdateInventoryRequest,
+  // useUpdateInventoryRequest,
   useDeleteInventoryRequest
 } from "@/hooks/useInventoryRequests";
 
 export default function InventoryPage() {
   const { user } = useAuth();
   const { isCustomer } = useRBAC();
+  const { addNotification } = useApp();
   const [activeTab, setActiveTab] = useState<'requests' | 'stock-adjustment' | 'new-product'>('requests');
   const [selectedStore, setSelectedStore] = useState<string>("");
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [editingRequest, setEditingRequest] = useState<string | null>(null);
+  // const [showCreateModal, setShowCreateModal] = useState(false);
+  // const [editingRequest, setEditingRequest] = useState<string | null>(null);
 
   // Form states
   const [stockForm, setStockForm] = useState({
@@ -48,7 +50,7 @@ export default function InventoryPage() {
     }
   }, [user]);
 
-  const { data: productsData, isLoading: productsLoading } = useProducts({
+  const { data: productsData } = useProducts({
     storeId: selectedStore,
     limit: 100,
   });
@@ -60,14 +62,18 @@ export default function InventoryPage() {
   const { data: statsData } = useInventoryRequestStats();
 
   const createRequestMutation = useCreateInventoryRequest();
-  const updateRequestMutation = useUpdateInventoryRequest();
+  // const updateRequestMutation = useUpdateInventoryRequest();
   const deleteRequestMutation = useDeleteInventoryRequest();
 
   const handleCreateStockAdjustment = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!selectedStore || !stockForm.productId) {
-      alert("Lütfen mağaza ve ürün seçin");
+      addNotification({
+        type: 'warning',
+        title: 'Eksik Bilgi',
+        message: 'Lütfen mağaza ve ürün seçin'
+      });
       return;
     }
 
@@ -75,7 +81,7 @@ export default function InventoryPage() {
       await createRequestMutation.mutateAsync({
         storeId: selectedStore,
         type: 'stock_adjustment',
-        title: `Stok Düzenleme - ${productsData?.data.find(p => p.id === stockForm.productId)?.name}`,
+        title: `Stok Düzenleme - ${(productsData as any)?.data?.find((p: any) => p.id === stockForm.productId)?.name}`,
         description: stockForm.adjustmentReason,
         productId: stockForm.productId,
         currentStock: stockForm.currentStock,
@@ -89,11 +95,18 @@ export default function InventoryPage() {
         requestedStock: 0,
         adjustmentReason: '',
       });
-      setShowCreateModal(false);
-      alert("Stok düzenleme talebi oluşturuldu!");
-    } catch (error) {
-      console.error("Stok düzenleme hatası:", error);
-      alert("Stok düzenleme talebi oluşturulurken bir hata oluştu");
+      // setShowCreateModal(false);
+      addNotification({
+        type: 'success',
+        title: 'Başarılı',
+        message: 'Stok düzenleme talebi oluşturuldu!'
+      });
+    } catch {
+      addNotification({
+        type: 'error',
+        title: 'Hata',
+        message: 'Stok düzenleme talebi oluşturulurken bir hata oluştu'
+      });
     }
   };
 
@@ -101,7 +114,11 @@ export default function InventoryPage() {
     e.preventDefault();
     
     if (!selectedStore || !productForm.name || !productForm.price) {
-      alert("Lütfen gerekli alanları doldurun");
+      addNotification({
+        type: 'warning',
+        title: 'Eksik Bilgi',
+        message: 'Lütfen gerekli alanları doldurun'
+      });
       return;
     }
 
@@ -119,7 +136,6 @@ export default function InventoryPage() {
           description: productForm.description,
           shortDescription: productForm.shortDescription,
           weight: productForm.weight || 0,
-          stockQuantity: productForm.stockQuantity,
           categories: productForm.categories,
           tags: productForm.tags,
         },
@@ -137,11 +153,18 @@ export default function InventoryPage() {
         categories: [],
         tags: [],
       });
-      setShowCreateModal(false);
-      alert("Yeni ürün talebi oluşturuldu!");
-    } catch (error) {
-      console.error("Yeni ürün hatası:", error);
-      alert("Yeni ürün talebi oluşturulurken bir hata oluştu");
+      // setShowCreateModal(false);
+      addNotification({
+        type: 'success',
+        title: 'Başarılı',
+        message: 'Yeni ürün talebi oluşturuldu!'
+      });
+    } catch {
+      addNotification({
+        type: 'error',
+        title: 'Hata',
+        message: 'Yeni ürün talebi oluşturulurken bir hata oluştu'
+      });
     }
   };
 
@@ -149,10 +172,17 @@ export default function InventoryPage() {
     if (confirm("Bu talebi silmek istediğinizden emin misiniz?")) {
       try {
         await deleteRequestMutation.mutateAsync(id);
-        alert("Talep silindi");
-      } catch (error) {
-        console.error("Talep silme hatası:", error);
-        alert("Talep silinirken bir hata oluştu");
+        addNotification({
+          type: 'success',
+          title: 'Başarılı',
+          message: 'Talep silindi'
+        });
+      } catch {
+        addNotification({
+          type: 'error',
+          title: 'Hata',
+          message: 'Talep silinirken bir hata oluştu'
+        });
       }
     }
   };
@@ -170,8 +200,8 @@ export default function InventoryPage() {
     );
   }
 
-  const requests = requestsData?.data || [];
-  const products = productsData?.data || [];
+  const requests = (requestsData as any)?.data || [];
+  const products = (productsData as any)?.data || [];
   const stats = statsData || { total: 0, pending: 0, approved: 0, rejected: 0 };
 
   return (
@@ -190,19 +220,19 @@ export default function InventoryPage() {
           {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="bg-card p-4 rounded-lg border border-border">
-              <div className="text-2xl font-bold text-foreground">{stats.total}</div>
+              <div className="text-2xl font-bold text-foreground">{(stats as any)?.total}</div>
               <div className="text-sm text-muted-foreground">Toplam Talep</div>
             </div>
             <div className="bg-card p-4 rounded-lg border border-border">
-              <div className="text-2xl font-bold text-yellow-600">{stats.pending}</div>
+              <div className="text-2xl font-bold text-yellow-600">{(stats as any)?.pending}</div>
               <div className="text-sm text-muted-foreground">Bekleyen</div>
             </div>
             <div className="bg-card p-4 rounded-lg border border-border">
-              <div className="text-2xl font-bold text-green-600">{stats.approved}</div>
+              <div className="text-2xl font-bold text-green-600">{(stats as any)?.approved}</div>
               <div className="text-sm text-muted-foreground">Onaylanan</div>
             </div>
             <div className="bg-card p-4 rounded-lg border border-border">
-              <div className="text-2xl font-bold text-red-600">{stats.rejected}</div>
+              <div className="text-2xl font-bold text-red-600">{(stats as any)?.rejected}</div>
               <div className="text-sm text-muted-foreground">Reddedilen</div>
             </div>
           </div>
@@ -253,7 +283,7 @@ export default function InventoryPage() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {requests.map((request) => (
+                  {requests.map((request: any) => (
                     <div key={request.id} className="bg-card p-4 rounded-lg border border-border">
                       <div className="flex justify-between items-start mb-2">
                         <div>
@@ -347,7 +377,7 @@ export default function InventoryPage() {
                   <select
                     value={stockForm.productId}
                     onChange={(e) => {
-                      const product = products.find(p => p.id === e.target.value);
+                      const product = products.find((p: any) => p.id === e.target.value);
                       setStockForm(prev => ({
                         ...prev,
                         productId: e.target.value,
@@ -358,7 +388,7 @@ export default function InventoryPage() {
                     className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground"
                   >
                     <option value="">Ürün Seçin</option>
-                    {products.map((product) => (
+                    {products.map((product: any) => (
                       <option key={product.id} value={product.id}>
                         {product.name} (SKU: {product.sku}) - Mevcut: {product.stockQuantity || 0}
                       </option>

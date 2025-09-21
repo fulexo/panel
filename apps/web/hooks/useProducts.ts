@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
 import { queryKeys } from './useApi';
+import { Product, PaginatedResponse } from '@/types/api';
 
 // Products hooks
 export const useProducts = (params?: { 
@@ -10,9 +11,9 @@ export const useProducts = (params?: {
   storeId?: string;
   status?: string;
 }) => {
-  return useQuery({
+  return useQuery<PaginatedResponse<Product[]>>({
     queryKey: queryKeys.products(params),
-    queryFn: () => apiClient.getProducts(params),
+    queryFn: () => apiClient.getProducts(params) as Promise<PaginatedResponse<Product[]>>,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 };

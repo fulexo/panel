@@ -104,15 +104,7 @@ export function useInventoryRequests(params?: {
 }) {
   return useQuery({
     queryKey: ['inventory-requests', params],
-    queryFn: () => apiClient.get<{
-      data: InventoryRequest[];
-      pagination: {
-        page: number;
-        limit: number;
-        total: number;
-        totalPages: number;
-      };
-    }>('/inventory-requests', { params }),
+    queryFn: () => apiClient.getInventoryRequests(params),
     staleTime: 2 * 60 * 1000, // 2 minutes
   });
 }
@@ -121,7 +113,7 @@ export function useInventoryRequests(params?: {
 export function useInventoryRequest(id: string) {
   return useQuery({
     queryKey: ['inventory-requests', id],
-    queryFn: () => apiClient.get<InventoryRequest>(`/inventory-requests/${id}`),
+    queryFn: () => apiClient.getInventoryRequest(id),
     enabled: !!id,
   });
 }
@@ -130,7 +122,7 @@ export function useInventoryRequest(id: string) {
 export function useInventoryRequestStats() {
   return useQuery({
     queryKey: ['inventory-requests', 'stats'],
-    queryFn: () => apiClient.get<InventoryRequestStats>('/inventory-requests/stats'),
+    queryFn: () => apiClient.getInventoryRequestStats(),
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }
@@ -141,7 +133,7 @@ export function useCreateInventoryRequest() {
 
   return useMutation({
     mutationFn: (data: CreateInventoryRequestData) => 
-      apiClient.post<InventoryRequest>('/inventory-requests', data),
+      apiClient.createInventoryRequest(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['inventory-requests'] });
       queryClient.invalidateQueries({ queryKey: ['inventory-requests', 'stats'] });
@@ -155,7 +147,7 @@ export function useUpdateInventoryRequest() {
 
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: UpdateInventoryRequestData }) => 
-      apiClient.put<InventoryRequest>(`/inventory-requests/${id}`, data),
+      apiClient.updateInventoryRequest(id, data),
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: ['inventory-requests'] });
       queryClient.invalidateQueries({ queryKey: ['inventory-requests', id] });
@@ -169,7 +161,7 @@ export function useReviewInventoryRequest() {
 
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: ReviewInventoryRequestData }) => 
-      apiClient.put<InventoryRequest>(`/inventory-requests/${id}/review`, data),
+      apiClient.updateInventoryRequest(id, data),
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: ['inventory-requests'] });
       queryClient.invalidateQueries({ queryKey: ['inventory-requests', id] });
@@ -184,7 +176,7 @@ export function useDeleteInventoryRequest() {
 
   return useMutation({
     mutationFn: (id: string) => 
-      apiClient.delete(`/inventory-requests/${id}`),
+      apiClient.deleteInventoryRequest(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['inventory-requests'] });
       queryClient.invalidateQueries({ queryKey: ['inventory-requests', 'stats'] });

@@ -680,10 +680,80 @@ class ApiClient {
     return this.request(`/shipping/options${queryString ? `?${queryString}` : ''}`);
   }
 
+  async getCustomerShippingPrices(customerId?: string) {
+    const searchParams = new URLSearchParams();
+    if (customerId) searchParams.set('customerId', customerId);
+    const queryString = searchParams.toString();
+    return this.request(`/shipping/customer-prices${queryString ? `?${queryString}` : ''}`);
+  }
+
   async calculateShipping(data: { zoneId: string; customerId?: string; orderTotal: number }) {
     return this.request('/shipping/calculate', {
       method: 'POST',
       body: JSON.stringify(data),
+    });
+  }
+
+  // Shipping zone CRUD
+  async createShippingZone(data: any) {
+    return this.request('/shipping/zones', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateShippingZone(id: string, data: any) {
+    return this.request(`/shipping/zones/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteShippingZone(id: string) {
+    return this.request(`/shipping/zones/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Shipping price CRUD
+  async createShippingPrice(data: any) {
+    return this.request('/shipping/prices', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateShippingPrice(id: string, data: any) {
+    return this.request(`/shipping/prices/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteShippingPrice(id: string) {
+    return this.request(`/shipping/prices/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Customer shipping price CRUD
+  async createCustomerShippingPrice(data: any) {
+    return this.request('/shipping/customer-prices', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateCustomerShippingPrice(id: string, data: any) {
+    return this.request(`/shipping/customer-prices/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteCustomerShippingPrice(id: string) {
+    return this.request(`/shipping/customer-prices/${id}`, {
+      method: 'DELETE',
     });
   }
 
@@ -735,6 +805,26 @@ class ApiClient {
     if (includeInactive) searchParams.set('includeInactive', 'true');
     const queryString = searchParams.toString();
     return this.request(`/fulfillment-billing/services${queryString ? `?${queryString}` : ''}`);
+  }
+
+  async createFulfillmentService(data: any) {
+    return this.request('/fulfillment-billing/services', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateFulfillmentService(id: string, data: any) {
+    return this.request(`/fulfillment-billing/services/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteFulfillmentService(id: string) {
+    return this.request(`/fulfillment-billing/services/${id}`, {
+      method: 'DELETE',
+    });
   }
 
   async getFulfillmentBillingItems(params?: any) {

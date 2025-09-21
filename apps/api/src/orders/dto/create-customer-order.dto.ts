@@ -3,11 +3,11 @@ import { Type } from 'class-transformer';
 
 export class OrderItemDto {
   @IsString()
-  productId: string;
+  productId!: string;
 
   @IsNumber()
   @Min(1)
-  quantity: number;
+  quantity!: number;
 
   @IsOptional()
   @IsNumber()
@@ -16,29 +16,29 @@ export class OrderItemDto {
 
 export class AddressDto {
   @IsString()
-  firstName: string;
+  firstName!: string;
 
   @IsString()
-  lastName: string;
+  lastName!: string;
 
   @IsString()
-  addressLine1: string;
+  addressLine1!: string;
 
   @IsOptional()
   @IsString()
   addressLine2?: string;
 
   @IsString()
-  city: string;
+  city!: string;
 
   @IsString()
-  state: string;
+  state!: string;
 
   @IsString()
-  postalCode: string;
+  postalCode!: string;
 
   @IsString()
-  country: string;
+  country!: string;
 
   @IsOptional()
   @IsString()
@@ -47,30 +47,30 @@ export class AddressDto {
 
 export class CreateCustomerOrderDto {
   @IsString()
-  storeId: string;
+  storeId!: string;
 
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => OrderItemDto)
-  items: OrderItemDto[];
+  items!: OrderItemDto[];
 
   @IsEmail()
-  customerEmail: string;
+  customerEmail!: string;
 
   @IsOptional()
   @IsString()
   customerPhone?: string;
 
   @IsString()
-  customerName: string;
+  customerName!: string;
 
   @ValidateNested()
   @Type(() => AddressDto)
-  shippingAddress: AddressDto;
+  shippingAddress!: AddressDto;
 
   @ValidateNested()
   @Type(() => AddressDto)
-  billingAddress: AddressDto;
+  billingAddress!: AddressDto;
 
   @IsOptional()
   @IsString()

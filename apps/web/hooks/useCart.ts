@@ -46,7 +46,7 @@ export interface UpdateCartItemDto {
 export function useCart(storeId: string) {
   return useQuery({
     queryKey: ['cart', storeId],
-    queryFn: () => apiClient.get<Cart>(`/orders/cart/${storeId}`),
+    queryFn: () => apiClient.getCart(storeId),
     enabled: !!storeId,
   });
 }
@@ -54,7 +54,7 @@ export function useCart(storeId: string) {
 export function useCartSummary(storeId: string) {
   return useQuery({
     queryKey: ['cart', 'summary', storeId],
-    queryFn: () => apiClient.get<CartSummary>(`/orders/cart/${storeId}/summary`),
+    queryFn: () => apiClient.getCartSummary(storeId),
     enabled: !!storeId,
   });
 }
@@ -64,7 +64,7 @@ export function useAddToCart() {
 
   return useMutation({
     mutationFn: ({ storeId, data }: { storeId: string; data: AddToCartDto }) =>
-      apiClient.post<CartItem>(`/orders/cart/${storeId}/items`, data),
+      apiClient.addToCart(storeId, data),
     onSuccess: (_, { storeId }) => {
       queryClient.invalidateQueries({ queryKey: ['cart', storeId] });
       queryClient.invalidateQueries({ queryKey: ['cart', 'summary', storeId] });
@@ -85,7 +85,7 @@ export function useUpdateCartItem() {
       productId: string; 
       data: UpdateCartItemDto 
     }) =>
-      apiClient.put<CartItem>(`/orders/cart/${storeId}/items/${productId}`, data),
+      apiClient.updateCartItem(storeId, productId, data),
     onSuccess: (_, { storeId }) => {
       queryClient.invalidateQueries({ queryKey: ['cart', storeId] });
       queryClient.invalidateQueries({ queryKey: ['cart', 'summary', storeId] });
@@ -98,7 +98,7 @@ export function useRemoveFromCart() {
 
   return useMutation({
     mutationFn: ({ storeId, productId }: { storeId: string; productId: string }) =>
-      apiClient.delete(`/orders/cart/${storeId}/items/${productId}`),
+      apiClient.removeFromCart(storeId, productId),
     onSuccess: (_, { storeId }) => {
       queryClient.invalidateQueries({ queryKey: ['cart', storeId] });
       queryClient.invalidateQueries({ queryKey: ['cart', 'summary', storeId] });
@@ -111,7 +111,7 @@ export function useClearCart() {
 
   return useMutation({
     mutationFn: ({ storeId }: { storeId: string }) =>
-      apiClient.delete(`/orders/cart/${storeId}`),
+      apiClient.clearCart(storeId),
     onSuccess: (_, { storeId }) => {
       queryClient.invalidateQueries({ queryKey: ['cart', storeId] });
       queryClient.invalidateQueries({ queryKey: ['cart', 'summary', storeId] });

@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { useAuth } from "@/components/AuthProvider";
+// import { useAuth } from "@/components/AuthProvider";
 import { useRBAC } from "@/hooks/useRBAC";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import { useApp } from "@/contexts/AppContext";
 import { 
   useInventoryRequests, 
   useInventoryRequestStats,
@@ -11,8 +12,9 @@ import {
 } from "@/hooks/useInventoryRequests";
 
 export default function InventoryApprovalsPage() {
-  const { user } = useAuth();
+  // const { user } = useAuth();
   const { isAdmin } = useRBAC();
+  const { addNotification } = useApp();
   const [selectedRequest, setSelectedRequest] = useState<string | null>(null);
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [reviewForm, setReviewForm] = useState({
@@ -39,8 +41,8 @@ export default function InventoryApprovalsPage() {
         id: selectedRequest,
         data: {
           status: reviewForm.status,
-          rejectionReason: reviewForm.rejectionReason || undefined,
-          adminNotes: reviewForm.adminNotes || undefined,
+          ...(reviewForm.rejectionReason && { rejectionReason: reviewForm.rejectionReason }),
+          ...(reviewForm.adminNotes && { adminNotes: reviewForm.adminNotes }),
         },
       });
       
@@ -51,10 +53,17 @@ export default function InventoryApprovalsPage() {
         rejectionReason: '',
         adminNotes: '',
       });
-      alert(`Talep ${reviewForm.status === 'approved' ? 'onaylandı' : 'reddedildi'}`);
-    } catch (error) {
-      console.error("Talep inceleme hatası:", error);
-      alert("Talep incelenirken bir hata oluştu");
+      addNotification({
+        type: 'success',
+        title: 'Başarılı',
+        message: `Talep ${reviewForm.status === 'approved' ? 'onaylandı' : 'reddedildi'}`
+      });
+    } catch {
+      addNotification({
+        type: 'error',
+        title: 'Hata',
+        message: 'Talep incelenirken bir hata oluştu'
+      });
     }
   };
 
@@ -76,7 +85,7 @@ export default function InventoryApprovalsPage() {
     );
   }
 
-  const requests = requestsData?.data || [];
+  const requests = (requestsData as any)?.data || [];
   const stats = statsData || { total: 0, pending: 0, approved: 0, rejected: 0 };
 
   return (
@@ -95,19 +104,19 @@ export default function InventoryApprovalsPage() {
           {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="bg-card p-4 rounded-lg border border-border">
-              <div className="text-2xl font-bold text-foreground">{stats.total}</div>
+              <div className="text-2xl font-bold text-foreground">{(stats as any)?.total}</div>
               <div className="text-sm text-muted-foreground">Toplam Talep</div>
             </div>
             <div className="bg-card p-4 rounded-lg border border-border">
-              <div className="text-2xl font-bold text-yellow-600">{stats.pending}</div>
+              <div className="text-2xl font-bold text-yellow-600">{(stats as any)?.pending}</div>
               <div className="text-sm text-muted-foreground">Bekleyen</div>
             </div>
             <div className="bg-card p-4 rounded-lg border border-border">
-              <div className="text-2xl font-bold text-green-600">{stats.approved}</div>
+              <div className="text-2xl font-bold text-green-600">{(stats as any)?.approved}</div>
               <div className="text-sm text-muted-foreground">Onaylanan</div>
             </div>
             <div className="bg-card p-4 rounded-lg border border-border">
-              <div className="text-2xl font-bold text-red-600">{stats.rejected}</div>
+              <div className="text-2xl font-bold text-red-600">{(stats as any)?.rejected}</div>
               <div className="text-sm text-muted-foreground">Reddedilen</div>
             </div>
           </div>
@@ -123,7 +132,7 @@ export default function InventoryApprovalsPage() {
               </div>
             ) : (
               <div className="space-y-4">
-                {requests.map((request) => (
+                {requests.map((request: any) => (
                   <div key={request.id} className="bg-card p-6 rounded-lg border border-border">
                     <div className="flex justify-between items-start mb-4">
                       <div>

@@ -245,11 +245,11 @@ export default function ProductsPage() {
             data: {
               productId: item.productId,
               quantity: item.quantity,
-              isOptional: item.isOptional,
-              minQuantity: item.minQuantity,
-              maxQuantity: item.maxQuantity,
-              discount: item.discount,
-              sortOrder: item.sortOrder,
+              ...(item.isOptional !== undefined && { isOptional: item.isOptional }),
+              ...(item.minQuantity !== undefined && { minQuantity: item.minQuantity }),
+              ...(item.maxQuantity !== undefined && { maxQuantity: item.maxQuantity }),
+              ...(item.discount !== undefined && { discount: item.discount }),
+              ...(item.sortOrder !== undefined && { sortOrder: item.sortOrder }),
             }
           });
         }
@@ -288,7 +288,7 @@ export default function ProductsPage() {
 
   const handleRemoveBundleItem = async (index: number) => {
     const item = bundleItems[index];
-    if (item.id && showBundleModal) {
+    if (item && item.id && showBundleModal) {
       try {
         await removeBundleItem.mutateAsync({
           bundleId: showBundleModal,
@@ -728,35 +728,35 @@ export default function ProductsPage() {
                     <label className="form-label">Product Name *</label>
                     <input
                       type="text"
-                      className={`form-input ${formErrors.name ? 'border-red-500' : ''}`}
+                      className={`form-input ${formErrors['name'] ? 'border-red-500' : ''}`}
                       placeholder="Enter product name"
                       value={formData.name}
                       onChange={(e) => handleInputChange('name', e.target.value)}
                     />
-                    {formErrors.name && <p className="text-red-500 text-sm mt-1">{formErrors.name}</p>}
+                    {formErrors['name'] && <p className="text-red-500 text-sm mt-1">{formErrors['name']}</p>}
                   </div>
                   <div>
                     <label className="form-label">SKU *</label>
                     <input
                       type="text"
-                      className={`form-input ${formErrors.sku ? 'border-red-500' : ''}`}
+                      className={`form-input ${formErrors['sku'] ? 'border-red-500' : ''}`}
                       placeholder="Enter SKU"
                       value={formData.sku}
                       onChange={(e) => handleInputChange('sku', e.target.value)}
                     />
-                    {formErrors.sku && <p className="text-red-500 text-sm mt-1">{formErrors.sku}</p>}
+                    {formErrors['sku'] && <p className="text-red-500 text-sm mt-1">{formErrors['sku']}</p>}
                   </div>
                   <div>
                     <label className="form-label">Price *</label>
                     <input
                       type="number"
                       step="0.01"
-                      className={`form-input ${formErrors.price ? 'border-red-500' : ''}`}
+                      className={`form-input ${formErrors['price'] ? 'border-red-500' : ''}`}
                       placeholder="0.00"
                       value={formData.price}
                       onChange={(e) => handleInputChange('price', parseFloat(e.target.value) || 0)}
                     />
-                    {formErrors.price && <p className="text-red-500 text-sm mt-1">{formErrors.price}</p>}
+                    {formErrors['price'] && <p className="text-red-500 text-sm mt-1">{formErrors['price']}</p>}
                   </div>
                   <div>
                     <label className="form-label">Sale Price</label>
@@ -773,12 +773,12 @@ export default function ProductsPage() {
                     <label className="form-label">Stock Quantity *</label>
                     <input
                       type="number"
-                      className={`form-input ${formErrors.stockQuantity ? 'border-red-500' : ''}`}
+                      className={`form-input ${formErrors['stockQuantity'] ? 'border-red-500' : ''}`}
                       placeholder="0"
                       value={formData.stockQuantity}
                       onChange={(e) => handleInputChange('stockQuantity', parseInt(e.target.value) || 0)}
                     />
-                    {formErrors.stockQuantity && <p className="text-red-500 text-sm mt-1">{formErrors.stockQuantity}</p>}
+                    {formErrors['stockQuantity'] && <p className="text-red-500 text-sm mt-1">{formErrors['stockQuantity']}</p>}
                   </div>
                   <div>
                     <label className="form-label">Category</label>
@@ -839,12 +839,12 @@ export default function ProductsPage() {
                         <input
                           type="number"
                           min="0"
-                          className={`form-input ${formErrors.maxBundleItems ? 'border-red-500' : ''}`}
+                          className={`form-input ${formErrors['maxBundleItems'] ? 'border-red-500' : ''}`}
                           placeholder="0"
                           value={formData.maxBundleItems}
                           onChange={(e) => handleInputChange('maxBundleItems', parseInt(e.target.value) || 0)}
                         />
-                        {formErrors.maxBundleItems && <p className="text-red-500 text-sm mt-1">{formErrors.maxBundleItems}</p>}
+                        {formErrors['maxBundleItems'] && <p className="text-red-500 text-sm mt-1">{formErrors['maxBundleItems']}</p>}
                       </div>
                       <div>
                         <label className="form-label">Bundle Stock Management</label>
@@ -918,35 +918,35 @@ export default function ProductsPage() {
                     <label className="form-label">Product Name *</label>
                     <input
                       type="text"
-                      className={`form-input ${formErrors.name ? 'border-red-500' : ''}`}
+                      className={`form-input ${formErrors['name'] ? 'border-red-500' : ''}`}
                       placeholder="Enter product name"
                       value={formData.name}
                       onChange={(e) => handleInputChange('name', e.target.value)}
                     />
-                    {formErrors.name && <p className="text-red-500 text-sm mt-1">{formErrors.name}</p>}
+                    {formErrors['name'] && <p className="text-red-500 text-sm mt-1">{formErrors['name']}</p>}
                   </div>
                   <div>
                     <label className="form-label">SKU *</label>
                     <input
                       type="text"
-                      className={`form-input ${formErrors.sku ? 'border-red-500' : ''}`}
+                      className={`form-input ${formErrors['sku'] ? 'border-red-500' : ''}`}
                       placeholder="Enter SKU"
                       value={formData.sku}
                       onChange={(e) => handleInputChange('sku', e.target.value)}
                     />
-                    {formErrors.sku && <p className="text-red-500 text-sm mt-1">{formErrors.sku}</p>}
+                    {formErrors['sku'] && <p className="text-red-500 text-sm mt-1">{formErrors['sku']}</p>}
                   </div>
                   <div>
                     <label className="form-label">Price *</label>
                     <input
                       type="number"
                       step="0.01"
-                      className={`form-input ${formErrors.price ? 'border-red-500' : ''}`}
+                      className={`form-input ${formErrors['price'] ? 'border-red-500' : ''}`}
                       placeholder="0.00"
                       value={formData.price}
                       onChange={(e) => handleInputChange('price', parseFloat(e.target.value) || 0)}
                     />
-                    {formErrors.price && <p className="text-red-500 text-sm mt-1">{formErrors.price}</p>}
+                    {formErrors['price'] && <p className="text-red-500 text-sm mt-1">{formErrors['price']}</p>}
                   </div>
                   <div>
                     <label className="form-label">Sale Price</label>
@@ -963,12 +963,12 @@ export default function ProductsPage() {
                     <label className="form-label">Stock Quantity *</label>
                     <input
                       type="number"
-                      className={`form-input ${formErrors.stockQuantity ? 'border-red-500' : ''}`}
+                      className={`form-input ${formErrors['stockQuantity'] ? 'border-red-500' : ''}`}
                       placeholder="0"
                       value={formData.stockQuantity}
                       onChange={(e) => handleInputChange('stockQuantity', parseInt(e.target.value) || 0)}
                     />
-                    {formErrors.stockQuantity && <p className="text-red-500 text-sm mt-1">{formErrors.stockQuantity}</p>}
+                    {formErrors['stockQuantity'] && <p className="text-red-500 text-sm mt-1">{formErrors['stockQuantity']}</p>}
                   </div>
                   <div>
                     <label className="form-label">Category</label>
@@ -1029,12 +1029,12 @@ export default function ProductsPage() {
                         <input
                           type="number"
                           min="0"
-                          className={`form-input ${formErrors.maxBundleItems ? 'border-red-500' : ''}`}
+                          className={`form-input ${formErrors['maxBundleItems'] ? 'border-red-500' : ''}`}
                           placeholder="0"
                           value={formData.maxBundleItems}
                           onChange={(e) => handleInputChange('maxBundleItems', parseInt(e.target.value) || 0)}
                         />
-                        {formErrors.maxBundleItems && <p className="text-red-500 text-sm mt-1">{formErrors.maxBundleItems}</p>}
+                        {formErrors['maxBundleItems'] && <p className="text-red-500 text-sm mt-1">{formErrors['maxBundleItems']}</p>}
                       </div>
                       <div>
                         <label className="form-label">Bundle Stock Management</label>
@@ -1142,7 +1142,9 @@ export default function ProductsPage() {
                                 value={item.quantity}
                                 onChange={(e) => {
                                   const newItems = [...bundleItems];
-                                  newItems[index].quantity = parseInt(e.target.value) || 1;
+                                  if (newItems[index]) {
+                                    newItems[index].quantity = parseInt(e.target.value) || 1;
+                                  }
                                   setBundleItems(newItems);
                                 }}
                                 className="w-20 px-2 py-1 border border-border rounded bg-background text-foreground"
@@ -1154,7 +1156,9 @@ export default function ProductsPage() {
                                 checked={item.isOptional}
                                 onChange={(e) => {
                                   const newItems = [...bundleItems];
-                                  newItems[index].isOptional = e.target.checked;
+                                  if (newItems[index]) {
+                                    newItems[index].isOptional = e.target.checked;
+                                  }
                                   setBundleItems(newItems);
                                 }}
                                 className="form-checkbox"
@@ -1169,7 +1173,9 @@ export default function ProductsPage() {
                                 value={item.discount || 0}
                                 onChange={(e) => {
                                   const newItems = [...bundleItems];
-                                  newItems[index].discount = parseFloat(e.target.value) || 0;
+                                  if (newItems[index]) {
+                                    newItems[index].discount = parseFloat(e.target.value) || 0;
+                                  }
                                   setBundleItems(newItems);
                                 }}
                                 className="w-20 px-2 py-1 border border-border rounded bg-background text-foreground"

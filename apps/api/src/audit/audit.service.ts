@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
-import { toPrismaJson } from '../common/utils/prisma-json.util';
+import { toPrismaJsonValue } from '../common/utils/prisma-json.util';
 import { LoggerService } from '../logger/logger.service';
 
 export interface AuditLogData {
@@ -29,8 +29,8 @@ export class AuditService {
           action: data.action,
           entityType: data.entityType,
           entityId: data.entityId,
-          changes: toPrismaJson(data.changes),
-          metadata: toPrismaJson(data.metadata),
+          changes: toPrismaJsonValue(data.changes),
+          metadata: toPrismaJsonValue(data.metadata),
           userId: data.userId,
           tenantId: data.tenantId,
           ipAddress: data.ipAddress,

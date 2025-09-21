@@ -99,9 +99,7 @@ export interface CalculateShippingResponse {
 export function useShippingZones(includeInactive = false) {
   return useQuery({
     queryKey: ['shipping', 'zones', { includeInactive }],
-    queryFn: () => apiClient.get<ShippingZone[]>('/shipping/zones', { 
-      params: { includeInactive } 
-    }),
+    queryFn: () => apiClient.getShippingZones(includeInactive),
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }
@@ -109,7 +107,9 @@ export function useShippingZones(includeInactive = false) {
 export function useShippingZone(id: string) {
   return useQuery({
     queryKey: ['shipping', 'zones', id],
-    queryFn: () => apiClient.get<ShippingZone>(`/shipping/zones/${id}`),
+    queryFn: () => apiClient.getShippingZones().then((zones: any) => 
+      zones.find((zone: any) => zone.id === id)
+    ),
     enabled: !!id,
   });
 }
@@ -119,7 +119,7 @@ export function useCreateShippingZone() {
 
   return useMutation({
     mutationFn: (data: Partial<ShippingZone>) => 
-      apiClient.post<ShippingZone>('/shipping/zones', data),
+      apiClient.createShippingZone(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['shipping', 'zones'] });
     },
@@ -131,7 +131,7 @@ export function useUpdateShippingZone() {
 
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: Partial<ShippingZone> }) => 
-      apiClient.put<ShippingZone>(`/shipping/zones/${id}`, data),
+      apiClient.updateShippingZone(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['shipping', 'zones'] });
     },
@@ -143,7 +143,7 @@ export function useDeleteShippingZone() {
 
   return useMutation({
     mutationFn: (id: string) => 
-      apiClient.delete(`/shipping/zones/${id}`),
+      apiClient.deleteShippingZone(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['shipping', 'zones'] });
     },
@@ -154,9 +154,7 @@ export function useDeleteShippingZone() {
 export function useShippingPrices(zoneId?: string) {
   return useQuery({
     queryKey: ['shipping', 'prices', { zoneId }],
-    queryFn: () => apiClient.get<ShippingPrice[]>('/shipping/prices', { 
-      params: zoneId ? { zoneId } : {} 
-    }),
+    queryFn: () => apiClient.getShippingPrices(zoneId),
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }
@@ -164,7 +162,9 @@ export function useShippingPrices(zoneId?: string) {
 export function useShippingPrice(id: string) {
   return useQuery({
     queryKey: ['shipping', 'prices', id],
-    queryFn: () => apiClient.get<ShippingPrice>(`/shipping/prices/${id}`),
+    queryFn: () => apiClient.getShippingPrices().then((prices: any) => 
+      prices.find((price: any) => price.id === id)
+    ),
     enabled: !!id,
   });
 }
@@ -174,7 +174,7 @@ export function useCreateShippingPrice() {
 
   return useMutation({
     mutationFn: (data: Partial<ShippingPrice> & { zoneId: string }) => 
-      apiClient.post<ShippingPrice>('/shipping/prices', data),
+      apiClient.createShippingPrice(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['shipping', 'prices'] });
       queryClient.invalidateQueries({ queryKey: ['shipping', 'zones'] });
@@ -187,7 +187,7 @@ export function useUpdateShippingPrice() {
 
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: Partial<ShippingPrice> }) => 
-      apiClient.put<ShippingPrice>(`/shipping/prices/${id}`, data),
+      apiClient.updateShippingPrice(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['shipping', 'prices'] });
     },
@@ -199,7 +199,7 @@ export function useDeleteShippingPrice() {
 
   return useMutation({
     mutationFn: (id: string) => 
-      apiClient.delete(`/shipping/prices/${id}`),
+      apiClient.deleteShippingPrice(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['shipping', 'prices'] });
     },
@@ -210,9 +210,7 @@ export function useDeleteShippingPrice() {
 export function useCustomerShippingPrices(customerId?: string) {
   return useQuery({
     queryKey: ['shipping', 'customer-prices', { customerId }],
-    queryFn: () => apiClient.get<CustomerShippingPrice[]>('/shipping/customer-prices', { 
-      params: customerId ? { customerId } : {} 
-    }),
+    queryFn: () => apiClient.getCustomerShippingPrices(customerId),
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }
@@ -222,7 +220,7 @@ export function useCreateCustomerShippingPrice() {
 
   return useMutation({
     mutationFn: (data: Partial<CustomerShippingPrice> & { zoneId: string; priceId: string }) => 
-      apiClient.post<CustomerShippingPrice>('/shipping/customer-prices', data),
+      apiClient.createCustomerShippingPrice(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['shipping', 'customer-prices'] });
     },
@@ -234,7 +232,7 @@ export function useUpdateCustomerShippingPrice() {
 
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: Partial<CustomerShippingPrice> }) => 
-      apiClient.put<CustomerShippingPrice>(`/shipping/customer-prices/${id}`, data),
+      apiClient.updateCustomerShippingPrice(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['shipping', 'customer-prices'] });
     },
@@ -246,7 +244,7 @@ export function useDeleteCustomerShippingPrice() {
 
   return useMutation({
     mutationFn: (id: string) => 
-      apiClient.delete(`/shipping/customer-prices/${id}`),
+      apiClient.deleteCustomerShippingPrice(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['shipping', 'customer-prices'] });
     },
@@ -257,7 +255,7 @@ export function useDeleteCustomerShippingPrice() {
 export function useCalculateShipping() {
   return useMutation({
     mutationFn: (data: CalculateShippingRequest) => 
-      apiClient.post<CalculateShippingResponse>('/shipping/calculate', data),
+      apiClient.calculateShipping(data),
   });
 }
 
@@ -265,9 +263,7 @@ export function useCalculateShipping() {
 export function useShippingOptions(customerId?: string) {
   return useQuery({
     queryKey: ['shipping', 'options', { customerId }],
-    queryFn: () => apiClient.get<ShippingOption[]>('/shipping/options', { 
-      params: customerId ? { customerId } : {} 
-    }),
+    queryFn: () => apiClient.getShippingOptions(customerId),
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }

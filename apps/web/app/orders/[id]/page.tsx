@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useParams } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
 import { useRBAC } from "@/hooks/useRBAC";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import { useApp } from "@/contexts/AppContext";
 import { useOrder } from "@/hooks/useOrders";
 import { 
   useFulfillmentServices,
@@ -16,9 +17,10 @@ import {
 
 export default function OrderDetailPage() {
   const params = useParams();
-  const orderId = params.id as string;
+  const orderId = params['id'] as string;
   const { user } = useAuth();
-  const { isAdmin, isCustomer } = useRBAC();
+  const { isCustomer } = useRBAC();
+  const { addNotification } = useApp();
   const [activeTab, setActiveTab] = useState<'details' | 'fulfillment'>('details');
   const [showAddFulfillment, setShowAddFulfillment] = useState(false);
   const [editingItem, setEditingItem] = useState<string | null>(null);
@@ -33,7 +35,7 @@ export default function OrderDetailPage() {
   });
 
   const { data: order, isLoading: orderLoading } = useOrder(orderId);
-  const { data: services, isLoading: servicesLoading } = useFulfillmentServices();
+  const { data: services } = useFulfillmentServices();
   const { data: billingItems, isLoading: billingItemsLoading } = useFulfillmentBillingItems({
     orderId,
   });
@@ -46,7 +48,11 @@ export default function OrderDetailPage() {
     e.preventDefault();
     
     if (!fulfillmentForm.serviceId) {
-      alert("Lütfen hizmet seçin");
+      addNotification({
+        type: 'warning',
+        title: 'Eksik Bilgi',
+        message: 'Lütfen hizmet seçin'
+      });
       return;
     }
 
@@ -55,9 +61,9 @@ export default function OrderDetailPage() {
         orderId,
         serviceId: fulfillmentForm.serviceId,
         quantity: fulfillmentForm.quantity,
-        unitPrice: fulfillmentForm.unitPrice || undefined,
-        description: fulfillmentForm.description || undefined,
-        serviceDate: fulfillmentForm.serviceDate,
+        ...(fulfillmentForm.unitPrice && { unitPrice: fulfillmentForm.unitPrice }),
+        ...(fulfillmentForm.description && { description: fulfillmentForm.description }),
+        ...(fulfillmentForm.serviceDate && { serviceDate: fulfillmentForm.serviceDate }),
       });
       
       setFulfillmentForm({
@@ -68,10 +74,17 @@ export default function OrderDetailPage() {
         serviceDate: new Date().toISOString().split('T')[0],
       });
       setShowAddFulfillment(false);
-      alert("Fulfillment hizmeti eklendi");
-    } catch (error) {
-      console.error("Fulfillment ekleme hatası:", error);
-      alert("Fulfillment hizmeti eklenirken bir hata oluştu");
+      addNotification({
+        type: 'success',
+        title: 'Başarılı',
+        message: 'Fulfillment hizmeti eklendi'
+      });
+    } catch {
+      addNotification({
+        type: 'error',
+        title: 'Hata',
+        message: 'Fulfillment hizmeti eklenirken bir hata oluştu'
+      });
     }
   };
 
@@ -85,9 +98,9 @@ export default function OrderDetailPage() {
         id: editingItem,
         data: {
           quantity: fulfillmentForm.quantity,
-          unitPrice: fulfillmentForm.unitPrice || undefined,
-          description: fulfillmentForm.description || undefined,
-          serviceDate: fulfillmentForm.serviceDate,
+          ...(fulfillmentForm.unitPrice && { unitPrice: fulfillmentForm.unitPrice }),
+          ...(fulfillmentForm.description && { description: fulfillmentForm.description }),
+          ...(fulfillmentForm.serviceDate && { serviceDate: fulfillmentForm.serviceDate }),
         },
       });
       
@@ -99,10 +112,17 @@ export default function OrderDetailPage() {
         description: '',
         serviceDate: new Date().toISOString().split('T')[0],
       });
-      alert("Fulfillment hizmeti güncellendi");
-    } catch (error) {
-      console.error("Fulfillment güncelleme hatası:", error);
-      alert("Fulfillment hizmeti güncellenirken bir hata oluştu");
+      addNotification({
+        type: 'success',
+        title: 'Başarılı',
+        message: 'Fulfillment hizmeti güncellendi'
+      });
+    } catch {
+      addNotification({
+        type: 'error',
+        title: 'Hata',
+        message: 'Fulfillment hizmeti güncellenirken bir hata oluştu'
+      });
     }
   };
 
@@ -110,15 +130,22 @@ export default function OrderDetailPage() {
     if (confirm("Bu fulfillment hizmetini silmek istediğinizden emin misiniz?")) {
       try {
         await deleteBillingItemMutation.mutateAsync(id);
-        alert("Fulfillment hizmeti silindi");
-      } catch (error) {
-        console.error("Fulfillment silme hatası:", error);
-        alert("Fulfillment hizmeti silinirken bir hata oluştu");
+        addNotification({
+          type: 'success',
+          title: 'Başarılı',
+          message: 'Fulfillment hizmeti silindi'
+        });
+      } catch {
+        addNotification({
+          type: 'error',
+          title: 'Hata',
+          message: 'Fulfillment hizmeti silinirken bir hata oluştu'
+        });
       }
     }
   };
 
-  const openEditModal = (item: any) => {
+  const openEditModal = (item: { id: string; serviceId: string; quantity: number; unitPrice: number; description?: string; serviceDate: string }) => {
     setEditingItem(item.id);
     setFulfillmentForm({
       serviceId: item.serviceId,
@@ -156,7 +183,7 @@ export default function OrderDetailPage() {
   }
 
   // Check access permissions
-  if (isCustomer() && order.customer?.id !== user?.id) {
+  if (isCustomer() && (order as any).customer?.id !== user?.id) {
     return (
       <ProtectedRoute>
         <div className="min-h-screen bg-background flex items-center justify-center">
@@ -169,8 +196,8 @@ export default function OrderDetailPage() {
     );
   }
 
-  const items = billingItems?.data || [];
-  const totalFulfillmentCost = items.reduce((sum, item) => sum + item.totalPrice, 0);
+  const items = (billingItems as any)?.data || [];
+  const totalFulfillmentCost = items.reduce((sum: number, item: any) => sum + item.totalPrice, 0);
 
   return (
     <ProtectedRoute>
@@ -180,7 +207,7 @@ export default function OrderDetailPage() {
             <div>
               <h1 className="mobile-heading text-foreground">Sipariş Detayı</h1>
               <p className="text-muted-foreground mobile-text">
-                Sipariş #{order.orderNumber || order.id}
+                Sipariş #{(order as any).orderNumber || (order as any).id}
               </p>
             </div>
             <div className="flex gap-2">
@@ -226,37 +253,37 @@ export default function OrderDetailPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <p className="text-sm text-muted-foreground">Sipariş Numarası</p>
-                    <p className="font-medium text-foreground">{order.orderNumber || order.id}</p>
+                    <p className="font-medium text-foreground">{(order as any).orderNumber || (order as any).id}</p>
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Durum</p>
-                    <p className="font-medium text-foreground">{order.status}</p>
+                    <p className="font-medium text-foreground">{(order as any).status}</p>
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Toplam Tutar</p>
-                    <p className="font-medium text-foreground">₺{order.total.toFixed(2)}</p>
+                    <p className="font-medium text-foreground">₺{(order as any).total.toFixed(2)}</p>
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Oluşturulma Tarihi</p>
                     <p className="font-medium text-foreground">
-                      {new Date(order.createdAt).toLocaleDateString('tr-TR')}
+                      {new Date((order as any).createdAt).toLocaleDateString('tr-TR')}
                     </p>
                   </div>
                 </div>
               </div>
 
               {/* Customer Info */}
-              {order.customer && (
+              {(order as any).customer && (
                 <div className="bg-card p-6 rounded-lg border border-border">
                   <h2 className="text-xl font-semibold text-foreground mb-4">Müşteri Bilgileri</h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <p className="text-sm text-muted-foreground">Müşteri Adı</p>
-                      <p className="font-medium text-foreground">{order.customer.name}</p>
+                      <p className="font-medium text-foreground">{(order as any).customer.name}</p>
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">E-posta</p>
-                      <p className="font-medium text-foreground">{order.customer.email}</p>
+                      <p className="font-medium text-foreground">{(order as any).customer.email}</p>
                     </div>
                   </div>
                 </div>
@@ -266,7 +293,7 @@ export default function OrderDetailPage() {
               <div className="bg-card p-6 rounded-lg border border-border">
                 <h2 className="text-xl font-semibold text-foreground mb-4">Sipariş Ürünleri</h2>
                 <div className="space-y-4">
-                  {order.items?.map((item: any) => (
+                  {(order as any).items?.map((item: any) => (
                     <div key={item.id} className="flex justify-between items-center p-4 bg-accent rounded-lg">
                       <div>
                         <p className="font-medium text-foreground">{item.product.name}</p>
@@ -310,7 +337,7 @@ export default function OrderDetailPage() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {items.map((item) => (
+                  {items.map((item: any) => (
                     <div key={item.id} className="bg-card p-4 rounded-lg border border-border">
                       <div className="flex justify-between items-start mb-2">
                         <div>
@@ -397,7 +424,7 @@ export default function OrderDetailPage() {
                     <select
                       value={fulfillmentForm.serviceId}
                       onChange={(e) => {
-                        const service = services?.find(s => s.id === e.target.value);
+                        const service = (services as any)?.find((s: any) => s.id === e.target.value);
                         setFulfillmentForm(prev => ({
                           ...prev,
                           serviceId: e.target.value,
@@ -408,7 +435,7 @@ export default function OrderDetailPage() {
                       className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground"
                     >
                       <option value="">Hizmet Seçin</option>
-                      {services?.map((service) => (
+                      {(services as any)?.map((service: any) => (
                         <option key={service.id} value={service.id}>
                           {service.name} - ₺{service.basePrice.toFixed(2)}/{service.unit}
                         </option>

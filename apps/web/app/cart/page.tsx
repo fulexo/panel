@@ -6,11 +6,14 @@ import { useRBAC } from "@/hooks/useRBAC";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { useProducts } from "@/hooks/useProducts";
 import { useCart, useAddToCart, useUpdateCartItem, useRemoveFromCart, useClearCart } from "@/hooks/useCart";
+import { useApp } from "@/contexts/AppContext";
+import { Product } from "@/types/api";
 import Link from "next/link";
 
 export default function CartPage() {
   const { user } = useAuth();
   const { isCustomer } = useRBAC();
+  const { addNotification } = useApp();
   const [storeId, setStoreId] = useState<string>("");
 
   // Get user's store ID
@@ -39,9 +42,12 @@ export default function CartPage() {
         storeId,
         data: { productId, quantity },
       });
-    } catch (error) {
-      console.error("Sepete ekleme hatası:", error);
-      alert("Ürün sepete eklenirken bir hata oluştu");
+    } catch {
+      addNotification({
+        type: 'error',
+        title: 'Sepete Ekleme Hatası',
+        message: 'Ürün sepete eklenirken bir hata oluştu'
+      });
     }
   };
 
@@ -58,9 +64,12 @@ export default function CartPage() {
           data: { quantity },
         });
       }
-    } catch (error) {
-      console.error("Miktar güncelleme hatası:", error);
-      alert("Miktar güncellenirken bir hata oluştu");
+    } catch {
+      addNotification({
+        type: 'error',
+        title: 'Miktar Güncelleme Hatası',
+        message: 'Miktar güncellenirken bir hata oluştu'
+      });
     }
   };
 
@@ -69,9 +78,12 @@ export default function CartPage() {
 
     try {
       await removeFromCartMutation.mutateAsync({ storeId, productId });
-    } catch (error) {
-      console.error("Ürün kaldırma hatası:", error);
-      alert("Ürün kaldırılırken bir hata oluştu");
+    } catch {
+      addNotification({
+        type: 'error',
+        title: 'Ürün Kaldırma Hatası',
+        message: 'Ürün kaldırılırken bir hata oluştu'
+      });
     }
   };
 
@@ -81,10 +93,13 @@ export default function CartPage() {
     if (confirm("Sepeti temizlemek istediğinizden emin misiniz?")) {
       try {
         await clearCartMutation.mutateAsync({ storeId });
-      } catch (error) {
-        console.error("Sepet temizleme hatası:", error);
-        alert("Sepet temizlenirken bir hata oluştu");
-      }
+    } catch {
+      addNotification({
+        type: 'error',
+        title: 'Sepet Temizleme Hatası',
+        message: 'Sepet temizlenirken bir hata oluştu'
+      });
+    }
     }
   };
 
@@ -114,17 +129,17 @@ export default function CartPage() {
     );
   }
 
-  const cartItems = cartData?.cart?.items || [];
-  const products = productsData?.data || [];
+  const cartItems = (cartData as any)?.cart?.items || [];
+  const products = (productsData as any)?.data || [];
 
   const calculateTotal = () => {
-    return cartItems.reduce((total, item) => {
+    return cartItems.reduce((total: number, item: any) => {
       return total + (item.product.price * item.quantity);
     }, 0);
   };
 
   const getTotalItems = () => {
-    return cartItems.reduce((total, item) => total + item.quantity, 0);
+    return cartItems.reduce((total: number, item: any) => total + item.quantity, 0);
   };
 
   return (
@@ -167,7 +182,7 @@ export default function CartPage() {
                     </div>
                   ) : (
                     <div className="space-y-4">
-                      {cartItems.map((item) => (
+                      {cartItems.map((item: any) => (
                         <div key={item.id} className="flex items-center gap-4 p-4 bg-accent rounded-lg">
                           {item.product.images[0] && (
                             <img
@@ -269,10 +284,10 @@ export default function CartPage() {
               <div className="mt-8">
                 <h2 className="text-xl font-semibold text-foreground mb-4">Mevcut Ürünler</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {products.slice(0, 6).map((product: any) => {
-                    const cartItem = cartItems.find(item => item.productId === product.id);
+                  {products.slice(0, 6).map((product: Product) => {
+                    const cartItem = cartItems.find((item: any) => item.productId === product.id);
                     const isInCart = !!cartItem;
-                    const isOutOfStock = product.stockQuantity !== null && product.stockQuantity <= 0;
+                    const isOutOfStock = product.stockQuantity !== null && product.stockQuantity !== undefined && product.stockQuantity <= 0;
 
                     return (
                       <div key={product.id} className="bg-card p-4 rounded-lg border border-border">

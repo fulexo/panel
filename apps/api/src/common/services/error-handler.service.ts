@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../prisma.service';
-import { toPrismaJson } from '../utils/prisma-json.util';
+import { toPrismaJsonValue } from '../utils/prisma-json.util';
 
 export interface ErrorContext {
   userId?: string;
@@ -67,10 +67,10 @@ export class ErrorHandlerService {
         data: {
           action: 'ERROR_OCCURRED',
           entityType: 'ERROR',
-          changes: toPrismaJson({
+          changes: toPrismaJsonValue({
             error: errorInfo,
           }),
-          metadata: toPrismaJson({
+          metadata: toPrismaJsonValue({
             severity: errorInfo['severity'],
             context: errorInfo['context'],
           }),

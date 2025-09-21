@@ -1,15 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { useAuth } from "@/components/AuthProvider";
+// import { useAuth } from "@/components/AuthProvider";
 import { useRBAC } from "@/hooks/useRBAC";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import ProtectedComponent from "@/components/ProtectedComponent";
+import { useApp } from "@/contexts/AppContext";
+// import ProtectedComponent from "@/components/ProtectedComponent";
 import { usePendingApprovals, useApproveOrder, useRejectOrder } from "@/hooks/useOrders";
 
 export default function OrderApprovalsPage() {
-  const { user } = useAuth();
+  // const { user } = useAuth();
   const { isAdmin } = useRBAC();
+  const { addNotification } = useApp();
   const [page, setPage] = useState(1);
   const [storeFilter, setStoreFilter] = useState("");
   const [selectedOrder, setSelectedOrder] = useState<string | null>(null);
@@ -34,16 +36,28 @@ export default function OrderApprovalsPage() {
       });
       setSelectedOrder(null);
       setApprovalNotes("");
-      alert("Sipariş onaylandı");
+      addNotification({
+        type: 'success',
+        title: 'Başarılı',
+        message: 'Sipariş onaylandı'
+      });
     } catch (error) {
       console.error("Onaylama hatası:", error);
-      alert("Sipariş onaylanırken bir hata oluştu");
+      addNotification({
+        type: 'error',
+        title: 'Hata',
+        message: 'Sipariş onaylanırken bir hata oluştu'
+      });
     }
   };
 
   const handleReject = async (orderId: string) => {
     if (!rejectionReason.trim()) {
-      alert("Red nedeni gereklidir");
+      addNotification({
+        type: 'warning',
+        title: 'Eksik Bilgi',
+        message: 'Red nedeni gereklidir'
+      });
       return;
     }
 
@@ -56,10 +70,18 @@ export default function OrderApprovalsPage() {
       setSelectedOrder(null);
       setRejectionReason("");
       setRejectionNotes("");
-      alert("Sipariş reddedildi");
+      addNotification({
+        type: 'success',
+        title: 'Başarılı',
+        message: 'Sipariş reddedildi'
+      });
     } catch (error) {
       console.error("Reddetme hatası:", error);
-      alert("Sipariş reddedilirken bir hata oluştu");
+      addNotification({
+        type: 'error',
+        title: 'Hata',
+        message: 'Sipariş reddedilirken bir hata oluştu'
+      });
     }
   };
 
@@ -89,8 +111,8 @@ export default function OrderApprovalsPage() {
     );
   }
 
-  const orders = approvalsData?.data || [];
-  const totalPages = approvalsData?.pagination?.totalPages || 1;
+  const orders = (approvalsData as any)?.data || [];
+  const totalPages = (approvalsData as any)?.pagination?.totalPages || 1;
 
   return (
     <ProtectedRoute>

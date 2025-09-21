@@ -1,14 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import { useRBAC } from "@/hooks/useRBAC";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import { useApp } from "@/contexts/AppContext";
 import { useShippingOptions, useCalculateShipping } from "@/hooks/useShipping";
 
 export default function ShippingCalculatorPage() {
   const { user } = useAuth();
   const { isCustomer } = useRBAC();
+  const { addNotification } = useApp();
   const [selectedZone, setSelectedZone] = useState<string>("");
   const [orderTotal, setOrderTotal] = useState<number>(0);
   const [calculatedPrices, setCalculatedPrices] = useState<any>(null);
@@ -19,7 +21,11 @@ export default function ShippingCalculatorPage() {
 
   const handleCalculate = async () => {
     if (!selectedZone || orderTotal <= 0) {
-      alert("Lütfen bölge seçin ve sipariş tutarını girin");
+      addNotification({
+        type: 'error',
+        title: 'Hata',
+        message: 'Lütfen bölge seçin ve sipariş tutarını girin'
+      });
       return;
     }
 
@@ -27,13 +33,17 @@ export default function ShippingCalculatorPage() {
     try {
       const result = await calculateShippingMutation.mutateAsync({
         zoneId: selectedZone,
-        customerId: user?.id,
+        ...(user?.id && { customerId: user.id }),
         orderTotal,
       });
       setCalculatedPrices(result);
     } catch (error) {
       console.error("Kargo hesaplama hatası:", error);
-      alert("Kargo hesaplanırken bir hata oluştu");
+      addNotification({
+        type: 'error',
+        title: 'Hata',
+        message: 'Kargo hesaplanırken bir hata oluştu'
+      });
     } finally {
       setIsCalculating(false);
     }
@@ -87,7 +97,7 @@ export default function ShippingCalculatorPage() {
                     className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground"
                   >
                     <option value="">Bölge Seçin</option>
-                    {shippingOptions?.map((option) => (
+                    {(shippingOptions as any)?.map((option: any) => (
                       <option key={option.zone.id} value={option.zone.id}>
                         {option.zone.name}
                       </option>
@@ -124,7 +134,7 @@ export default function ShippingCalculatorPage() {
               <div className="bg-card p-6 rounded-lg border border-border mb-8">
                 <h2 className="text-xl font-semibold text-foreground mb-4">Kargo Seçenekleri</h2>
                 <div className="space-y-4">
-                  {calculatedPrices.options.map((option: any) => (
+                  {(calculatedPrices as any)?.options?.map((option: any) => (
                     <div key={option.id} className="border border-border rounded-lg p-4">
                       <div className="flex justify-between items-start mb-2">
                         <div>
@@ -166,13 +176,13 @@ export default function ShippingCalculatorPage() {
             <div className="bg-card p-6 rounded-lg border border-border">
               <h2 className="text-xl font-semibold text-foreground mb-4">Mevcut Kargo Seçenekleri</h2>
               
-              {shippingOptions?.length === 0 ? (
+              {(shippingOptions as any)?.length === 0 ? (
                 <p className="text-muted-foreground text-center py-8">
                   Henüz kargo seçeneği bulunmuyor
                 </p>
               ) : (
                 <div className="space-y-6">
-                  {shippingOptions?.map((option) => (
+                  {(shippingOptions as any)?.map((option: any) => (
                     <div key={option.zone.id} className="border border-border rounded-lg p-4">
                       <h3 className="font-medium text-foreground mb-3">{option.zone.name}</h3>
                       {option.zone.description && (
@@ -180,7 +190,7 @@ export default function ShippingCalculatorPage() {
                       )}
                       
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {option.prices.map((price) => (
+                        {(option as any).prices?.map((price: any) => (
                           <div key={price.id} className="bg-accent p-3 rounded-lg">
                             <div className="flex justify-between items-start mb-2">
                               <h4 className="font-medium text-foreground">{price.name}</h4>

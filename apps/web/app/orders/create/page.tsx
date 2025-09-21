@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import { useRBAC } from "@/hooks/useRBAC";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import { useApp } from "@/contexts/AppContext";
 import { useProducts } from "@/hooks/useProducts";
 import { useCart } from "@/hooks/useCart";
 import { useCreateCustomerOrder } from "@/hooks/useOrders";
@@ -38,6 +39,7 @@ interface Address {
 export default function CreateOrderPage() {
   const { user } = useAuth();
   const { isCustomer } = useRBAC();
+  const { addNotification } = useApp();
   const [storeId, setStoreId] = useState<string>("");
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [shippingAddress, setShippingAddress] = useState<Address>({
@@ -82,7 +84,7 @@ export default function CreateOrderPage() {
 
   // Get cart data
   const { data: cartData, isLoading: cartLoading } = useCart(storeId);
-  const { data: productsData, isLoading: productsLoading } = useProducts({
+  const { isLoading: productsLoading } = useProducts({
     storeId,
     limit: 100,
   });
@@ -92,8 +94,8 @@ export default function CreateOrderPage() {
   const calculateShippingMutation = useCalculateShipping();
 
   useEffect(() => {
-    if (cartData?.cart?.items) {
-      setCartItems(cartData.cart.items);
+    if ((cartData as any)?.cart?.items) {
+      setCartItems((cartData as any).cart.items);
     }
   }, [cartData]);
 
@@ -128,7 +130,7 @@ export default function CreateOrderPage() {
     try {
       const result = await calculateShippingMutation.mutateAsync({
         zoneId: selectedShippingZone,
-        customerId: user?.id,
+        ...(user?.id && { customerId: user.id }),
         orderTotal,
       });
       setCalculatedShipping(result);
@@ -158,12 +160,20 @@ export default function CreateOrderPage() {
     e.preventDefault();
     
     if (cartItems.length === 0) {
-      alert("Sepetinizde ürün bulunmuyor");
+      addNotification({
+        type: 'error',
+        title: 'Hata',
+        message: 'Sepetinizde ürün bulunmuyor'
+      });
       return;
     }
 
     if (!storeId) {
-      alert("Mağaza seçilmedi");
+      addNotification({
+        type: 'error',
+        title: 'Hata',
+        message: 'Mağaza seçilmedi'
+      });
       return;
     }
 
@@ -172,7 +182,7 @@ export default function CreateOrderPage() {
     try {
       const orderData = {
         storeId,
-        items: cartItems.map(item => ({
+        items: cartItems.map((item: any) => ({
           productId: item.productId,
           quantity: item.quantity,
           price: item.product.price,
@@ -189,12 +199,20 @@ export default function CreateOrderPage() {
       };
 
       await createOrderMutation.mutateAsync(orderData);
-      alert("Siparişiniz başarıyla oluşturuldu! Onay bekliyor.");
+      addNotification({
+        type: 'success',
+        title: 'Başarılı',
+        message: 'Siparişiniz başarıyla oluşturuldu! Onay bekliyor.'
+      });
       // Redirect to orders page or clear cart
       window.location.href = "/orders";
     } catch (error) {
       console.error("Sipariş oluşturma hatası:", error);
-      alert("Sipariş oluşturulurken bir hata oluştu");
+      addNotification({
+        type: 'error',
+        title: 'Hata',
+        message: 'Sipariş oluşturulurken bir hata oluştu'
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -241,7 +259,7 @@ export default function CreateOrderPage() {
                   <p className="text-muted-foreground">Sepetinizde ürün bulunmuyor</p>
                 ) : (
                   <div className="space-y-4">
-                    {cartItems.map((item) => (
+                    {cartItems.map((item: any) => (
                       <div key={item.id} className="flex items-center justify-between p-4 bg-accent rounded-lg">
                         <div className="flex items-center gap-4">
                           {item.product.images[0] && (
@@ -594,7 +612,7 @@ export default function CreateOrderPage() {
                         className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground"
                       >
                         <option value="">Bölge Seçin</option>
-                        {shippingOptions?.map((option) => (
+                        {(shippingOptions as any)?.map((option: any) => (
                           <option key={option.zone.id} value={option.zone.id}>
                             {option.zone.name}
                           </option>
@@ -608,7 +626,7 @@ export default function CreateOrderPage() {
                           Kargo Türü *
                         </label>
                         <div className="space-y-2">
-                          {calculatedShipping.options.map((option: any) => (
+                          {(calculatedShipping as any)?.options?.map((option: any) => (
                             <div key={option.id} className="border border-border rounded-lg p-3">
                               <label className="flex items-center justify-between cursor-pointer">
                                 <div className="flex items-center gap-3">
