@@ -2,7 +2,7 @@
 
 import { logger } from "@/lib/logger";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import { useRBAC } from "@/hooks/useRBAC";
 import { 
@@ -11,11 +11,9 @@ import {
   useBulkUpdateProducts,
   useCreateProduct,
   useUpdateProduct,
-  useBundleItems,
   useAddBundleItem,
   useUpdateBundleItem,
-  useRemoveBundleItem,
-  useCalculateBundlePrice
+  useRemoveBundleItem
 } from "@/hooks/useApi";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import ProtectedComponent from "@/components/ProtectedComponent";
@@ -67,7 +65,7 @@ export default function ProductsPage() {
   
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
   // API hooks
@@ -76,7 +74,6 @@ export default function ProductsPage() {
   const addBundleItem = useAddBundleItem();
   const updateBundleItem = useUpdateBundleItem();
   const removeBundleItem = useRemoveBundleItem();
-  const calculateBundlePrice = useCalculateBundlePrice();
 
   // Load bundle items when modal opens
   const handleOpenBundleModal = async (productId: string) => {
@@ -97,24 +94,24 @@ export default function ProductsPage() {
 
   // Form handlers
   const handleInputChange = (field: string, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev: any) => ({ ...prev, [field]: value }));
     // Clear error when user starts typing
     if (formErrors[field]) {
-      setFormErrors(prev => ({ ...prev, [field]: '' }));
+      setFormErrors((prev: any) => ({ ...prev, [field]: '' }));
     }
   };
 
   const validateForm = () => {
     const errors: Record<string, string> = {};
     
-    if (!formData.name.trim()) errors.name = 'Product name is required';
-    if (!formData.sku.trim()) errors.sku = 'SKU is required';
-    if (formData.price <= 0) errors.price = 'Price must be greater than 0';
-    if (formData.stockQuantity < 0) errors.stockQuantity = 'Stock quantity cannot be negative';
+    if (!formData.name.trim()) errors['name'] = 'Product name is required';
+    if (!formData.sku.trim()) errors['sku'] = 'SKU is required';
+    if (formData.price <= 0) errors['price'] = 'Price must be greater than 0';
+    if (formData.stockQuantity < 0) errors['stockQuantity'] = 'Stock quantity cannot be negative';
     
     if (formData.isBundle) {
       if (formData.minBundleItems && formData.maxBundleItems && formData.minBundleItems > formData.maxBundleItems) {
-        errors.maxBundleItems = 'Max bundle items must be greater than min bundle items';
+        errors['maxBundleItems'] = 'Max bundle items must be greater than min bundle items';
       }
     }
     
@@ -126,7 +123,7 @@ export default function ProductsPage() {
     if (!validateForm()) return;
     
     setIsSubmitting(true);
-    setError(null);
+    setErrorMessage(null);
     setSuccess(null);
     
     try {
@@ -157,7 +154,7 @@ export default function ProductsPage() {
       setFormErrors({});
     } catch (error: any) {
       console.error('Failed to create product:', error);
-      setError(error?.message || 'Failed to create product. Please try again.');
+      setErrorMessage(error?.message || 'Failed to create product. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -167,7 +164,7 @@ export default function ProductsPage() {
     if (!validateForm()) return;
     
     setIsSubmitting(true);
-    setError(null);
+    setErrorMessage(null);
     setSuccess(null);
     
     try {
@@ -192,7 +189,7 @@ export default function ProductsPage() {
       setFormErrors({});
     } catch (error: any) {
       console.error('Failed to update product:', error);
-      setError(error?.message || 'Failed to update product. Please try again.');
+      setErrorMessage(error?.message || 'Failed to update product. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -221,7 +218,7 @@ export default function ProductsPage() {
     if (!showBundleModal) return;
     
     setIsSubmitting(true);
-    setError(null);
+    setErrorMessage(null);
     setSuccess(null);
     
     try {
@@ -263,7 +260,7 @@ export default function ProductsPage() {
       setBundleItems([]);
     } catch (error: any) {
       console.error('Failed to save bundle:', error);
-      setError(error?.message || 'Failed to save bundle items. Please try again.');
+      setErrorMessage(error?.message || 'Failed to save bundle items. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -301,7 +298,7 @@ export default function ProductsPage() {
         console.error('Failed to remove bundle item:', error);
       }
     }
-    setBundleItems(bundleItems.filter((_, i) => i !== index));
+    setBundleItems(bundleItems.filter((_: any, i: number) => i !== index));
   };
   
   // Get user's store ID for customer view
@@ -405,15 +402,15 @@ export default function ProductsPage() {
           </div>
 
           {/* Error/Success Messages */}
-          {error && (
+          {errorMessage && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
               <div className="flex items-center">
                 <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
                 </svg>
-                {error}
+                {errorMessage}
                 <button 
-                  onClick={() => setError(null)}
+                  onClick={() => setErrorMessage(null)}
                   className="ml-auto text-red-500 hover:text-red-700"
                 >
                   ×

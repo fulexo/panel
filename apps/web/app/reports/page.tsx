@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import { useRBAC } from "@/hooks/useRBAC";
 import { 
@@ -14,7 +14,7 @@ import {
 import ProtectedRoute from "@/components/ProtectedRoute";
 
 export default function ReportsPage() {
-  useAuth();
+  const { user } = useAuth();
   const { isAdmin } = useRBAC();
   const [activeTab, setActiveTab] = useState("overview");
   const [dateRange, setDateRange] = useState("30d");
@@ -34,18 +34,18 @@ export default function ReportsPage() {
   // Fetch real data from API
   const { data: dashboardStats, isLoading: isLoadingDashboard } = useDashboardStats(userStoreId);
   const { data: salesData, isLoading: isLoadingSales } = useSalesReport({ 
-    startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    endDate: new Date().toISOString().split('T')[0],
+    startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] as string,
+    endDate: new Date().toISOString().split('T')[0] as string,
     storeId: userStoreId 
   });
   const { data: productData, isLoading: isLoadingProducts } = useProductReport({ 
-    startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    endDate: new Date().toISOString().split('T')[0],
+    startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] as string,
+    endDate: new Date().toISOString().split('T')[0] as string,
     storeId: userStoreId 
   });
   const { data: customerData, isLoading: isLoadingCustomers } = useCustomerReport({ 
-    startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    endDate: new Date().toISOString().split('T')[0],
+    startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] as string,
+    endDate: new Date().toISOString().split('T')[0] as string,
     storeId: userStoreId 
   });
   const { data: inventoryData, isLoading: isLoadingInventory } = useInventoryReport({ 
@@ -53,8 +53,8 @@ export default function ReportsPage() {
     lowStock: true 
   });
   const { data: financialData, isLoading: isLoadingFinancial } = useFinancialReport({ 
-    startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    endDate: new Date().toISOString().split('T')[0],
+    startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] as string,
+    endDate: new Date().toISOString().split('T')[0] as string,
     storeId: userStoreId 
   });
 

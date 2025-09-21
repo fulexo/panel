@@ -567,14 +567,6 @@ class ApiClient {
     });
   }
 
-  // Dashboard endpoints
-  async getDashboardStats(storeId?: string) {
-    const searchParams = new URLSearchParams();
-    if (storeId) searchParams.set('storeId', storeId);
-    
-    const queryString = searchParams.toString();
-    return this.request(`/dashboard/stats${queryString ? `?${queryString}` : ''}`);
-  }
 
   // File upload endpoints
   async getFiles(params: { page?: number; limit?: number; search?: string } = {}) {

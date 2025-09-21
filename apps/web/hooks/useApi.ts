@@ -240,7 +240,15 @@ export const useAddBundleItem = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: ({ bundleId, data }: { bundleId: string; data: Record<string, unknown> }) => 
+    mutationFn: ({ bundleId, data }: { bundleId: string; data: {
+      productId: string;
+      quantity: number;
+      isOptional?: boolean;
+      minQuantity?: number;
+      maxQuantity?: number;
+      discount?: number;
+      sortOrder?: number;
+    } }) => 
       apiClient.addBundleItem(bundleId, data),
     onSuccess: (_, { bundleId }) => {
       queryClient.invalidateQueries({ queryKey: ['bundle-items', bundleId] });
@@ -277,7 +285,12 @@ export const useRemoveBundleItem = () => {
 
 export const useCalculateBundlePrice = () => {
   return useMutation({
-    mutationFn: ({ bundleId, data }: { bundleId: string; data: Record<string, unknown> }) => 
+    mutationFn: ({ bundleId, data }: { bundleId: string; data: {
+      items: Array<{
+        productId: string;
+        quantity: number;
+      }>;
+    } }) => 
       apiClient.calculateBundlePrice(bundleId, data),
   });
 };
@@ -501,13 +514,6 @@ export const useSendSupportMessage = () => {
 };
 
 // Reports hooks
-export const useDashboardStats = (storeId?: string) => {
-  return useQuery({
-    queryKey: queryKeys.dashboardStats(storeId),
-    queryFn: () => apiClient.getDashboardStats(storeId),
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  });
-};
 
 export const useSalesReport = (params?: {
   startDate?: string;
