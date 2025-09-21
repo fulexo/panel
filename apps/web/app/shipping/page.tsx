@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRBAC } from "@/hooks/useRBAC";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import { useApp } from "@/contexts/AppContext";
 import { 
   useShippingZones, 
   useShippingPrices, 
@@ -18,6 +19,7 @@ import {
 
 export default function ShippingPage() {
   const { isAdmin } = useRBAC();
+  const { addNotification } = useApp();
   const [activeTab, setActiveTab] = useState<'zones' | 'prices' | 'customer-prices'>('zones');
   const [selectedZone, setSelectedZone] = useState<string>("");
   const [showCreateZone, setShowCreateZone] = useState(false);
@@ -79,7 +81,11 @@ export default function ShippingPage() {
       setShowCreateZone(false);
     } catch (error) {
       console.error('Zone creation error:', error);
-      alert('Bölge oluşturulurken bir hata oluştu');
+      addNotification({
+        type: 'error',
+        title: 'Hata',
+        message: 'Bölge oluşturulurken bir hata oluştu'
+      });
     }
   };
 
@@ -93,7 +99,11 @@ export default function ShippingPage() {
       setZoneForm({ name: '', description: '', isActive: true });
     } catch (error) {
       console.error('Zone update error:', error);
-      alert('Bölge güncellenirken bir hata oluştu');
+      addNotification({
+        type: 'error',
+        title: 'Hata',
+        message: 'Bölge güncellenirken bir hata oluştu'
+      });
     }
   };
 
@@ -103,7 +113,11 @@ export default function ShippingPage() {
         await deleteZoneMutation.mutateAsync(id);
       } catch (error) {
         console.error('Zone deletion error:', error);
-        alert('Bölge silinirken bir hata oluştu');
+        addNotification({
+          type: 'error',
+          title: 'Hata',
+          message: 'Bölge silinirken bir hata oluştu'
+        });
       }
     }
   };
@@ -125,7 +139,11 @@ export default function ShippingPage() {
       setShowCreatePrice(false);
     } catch (error) {
       console.error('Price creation error:', error);
-      alert('Fiyat oluşturulurken bir hata oluştu');
+      addNotification({
+        type: 'error',
+        title: 'Hata',
+        message: 'Fiyat oluşturulurken bir hata oluştu'
+      });
     }
   };
 
@@ -136,7 +154,11 @@ export default function ShippingPage() {
         await deletePriceMutation.mutateAsync(id);
       } catch (error) {
         console.error('Price deletion error:', error);
-        alert('Fiyat silinirken bir hata oluştu');
+        addNotification({
+          type: 'error',
+          title: 'Hata',
+          message: 'Fiyat silinirken bir hata oluştu'
+        });
       }
     }
   };
@@ -156,7 +178,11 @@ export default function ShippingPage() {
       setShowCreateCustomerPrice(false);
     } catch (error) {
       console.error('Customer price creation error:', error);
-      alert('Müşteri fiyatı oluşturulurken bir hata oluştu');
+      addNotification({
+        type: 'error',
+        title: 'Hata',
+        message: 'Müşteri fiyatı oluşturulurken bir hata oluştu'
+      });
     }
   };
 
@@ -167,7 +193,11 @@ export default function ShippingPage() {
         await deleteCustomerPriceMutation.mutateAsync(id);
       } catch (error) {
         console.error('Customer price deletion error:', error);
-        alert('Müşteri fiyatı silinirken bir hata oluştu');
+        addNotification({
+          type: 'error',
+          title: 'Hata',
+          message: 'Müşteri fiyatı silinirken bir hata oluştu'
+        });
       }
     }
   };

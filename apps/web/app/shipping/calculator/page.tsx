@@ -4,11 +4,13 @@ import { useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import { useRBAC } from "@/hooks/useRBAC";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import { useApp } from "@/contexts/AppContext";
 import { useShippingOptions, useCalculateShipping } from "@/hooks/useShipping";
 
 export default function ShippingCalculatorPage() {
   const { user } = useAuth();
   const { isCustomer } = useRBAC();
+  const { addNotification } = useApp();
   const [selectedZone, setSelectedZone] = useState<string>("");
   const [orderTotal, setOrderTotal] = useState<number>(0);
   const [calculatedPrices, setCalculatedPrices] = useState<any>(null);
@@ -19,7 +21,11 @@ export default function ShippingCalculatorPage() {
 
   const handleCalculate = async () => {
     if (!selectedZone || orderTotal <= 0) {
-      alert("Lütfen bölge seçin ve sipariş tutarını girin");
+      addNotification({
+        type: 'error',
+        title: 'Hata',
+        message: 'Lütfen bölge seçin ve sipariş tutarını girin'
+      });
       return;
     }
 
@@ -33,7 +39,11 @@ export default function ShippingCalculatorPage() {
       setCalculatedPrices(result);
     } catch (error) {
       console.error("Kargo hesaplama hatası:", error);
-      alert("Kargo hesaplanırken bir hata oluştu");
+      addNotification({
+        type: 'error',
+        title: 'Hata',
+        message: 'Kargo hesaplanırken bir hata oluştu'
+      });
     } finally {
       setIsCalculating(false);
     }

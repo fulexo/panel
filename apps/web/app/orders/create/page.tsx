@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import { useRBAC } from "@/hooks/useRBAC";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import { useApp } from "@/contexts/AppContext";
 import { useProducts } from "@/hooks/useProducts";
 import { useCart } from "@/hooks/useCart";
 import { useCreateCustomerOrder } from "@/hooks/useOrders";
@@ -38,6 +39,7 @@ interface Address {
 export default function CreateOrderPage() {
   const { user } = useAuth();
   const { isCustomer } = useRBAC();
+  const { addNotification } = useApp();
   const [storeId, setStoreId] = useState<string>("");
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [shippingAddress, setShippingAddress] = useState<Address>({
@@ -158,12 +160,20 @@ export default function CreateOrderPage() {
     e.preventDefault();
     
     if (cartItems.length === 0) {
-      alert("Sepetinizde ürün bulunmuyor");
+      addNotification({
+        type: 'error',
+        title: 'Hata',
+        message: 'Sepetinizde ürün bulunmuyor'
+      });
       return;
     }
 
     if (!storeId) {
-      alert("Mağaza seçilmedi");
+      addNotification({
+        type: 'error',
+        title: 'Hata',
+        message: 'Mağaza seçilmedi'
+      });
       return;
     }
 
@@ -189,12 +199,20 @@ export default function CreateOrderPage() {
       };
 
       await createOrderMutation.mutateAsync(orderData);
-      alert("Siparişiniz başarıyla oluşturuldu! Onay bekliyor.");
+      addNotification({
+        type: 'success',
+        title: 'Başarılı',
+        message: 'Siparişiniz başarıyla oluşturuldu! Onay bekliyor.'
+      });
       // Redirect to orders page or clear cart
       window.location.href = "/orders";
     } catch (error) {
       console.error("Sipariş oluşturma hatası:", error);
-      alert("Sipariş oluşturulurken bir hata oluştu");
+      addNotification({
+        type: 'error',
+        title: 'Hata',
+        message: 'Sipariş oluşturulurken bir hata oluştu'
+      });
     } finally {
       setIsSubmitting(false);
     }
