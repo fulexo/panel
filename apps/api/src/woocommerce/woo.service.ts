@@ -548,7 +548,16 @@ export class WooCommerceService {
     return customers;
   }
 
-  private async syncBundleItems(tenantId: string, bundleWooId: string, storeId: string, bundleItems: any[]) {
+  private async syncBundleItems(tenantId: string, bundleWooId: string, storeId: string, bundleItems: Array<{
+    id: number;
+    product_id: number;
+    quantity: number;
+    optional: boolean;
+    min_quantity?: number;
+    max_quantity?: number;
+    discount?: number;
+    sort_order?: number;
+  }>) {
     // Find the bundle product in our database
     const bundleProduct = await this.prisma.product.findFirst({
       where: { 

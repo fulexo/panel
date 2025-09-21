@@ -20,7 +20,22 @@ export default function ProductsPage() {
   const [editingProduct, setEditingProduct] = useState<string | null>(null);
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   const [showBundleModal, setShowBundleModal] = useState<string | null>(null);
-  const [bundleItems, setBundleItems] = useState<any[]>([]);
+  const [bundleItems, setBundleItems] = useState<Array<{
+    id: string;
+    productId: string;
+    quantity: number;
+    isOptional: boolean;
+    minQuantity?: number;
+    maxQuantity?: number;
+    discount?: number;
+    sortOrder: number;
+    product?: {
+      id: string;
+      name: string;
+      sku: string;
+      price: number;
+    };
+  }>>([]);
 
   // Load bundle items when modal opens
   const handleOpenBundleModal = async (productId: string) => {
@@ -320,7 +335,7 @@ export default function ProductsPage() {
                             {product.category}
                             {product.isBundle && product.bundleProducts && (
                               <span className="ml-2">
-                                ({product.bundleProducts.length} items)
+                                ({product.bundleProducts?.length || 0} items)
                               </span>
                             )}
                           </div>

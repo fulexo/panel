@@ -247,7 +247,15 @@ export class ProductsService {
   }
 
   // Bundle product helper methods
-  private async createBundleItems(tenantId: string, bundleId: string, bundleItems: any[]) {
+  private async createBundleItems(tenantId: string, bundleId: string, bundleItems: Array<{
+    productId: string;
+    quantity: number;
+    isOptional?: boolean;
+    minQuantity?: number;
+    maxQuantity?: number;
+    discount?: number;
+    sortOrder?: number;
+  }>) {
     return this.runTenant(tenantId, async (db) => {
       const bundleItemData = bundleItems.map((item, index) => ({
         tenantId,
@@ -398,13 +406,21 @@ export class ProductsService {
       });
 
       let totalPrice = 0;
-      let items: any[] = [];
+      let items: Array<{
+        productId: string;
+        quantity: number;
+        unitPrice: number;
+        discount: number;
+        discountedPrice: number;
+        total: number;
+        isOptional: boolean;
+      }> = [];
 
       for (const item of bundleItems) {
         const quantity = selectedItems?.find(si => si.productId === item.productId)?.quantity || item.quantity;
         const itemPrice = item.product.salePrice || item.product.price;
         const discountedPrice = item.discount ? 
-          itemPrice * (1 - item.discount.toNumber() / 100) : 
+          itemPrice * (1 - (item.discount.toNumber() || 0) / 100) : 
           itemPrice;
         
         const itemTotal = discountedPrice * quantity;
@@ -414,7 +430,7 @@ export class ProductsService {
           productId: item.productId,
           quantity,
           unitPrice: itemPrice,
-          discount: item.discount?.toNumber() || 0,
+          discount: item.discount ? (item.discount.toNumber() || 0) : 0,
           discountedPrice,
           total: itemTotal,
           isOptional: item.isOptional
@@ -423,7 +439,7 @@ export class ProductsService {
 
       // Apply bundle discount if configured
       if (bundle.bundleDiscount) {
-        totalPrice = totalPrice * (1 - bundle.bundleDiscount.toNumber() / 100);
+        totalPrice = totalPrice * (1 - (bundle.bundleDiscount.toNumber() || 0) / 100);
       }
 
       return {
@@ -432,7 +448,7 @@ export class ProductsService {
         bundleDiscount: bundle.bundleDiscount?.toNumber() || 0,
         items,
         totalPrice: totalPrice,
-        originalPrice: bundle.price.toNumber()
+        originalPrice: bundle.price ? bundle.price.toNumber() : 0
       };
     });
   }
