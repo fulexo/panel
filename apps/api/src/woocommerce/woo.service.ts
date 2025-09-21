@@ -1,6 +1,6 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
-import { toPrismaJsonValue } from '../common/utils/json-utils';
+import { toPrismaJsonValue } from '../common/utils/prisma-json.util';
 import { Prisma } from '@prisma/client';
 import * as crypto from 'crypto';
 

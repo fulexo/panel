@@ -36,7 +36,7 @@ export default function ProductsPage() {
     ...(search ? { search } : {}),
     ...(category ? { category } : {}),
     ...(isAdmin() ? {} : userStoreId ? { storeId: userStoreId } : {}),
-  }) as { data: { data: Array<{ id: string; name: string; sku: string; price: number; salePrice?: number; stockQuantity: number; category?: string; status: string; createdAt: string; store?: { name: string } }>; pagination: { total: number; pages: number } } | undefined; isLoading: boolean; error: ApiError | null };
+  }) as { data: { data: Array<{ id: string; name: string; sku: string; price: number; salePrice?: number; stockQuantity: number; category?: string; status: string; createdAt: string; store?: { name: string }; isBundle?: boolean; bundleProducts?: Array<{ id: string; product: { name: string; sku: string } }> }>; pagination: { total: number; pages: number } } | undefined; isLoading: boolean; error: ApiError | null };
 
   const deleteProduct = useDeleteProduct();
   const bulkUpdateProducts = useBulkUpdateProducts();
@@ -74,12 +74,12 @@ export default function ProductsPage() {
   const totalPages = productsData?.pagination?.pages || 1;
 
   // Calculate statistics
-  const statusCounts = products.reduce((acc: Record<string, number>, product: { id: string; name: string; sku: string; price: number; salePrice?: number; stockQuantity: number; category?: string; status: string; createdAt: string; store?: { name: string } }) => {
+  const statusCounts = products.reduce((acc: Record<string, number>, product: { id: string; name: string; sku: string; price: number; salePrice?: number; stockQuantity: number; category?: string; status: string; createdAt: string; store?: { name: string }; isBundle?: boolean; bundleProducts?: Array<{ id: string; product: { name: string; sku: string } }> }) => {
     acc[product.status] = (acc[product.status] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);
 
-  const lowStockProducts = products.filter((product: { id: string; name: string; sku: string; price: number; salePrice?: number; stockQuantity: number; category?: string; status: string; createdAt: string; store?: { name: string } }) => product.stockQuantity <= 10);
+  const lowStockProducts = products.filter((product: { id: string; name: string; sku: string; price: number; salePrice?: number; stockQuantity: number; category?: string; status: string; createdAt: string; store?: { name: string }; isBundle?: boolean; bundleProducts?: Array<{ id: string; product: { name: string; sku: string } }> }) => product.stockQuantity <= 10);
 
   const handleBulkAction = async (action: string) => {
     if (selectedProducts.length === 0) return;
@@ -185,7 +185,7 @@ export default function ProductsPage() {
             <div className="bg-card p-6 rounded-lg border border-red-200">
               <h3 className="text-lg font-semibold text-red-800 mb-4">Low Stock Alerts</h3>
               <div className="space-y-3">
-                {lowStockProducts.slice(0, 5).map((product: { id: string; name: string; sku: string; price: number; salePrice?: number; stockQuantity: number; category?: string; status: string; createdAt: string; store?: { name: string } }) => (
+                {lowStockProducts.slice(0, 5).map((product: { id: string; name: string; sku: string; price: number; salePrice?: number; stockQuantity: number; category?: string; status: string; createdAt: string; store?: { name: string }; isBundle?: boolean; bundleProducts?: Array<{ id: string; product: { name: string; sku: string } }> }) => (
                   <div key={product.id} className="flex justify-between items-center p-3 bg-red-50 rounded-lg">
                     <div>
                       <div className="font-medium text-red-800">{product.name}</div>
@@ -275,7 +275,7 @@ export default function ProductsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {products.map((product: { id: string; name: string; sku: string; price: number; salePrice?: number; stockQuantity: number; category?: string; status: string; createdAt: string; store?: { name: string } }) => (
+                  {products.map((product: { id: string; name: string; sku: string; price: number; salePrice?: number; stockQuantity: number; category?: string; status: string; createdAt: string; store?: { name: string }; isBundle?: boolean; bundleProducts?: Array<{ id: string; product: { name: string; sku: string } }> }) => (
                     <tr key={product.id} className="border-b border-border">
                       <td className="p-3">
                         <input
