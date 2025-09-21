@@ -38,6 +38,9 @@ model Tenant {
   shippingPrices ShippingPrice[]
   customerShippingPrices CustomerShippingPrice[]
   inventoryRequests InventoryRequest[]
+  fulfillmentServices FulfillmentService[]
+  fulfillmentBillingItems FulfillmentBillingItem[]
+  fulfillmentInvoices FulfillmentInvoice[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -71,6 +74,7 @@ model User {
   supportTickets SupportTicket[] // Customer support tickets
   carts         Cart[]   // Customer shopping carts
   inventoryRequests InventoryRequest[] // Customer inventory requests
+  fulfillmentInvoices FulfillmentInvoice[] // Customer fulfillment invoices
 
   @@index([tenantId])
   @@index([tenantId, role])
@@ -255,6 +259,7 @@ model Order {
   shipments      Shipment[]
   returns        Return[]
   invoices       Invoice[]
+  fulfillmentBillingItems FulfillmentBillingItem[]
   serviceCharges OrderServiceCharge[]
 
   @@unique([wooId, storeId])
@@ -1148,4 +1153,84 @@ model InventoryRequest {
   @@index([createdAt])
   @@index([tenantId, status])
   @@index([customerId, status])
+}
+
+// Fulfillment billing for services
+model FulfillmentService {
+  id          String   @id @default(uuid())
+  tenantId    String
+  name        String   // "Paketleme", "Kargolama", "Toplama", "Etiketleme"
+  description String?
+  unit        String   // "adet", "kg", "m3", "saat"
+  basePrice   Decimal  @db.Decimal(10,2) // Base price per unit
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  billingItems FulfillmentBillingItem[]
+  
+  @@index([tenantId])
+  @@index([isActive])
+  @@index([name])
+}
+
+// Fulfillment billing items for orders
+model FulfillmentBillingItem {
+  id          String   @id @default(uuid())
+  tenantId    String
+  orderId     String
+  serviceId   String
+  quantity    Decimal  @db.Decimal(10,2) // Quantity of service used
+  unitPrice   Decimal  @db.Decimal(10,2) // Price per unit at time of service
+  totalPrice  Decimal  @db.Decimal(10,2) // Total price (quantity * unitPrice)
+  description String?  // Additional description
+  serviceDate DateTime @default(now()) // When service was performed
+  isBilled    Boolean  @default(false) // Whether this item has been billed
+  billedAt    DateTime? // When it was billed
+  invoiceId   String?  // Invoice ID if billed
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  service     FulfillmentService @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  
+  @@index([tenantId])
+  @@index([orderId])
+  @@index([serviceId])
+  @@index([isBilled])
+  @@index([serviceDate])
+  @@index([billedAt])
+  @@index([tenantId, isBilled])
+  @@index([tenantId, serviceDate])
+}
+
+// Monthly fulfillment invoices
+model FulfillmentInvoice {
+  id          String   @id @default(uuid())
+  tenantId    String
+  customerId  String   // Customer who will be billed
+  invoiceNumber String // Monthly invoice number (e.g., "2024-01-001")
+  month       Int      // Month (1-12)
+  year        Int      // Year
+  totalAmount Decimal  @db.Decimal(10,2) // Total amount for the month
+  status      String   @default("draft") // draft, sent, paid, overdue
+  dueDate     DateTime // Payment due date
+  paidAt      DateTime? // When payment was received
+  notes       String?  // Additional notes
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customer    User     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  items       FulfillmentBillingItem[] // Items included in this invoice
+  
+  @@unique([tenantId, invoiceNumber])
+  @@index([tenantId])
+  @@index([customerId])
+  @@index([month, year])
+  @@index([status])
+  @@index([dueDate])
+  @@index([tenantId, month, year])
 }
