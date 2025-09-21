@@ -107,6 +107,16 @@ export default function OrdersPage() {
                   Shipping Prices
                 </Link>
               </ProtectedComponent>
+              <ProtectedComponent permission="inventory.manage">
+                <Link href="/inventory" className="btn btn-outline">
+                  Inventory Management
+                </Link>
+              </ProtectedComponent>
+              <ProtectedComponent permission="inventory.approve">
+                <Link href="/inventory/approvals" className="btn btn-warning">
+                  Inventory Approvals
+                </Link>
+              </ProtectedComponent>
             </div>
           </div>
 

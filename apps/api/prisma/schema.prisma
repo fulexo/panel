@@ -37,6 +37,7 @@ model Tenant {
   shippingZones ShippingZone[]
   shippingPrices ShippingPrice[]
   customerShippingPrices CustomerShippingPrice[]
+  inventoryRequests InventoryRequest[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -69,6 +70,7 @@ model User {
   stores        Store[]  // Customer can have stores
   supportTickets SupportTicket[] // Customer support tickets
   carts         Cart[]   // Customer shopping carts
+  inventoryRequests InventoryRequest[] // Customer inventory requests
 
   @@index([tenantId])
   @@index([tenantId, role])
@@ -353,6 +355,7 @@ model Product {
   stockMovements  StockMovement[]
   inventoryApprovals InventoryApproval[]
   cartItems       CartItem[]
+  inventoryRequests InventoryRequest[]
 
   @@unique([wooId, storeId])
   @@index([tenantId])
@@ -592,6 +595,7 @@ model Store {
   inventoryApprovals InventoryApproval[]
   supportTickets SupportTicket[]
   carts         Cart[]
+  inventoryRequests InventoryRequest[]
 
   @@index([customerId])
   @@index([status])
@@ -1096,4 +1100,52 @@ model CustomerShippingPrice {
   @@index([zoneId])
   @@index([priceId])
   @@index([isActive])
+}
+
+// Inventory requests from customers
+model InventoryRequest {
+  id          String   @id @default(uuid())
+  tenantId    String
+  storeId     String
+  customerId  String
+  type        String   // "stock_adjustment", "new_product", "product_update"
+  status      String   @default("pending") // pending, approved, rejected
+  title       String   // Request title
+  description String?  // Request description
+  
+  // For stock adjustments
+  productId   String?  // Existing product ID
+  currentStock Int?    // Current stock level
+  requestedStock Int?  // Requested stock level
+  adjustmentReason String? // Reason for adjustment
+  
+  // For new products
+  productData Json?    // New product data (name, sku, price, etc.)
+  
+  // For product updates
+  updateData  Json?    // Product update data
+  
+  // Approval workflow
+  reviewedBy  String?  // Admin user ID who reviewed
+  reviewedAt  DateTime? // Review date
+  rejectionReason String? // Reason for rejection
+  adminNotes  String?  // Admin notes
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  store       Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  customer    User     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  product     Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  
+  @@index([tenantId])
+  @@index([storeId])
+  @@index([customerId])
+  @@index([productId])
+  @@index([type])
+  @@index([status])
+  @@index([createdAt])
+  @@index([tenantId, status])
+  @@index([customerId, status])
 }

@@ -1,114 +1,178 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import { useRBAC } from "@/hooks/useRBAC";
-import { useInventory, useUpdateInventory, useInventoryApprovals, useApproveInventoryChange } from "@/hooks/useApi";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import ProtectedComponent from "@/components/ProtectedComponent";
-import { ApiError } from "@/lib/api-client";
-import { logger } from "@/lib/logger";
+import { useProducts } from "@/hooks/useProducts";
+import { 
+  useInventoryRequests, 
+  useInventoryRequestStats,
+  useCreateInventoryRequest,
+  useUpdateInventoryRequest,
+  useDeleteInventoryRequest
+} from "@/hooks/useInventoryRequests";
 
 export default function InventoryPage() {
   const { user } = useAuth();
-  const { isAdmin } = useRBAC();
-  const [page, setPage] = useState(1);
-  const [search, setSearch] = useState("");
-  const [showLowStock, setShowLowStock] = useState(false);
-  const [showUpdateModal, setShowUpdateModal] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState<string | null>(null);
-  const [newQuantity, setNewQuantity] = useState("");
-  const [reason, setReason] = useState("");
-  
-  // Get user's store ID for customer view
-  const userStoreId = user?.stores?.[0]?.id;
-  
-  // Fetch inventory data
-  const { 
-    data: inventoryData, 
-    isLoading,
-    error
-  } = useInventory({
-    page,
-    limit: 10,
-    ...(search ? { search } : {}),
-    ...(showLowStock ? { lowStock: true } : {}),
-    ...(isAdmin() ? {} : userStoreId ? { storeId: userStoreId } : {}),
-  }) as { data: { data: Array<{ id: string; productName: string; sku: string; currentStock: number; minStock: number; maxStock: number; lastUpdated: string; store?: { name: string } }>; pagination: { total: number; pages: number } } | undefined; isLoading: boolean; error: ApiError | null };
+  const { isCustomer } = useRBAC();
+  const [activeTab, setActiveTab] = useState<'requests' | 'stock-adjustment' | 'new-product'>('requests');
+  const [selectedStore, setSelectedStore] = useState<string>("");
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [editingRequest, setEditingRequest] = useState<string | null>(null);
 
-  // Fetch pending approvals (admin only)
-  const { 
-    data: approvalsData
-  } = useInventoryApprovals({
-    status: 'pending'
-  }) as { data: { data: Array<{ id: string; productName: string; sku: string; currentStock: number; requestedStock: number; reason: string; requestedBy: string; requestedAt: string; store?: { name: string } }>; pagination: { total: number; pages: number } } | undefined; isLoading: boolean; error: ApiError | null };
+  // Form states
+  const [stockForm, setStockForm] = useState({
+    productId: '',
+    currentStock: 0,
+    requestedStock: 0,
+    adjustmentReason: '',
+  });
+  const [productForm, setProductForm] = useState({
+    name: '',
+    sku: '',
+    price: 0,
+    regularPrice: 0,
+    description: '',
+    shortDescription: '',
+    weight: 0,
+    stockQuantity: 0,
+    categories: [] as string[],
+    tags: [] as string[],
+  });
 
-  const updateInventory = useUpdateInventory();
-  const approveInventoryChange = useApproveInventoryChange();
+  // Get user's store ID
+  useEffect(() => {
+    if (user?.stores?.[0]?.id) {
+      setSelectedStore(user.stores[0].id);
+    }
+  }, [user]);
 
-  if (isLoading) {
+  const { data: productsData, isLoading: productsLoading } = useProducts({
+    storeId: selectedStore,
+    limit: 100,
+  });
+
+  const { data: requestsData, isLoading: requestsLoading } = useInventoryRequests({
+    storeId: selectedStore,
+  });
+
+  const { data: statsData } = useInventoryRequestStats();
+
+  const createRequestMutation = useCreateInventoryRequest();
+  const updateRequestMutation = useUpdateInventoryRequest();
+  const deleteRequestMutation = useDeleteInventoryRequest();
+
+  const handleCreateStockAdjustment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!selectedStore || !stockForm.productId) {
+      alert("Lütfen mağaza ve ürün seçin");
+      return;
+    }
+
+    try {
+      await createRequestMutation.mutateAsync({
+        storeId: selectedStore,
+        type: 'stock_adjustment',
+        title: `Stok Düzenleme - ${productsData?.data.find(p => p.id === stockForm.productId)?.name}`,
+        description: stockForm.adjustmentReason,
+        productId: stockForm.productId,
+        currentStock: stockForm.currentStock,
+        requestedStock: stockForm.requestedStock,
+        adjustmentReason: stockForm.adjustmentReason,
+      });
+      
+      setStockForm({
+        productId: '',
+        currentStock: 0,
+        requestedStock: 0,
+        adjustmentReason: '',
+      });
+      setShowCreateModal(false);
+      alert("Stok düzenleme talebi oluşturuldu!");
+    } catch (error) {
+      console.error("Stok düzenleme hatası:", error);
+      alert("Stok düzenleme talebi oluşturulurken bir hata oluştu");
+    }
+  };
+
+  const handleCreateNewProduct = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!selectedStore || !productForm.name || !productForm.price) {
+      alert("Lütfen gerekli alanları doldurun");
+      return;
+    }
+
+    try {
+      await createRequestMutation.mutateAsync({
+        storeId: selectedStore,
+        type: 'new_product',
+        title: `Yeni Ürün - ${productForm.name}`,
+        description: productForm.description,
+        productData: {
+          name: productForm.name,
+          sku: productForm.sku,
+          price: productForm.price,
+          regularPrice: productForm.regularPrice || productForm.price,
+          description: productForm.description,
+          shortDescription: productForm.shortDescription,
+          weight: productForm.weight || 0,
+          stockQuantity: productForm.stockQuantity,
+          categories: productForm.categories,
+          tags: productForm.tags,
+        },
+      });
+      
+      setProductForm({
+        name: '',
+        sku: '',
+        price: 0,
+        regularPrice: 0,
+        description: '',
+        shortDescription: '',
+        weight: 0,
+        stockQuantity: 0,
+        categories: [],
+        tags: [],
+      });
+      setShowCreateModal(false);
+      alert("Yeni ürün talebi oluşturuldu!");
+    } catch (error) {
+      console.error("Yeni ürün hatası:", error);
+      alert("Yeni ürün talebi oluşturulurken bir hata oluştu");
+    }
+  };
+
+  const handleDeleteRequest = async (id: string) => {
+    if (confirm("Bu talebi silmek istediğinizden emin misiniz?")) {
+      try {
+        await deleteRequestMutation.mutateAsync(id);
+        alert("Talep silindi");
+      } catch (error) {
+        console.error("Talep silme hatası:", error);
+        alert("Talep silinirken bir hata oluştu");
+      }
+    }
+  };
+
+  if (!isCustomer()) {
     return (
       <ProtectedRoute>
         <div className="min-h-screen bg-background flex items-center justify-center">
-          <div className="flex flex-col items-center gap-4">
-            <div className="spinner"></div>
-            <div className="text-lg text-foreground">Loading inventory data...</div>
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-foreground mb-4">Erişim Reddedildi</h1>
+            <p className="text-muted-foreground">Bu sayfaya erişim yetkiniz yok.</p>
           </div>
         </div>
       </ProtectedRoute>
     );
   }
 
-  if (error) {
-    return (
-      <ProtectedRoute>
-        <div className="min-h-screen bg-background flex items-center justify-center">
-          <div className="flex flex-col items-center gap-4">
-            <div className="text-red-500 text-lg">Error loading inventory</div>
-            <div className="text-muted-foreground">
-              {error instanceof ApiError ? error.message : 'Unknown error'}
-            </div>
-          </div>
-        </div>
-      </ProtectedRoute>
-    );
-  }
-
-  const inventory = inventoryData?.data || [];
-  const totalItems = inventoryData?.pagination?.total || 0;
-  const totalPages = inventoryData?.pagination?.pages || 1;
-  const pendingApprovals = approvalsData?.data || [];
-
-  // Calculate statistics
-  const lowStockItems = inventory.filter((item: { id: string; productName: string; sku: string; currentStock: number; minStock: number; maxStock: number; lastUpdated: string; store?: { name: string } }) => item.currentStock <= item.minStock);
-  const outOfStockItems = inventory.filter((item: { id: string; productName: string; sku: string; currentStock: number; minStock: number; maxStock: number; lastUpdated: string; store?: { name: string } }) => item.currentStock === 0);
-  const totalValue = inventory.reduce((sum: number, item: { id: string; productName: string; sku: string; currentStock: number; minStock: number; maxStock: number; lastUpdated: string; store?: { name: string } }) => sum + item.currentStock, 0);
-
-  const handleUpdateStock = async (productId: string, quantity: number, reason: string) => {
-    try {
-      await updateInventory.mutateAsync({
-        id: productId,
-        data: { quantity, reason }
-      });
-      setShowUpdateModal(false);
-      setSelectedProduct(null);
-      setNewQuantity("");
-      setReason("");
-    } catch (error) {
-      logger.error('Failed to update stock:', error);
-    }
-  };
-
-  const handleApproveChange = async (approvalId: string, approved: boolean) => {
-    try {
-      await approveInventoryChange.mutateAsync({
-        id: approvalId,
-        approved
-      });
-    } catch (error) {
-      logger.error('Failed to approve change:', error);
-    }
-  };
+  const requests = requestsData?.data || [];
+  const products = productsData?.data || [];
+  const stats = statsData || { total: 0, pending: 0, approved: 0, rejected: 0 };
 
   return (
     <ProtectedRoute>
@@ -116,287 +180,366 @@ export default function InventoryPage() {
         <main className="mobile-container py-6 space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h1 className="mobile-heading text-foreground">Inventory Management</h1>
+              <h1 className="mobile-heading text-foreground">Envanter Yönetimi</h1>
               <p className="text-muted-foreground mobile-text">
-                {isAdmin() ? 'Manage all inventory across all stores' : 'Manage your store inventory (changes require approval)'}
+                Stok düzenlemeleri ve yeni ürün talepleri oluşturun
               </p>
             </div>
-            <ProtectedComponent permission="inventory.manage">
-              <button 
-                onClick={() => setShowUpdateModal(true)}
-                className="btn btn-primary"
-              >
-                Update Stock
-              </button>
-            </ProtectedComponent>
           </div>
 
-          {/* Filters */}
-          <div className="flex flex-col sm:flex-row gap-4">
-            <input
-              type="text"
-              placeholder="Search inventory..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="flex-1 px-3 py-2 border border-border rounded-lg bg-background text-foreground"
-            />
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={showLowStock}
-                onChange={(e) => setShowLowStock(e.target.checked)}
-                className="form-checkbox"
-              />
-              <span className="text-sm">Show low stock only</span>
-            </label>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="bg-card p-6 rounded-lg border border-border">
-              <h3 className="text-lg font-semibold text-foreground mb-2">Total Items</h3>
-              <div className="text-3xl font-bold text-primary">
-                {totalItems}
-              </div>
-              <p className="text-sm text-muted-foreground">
-                {isAdmin() ? 'Across all stores' : 'In your store'}
-              </p>
+          {/* Stats Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="bg-card p-4 rounded-lg border border-border">
+              <div className="text-2xl font-bold text-foreground">{stats.total}</div>
+              <div className="text-sm text-muted-foreground">Toplam Talep</div>
             </div>
-
-            <div className="bg-card p-6 rounded-lg border border-border">
-              <h3 className="text-lg font-semibold text-foreground mb-2">Low Stock</h3>
-              <div className="text-3xl font-bold text-yellow-600">
-                {lowStockItems.length}
-              </div>
-              <p className="text-sm text-muted-foreground">≤ min stock level</p>
+            <div className="bg-card p-4 rounded-lg border border-border">
+              <div className="text-2xl font-bold text-yellow-600">{stats.pending}</div>
+              <div className="text-sm text-muted-foreground">Bekleyen</div>
             </div>
-
-            <div className="bg-card p-6 rounded-lg border border-border">
-              <h3 className="text-lg font-semibold text-foreground mb-2">Out of Stock</h3>
-              <div className="text-3xl font-bold text-red-600">
-                {outOfStockItems.length}
-              </div>
-              <p className="text-sm text-muted-foreground">0 units</p>
+            <div className="bg-card p-4 rounded-lg border border-border">
+              <div className="text-2xl font-bold text-green-600">{stats.approved}</div>
+              <div className="text-sm text-muted-foreground">Onaylanan</div>
             </div>
-
-            <div className="bg-card p-6 rounded-lg border border-border">
-              <h3 className="text-lg font-semibold text-foreground mb-2">Total Units</h3>
-              <div className="text-3xl font-bold text-blue-600">
-                {totalValue}
-              </div>
-              <p className="text-sm text-muted-foreground">In stock</p>
+            <div className="bg-card p-4 rounded-lg border border-border">
+              <div className="text-2xl font-bold text-red-600">{stats.rejected}</div>
+              <div className="text-sm text-muted-foreground">Reddedilen</div>
             </div>
           </div>
 
-          {/* Pending Approvals (Admin only) */}
-          {isAdmin() && pendingApprovals.length > 0 && (
-            <div className="bg-card p-6 rounded-lg border border-yellow-200">
-              <h3 className="text-lg font-semibold text-yellow-800 mb-4">Pending Approvals ({pendingApprovals.length})</h3>
-              <div className="space-y-3">
-                {pendingApprovals.slice(0, 5).map((approval: { id: string; productName: string; sku: string; currentStock: number; requestedStock: number; reason: string; requestedBy: string; requestedAt: string; store?: { name: string } }) => (
-                  <div key={approval.id} className="flex justify-between items-center p-3 bg-yellow-50 rounded-lg">
-                    <div className="flex-1">
-                      <div className="font-medium text-yellow-800">{approval.productName}</div>
-                      <div className="text-sm text-yellow-600">SKU: {approval.sku}</div>
-                      <div className="text-sm text-yellow-600">
-                        {approval.currentStock} → {approval.requestedStock} units
-                      </div>
-                      <div className="text-sm text-yellow-600">Reason: {approval.reason}</div>
-                    </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => handleApproveChange(approval.id, true)}
-                        className="btn btn-sm btn-success"
-                      >
-                        Approve
-                      </button>
-                      <button
-                        onClick={() => handleApproveChange(approval.id, false)}
-                        className="btn btn-sm btn-destructive"
-                      >
-                        Reject
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Low Stock Alerts */}
-          {lowStockItems.length > 0 && (
-            <div className="bg-card p-6 rounded-lg border border-red-200">
-              <h3 className="text-lg font-semibold text-red-800 mb-4">Low Stock Alerts ({lowStockItems.length})</h3>
-              <div className="space-y-3">
-                {lowStockItems.slice(0, 5).map((item: { id: string; productName: string; sku: string; currentStock: number; minStock: number; maxStock: number; lastUpdated: string; store?: { name: string } }) => (
-                  <div key={item.id} className="flex justify-between items-center p-3 bg-red-50 rounded-lg">
-                    <div>
-                      <div className="font-medium text-red-800">{item.productName}</div>
-                      <div className="text-sm text-red-600">SKU: {item.sku}</div>
-                      <div className="text-sm text-red-600">Min: {item.minStock}</div>
-                    </div>
-                    <div className="text-right">
-                      <div className="font-medium text-red-800">{item.currentStock} left</div>
-                      <div className="text-sm text-red-600">Critical</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <div className="bg-card p-6 rounded-lg border border-border">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-foreground">Inventory</h3>
-              <div className="flex gap-2">
-                <button className="btn btn-outline btn-sm">Export</button>
-                <button className="btn btn-outline btn-sm">Import</button>
-              </div>
-            </div>
-            
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-border">
-                    <th className="text-left p-3">Product</th>
-                    <th className="text-left p-3">SKU</th>
-                    <th className="text-left p-3">Current Stock</th>
-                    <th className="text-left p-3">Min Stock</th>
-                    <th className="text-left p-3">Max Stock</th>
-                    <th className="text-left p-3">Last Updated</th>
-                    {isAdmin() && <th className="text-left p-3">Store</th>}
-                    <ProtectedComponent permission="inventory.manage">
-                      <th className="text-left p-3">Actions</th>
-                    </ProtectedComponent>
-                  </tr>
-                </thead>
-                <tbody>
-                  {inventory.map((item: { id: string; productName: string; sku: string; currentStock: number; minStock: number; maxStock: number; lastUpdated: string; store?: { name: string } }) => (
-                    <tr key={item.id} className="border-b border-border">
-                      <td className="p-3">
-                        <div className="font-medium">{item.productName}</div>
-                      </td>
-                      <td className="p-3">{item.sku}</td>
-                      <td className="p-3">
-                        <div className={`font-medium ${
-                          item.currentStock <= item.minStock ? 'text-red-600' : 
-                          item.currentStock <= item.minStock * 1.5 ? 'text-yellow-600' : 
-                          'text-green-600'
-                        }`}>
-                          {item.currentStock}
-                        </div>
-                      </td>
-                      <td className="p-3">{item.minStock}</td>
-                      <td className="p-3">{item.maxStock}</td>
-                      <td className="p-3">
-                        <div className="text-sm text-muted-foreground">
-                          {new Date(item.lastUpdated).toLocaleDateString()}
-                        </div>
-                      </td>
-                      {isAdmin() && (
-                        <td className="p-3">{item.store?.name || 'N/A'}</td>
-                      )}
-                      <ProtectedComponent permission="inventory.manage">
-                        <td className="p-3">
-                          <button 
-                            onClick={() => {
-                              setSelectedProduct(item.id);
-                              setNewQuantity(item.currentStock.toString());
-                              setShowUpdateModal(true);
-                            }}
-                            className="btn btn-sm btn-outline"
-                          >
-                            Update
-                          </button>
-                        </td>
-                      </ProtectedComponent>
-                    </tr>
-                  ))}
-                  {inventory.length === 0 && (
-                    <tr>
-                      <td colSpan={isAdmin() ? 8 : 7} className="p-8 text-center text-muted-foreground">
-                        No inventory items found
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex justify-center mt-6 gap-2">
-                <button
-                  onClick={() => setPage(p => Math.max(1, p - 1))}
-                  disabled={page === 1}
-                  className="btn btn-outline btn-sm"
-                >
-                  Previous
-                </button>
-                <span className="px-4 py-2 text-sm text-muted-foreground">
-                  Page {page} of {totalPages}
-                </span>
-                <button
-                  onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                  disabled={page === totalPages}
-                  className="btn btn-outline btn-sm"
-                >
-                  Next
-                </button>
-              </div>
-            )}
+          {/* Tabs */}
+          <div className="flex space-x-1 bg-accent p-1 rounded-lg">
+            <button
+              onClick={() => setActiveTab('requests')}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                activeTab === 'requests'
+                  ? 'bg-background text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Taleplerim
+            </button>
+            <button
+              onClick={() => setActiveTab('stock-adjustment')}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                activeTab === 'stock-adjustment'
+                  ? 'bg-background text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Stok Düzenleme
+            </button>
+            <button
+              onClick={() => setActiveTab('new-product')}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                activeTab === 'new-product'
+                  ? 'bg-background text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Yeni Ürün
+            </button>
           </div>
 
-          {/* Update Stock Modal */}
-          {showUpdateModal && (
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-              <div className="bg-card p-6 rounded-lg border border-border w-full max-w-md">
-                <h3 className="text-lg font-semibold text-foreground mb-4">Update Stock</h3>
+          {/* Requests Tab */}
+          {activeTab === 'requests' && (
+            <div className="space-y-4">
+              <h2 className="text-xl font-semibold text-foreground">Envanter Talepleri</h2>
+              
+              {requestsLoading ? (
+                <div className="text-center py-8">
+                  <div className="spinner mx-auto mb-4"></div>
+                  <p className="text-muted-foreground">Yükleniyor...</p>
+                </div>
+              ) : (
                 <div className="space-y-4">
+                  {requests.map((request) => (
+                    <div key={request.id} className="bg-card p-4 rounded-lg border border-border">
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <h3 className="font-medium text-foreground">{request.title}</h3>
+                          <p className="text-sm text-muted-foreground">
+                            {request.type === 'stock_adjustment' && 'Stok Düzenleme'}
+                            {request.type === 'new_product' && 'Yeni Ürün'}
+                            {request.type === 'product_update' && 'Ürün Güncelleme'}
+                          </p>
+                          {request.description && (
+                            <p className="text-sm text-muted-foreground mt-1">{request.description}</p>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className={`px-2 py-1 rounded-full text-xs ${
+                            request.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                            request.status === 'approved' ? 'bg-green-100 text-green-800' :
+                            'bg-red-100 text-red-800'
+                          }`}>
+                            {request.status === 'pending' && 'Bekliyor'}
+                            {request.status === 'approved' && 'Onaylandı'}
+                            {request.status === 'rejected' && 'Reddedildi'}
+                          </span>
+                          {request.status === 'pending' && (
+                            <button
+                              onClick={() => handleDeleteRequest(request.id)}
+                              className="btn btn-sm btn-danger"
+                            >
+                              Sil
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      {request.type === 'stock_adjustment' && request.product && (
+                        <div className="text-sm text-muted-foreground">
+                          <p>Ürün: {request.product.name} (SKU: {request.product.sku})</p>
+                          <p>Mevcut Stok: {request.currentStock} → İstenen Stok: {request.requestedStock}</p>
+                        </div>
+                      )}
+
+                      {request.type === 'new_product' && request.productData && (
+                        <div className="text-sm text-muted-foreground">
+                          <p>Ürün Adı: {request.productData.name}</p>
+                          <p>SKU: {request.productData.sku}</p>
+                          <p>Fiyat: ₺{request.productData.price}</p>
+                        </div>
+                      )}
+
+                      {request.adminNotes && (
+                        <div className="mt-2 p-2 bg-accent rounded text-sm">
+                          <strong>Admin Notu:</strong> {request.adminNotes}
+                        </div>
+                      )}
+
+                      {request.rejectionReason && (
+                        <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-sm text-red-800">
+                          <strong>Red Nedeni:</strong> {request.rejectionReason}
+                        </div>
+                      )}
+
+                      <div className="text-xs text-muted-foreground mt-2">
+                        Oluşturulma: {new Date(request.createdAt).toLocaleDateString('tr-TR')}
+                        {request.reviewedAt && (
+                          <span> • İncelenme: {new Date(request.reviewedAt).toLocaleDateString('tr-TR')}</span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+
+                  {requests.length === 0 && (
+                    <div className="text-center py-8 text-muted-foreground">
+                      Henüz talep bulunmuyor
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Stock Adjustment Tab */}
+          {activeTab === 'stock-adjustment' && (
+            <div className="space-y-6">
+              <h2 className="text-xl font-semibold text-foreground">Stok Düzenleme</h2>
+              
+              <form onSubmit={handleCreateStockAdjustment} className="bg-card p-6 rounded-lg border border-border space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-2">
+                    Ürün Seçin *
+                  </label>
+                  <select
+                    value={stockForm.productId}
+                    onChange={(e) => {
+                      const product = products.find(p => p.id === e.target.value);
+                      setStockForm(prev => ({
+                        ...prev,
+                        productId: e.target.value,
+                        currentStock: product?.stockQuantity || 0,
+                      }));
+                    }}
+                    required
+                    className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground"
+                  >
+                    <option value="">Ürün Seçin</option>
+                    {products.map((product) => (
+                      <option key={product.id} value={product.id}>
+                        {product.name} (SKU: {product.sku}) - Mevcut: {product.stockQuantity || 0}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="form-label">New Quantity</label>
+                    <label className="block text-sm font-medium text-foreground mb-2">
+                      Mevcut Stok
+                    </label>
                     <input
                       type="number"
-                      value={newQuantity}
-                      onChange={(e) => setNewQuantity(e.target.value)}
-                      className="form-input"
-                      placeholder="Enter new quantity"
+                      min="0"
+                      value={stockForm.currentStock}
+                      onChange={(e) => setStockForm(prev => ({ ...prev, currentStock: parseInt(e.target.value) || 0 }))}
+                      className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground"
                     />
                   </div>
                   <div>
-                    <label className="form-label">Reason</label>
-                    <textarea
-                      value={reason}
-                      onChange={(e) => setReason(e.target.value)}
-                      className="form-textarea"
-                      placeholder="Enter reason for change"
-                      rows={3}
+                    <label className="block text-sm font-medium text-foreground mb-2">
+                      İstenen Stok *
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={stockForm.requestedStock}
+                      onChange={(e) => setStockForm(prev => ({ ...prev, requestedStock: parseInt(e.target.value) || 0 }))}
+                      required
+                      className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground"
                     />
                   </div>
                 </div>
-                <div className="flex gap-2 mt-6">
-                  <button
-                    onClick={() => {
-                      if (selectedProduct && newQuantity) {
-                        handleUpdateStock(selectedProduct, parseInt(newQuantity), reason);
-                      }
-                    }}
-                    className="btn btn-primary"
-                  >
-                    Update Stock
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowUpdateModal(false);
-                      setSelectedProduct(null);
-                      setNewQuantity("");
-                      setReason("");
-                    }}
-                    className="btn btn-outline"
-                  >
-                    Cancel
-                  </button>
+
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-2">
+                    Düzenleme Nedeni
+                  </label>
+                  <textarea
+                    value={stockForm.adjustmentReason}
+                    onChange={(e) => setStockForm(prev => ({ ...prev, adjustmentReason: e.target.value }))}
+                    rows={3}
+                    className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground"
+                    placeholder="Stok düzenleme nedenini açıklayın..."
+                  />
                 </div>
-              </div>
+
+                <button
+                  type="submit"
+                  disabled={createRequestMutation.isPending}
+                  className="btn btn-primary"
+                >
+                  {createRequestMutation.isPending ? 'Oluşturuluyor...' : 'Stok Düzenleme Talebi Oluştur'}
+                </button>
+              </form>
+            </div>
+          )}
+
+          {/* New Product Tab */}
+          {activeTab === 'new-product' && (
+            <div className="space-y-6">
+              <h2 className="text-xl font-semibold text-foreground">Yeni Ürün Önerisi</h2>
+              
+              <form onSubmit={handleCreateNewProduct} className="bg-card p-6 rounded-lg border border-border space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-2">
+                      Ürün Adı *
+                    </label>
+                    <input
+                      type="text"
+                      value={productForm.name}
+                      onChange={(e) => setProductForm(prev => ({ ...prev, name: e.target.value }))}
+                      required
+                      className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-2">
+                      SKU
+                    </label>
+                    <input
+                      type="text"
+                      value={productForm.sku}
+                      onChange={(e) => setProductForm(prev => ({ ...prev, sku: e.target.value }))}
+                      className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-2">
+                      Fiyat (₺) *
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={productForm.price}
+                      onChange={(e) => setProductForm(prev => ({ ...prev, price: parseFloat(e.target.value) || 0 }))}
+                      required
+                      className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-2">
+                      Normal Fiyat (₺)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={productForm.regularPrice}
+                      onChange={(e) => setProductForm(prev => ({ ...prev, regularPrice: parseFloat(e.target.value) || 0 }))}
+                      className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-2">
+                      Başlangıç Stoku
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={productForm.stockQuantity}
+                      onChange={(e) => setProductForm(prev => ({ ...prev, stockQuantity: parseInt(e.target.value) || 0 }))}
+                      className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-2">
+                    Açıklama
+                  </label>
+                  <textarea
+                    value={productForm.description}
+                    onChange={(e) => setProductForm(prev => ({ ...prev, description: e.target.value }))}
+                    rows={4}
+                    className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground"
+                    placeholder="Ürün açıklaması..."
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-2">
+                    Kısa Açıklama
+                  </label>
+                  <textarea
+                    value={productForm.shortDescription}
+                    onChange={(e) => setProductForm(prev => ({ ...prev, shortDescription: e.target.value }))}
+                    rows={2}
+                    className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground"
+                    placeholder="Kısa ürün açıklaması..."
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-2">
+                    Ağırlık (kg)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={productForm.weight}
+                    onChange={(e) => setProductForm(prev => ({ ...prev, weight: parseFloat(e.target.value) || 0 }))}
+                    className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={createRequestMutation.isPending}
+                  className="btn btn-primary"
+                >
+                  {createRequestMutation.isPending ? 'Oluşturuluyor...' : 'Yeni Ürün Talebi Oluştur'}
+                </button>
+              </form>
             </div>
           )}
         </main>
