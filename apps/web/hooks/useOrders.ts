@@ -50,3 +50,56 @@ export const useUpdateOrderShipping = () => {
     },
   });
 };
+
+// Customer order creation
+export const useCreateCustomerOrder = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: (data: any) => apiClient.post('/orders/customer', data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.orders() });
+    },
+  });
+};
+
+// Order approvals
+export const usePendingApprovals = (params?: { 
+  page?: number; 
+  limit?: number; 
+  storeId?: string;
+}) => {
+  return useQuery({
+    queryKey: ['orders', 'pending-approvals', params],
+    queryFn: () => apiClient.get('/orders/pending-approvals', { params }),
+    staleTime: 2 * 60 * 1000, // 2 minutes
+  });
+};
+
+export const useApproveOrder = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: ({ id, notes }: { id: string; notes?: string }) => 
+      apiClient.put(`/orders/${id}/approve`, { notes }),
+    onSuccess: (_, { id }) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.orders() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.order(id) });
+      queryClient.invalidateQueries({ queryKey: ['orders', 'pending-approvals'] });
+    },
+  });
+};
+
+export const useRejectOrder = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: ({ id, reason, notes }: { id: string; reason: string; notes?: string }) => 
+      apiClient.put(`/orders/${id}/reject`, { reason, notes }),
+    onSuccess: (_, { id }) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.orders() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.order(id) });
+      queryClient.invalidateQueries({ queryKey: ['orders', 'pending-approvals'] });
+    },
+  });
+};

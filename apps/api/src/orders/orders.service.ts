@@ -6,6 +6,9 @@ import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
 import { OrderQueryDto } from './dto/order-query.dto';
 import { CreateChargeDto } from './dto/create-charge.dto';
+import { CreateCustomerOrderDto } from './dto/create-customer-order.dto';
+import { ApproveOrderDto, RejectOrderDto } from './dto/approve-order.dto';
+import { AddToCartDto, UpdateCartItemDto } from './dto/cart.dto';
 import { PrismaClient } from '@prisma/client';
 import { Decimal } from 'decimal.js';
 import * as jose from 'jose';
@@ -215,6 +218,131 @@ export class OrdersService {
     await this.cache.set(cacheKey, sanitizedOrder, 300);
 
     return sanitizedOrder;
+  }
+
+  async createCustomerOrder(tenantId: string, dto: CreateCustomerOrderDto, userId: string) {
+    // Validate that all products exist and are available
+    const productIds = dto.items.map(item => item.productId);
+    const products = await this.runTenant(tenantId, async (db) => 
+      db.product.findMany({
+        where: {
+          id: { in: productIds },
+          tenantId,
+          storeId: dto.storeId,
+          active: true,
+        },
+      })
+    );
+
+    if (products.length !== productIds.length) {
+      throw new BadRequestException('One or more products not found or inactive');
+    }
+
+    // Check stock availability
+    for (const item of dto.items) {
+      const product = products.find(p => p.id === item.productId);
+      if (product && product.stockQuantity !== null && product.stockQuantity < item.quantity) {
+        throw new BadRequestException(`Insufficient stock for product ${product.name}`);
+      }
+    }
+
+    // Calculate total
+    const total = dto.items.reduce((sum, item) => {
+      const product = products.find(p => p.id === item.productId);
+      const price = item.price || (product ? Number(product.price) : 0);
+      return sum + (price * item.quantity);
+    }, 0);
+
+    // Create or find customer
+    let customer = await this.runTenant(tenantId, async (db) => 
+      db.customer.findFirst({
+        where: {
+          tenantId,
+          emailNormalized: dto.customerEmail.toLowerCase(),
+        },
+      })
+    );
+
+    if (!customer) {
+      customer = await this.runTenant(tenantId, async (db) => 
+        db.customer.create({
+          data: {
+            tenantId,
+            storeId: dto.storeId,
+            email: dto.customerEmail,
+            emailNormalized: dto.customerEmail.toLowerCase(),
+            name: dto.customerName,
+            phoneE164: dto.customerPhone,
+          },
+        })
+      );
+    }
+
+    // Get next order number
+    await this.runTenant(tenantId, async (db) => db.$executeRaw`
+      INSERT INTO "_OrderNoSeq" ("tenantId","value")
+      VALUES (${tenantId}::uuid, 1)
+      ON CONFLICT ("tenantId") DO UPDATE SET "value" = "_OrderNoSeq"."value" + 1
+    `);
+    
+    const current = await this.runTenant(tenantId, async (db) => db.$queryRaw`
+      SELECT "value" FROM "_OrderNoSeq" WHERE "tenantId" = ${tenantId}::uuid
+    `);
+    const nextOrderNo = Number((current as Record<string, unknown>[])?.[0]?.value || 1);
+
+    // Create order with pending approval status
+    const order = await this.runTenant(tenantId, async (db) => db.order.create({
+      data: {
+        tenantId,
+        storeId: dto.storeId,
+        customerId: customer.id,
+        orderNo: nextOrderNo,
+        orderSource: 'customer',
+        status: 'pending_approval',
+        approvalStatus: 'pending',
+        total: new Decimal(total),
+        currency: 'TRY',
+        customerEmail: dto.customerEmail,
+        customerPhone: dto.customerPhone,
+        shippingAddress: toPrismaJsonValue(dto.shippingAddress),
+        billingAddress: toPrismaJsonValue(dto.billingAddress),
+        paymentMethod: dto.paymentMethod,
+        notes: dto.notes,
+        metaData: toPrismaJsonValue(dto.metaData || {}),
+        createdBy: userId,
+        confirmedAt: new Date(),
+        items: {
+          create: dto.items.map(item => {
+            const product = products.find(p => p.id === item.productId);
+            return {
+              sku: product?.sku || '',
+              name: product?.name || '',
+              qty: item.quantity,
+              price: item.price || (product ? Number(product.price) : 0),
+            };
+          }),
+        },
+      },
+      include: {
+        items: true,
+        customer: true,
+      },
+    }));
+
+    // Audit log
+    await this.audit.log({
+      action: 'order.customer.created',
+      userId,
+      tenantId,
+      entityType: 'order',
+      entityId: order.id,
+      metadata: { source: 'customer', total, itemCount: dto.items.length },
+    });
+
+    // Invalidate cache
+    await this.cache.invalidateOrderCache(tenantId);
+
+    return order;
   }
 
   async create(tenantId: string, dto: CreateOrderDto, userId: string) {
@@ -700,6 +828,159 @@ export class OrdersService {
       message: `Successfully deleted ${results.count} orders`,
       deletedCount: results.count,
       orderIds,
+    };
+  }
+
+  async approveOrder(tenantId: string, orderId: string, dto: ApproveOrderDto, userId: string) {
+    const order = await this.runTenant(tenantId, async (db) => 
+      db.order.findFirst({
+        where: { id: orderId, tenantId },
+        include: { items: true }
+      })
+    );
+
+    if (!order) {
+      throw new NotFoundException('Order not found');
+    }
+
+    if (order.approvalStatus !== 'pending') {
+      throw new BadRequestException('Order is not pending approval');
+    }
+
+    // Update order status to approved
+    const updatedOrder = await this.runTenant(tenantId, async (db) => 
+      db.order.update({
+        where: { id: orderId },
+        data: {
+          approvalStatus: 'approved',
+          status: 'approved',
+          approvedBy: userId,
+          approvedAt: new Date(),
+          notes: dto.notes ? `${order.notes || ''}\n\nApproval: ${dto.notes}`.trim() : order.notes,
+        },
+        include: {
+          items: true,
+          customer: true,
+        },
+      })
+    );
+
+    // Audit log
+    await this.audit.log({
+      action: 'order.approved',
+      userId,
+      tenantId,
+      entityType: 'order',
+      entityId: orderId,
+      metadata: { approvedBy: userId, notes: dto.notes },
+    });
+
+    // Invalidate cache
+    await this.cache.invalidateOrderCache(tenantId, orderId);
+
+    return updatedOrder;
+  }
+
+  async rejectOrder(tenantId: string, orderId: string, dto: RejectOrderDto, userId: string) {
+    const order = await this.runTenant(tenantId, async (db) => 
+      db.order.findFirst({
+        where: { id: orderId, tenantId },
+        include: { items: true }
+      })
+    );
+
+    if (!order) {
+      throw new NotFoundException('Order not found');
+    }
+
+    if (order.approvalStatus !== 'pending') {
+      throw new BadRequestException('Order is not pending approval');
+    }
+
+    // Update order status to rejected
+    const updatedOrder = await this.runTenant(tenantId, async (db) => 
+      db.order.update({
+        where: { id: orderId },
+        data: {
+          approvalStatus: 'rejected',
+          status: 'rejected',
+          approvedBy: userId,
+          approvedAt: new Date(),
+          rejectionReason: dto.reason,
+          notes: dto.notes ? `${order.notes || ''}\n\nRejection: ${dto.notes}`.trim() : order.notes,
+        },
+        include: {
+          items: true,
+          customer: true,
+        },
+      })
+    );
+
+    // Audit log
+    await this.audit.log({
+      action: 'order.rejected',
+      userId,
+      tenantId,
+      entityType: 'order',
+      entityId: orderId,
+      metadata: { rejectedBy: userId, reason: dto.reason, notes: dto.notes },
+    });
+
+    // Invalidate cache
+    await this.cache.invalidateOrderCache(tenantId, orderId);
+
+    return updatedOrder;
+  }
+
+  async getPendingApprovals(tenantId: string, query: { page?: number; limit?: number; storeId?: string }) {
+    const page = query.page || 1;
+    const limit = Math.min(query.limit || 50, 100);
+    const offset = (page - 1) * limit;
+
+    const where: Record<string, unknown> = {
+      tenantId,
+      approvalStatus: 'pending',
+    };
+
+    if (query.storeId) {
+      where.storeId = query.storeId;
+    }
+
+    const [orders, total] = await this.runTenant(tenantId, async (db) => Promise.all([
+      db.order.findMany({
+        where,
+        include: {
+          items: true,
+          customer: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              phoneE164: true,
+            },
+          },
+          store: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+        take: limit,
+        skip: offset,
+      }),
+      db.order.count({ where }),
+    ]));
+
+    return {
+      data: orders,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
     };
   }
 }

@@ -33,6 +33,7 @@ model Tenant {
   shipments Shipment[]
   returns   Return[]
   fileUploads FileUpload[]
+  carts     Cart[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -64,6 +65,7 @@ model User {
   requestComments RequestComment[]
   stores        Store[]  // Customer can have stores
   supportTickets SupportTicket[] // Customer support tickets
+  carts         Cart[]   // Customer shopping carts
 
   @@index([tenantId])
   @@index([tenantId, role])
@@ -208,8 +210,8 @@ model Order {
   orderNumber    String?  // Order number from WooCommerce
   orderNo        Int?     // Sequential order number
   externalOrderNo String? // External order number
-  orderSource    String?  // Order source (woocommerce, manual, etc.)
-  status         String   @default("pending")
+  orderSource    String?  // Order source (woocommerce, manual, customer, etc.)
+  status         String   @default("pending_approval") // pending_approval, approved, processing, completed, cancelled, rejected
   mappedStatus   String?  // Mapped status
   currency       String   @default("USD")
   total          Decimal  @db.Decimal(14,2)
@@ -231,6 +233,12 @@ model Order {
   dateCompleted  DateTime?
   metaData       Json?    // WooCommerce meta data
   lastSyncedAt   DateTime?
+  // Approval workflow fields
+  approvalStatus String   @default("pending") // pending, approved, rejected
+  approvedBy     String?  // User ID who approved/rejected
+  approvedAt     DateTime? // Approval date
+  rejectionReason String? // Reason for rejection
+  createdBy      String?  // User ID who created the order (for customer orders)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
   
@@ -253,6 +261,11 @@ model Order {
   @@index([datePaid])
   @@index([dateCompleted])
   @@index([lastSyncedAt])
+  @@index([approvalStatus])
+  @@index([approvedBy])
+  @@index([createdBy])
+  @@index([tenantId, approvalStatus])
+  @@index([tenantId, status])
 }
 
 model OrderItem {
@@ -335,6 +348,7 @@ model Product {
   inboundItems    InboundItem[]
   stockMovements  StockMovement[]
   inventoryApprovals InventoryApproval[]
+  cartItems       CartItem[]
 
   @@unique([wooId, storeId])
   @@index([tenantId])
@@ -573,6 +587,7 @@ model Store {
   customers      Customer[]
   inventoryApprovals InventoryApproval[]
   supportTickets SupportTicket[]
+  carts         Cart[]
 
   @@index([customerId])
   @@index([status])
@@ -969,4 +984,42 @@ model OrderNoSeq {
 
   @@index([value])
   @@map("_OrderNoSeq")
+}
+
+// Shopping cart for customers
+model Cart {
+  id        String   @id @default(uuid())
+  tenantId  String
+  userId    String   // User ID who owns the cart
+  storeId   String   // Store ID for the cart
+  items     CartItem[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  store     Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, storeId])
+  @@index([tenantId])
+  @@index([userId])
+  @@index([storeId])
+  @@index([createdAt])
+}
+
+model CartItem {
+  id        String   @id @default(uuid())
+  cartId    String
+  productId String
+  quantity  Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  @@unique([cartId, productId])
+  @@index([cartId])
+  @@index([productId])
+  @@index([quantity])
 }
