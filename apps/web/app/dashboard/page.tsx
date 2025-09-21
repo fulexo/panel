@@ -6,6 +6,7 @@ import { useDashboardStats, useOrders, useStores } from "@/hooks/useApi";
 import { DashboardStats } from "@/types/api";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { ApiError } from "@/lib/api-client";
+import Link from "next/link";
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -182,6 +183,49 @@ export default function DashboardPage() {
                   </div>
                 )}
               </div>
+            </div>
+          </div>
+
+          {/* Quick Actions */}
+          <div className="bg-card p-6 rounded-lg border border-border">
+            <h3 className="text-lg font-semibold text-foreground mb-4">Quick Actions</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <Link href="/orders" className="p-4 bg-accent rounded-lg hover:bg-accent/80 transition-colors">
+                <div className="font-medium text-foreground">Orders</div>
+                <div className="text-sm text-muted-foreground">Manage orders</div>
+              </Link>
+              <Link href="/products" className="p-4 bg-accent rounded-lg hover:bg-accent/80 transition-colors">
+                <div className="font-medium text-foreground">Products</div>
+                <div className="text-sm text-muted-foreground">Manage inventory</div>
+              </Link>
+              <Link href="/cart" className="p-4 bg-accent rounded-lg hover:bg-accent/80 transition-colors">
+                <div className="font-medium text-foreground">Shopping Cart</div>
+                <div className="text-sm text-muted-foreground">View cart</div>
+              </Link>
+              <Link href="/inventory" className="p-4 bg-accent rounded-lg hover:bg-accent/80 transition-colors">
+                <div className="font-medium text-foreground">Inventory</div>
+                <div className="text-sm text-muted-foreground">Manage stock</div>
+              </Link>
+              {isAdmin() && (
+                <>
+                  <Link href="/shipping" className="p-4 bg-accent rounded-lg hover:bg-accent/80 transition-colors">
+                    <div className="font-medium text-foreground">Shipping</div>
+                    <div className="text-sm text-muted-foreground">Manage shipping</div>
+                  </Link>
+                  <Link href="/fulfillment" className="p-4 bg-accent rounded-lg hover:bg-accent/80 transition-colors">
+                    <div className="font-medium text-foreground">Fulfillment</div>
+                    <div className="text-sm text-muted-foreground">Billing & services</div>
+                  </Link>
+                  <Link href="/orders/approvals" className="p-4 bg-accent rounded-lg hover:bg-accent/80 transition-colors">
+                    <div className="font-medium text-foreground">Approvals</div>
+                    <div className="text-sm text-muted-foreground">Pending approvals</div>
+                  </Link>
+                  <Link href="/inventory/approvals" className="p-4 bg-accent rounded-lg hover:bg-accent/80 transition-colors">
+                    <div className="font-medium text-foreground">Inventory</div>
+                    <div className="text-sm text-muted-foreground">Approve requests</div>
+                  </Link>
+                </>
+              )}
             </div>
           </div>
 

@@ -7,6 +7,10 @@ import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
 import { OrderQueryDto } from './dto/order-query.dto';
 import { CreateChargeDto } from './dto/create-charge.dto';
+import { CreateCustomerOrderDto } from './dto/create-customer-order.dto';
+import { ApproveOrderDto, RejectOrderDto } from './dto/approve-order.dto';
+import { AddToCartDto, UpdateCartItemDto } from './dto/cart.dto';
+import { CartService } from './cart.service';
 import { Public } from '../auth/decorators/public.decorator';
 import { RateLimit } from '../rate-limit.decorator';
 
@@ -14,7 +18,10 @@ import { RateLimit } from '../rate-limit.decorator';
 @ApiBearerAuth()
 @Controller('orders')
 export class OrdersController {
-  constructor(private readonly ordersService: OrdersService) {}
+  constructor(
+    private readonly ordersService: OrdersService,
+    private readonly cartService: CartService,
+  ) {}
 
   @Get()
   @ApiOperation({ summary: 'List orders' })
@@ -135,5 +142,109 @@ export class OrdersController {
   @ApiOperation({ summary: 'Get public order info by share token' })
   async publicInfo(@Param('token') token: string) {
     return this.ordersService.getPublicInfo(token);
+  }
+
+  // Customer order creation endpoints
+  @Post('customer')
+  @ApiOperation({ summary: 'Create order as customer' })
+  async createCustomerOrder(
+    @CurrentUser() user: { id: string; email: string; role: string; tenantId: string },
+    @Body() dto: CreateCustomerOrderDto,
+  ) {
+    return this.ordersService.createCustomerOrder(user.tenantId, dto, user.id);
+  }
+
+  @Get('pending-approvals')
+  @Roles('ADMIN')
+  @ApiOperation({ summary: 'Get orders pending approval (admin only)' })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'storeId', required: false, type: String })
+  async getPendingApprovals(
+    @CurrentUser() user: { id: string; email: string; role: string; tenantId: string },
+    @Query() query: { page?: number; limit?: number; storeId?: string },
+  ) {
+    return this.ordersService.getPendingApprovals(user.tenantId, query);
+  }
+
+  @Put(':id/approve')
+  @Roles('ADMIN')
+  @ApiOperation({ summary: 'Approve order (admin only)' })
+  async approveOrder(
+    @CurrentUser() user: { id: string; email: string; role: string; tenantId: string },
+    @Param('id') id: string,
+    @Body() dto: ApproveOrderDto,
+  ) {
+    return this.ordersService.approveOrder(user.tenantId, id, dto, user.id);
+  }
+
+  @Put(':id/reject')
+  @Roles('ADMIN')
+  @ApiOperation({ summary: 'Reject order (admin only)' })
+  async rejectOrder(
+    @CurrentUser() user: { id: string; email: string; role: string; tenantId: string },
+    @Param('id') id: string,
+    @Body() dto: RejectOrderDto,
+  ) {
+    return this.ordersService.rejectOrder(user.tenantId, id, dto, user.id);
+  }
+
+  // Cart endpoints
+  @Get('cart/:storeId')
+  @ApiOperation({ summary: 'Get user cart for store' })
+  async getCart(
+    @CurrentUser() user: { id: string; email: string; role: string; tenantId: string },
+    @Param('storeId') storeId: string,
+  ) {
+    return this.cartService.getCart(user.tenantId, user.id, storeId);
+  }
+
+  @Get('cart/:storeId/summary')
+  @ApiOperation({ summary: 'Get cart summary' })
+  async getCartSummary(
+    @CurrentUser() user: { id: string; email: string; role: string; tenantId: string },
+    @Param('storeId') storeId: string,
+  ) {
+    return this.cartService.getCartSummary(user.tenantId, user.id, storeId);
+  }
+
+  @Post('cart/:storeId/items')
+  @ApiOperation({ summary: 'Add item to cart' })
+  async addToCart(
+    @CurrentUser() user: { id: string; email: string; role: string; tenantId: string },
+    @Param('storeId') storeId: string,
+    @Body() dto: AddToCartDto,
+  ) {
+    return this.cartService.addToCart(user.tenantId, user.id, storeId, dto);
+  }
+
+  @Put('cart/:storeId/items/:productId')
+  @ApiOperation({ summary: 'Update cart item quantity' })
+  async updateCartItem(
+    @CurrentUser() user: { id: string; email: string; role: string; tenantId: string },
+    @Param('storeId') storeId: string,
+    @Param('productId') productId: string,
+    @Body() dto: UpdateCartItemDto,
+  ) {
+    return this.cartService.updateCartItem(user.tenantId, user.id, storeId, productId, dto);
+  }
+
+  @Delete('cart/:storeId/items/:productId')
+  @ApiOperation({ summary: 'Remove item from cart' })
+  async removeFromCart(
+    @CurrentUser() user: { id: string; email: string; role: string; tenantId: string },
+    @Param('storeId') storeId: string,
+    @Param('productId') productId: string,
+  ) {
+    return this.cartService.removeFromCart(user.tenantId, user.id, storeId, productId);
+  }
+
+  @Delete('cart/:storeId')
+  @ApiOperation({ summary: 'Clear cart' })
+  async clearCart(
+    @CurrentUser() user: { id: string; email: string; role: string; tenantId: string },
+    @Param('storeId') storeId: string,
+  ) {
+    return this.cartService.clearCart(user.tenantId, user.id, storeId);
   }
 }

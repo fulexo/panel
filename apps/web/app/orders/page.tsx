@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useAuth } from "@/components/AuthProvider";
 import { useRBAC } from "@/hooks/useRBAC";
 import { useOrders, useUpdateOrderStatus } from "@/hooks/useOrders";
@@ -85,11 +86,38 @@ export default function OrdersPage() {
                 {isAdmin() ? 'Manage all orders across all stores' : 'View your store orders'}
               </p>
             </div>
-            <ProtectedComponent permission="orders.manage">
-              <button className="btn btn-primary">
-                Create Order
-              </button>
-            </ProtectedComponent>
+            <div className="flex gap-2">
+              <ProtectedComponent permission="orders.manage">
+                <button className="btn btn-primary">
+                  Create Order
+                </button>
+              </ProtectedComponent>
+              <ProtectedComponent permission="orders.create">
+                <Link href="/orders/create" className="btn btn-outline">
+                  New Customer Order
+                </Link>
+              </ProtectedComponent>
+              <ProtectedComponent permission="orders.approve">
+                <Link href="/orders/approvals" className="btn btn-warning">
+                  Pending Approvals
+                </Link>
+              </ProtectedComponent>
+              <ProtectedComponent permission="shipping.manage">
+                <Link href="/shipping" className="btn btn-outline">
+                  Shipping Prices
+                </Link>
+              </ProtectedComponent>
+              <ProtectedComponent permission="inventory.manage">
+                <Link href="/inventory" className="btn btn-outline">
+                  Inventory Management
+                </Link>
+              </ProtectedComponent>
+              <ProtectedComponent permission="inventory.approve">
+                <Link href="/inventory/approvals" className="btn btn-warning">
+                  Inventory Approvals
+                </Link>
+              </ProtectedComponent>
+            </div>
           </div>
 
           {/* Filters */}

@@ -7,6 +7,8 @@ export type Permission =
   | 'stores.manage'
   | 'orders.view'
   | 'orders.manage'
+  | 'orders.create'
+  | 'orders.approve'
   | 'products.view'
   | 'products.manage'
   | 'customers.view'
@@ -17,7 +19,10 @@ export type Permission =
   | 'returns.view'
   | 'returns.manage'
   | 'support.view'
-  | 'support.manage';
+  | 'support.manage'
+  | 'shipping.manage'
+  | 'fulfillment.manage'
+  | 'fulfillment.approve';
 
 export type Role = 'ADMIN' | 'CUSTOMER';
 
@@ -36,6 +41,7 @@ export function useRBAC() {
     if (role === 'CUSTOMER') {
       const customerPermissions: Permission[] = [
         'orders.view',
+        'orders.create',
         'products.view',
         'customers.view',
         'inventory.view',
