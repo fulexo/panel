@@ -34,6 +34,9 @@ model Tenant {
   returns   Return[]
   fileUploads FileUpload[]
   carts     Cart[]
+  shippingZones ShippingZone[]
+  shippingPrices ShippingPrice[]
+  customerShippingPrices CustomerShippingPrice[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -190,6 +193,7 @@ model Customer {
   tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   store           Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
   orders          Order[]
+  shippingPrices  CustomerShippingPrice[]
 
   @@unique([wooId, storeId])
   @@index([tenantId])
@@ -1022,4 +1026,74 @@ model CartItem {
   @@index([cartId])
   @@index([productId])
   @@index([quantity])
+}
+
+// Shipping prices and zones
+model ShippingZone {
+  id          String   @id @default(uuid())
+  tenantId    String
+  name        String   // "İstanbul", "Ankara", "Türkiye Geneli"
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  prices      ShippingPrice[]
+  customerPrices CustomerShippingPrice[]
+  
+  @@index([tenantId])
+  @@index([isActive])
+  @@index([name])
+}
+
+model ShippingPrice {
+  id            String   @id @default(uuid())
+  tenantId      String
+  zoneId        String
+  name          String   // "Standart Kargo", "Hızlı Kargo", "Express"
+  description   String?
+  basePrice     Decimal  @db.Decimal(10,2) // Base price in TRY
+  freeShippingThreshold Decimal? @db.Decimal(10,2) // Free shipping above this amount
+  estimatedDays String?  // "1-2 gün", "3-5 gün"
+  isActive      Boolean  @default(true)
+  priority      Int      @default(0) // Higher number = higher priority
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  zone          ShippingZone @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+  customerPrices CustomerShippingPrice[]
+  
+  @@index([tenantId])
+  @@index([zoneId])
+  @@index([isActive])
+  @@index([priority])
+  @@index([basePrice])
+}
+
+// Customer-specific shipping pricing
+model CustomerShippingPrice {
+  id            String   @id @default(uuid())
+  tenantId      String
+  customerId    String?  // null = applies to all customers
+  zoneId        String
+  priceId       String
+  adjustmentType String  // "percentage" or "fixed"
+  adjustmentValue Decimal @db.Decimal(10,2) // +10 for 10% increase, -10 for 10% decrease, or fixed amount
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customer      Customer? @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  zone          ShippingZone @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+  price         ShippingPrice @relation(fields: [priceId], references: [id], onDelete: Cascade)
+  
+  @@unique([customerId, zoneId, priceId])
+  @@index([tenantId])
+  @@index([customerId])
+  @@index([zoneId])
+  @@index([priceId])
+  @@index([isActive])
 }

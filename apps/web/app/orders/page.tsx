@@ -102,6 +102,11 @@ export default function OrdersPage() {
                   Pending Approvals
                 </Link>
               </ProtectedComponent>
+              <ProtectedComponent permission="shipping.manage">
+                <Link href="/shipping" className="btn btn-outline">
+                  Shipping Prices
+                </Link>
+              </ProtectedComponent>
             </div>
           </div>
 

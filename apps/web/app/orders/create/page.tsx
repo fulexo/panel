@@ -7,6 +7,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import { useProducts } from "@/hooks/useProducts";
 import { useCart } from "@/hooks/useCart";
 import { useCreateCustomerOrder } from "@/hooks/useOrders";
+import { useShippingOptions, useCalculateShipping } from "@/hooks/useShipping";
 
 interface CartItem {
   id: string;
@@ -67,6 +68,10 @@ export default function CreateOrderPage() {
   const [customerPhone, setCustomerPhone] = useState("");
   const [notes, setNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedShippingZone, setSelectedShippingZone] = useState<string>("");
+  const [selectedShippingOption, setSelectedShippingOption] = useState<string>("");
+  const [shippingCost, setShippingCost] = useState<number>(0);
+  const [calculatedShipping, setCalculatedShipping] = useState<any>(null);
 
   // Get user's store ID
   useEffect(() => {
@@ -83,6 +88,8 @@ export default function CreateOrderPage() {
   });
 
   const createOrderMutation = useCreateCustomerOrder();
+  const { data: shippingOptions, isLoading: shippingLoading } = useShippingOptions(user?.id);
+  const calculateShippingMutation = useCalculateShipping();
 
   useEffect(() => {
     if (cartData?.cart?.items) {
@@ -114,6 +121,39 @@ export default function CreateOrderPage() {
     }, 0);
   };
 
+  const calculateShippingCost = async () => {
+    if (!selectedShippingZone || cartItems.length === 0) return;
+
+    const orderTotal = calculateTotal();
+    try {
+      const result = await calculateShippingMutation.mutateAsync({
+        zoneId: selectedShippingZone,
+        customerId: user?.id,
+        orderTotal,
+      });
+      setCalculatedShipping(result);
+    } catch (error) {
+      console.error("Kargo hesaplama hatası:", error);
+    }
+  };
+
+  // Calculate shipping when zone changes
+  useEffect(() => {
+    if (selectedShippingZone && cartItems.length > 0) {
+      calculateShippingCost();
+    }
+  }, [selectedShippingZone, cartItems]);
+
+  // Update shipping cost when option changes
+  useEffect(() => {
+    if (calculatedShipping && selectedShippingOption) {
+      const option = calculatedShipping.options.find((opt: any) => opt.id === selectedShippingOption);
+      if (option) {
+        setShippingCost(option.finalPrice);
+      }
+    }
+  }, [selectedShippingOption, calculatedShipping]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -143,6 +183,9 @@ export default function CreateOrderPage() {
         shippingAddress,
         billingAddress: useSameAddress ? shippingAddress : billingAddress,
         notes,
+        shippingZoneId: selectedShippingZone,
+        shippingOptionId: selectedShippingOption,
+        shippingCost,
       };
 
       await createOrderMutation.mutateAsync(orderData);
@@ -224,10 +267,20 @@ export default function CreateOrderPage() {
                         </div>
                       </div>
                     ))}
-                    <div className="border-t border-border pt-4">
-                      <div className="flex justify-between text-lg font-semibold text-foreground">
-                        <span>Toplam:</span>
+                    <div className="border-t border-border pt-4 space-y-2">
+                      <div className="flex justify-between text-foreground">
+                        <span>Ara Toplam:</span>
                         <span>₺{calculateTotal().toFixed(2)}</span>
+                      </div>
+                      {shippingCost > 0 && (
+                        <div className="flex justify-between text-foreground">
+                          <span>Kargo:</span>
+                          <span>₺{shippingCost.toFixed(2)}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between text-lg font-semibold text-foreground border-t border-border pt-2">
+                        <span>Toplam:</span>
+                        <span>₺{(calculateTotal() + shippingCost).toFixed(2)}</span>
                       </div>
                     </div>
                   </div>
@@ -516,6 +569,92 @@ export default function CreateOrderPage() {
                       </div>
                     </div>
                   </>
+                )}
+              </div>
+
+              {/* Shipping Options */}
+              <div className="bg-card p-6 rounded-lg border border-border">
+                <h2 className="text-xl font-semibold text-foreground mb-4">Kargo Seçenekleri</h2>
+                
+                {shippingLoading ? (
+                  <div className="text-center py-4">
+                    <div className="spinner mx-auto mb-2"></div>
+                    <p className="text-muted-foreground">Kargo seçenekleri yükleniyor...</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-foreground mb-2">
+                        Kargo Bölgesi *
+                      </label>
+                      <select
+                        value={selectedShippingZone}
+                        onChange={(e) => setSelectedShippingZone(e.target.value)}
+                        required
+                        className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground"
+                      >
+                        <option value="">Bölge Seçin</option>
+                        {shippingOptions?.map((option) => (
+                          <option key={option.zone.id} value={option.zone.id}>
+                            {option.zone.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {calculatedShipping && calculatedShipping.options.length > 0 && (
+                      <div>
+                        <label className="block text-sm font-medium text-foreground mb-2">
+                          Kargo Türü *
+                        </label>
+                        <div className="space-y-2">
+                          {calculatedShipping.options.map((option: any) => (
+                            <div key={option.id} className="border border-border rounded-lg p-3">
+                              <label className="flex items-center justify-between cursor-pointer">
+                                <div className="flex items-center gap-3">
+                                  <input
+                                    type="radio"
+                                    name="shippingOption"
+                                    value={option.id}
+                                    checked={selectedShippingOption === option.id}
+                                    onChange={(e) => setSelectedShippingOption(e.target.value)}
+                                    className="rounded"
+                                  />
+                                  <div>
+                                    <div className="font-medium text-foreground">{option.name}</div>
+                                    {option.description && (
+                                      <div className="text-sm text-muted-foreground">{option.description}</div>
+                                    )}
+                                    {option.estimatedDays && (
+                                      <div className="text-sm text-muted-foreground">
+                                        Tahmini süre: {option.estimatedDays}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                                <div className="text-right">
+                                  <div className="font-semibold text-foreground">
+                                    {option.isFree ? "Ücretsiz" : `₺${option.finalPrice.toFixed(2)}`}
+                                  </div>
+                                  {option.freeShippingThreshold && (
+                                    <div className="text-xs text-muted-foreground">
+                                      Ücretsiz: ₺{option.freeShippingThreshold.toFixed(2)}+
+                                    </div>
+                                  )}
+                                </div>
+                              </label>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {selectedShippingZone && !calculatedShipping && (
+                      <div className="text-center py-4">
+                        <p className="text-muted-foreground">Kargo seçenekleri hesaplanıyor...</p>
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
 

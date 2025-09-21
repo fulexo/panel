@@ -302,9 +302,12 @@ export default function CartPage() {
                     );
                   })}
                 </div>
-                <div className="text-center mt-4">
+                <div className="text-center mt-4 space-x-2">
                   <Link href="/products" className="btn btn-outline">
                     Tüm Ürünleri Görüntüle
+                  </Link>
+                  <Link href="/shipping/calculator" className="btn btn-outline">
+                    Kargo Fiyatları
                   </Link>
                 </div>
               </div>
