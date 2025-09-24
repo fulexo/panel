@@ -34,6 +34,14 @@ export default function Sidebar({ isOpen, onClose, isDesktopCollapsed = false, o
     { href: '/inventory/approvals', label: 'Inventory Approvals', icon: '📝', roles: ['ADMIN'] },
   ];
 
+  const customerItems = [
+    { href: '/stores', label: 'My Stores', icon: '🏪', roles: ['CUSTOMER'] },
+    { href: '/shipping', label: 'Shipping', icon: '🚚', roles: ['CUSTOMER'] },
+    { href: '/fulfillment', label: 'Fulfillment', icon: '📋', roles: ['CUSTOMER'] },
+    { href: '/orders/approvals', label: 'Order Approvals', icon: '✅', roles: ['CUSTOMER'] },
+    { href: '/inventory/approvals', label: 'Inventory Approvals', icon: '📝', roles: ['CUSTOMER'] },
+  ];
+
   const userItems = [
     { href: '/returns', label: 'Returns', icon: '↩️' },
     { href: '/support', label: 'Support', icon: '🆘' },
@@ -187,27 +195,54 @@ export default function Sidebar({ isOpen, onClose, isDesktopCollapsed = false, o
               </div>
 
               {/* Admin Navigation */}
-              <div>
-                <button
-                  onClick={() => toggleSection('admin')}
-                  className="flex items-center justify-between w-full px-3 py-2 text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  <span>Administration</span>
-                  <svg 
-                    className={`w-4 h-4 transition-transform ${expandedSections.includes('admin') ? 'rotate-180' : ''}`}
-                    fill="none" 
-                    stroke="currentColor" 
-                    viewBox="0 0 24 24"
+              {user?.role === 'ADMIN' && (
+                <div>
+                  <button
+                    onClick={() => toggleSection('admin')}
+                    className="flex items-center justify-between w-full px-3 py-2 text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors"
                   >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-                {expandedSections.includes('admin') && (
-                  <div className="mt-2 space-y-1">
-                    {renderNavItems(adminItems, 'admin')}
-                  </div>
-                )}
-              </div>
+                    <span>Administration</span>
+                    <svg 
+                      className={`w-4 h-4 transition-transform ${expandedSections.includes('admin') ? 'rotate-180' : ''}`}
+                      fill="none" 
+                      stroke="currentColor" 
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                  {expandedSections.includes('admin') && (
+                    <div className="mt-2 space-y-1">
+                      {renderNavItems(adminItems, 'admin')}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Customer Navigation */}
+              {user?.role === 'CUSTOMER' && (
+                <div>
+                  <button
+                    onClick={() => toggleSection('customer')}
+                    className="flex items-center justify-between w-full px-3 py-2 text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <span>Store Management</span>
+                    <svg 
+                      className={`w-4 h-4 transition-transform ${expandedSections.includes('customer') ? 'rotate-180' : ''}`}
+                      fill="none" 
+                      stroke="currentColor" 
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                  {expandedSections.includes('customer') && (
+                    <div className="mt-2 space-y-1">
+                      {renderNavItems(customerItems, 'customer')}
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* User Navigation */}
               <div>
