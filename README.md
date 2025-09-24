@@ -54,15 +54,15 @@ Fulexo is a comprehensive self-hosted platform for managing multiple WooCommerce
 - **Returns**: Full returns management across all stores
 - **Support**: Full support ticket management
 
-### CUSTOMER (Store Owner) - Limited Access
-- **Dashboard**: Only their store overview
-- **Stores**: No access
-- **Orders**: View-only (their store only)
-- **Products**: View-only (their store only)
-- **Customers**: View-only (their store only)
-- **Inventory**: Limited management with approval workflow
-- **Returns**: View-only (their store only)
-- **Support**: Manage only their own support tickets
+### CUSTOMER (Store Owner + Manager) - Full Store Access
+- **Dashboard**: Their store overview and statistics
+- **Stores**: Manage their own stores and WooCommerce connections
+- **Orders**: Full order management for their stores
+- **Products**: Full product management for their stores
+- **Customers**: Full customer management for their stores
+- **Inventory**: Full inventory management with approval workflow
+- **Returns**: Full returns management for their stores
+- **Support**: Manage their own support tickets
 
 ## 📊 Panel Pages
 
@@ -70,30 +70,30 @@ Fulexo is a comprehensive self-hosted platform for managing multiple WooCommerce
 - **Admin**: All stores overview, statistics, recent orders, low stock alerts
 - **Customer**: Their store overview, statistics, recent orders, low stock alerts
 
-### 2. 🏪 Stores (Admin Only)
-- Store list and management
+### 2. 🏪 Stores
+- **Admin**: All stores management and overview
+- **Customer**: Their own stores management
 - WooCommerce connection management
-- Customer-store mapping
 - API key management
 - Sync status monitoring
 
 ### 3. 📦 Orders
 - **Admin**: Full order management across all stores
-- **Customer**: View-only access to their store orders
+- **Customer**: Full order management for their stores
 - Integrated shipping management
 - Order status updates
 - Tracking number management
 
 ### 4. 📱 Products
 - **Admin**: Full product management across all stores
-- **Customer**: View-only access to their store products
+- **Customer**: Full product management for their stores
 - Stock management
 - Price management
 - Category management
 
 ### 5. 👥 Customers
 - **Admin**: Full customer management across all stores
-- **Customer**: View-only access to their store customers
+- **Customer**: Full customer management for their stores
 - Customer details and history
 - Order tracking
 

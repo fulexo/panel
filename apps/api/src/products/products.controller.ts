@@ -58,7 +58,7 @@ export class ProductsController {
   }
 
   @Put('bulk')
-  @Roles('ADMIN')
+  @Roles('ADMIN', 'CUSTOMER')
   @ApiOperation({ summary: 'Bulk update products' })
   async bulkUpdate(
     @CurrentUser() user: { id: string; email: string; role: string; tenantId: string },
@@ -68,7 +68,7 @@ export class ProductsController {
   }
 
   @Delete('bulk')
-  @Roles('ADMIN')
+  @Roles('ADMIN', 'CUSTOMER')
   @ApiOperation({ summary: 'Bulk delete products' })
   async bulkDelete(
     @CurrentUser() user: { id: string; email: string; role: string; tenantId: string },

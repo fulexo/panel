@@ -39,15 +39,15 @@ export class CustomersController {
   }
 
   @Post()
-  @Roles('ADMIN')
-  @ApiOperation({ summary: 'Create customer (admin only)' })
+  @Roles('ADMIN', 'CUSTOMER')
+  @ApiOperation({ summary: 'Create customer' })
   async create(@CurrentUser() user: { id: string; email: string; role: string; tenantId: string }, @Body() body: CreateCustomerDto) {
     return this.customers.create(user.tenantId, body);
   }
 
   @Put(':id')
-  @Roles('ADMIN')
-  @ApiOperation({ summary: 'Update customer (admin only)' })
+  @Roles('ADMIN', 'CUSTOMER')
+  @ApiOperation({ summary: 'Update customer' })
   async update(@CurrentUser() user: { id: string; email: string; role: string; tenantId: string }, @Param('id') id: string, @Body() body: UpdateCustomerDto) {
     return this.customers.update(user.tenantId, id, body);
   }

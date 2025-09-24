@@ -37,14 +37,14 @@ export class InventoryController {
 
   @Put('approvals/:id/approve')
   @UseGuards(RolesGuard)
-  @Roles('ADMIN')
+  @Roles('ADMIN', 'CUSTOMER')
   async approveChange(@Param('id') id: string, @CurrentUser() user: User) {
     return this.inventoryService.approveChange(id, user.id);
   }
 
   @Put('approvals/:id/reject')
   @UseGuards(RolesGuard)
-  @Roles('ADMIN')
+  @Roles('ADMIN', 'CUSTOMER')
   async rejectChange(
     @Param('id') id: string,
     @Body() body: { reason: string },

@@ -51,14 +51,14 @@ export class OrdersController {
   }
 
   @Post()
-  @Roles('ADMIN')
-  @ApiOperation({ summary: 'Create order (admin only)' })
+  @Roles('ADMIN', 'CUSTOMER')
+  @ApiOperation({ summary: 'Create order' })
   async create(@CurrentUser() user: { id: string; email: string; role: string; tenantId: string }, @Body() dto: CreateOrderDto) {
     return this.ordersService.create(user.tenantId, dto, user.id);
   }
 
   @Put(':id')
-  @Roles('ADMIN')
+  @Roles('ADMIN', 'CUSTOMER')
   @ApiOperation({ summary: 'Update order' })
   async update(
     @CurrentUser() user: { id: string; email: string; role: string; tenantId: string },
