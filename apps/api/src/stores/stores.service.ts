@@ -15,7 +15,7 @@ export class StoresService {
     const skip = (page - 1) * limit;
     
     // Build where clause based on user role
-    let where: any = {};
+    const where: any = {};
     
     // Customer can only see their own stores
     if (user?.role === 'CUSTOMER') {
