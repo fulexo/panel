@@ -11,15 +11,25 @@ export class StoresService {
     private readonly wooCommerceService: WooCommerceService,
   ) {}
 
-  async findAll({ page, limit, search }: { page: number; limit: number; search?: string }) {
+  async findAll({ page, limit, search }: { page: number; limit: number; search?: string }, user?: any) {
     const skip = (page - 1) * limit;
-    const where = search ? {
-      OR: [
+    
+    // Build where clause based on user role
+    let where: any = {};
+    
+    // Customer can only see their own stores
+    if (user?.role === 'CUSTOMER') {
+      where.customerId = user.id;
+    }
+    
+    // Add search conditions
+    if (search) {
+      where.OR = [
         { name: { contains: search, mode: Prisma.QueryMode.insensitive } },
         { url: { contains: search, mode: Prisma.QueryMode.insensitive } },
         { customer: { email: { contains: search, mode: Prisma.QueryMode.insensitive } } },
-      ],
-    } : {};
+      ];
+    }
 
     const [stores, total] = await Promise.all([
       this.prisma.store.findMany({

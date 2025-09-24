@@ -3,6 +3,7 @@ import { StoresService } from './stores.service';
 import { CreateStoreDto, UpdateStoreDto } from './dto/stores.dto';
 import { AuthGuard } from '../auth/auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
+import { StoreAccessGuard } from '../modules/auth/guards/store-access.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { User } from '../users/entities/user.entity';
@@ -14,39 +15,45 @@ export class StoresController {
 
   @Get()
   @UseGuards(RolesGuard)
-  @Roles('ADMIN')
+  @Roles('ADMIN', 'CUSTOMER')
   async findAll(
+    @CurrentUser() user: User,
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 10,
     @Query('search') search?: string,
   ) {
-    return this.storesService.findAll({ page, limit, search });
+    // Admin can see all stores, Customer can only see their own
+    return this.storesService.findAll({ page, limit, search }, user);
   }
 
   @Get(':id')
-  @UseGuards(RolesGuard)
-  @Roles('ADMIN')
+  @UseGuards(RolesGuard, StoreAccessGuard)
+  @Roles('ADMIN', 'CUSTOMER')
   async findOne(@Param('id') id: string) {
     return this.storesService.findOne(id);
   }
 
   @Post()
   @UseGuards(RolesGuard)
-  @Roles('ADMIN')
-  async create(@Body() createStoreDto: CreateStoreDto) {
+  @Roles('ADMIN', 'CUSTOMER')
+  async create(@CurrentUser() user: User, @Body() createStoreDto: CreateStoreDto) {
+    // Customer can only create stores for themselves
+    if (user.role === 'CUSTOMER') {
+      createStoreDto.customerId = user.id;
+    }
     return this.storesService.create(createStoreDto);
   }
 
   @Put(':id')
-  @UseGuards(RolesGuard)
-  @Roles('ADMIN')
+  @UseGuards(RolesGuard, StoreAccessGuard)
+  @Roles('ADMIN', 'CUSTOMER')
   async update(@Param('id') id: string, @Body() updateStoreDto: UpdateStoreDto) {
     return this.storesService.update(id, updateStoreDto);
   }
 
   @Delete(':id')
-  @UseGuards(RolesGuard)
-  @Roles('ADMIN')
+  @UseGuards(RolesGuard, StoreAccessGuard)
+  @Roles('ADMIN', 'CUSTOMER')
   async remove(@Param('id') id: string) {
     return this.storesService.remove(id);
   }

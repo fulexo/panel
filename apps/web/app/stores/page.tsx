@@ -12,7 +12,7 @@ import { ApiError } from "@/lib/api-client";
 
 export default function StoresPage() {
   useAuth();
-  useRBAC();
+  const { isAdmin, isCustomer } = useRBAC();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -108,17 +108,25 @@ export default function StoresPage() {
           <main className="mobile-container py-6 space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
-                <h1 className="mobile-heading text-foreground">Stores Management</h1>
+                <h1 className="mobile-heading text-foreground">
+                  {isAdmin() ? 'Stores Management' : 'My Stores'}
+                </h1>
                 <p className="text-muted-foreground mobile-text">
-                  Manage all customer stores and their WooCommerce connections
+                  {isAdmin() 
+                    ? 'Manage all customer stores and their WooCommerce connections'
+                    : 'Manage your stores and WooCommerce connections'
+                  }
                 </p>
               </div>
-              <button 
-                onClick={() => setShowCreateModal(true)}
-                className="btn btn-primary"
-              >
-                Add Store
-              </button>
+              {/* Only show create button if user can manage stores */}
+              {(isAdmin() || isCustomer()) && (
+                <button 
+                  onClick={() => setShowCreateModal(true)}
+                  className="btn btn-primary"
+                >
+                  {isAdmin() ? 'Add Store' : 'Add My Store'}
+                </button>
+              )}
             </div>
 
             {/* Filters */}
