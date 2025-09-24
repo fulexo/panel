@@ -53,8 +53,8 @@ export class CustomersController {
   }
 
   @Delete(':id')
-  @Roles('ADMIN')
-  @ApiOperation({ summary: 'Delete customer (admin only)' })
+  @Roles('ADMIN', 'CUSTOMER')
+  @ApiOperation({ summary: 'Delete customer' })
   async remove(@CurrentUser() user: { id: string; email: string; role: string; tenantId: string }, @Param('id') id: string) {
     return this.customers.remove(user.tenantId, id);
   }

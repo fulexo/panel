@@ -68,8 +68,8 @@ export class InventoryRequestController {
   }
 
   @Put(':id/review')
-  @Roles('ADMIN')
-  @ApiOperation({ summary: 'Review inventory request (admin only)' })
+  @Roles('ADMIN', 'CUSTOMER')
+  @ApiOperation({ summary: 'Review inventory request' })
   async review(
     @CurrentUser() user: { id: string; email: string; role: string; tenantId: string },
     @Param('id') id: string,

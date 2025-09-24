@@ -20,8 +20,8 @@ export class CalendarController {
   }
 
   @Post('events')
-  @Roles('ADMIN')
-  @ApiOperation({ summary: 'Create calendar event (admin only)' })
+  @Roles('ADMIN', 'CUSTOMER')
+  @ApiOperation({ summary: 'Create calendar event' })
   async createEvent(@CurrentUser() user: AuthenticatedUser, @Body() dto: CreateEventDto) {
     return this.calendar.createEvent(user.tenantId, {
       title: dto.title,
@@ -33,15 +33,15 @@ export class CalendarController {
   }
 
   @Put('events/:id')
-  @Roles('ADMIN')
-  @ApiOperation({ summary: 'Update calendar event (admin only)' })
+  @Roles('ADMIN', 'CUSTOMER')
+  @ApiOperation({ summary: 'Update calendar event' })
   async updateEvent(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string, @Body() dto: UpdateEventDto) {
     return this.calendar.updateEvent(user.tenantId, id, dto);
   }
 
   @Delete('events/:id')
-  @Roles('ADMIN')
-  @ApiOperation({ summary: 'Delete calendar event (admin only)' })
+  @Roles('ADMIN', 'CUSTOMER')
+  @ApiOperation({ summary: 'Delete calendar event' })
   async deleteEvent(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string) {
     return this.calendar.deleteEvent(user.tenantId, id);
   }

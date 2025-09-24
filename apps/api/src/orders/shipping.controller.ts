@@ -21,8 +21,8 @@ export class ShippingController {
 
   // Shipping Zones
   @Post('zones')
-  @Roles('ADMIN')
-  @ApiOperation({ summary: 'Create shipping zone (admin only)' })
+  @Roles('ADMIN', 'CUSTOMER')
+  @ApiOperation({ summary: 'Create shipping zone' })
   async createZone(
     @CurrentUser() user: { id: string; email: string; role: string; tenantId: string },
     @Body() dto: CreateShippingZoneDto,
@@ -50,8 +50,8 @@ export class ShippingController {
   }
 
   @Put('zones/:id')
-  @Roles('ADMIN')
-  @ApiOperation({ summary: 'Update shipping zone (admin only)' })
+  @Roles('ADMIN', 'CUSTOMER')
+  @ApiOperation({ summary: 'Update shipping zone' })
   async updateZone(
     @CurrentUser() user: { id: string; email: string; role: string; tenantId: string },
     @Param('id') id: string,
@@ -61,8 +61,8 @@ export class ShippingController {
   }
 
   @Delete('zones/:id')
-  @Roles('ADMIN')
-  @ApiOperation({ summary: 'Delete shipping zone (admin only)' })
+  @Roles('ADMIN', 'CUSTOMER')
+  @ApiOperation({ summary: 'Delete shipping zone' })
   async deleteZone(
     @CurrentUser() user: { id: string; email: string; role: string; tenantId: string },
     @Param('id') id: string,
@@ -72,8 +72,8 @@ export class ShippingController {
 
   // Shipping Prices
   @Post('prices')
-  @Roles('ADMIN')
-  @ApiOperation({ summary: 'Create shipping price (admin only)' })
+  @Roles('ADMIN', 'CUSTOMER')
+  @ApiOperation({ summary: 'Create shipping price' })
   async createPrice(
     @CurrentUser() user: { id: string; email: string; role: string; tenantId: string },
     @Body() dto: CreateShippingPriceDto,
@@ -101,8 +101,8 @@ export class ShippingController {
   }
 
   @Put('prices/:id')
-  @Roles('ADMIN')
-  @ApiOperation({ summary: 'Update shipping price (admin only)' })
+  @Roles('ADMIN', 'CUSTOMER')
+  @ApiOperation({ summary: 'Update shipping price' })
   async updatePrice(
     @CurrentUser() user: { id: string; email: string; role: string; tenantId: string },
     @Param('id') id: string,
@@ -112,8 +112,8 @@ export class ShippingController {
   }
 
   @Delete('prices/:id')
-  @Roles('ADMIN')
-  @ApiOperation({ summary: 'Delete shipping price (admin only)' })
+  @Roles('ADMIN', 'CUSTOMER')
+  @ApiOperation({ summary: 'Delete shipping price' })
   async deletePrice(
     @CurrentUser() user: { id: string; email: string; role: string; tenantId: string },
     @Param('id') id: string,
@@ -123,8 +123,8 @@ export class ShippingController {
 
   // Customer-specific pricing
   @Post('customer-prices')
-  @Roles('ADMIN')
-  @ApiOperation({ summary: 'Create customer-specific shipping price (admin only)' })
+  @Roles('ADMIN', 'CUSTOMER')
+  @ApiOperation({ summary: 'Create customer-specific shipping price' })
   async createCustomerPrice(
     @CurrentUser() user: { id: string; email: string; role: string; tenantId: string },
     @Body() dto: CreateCustomerShippingPriceDto,
@@ -143,8 +143,8 @@ export class ShippingController {
   }
 
   @Put('customer-prices/:id')
-  @Roles('ADMIN')
-  @ApiOperation({ summary: 'Update customer-specific shipping price (admin only)' })
+  @Roles('ADMIN', 'CUSTOMER')
+  @ApiOperation({ summary: 'Update customer-specific shipping price' })
   async updateCustomerPrice(
     @CurrentUser() user: { id: string; email: string; role: string; tenantId: string },
     @Param('id') id: string,
@@ -154,8 +154,8 @@ export class ShippingController {
   }
 
   @Delete('customer-prices/:id')
-  @Roles('ADMIN')
-  @ApiOperation({ summary: 'Delete customer-specific shipping price (admin only)' })
+  @Roles('ADMIN', 'CUSTOMER')
+  @ApiOperation({ summary: 'Delete customer-specific shipping price' })
   async deleteCustomerPrice(
     @CurrentUser() user: { id: string; email: string; role: string; tenantId: string },
     @Param('id') id: string,

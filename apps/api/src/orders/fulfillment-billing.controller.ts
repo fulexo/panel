@@ -23,8 +23,8 @@ export class FulfillmentBillingController {
 
   // Fulfillment Services
   @Post('services')
-  @Roles('ADMIN')
-  @ApiOperation({ summary: 'Create fulfillment service (admin only)' })
+  @Roles('ADMIN', 'CUSTOMER')
+  @ApiOperation({ summary: 'Create fulfillment service' })
   async createService(
     @CurrentUser() user: { id: string; email: string; role: string; tenantId: string },
     @Body() dto: CreateFulfillmentServiceDto,
@@ -52,8 +52,8 @@ export class FulfillmentBillingController {
   }
 
   @Put('services/:id')
-  @Roles('ADMIN')
-  @ApiOperation({ summary: 'Update fulfillment service (admin only)' })
+  @Roles('ADMIN', 'CUSTOMER')
+  @ApiOperation({ summary: 'Update fulfillment service' })
   async updateService(
     @CurrentUser() user: { id: string; email: string; role: string; tenantId: string },
     @Param('id') id: string,
@@ -63,8 +63,8 @@ export class FulfillmentBillingController {
   }
 
   @Delete('services/:id')
-  @Roles('ADMIN')
-  @ApiOperation({ summary: 'Delete fulfillment service (admin only)' })
+  @Roles('ADMIN', 'CUSTOMER')
+  @ApiOperation({ summary: 'Delete fulfillment service' })
   async deleteService(
     @CurrentUser() user: { id: string; email: string; role: string; tenantId: string },
     @Param('id') id: string,

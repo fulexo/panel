@@ -155,8 +155,8 @@ export class OrdersController {
   }
 
   @Get('pending-approvals')
-  @Roles('ADMIN')
-  @ApiOperation({ summary: 'Get orders pending approval (admin only)' })
+  @Roles('ADMIN', 'CUSTOMER')
+  @ApiOperation({ summary: 'Get orders pending approval' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'storeId', required: false, type: String })
@@ -168,8 +168,8 @@ export class OrdersController {
   }
 
   @Put(':id/approve')
-  @Roles('ADMIN')
-  @ApiOperation({ summary: 'Approve order (admin only)' })
+  @Roles('ADMIN', 'CUSTOMER')
+  @ApiOperation({ summary: 'Approve order' })
   async approveOrder(
     @CurrentUser() user: { id: string; email: string; role: string; tenantId: string },
     @Param('id') id: string,
@@ -179,8 +179,8 @@ export class OrdersController {
   }
 
   @Put(':id/reject')
-  @Roles('ADMIN')
-  @ApiOperation({ summary: 'Reject order (admin only)' })
+  @Roles('ADMIN', 'CUSTOMER')
+  @ApiOperation({ summary: 'Reject order' })
   async rejectOrder(
     @CurrentUser() user: { id: string; email: string; role: string; tenantId: string },
     @Param('id') id: string,
