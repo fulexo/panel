@@ -1039,6 +1039,90 @@ class ApiClient {
     const queryString = searchParams.toString();
     return this.request(`/customers/${customerId}/orders${queryString ? `?${queryString}` : ''}`);
   }
+
+  // Calendar methods
+  async getCalendarEvents(params?: { from?: string; to?: string }) {
+    const searchParams = new URLSearchParams();
+    if (params?.from) searchParams.set('from', params.from);
+    if (params?.to) searchParams.set('to', params.to);
+    
+    const queryString = searchParams.toString();
+    return this.request(`/calendar/events${queryString ? `?${queryString}` : ''}`);
+  }
+
+  async createCalendarEvent(data: {
+    title: string;
+    description?: string;
+    type?: string;
+    startDate: string;
+    endDate: string;
+    allDay?: boolean;
+  }) {
+    return this.request('/calendar/events', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateCalendarEvent(id: string, data: {
+    title?: string;
+    description?: string;
+    type?: string;
+    startDate?: string;
+    endDate?: string;
+    allDay?: boolean;
+  }) {
+    return this.request(`/calendar/events/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteCalendarEvent(id: string) {
+    return this.request(`/calendar/events/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async getBusinessHours() {
+    return this.request('/calendar/business-hours');
+  }
+
+  async setBusinessHours(data: {
+    days: Array<{
+      day: string;
+      startTime?: string;
+      endTime?: string;
+      isWorkingDay?: boolean;
+    }>;
+  }) {
+    return this.request('/calendar/business-hours', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getHolidays() {
+    return this.request('/calendar/holidays');
+  }
+
+  async createHoliday(data: {
+    name: string;
+    date: string;
+    description?: string;
+    recurring?: boolean;
+  }) {
+    return this.request('/calendar/holidays', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteHoliday(id: string) {
+    return this.request(`/calendar/holidays/${id}`, {
+      method: 'DELETE',
+    });
+  }
 }
 
 export const apiClient = new ApiClient();

@@ -32,6 +32,7 @@ export default function Sidebar({ isOpen, onClose, isDesktopCollapsed = false, o
     { href: '/fulfillment', label: 'Fulfillment', icon: '📋', roles: ['ADMIN'] },
     { href: '/orders/approvals', label: 'Order Approvals', icon: '✅', roles: ['ADMIN'] },
     { href: '/inventory/approvals', label: 'Inventory Approvals', icon: '📝', roles: ['ADMIN'] },
+    { href: '/calendar', label: 'Calendar', icon: '📅', roles: ['ADMIN'] },
   ];
 
   const customerItems = [
@@ -40,6 +41,7 @@ export default function Sidebar({ isOpen, onClose, isDesktopCollapsed = false, o
     { href: '/fulfillment', label: 'Fulfillment', icon: '📋', roles: ['CUSTOMER'] },
     { href: '/orders/approvals', label: 'Order Approvals', icon: '✅', roles: ['CUSTOMER'] },
     { href: '/inventory/approvals', label: 'Inventory Approvals', icon: '📝', roles: ['CUSTOMER'] },
+    { href: '/calendar', label: 'Calendar', icon: '📅', roles: ['CUSTOMER'] },
   ];
 
   const userItems = [

@@ -6,6 +6,7 @@ import { useDashboardStats, useOrders, useStores } from "@/hooks/useApi";
 import { DashboardStats } from "@/types/api";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { ApiError } from "@/lib/api-client";
+import CalendarWidget from "@/components/CalendarWidget";
 import Link from "next/link";
 
 export default function DashboardPage() {
@@ -228,6 +229,9 @@ export default function DashboardPage() {
               )}
             </div>
           </div>
+
+          {/* Calendar Widget */}
+          <CalendarWidget />
 
           {isAdmin() && stores?.data && (
             <div className="bg-card p-6 rounded-lg border border-border">

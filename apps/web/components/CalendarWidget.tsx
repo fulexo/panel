@@ -1,175 +1,255 @@
-"use client";
-import { logger } from "@/lib/logger";
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Calendar, Clock, MapPin } from 'lucide-react';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths } from 'date-fns';
+import { tr } from 'date-fns/locale';
+import { useCalendarEvents, useHolidays } from '@/hooks/useCalendar';
 import Link from 'next/link';
 
-interface BusinessHours {
-  weekday: number;
-  startTime: string;
-  endTime: string;
+interface CalendarEvent {
+  id: string;
+  title: string;
+  description?: string;
+  type: string;
+  startAt: string;
+  endAt: string;
+  allDay?: boolean;
 }
 
 interface Holiday {
   id: string;
-  date: string;
   name: string;
+  date: string;
+  description?: string;
+  recurring?: boolean;
 }
 
-const WEEKDAYS = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
+const eventTypes = {
+  general: { label: 'Genel', color: 'bg-blue-100 text-blue-800' },
+  meeting: { label: 'Toplantı', color: 'bg-green-100 text-green-800' },
+  holiday: { label: 'Tatil', color: 'bg-red-100 text-red-800' },
+  maintenance: { label: 'Bakım', color: 'bg-yellow-100 text-yellow-800' },
+  closed: { label: 'Kapalı', color: 'bg-gray-100 text-gray-800' },
+};
 
 export default function CalendarWidget() {
-  const [businessHours, setBusinessHours] = useState<BusinessHours[]>([]);
-  const [holidays, setHolidays] = useState<Holiday[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [currentDate, setCurrentDate] = useState(new Date());
 
-  useEffect(() => {
-    loadCalendarData();
-  }, []);
+  // Load data using hooks
+  const from = startOfMonth(currentDate).toISOString();
+  const to = endOfMonth(currentDate).toISOString();
+  
+  const { data: eventsData, isLoading: eventsLoading } = useCalendarEvents({ from, to });
+  const { data: holidaysData, isLoading: holidaysLoading } = useHolidays();
 
-  const loadCalendarData = async () => {
-    try {
-      const [hoursRes, holidaysRes] = await Promise.all([
-        fetch('/api/calendar/business-hours', { credentials: 'include' }),
-        fetch('/api/calendar/holidays', { credentials: 'include' })
-      ]);
+  const events = eventsData?.events || [];
+  const holidays = holidaysData?.holidays || [];
+  const loading = eventsLoading || holidaysLoading;
 
-      if (hoursRes.ok && holidaysRes.ok) {
-        const [hoursData, holidaysData] = await Promise.all([
-          hoursRes.json(),
-          holidaysRes.json()
-        ]);
-        setBusinessHours(hoursData.hours || []);
-        setHolidays(holidaysData.holidays || []);
-      }
-    } catch (error) {
-      logger.error('Takvim verisi yüklenemedi:', error);
-      setError('Takvim verisi yüklenirken hata oluştu');
-    } finally {
-      setLoading(false);
-    }
+  const getEventsForDate = (date: Date) => {
+    return events.filter(event => {
+      const eventDate = new Date(event.startAt);
+      return isSameDay(eventDate, date);
+    });
   };
 
-  const getTodayInfo = () => {
+  const getHolidayForDate = (date: Date) => {
+    return holidays.find(holiday => {
+      const holidayDate = new Date(holiday.date);
+      return isSameDay(holidayDate, date);
+    });
+  };
+
+  const getUpcomingEvents = () => {
     const today = new Date();
-    const todayWeekday = today.getDay();
-    const todayStr = today.toISOString().split('T')[0];
+    const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
     
-    const todayHours = businessHours.find(h => h.weekday === todayWeekday);
-    const todayHoliday = holidays.find(h => todayStr && h.date.startsWith(todayStr));
-    
-    return { todayHours, todayHoliday, todayWeekday };
+    return events
+      .filter(event => {
+        const eventDate = new Date(event.startAt);
+        return eventDate >= today && eventDate <= nextWeek;
+      })
+      .sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime())
+      .slice(0, 5);
   };
 
-  const getUpcomingHolidays = () => {
-    const today = new Date();
-    return holidays
-      .filter(h => new Date(h.date) >= today)
-      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-      .slice(0, 3);
+  const renderMiniCalendar = () => {
+    const monthStart = startOfMonth(currentDate);
+    const monthEnd = endOfMonth(currentDate);
+    const calendarStart = startOfMonth(monthStart);
+    const calendarEnd = endOfMonth(monthEnd);
+    
+    const days = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
+    const monthDays = days.filter(day => isSameMonth(day, currentDate));
+
+    return (
+      <div className="grid grid-cols-7 gap-1 text-xs">
+        {['P', 'S', 'Ç', 'P', 'C', 'C', 'P'].map(day => (
+          <div key={day} className="p-1 text-center font-medium text-muted-foreground">
+            {day}
+          </div>
+        ))}
+        {days.map(day => {
+          const dayEvents = getEventsForDate(day);
+          const holiday = getHolidayForDate(day);
+          const isToday = isSameDay(day, new Date());
+          const isCurrentMonth = isSameMonth(day, currentDate);
+
+          return (
+            <div
+              key={day.toISOString()}
+              className={`
+                p-1 text-center cursor-pointer rounded hover:bg-gray-100
+                ${!isCurrentMonth ? 'text-gray-400' : ''}
+                ${isToday ? 'bg-blue-100 text-blue-600 font-bold' : ''}
+                ${holiday ? 'bg-red-100 text-red-600' : ''}
+                ${dayEvents.length > 0 ? 'bg-green-100' : ''}
+              `}
+            >
+              <div className="relative">
+                {format(day, 'd')}
+                {dayEvents.length > 0 && (
+                  <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full"></div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
   };
+
+  const upcomingEvents = getUpcomingEvents();
 
   if (loading) {
     return (
-      <div className="bg-white rounded-lg shadow p-6">
-        <div className="animate-pulse">
-          <div className="h-4 bg-gray-200 rounded w-1/3 mb-4"></div>
-          <div className="space-y-2">
-            <div className="h-3 bg-gray-200 rounded"></div>
-            <div className="h-3 bg-gray-200 rounded w-2/3"></div>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Calendar className="w-5 h-5" />
+            Takvim
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-center h-32">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     );
   }
-
-  if (error) {
-    return (
-      <div className="bg-white rounded-lg shadow p-6">
-        <div className="text-red-600 text-center">
-          <p>{error}</p>
-          <button 
-            onClick={() => {
-              setError(null);
-              loadCalendarData();
-            }}
-            className="mt-2 px-4 py-2 bg-red-100 text-red-700 rounded hover:bg-red-200"
-          >
-            Tekrar Dene
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  const { todayHours, todayHoliday } = getTodayInfo();
-  const upcomingHolidays = getUpcomingHolidays();
 
   return (
-    <div className="bg-white rounded-lg shadow p-6">
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-semibold text-gray-900">Takvim</h3>
-        <Link 
-          href="/calendar" 
-          className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-        >
-          Tümünü Gör
-        </Link>
-      </div>
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2">
+            <Calendar className="w-5 h-5" />
+            Takvim
+          </CardTitle>
+          <div className="flex gap-1">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentDate(subMonths(currentDate, 1))}
+            >
+              ←
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentDate(new Date())}
+            >
+              Bugün
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentDate(addMonths(currentDate, 1))}
+            >
+              →
+            </Button>
+          </div>
+        </div>
+        <div className="text-center text-sm text-muted-foreground">
+          {format(currentDate, 'MMMM yyyy', { locale: tr })}
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {/* Mini Calendar */}
+        <div>
+          {renderMiniCalendar()}
+        </div>
 
-      {/* Bugünkü Durum */}
-      <div className="mb-4 p-3 bg-gray-50 rounded-lg">
-        <h4 className="font-medium text-gray-700 mb-2">Bugün</h4>
-        {todayHoliday ? (
-          <div className="text-red-600 text-sm">
-            🎉 {todayHoliday.name} - Tatil
-          </div>
-        ) : todayHours ? (
-          <div className="text-green-600 text-sm">
-            ✅ Açık: {todayHours.startTime} - {todayHours.endTime}
-          </div>
-        ) : (
-          <div className="text-gray-500 text-sm">
-            ❓ Çalışma saatleri belirlenmemiş
+        {/* Upcoming Events */}
+        {upcomingEvents.length > 0 && (
+          <div>
+            <h4 className="font-medium text-sm mb-2 flex items-center gap-2">
+              <Clock className="w-4 h-4" />
+              Yaklaşan Etkinlikler
+            </h4>
+            <div className="space-y-2">
+              {upcomingEvents.map(event => (
+                <div key={event.id} className="flex items-center gap-2 p-2 bg-gray-50 rounded text-sm">
+                  <div className="flex-1">
+                    <div className="font-medium">{event.title}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {format(new Date(event.startAt), 'dd MMM HH:mm')}
+                    </div>
+                  </div>
+                  <Badge className={eventTypes[event.type as keyof typeof eventTypes]?.color || 'bg-gray-100 text-gray-800'}>
+                    {eventTypes[event.type as keyof typeof eventTypes]?.label || event.type}
+                  </Badge>
+                </div>
+              ))}
+            </div>
           </div>
         )}
-      </div>
 
-      {/* Çalışma Saatleri */}
-      <div className="mb-4">
-        <h4 className="font-medium text-gray-700 mb-2">Çalışma Saatleri</h4>
-        <div className="space-y-1 text-sm">
-          {businessHours.slice(0, 3).map((hour) => (
-            <div key={hour.weekday} className="flex justify-between">
-              <span className="text-gray-600">{WEEKDAYS[hour.weekday]}</span>
-              <span className="text-gray-900">
-                {hour.startTime} - {hour.endTime}
-              </span>
+        {/* Holidays */}
+        {holidays.length > 0 && (
+          <div>
+            <h4 className="font-medium text-sm mb-2 flex items-center gap-2">
+              <MapPin className="w-4 h-4" />
+              Tatiller
+            </h4>
+            <div className="space-y-1">
+              {holidays.slice(0, 3).map(holiday => (
+                <div key={holiday.id} className="flex items-center gap-2 p-2 bg-red-50 rounded text-sm">
+                  <div className="flex-1">
+                    <div className="font-medium">{holiday.name}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {format(new Date(holiday.date), 'dd MMM')}
+                    </div>
+                  </div>
+                  <Badge variant="destructive" className="text-xs">
+                    Tatil
+                  </Badge>
+                </div>
+              ))}
+              {holidays.length > 3 && (
+                <div className="text-xs text-muted-foreground text-center">
+                  +{holidays.length - 3} daha
+                </div>
+              )}
             </div>
-          ))}
-          {businessHours.length > 3 && (
-            <div className="text-gray-500 text-xs">
-              +{businessHours.length - 3} gün daha
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Yaklaşan Tatiller */}
-      {upcomingHolidays.length > 0 && (
-        <div>
-          <h4 className="font-medium text-gray-700 mb-2">Yaklaşan Tatiller</h4>
-          <div className="space-y-1 text-sm">
-            {upcomingHolidays.map((holiday) => (
-              <div key={holiday.id} className="text-red-600">
-                {holiday.name} - {new Date(holiday.date).toLocaleDateString('tr-TR')}
-              </div>
-            ))}
           </div>
+        )}
+
+        {/* View Full Calendar Button */}
+        <div className="pt-2">
+          <Link href="/calendar">
+            <Button variant="outline" className="w-full">
+              <Calendar className="w-4 h-4 mr-2" />
+              Tam Takvimi Görüntüle
+            </Button>
+          </Link>
         </div>
-      )}
-    </div>
+      </CardContent>
+    </Card>
   );
 }
