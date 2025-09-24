@@ -576,3 +576,41 @@ export const useFinancialReport = (params?: {
     staleTime: 10 * 60 * 1000, // 10 minutes
   });
 };
+
+// Store statistics hooks
+export const useStoreStats = (storeId: string) => {
+  return useQuery({
+    queryKey: ['store-stats', storeId],
+    queryFn: () => apiClient.getStoreStats(storeId),
+    enabled: !!storeId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+};
+
+export const useStoreSyncLogs = (storeId: string, params?: { limit?: number }) => {
+  return useQuery({
+    queryKey: ['store-sync-logs', storeId, params],
+    queryFn: () => apiClient.getStoreSyncLogs(storeId, params),
+    enabled: !!storeId,
+    staleTime: 2 * 60 * 1000, // 2 minutes
+  });
+};
+
+// Customer statistics hooks
+export const useCustomerStats = (customerId: string) => {
+  return useQuery({
+    queryKey: ['customer-stats', customerId],
+    queryFn: () => apiClient.getCustomerStats(customerId),
+    enabled: !!customerId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+};
+
+export const useCustomerOrders = (customerId: string, params?: { limit?: number; status?: string }) => {
+  return useQuery({
+    queryKey: ['customer-orders', customerId, params],
+    queryFn: () => apiClient.getCustomerOrders(customerId, params),
+    enabled: !!customerId,
+    staleTime: 2 * 60 * 1000, // 2 minutes
+  });
+};

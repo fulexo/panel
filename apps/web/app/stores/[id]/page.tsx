@@ -6,7 +6,7 @@ import { useState } from "react";
 import { useParams } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
 import { useRBAC } from "@/hooks/useRBAC";
-import { useStore, useUpdateStore, useDeleteStore, useSyncStore, useTestStoreConnection } from "@/hooks/useApi";
+import { useStore, useUpdateStore, useDeleteStore, useSyncStore, useTestStoreConnection, useStoreStats, useStoreSyncLogs } from "@/hooks/useApi";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import ProtectedComponent from "@/components/ProtectedComponent";
 import { ApiError } from "@/lib/api-client";
@@ -156,23 +156,21 @@ export default function StoreDetailPage() {
     }
   };
 
-  // Mock data for store statistics
-  const storeStats = {
-    totalProducts: 450,
-    totalOrders: 1250,
-    totalCustomers: 320,
-    totalRevenue: 125000,
+  // Get real store statistics from API
+  const { data: storeStats } = useStoreStats(storeId);
+  const { data: syncLogs } = useStoreSyncLogs(storeId);
+
+  // Fallback data structure for display
+  const displayStats = {
+    totalProducts: (storeStats as any)?.totalProducts || 0,
+    totalOrders: (storeStats as any)?.totalOrders || 0,
+    totalCustomers: (storeStats as any)?.totalCustomers || 0,
+    totalRevenue: (storeStats as any)?.totalRevenue || 0,
     lastSync: store.lastSync,
     syncFrequency: '15 minutes',
   };
 
-  // Mock data for recent sync logs
-  const syncLogs = [
-    { id: 1, type: 'products', status: 'success', count: 25, timestamp: '2024-01-15 14:30:00' },
-    { id: 2, type: 'orders', status: 'success', count: 12, timestamp: '2024-01-15 14:15:00' },
-    { id: 3, type: 'customers', status: 'success', count: 8, timestamp: '2024-01-15 14:00:00' },
-    { id: 4, type: 'products', status: 'error', count: 0, timestamp: '2024-01-15 13:45:00' },
-  ];
+  const displaySyncLogs = Array.isArray(syncLogs) ? syncLogs : [];
 
   return (
     <ProtectedRoute>
@@ -305,7 +303,7 @@ export default function StoreDetailPage() {
               <div className="bg-card p-6 rounded-lg border border-border">
                 <h3 className="text-lg font-semibold text-foreground mb-4">Recent Sync Logs</h3>
                 <div className="space-y-3">
-                  {syncLogs.map((log) => (
+                  {displaySyncLogs.map((log) => (
                     <div key={log.id} className="flex items-center justify-between p-3 border border-border rounded-lg">
                       <div className="flex items-center gap-3">
                         <span className="text-lg">
@@ -339,22 +337,22 @@ export default function StoreDetailPage() {
                 <div className="space-y-4">
                   <div className="text-center">
                     <div className="text-3xl font-bold text-primary mb-2">
-                      {storeStats.totalProducts}
+                      {displayStats.totalProducts}
                     </div>
                     <p className="text-sm text-muted-foreground">Total Products</p>
                   </div>
                   <div className="space-y-3">
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Orders</span>
-                      <span className="font-medium">{storeStats.totalOrders}</span>
+                      <span className="font-medium">{displayStats.totalOrders}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Customers</span>
-                      <span className="font-medium">{storeStats.totalCustomers}</span>
+                      <span className="font-medium">{displayStats.totalCustomers}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Revenue</span>
-                      <span className="font-medium">₺{storeStats.totalRevenue.toLocaleString()}</span>
+                      <span className="font-medium">₺{displayStats.totalRevenue.toLocaleString()}</span>
                     </div>
                   </div>
                 </div>
@@ -367,12 +365,12 @@ export default function StoreDetailPage() {
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Last Sync</span>
                     <span className="font-medium">
-                      {storeStats.lastSync ? new Date(storeStats.lastSync).toLocaleString() : 'Never'}
+                      {displayStats.lastSync ? new Date(displayStats.lastSync).toLocaleString() : 'Never'}
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Frequency</span>
-                    <span className="font-medium">{storeStats.syncFrequency}</span>
+                    <span className="font-medium">{displayStats.syncFrequency}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Status</span>

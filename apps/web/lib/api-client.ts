@@ -455,6 +455,24 @@ class ApiClient {
     });
   }
 
+  async rejectInventoryChange(id: string, reason: string) {
+    return this.request(`/inventory/approvals/${id}/reject`, {
+      method: 'PUT',
+      body: JSON.stringify({ reason }),
+    });
+  }
+
+  async requestInventoryChange(data: {
+    productId: string;
+    newQuantity: number;
+    reason: string;
+  }) {
+    return this.request('/inventory/requests', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
   // Returns endpoints
   async getReturns(params?: { 
     page?: number; 
@@ -995,6 +1013,31 @@ class ApiClient {
     }
     const queryString = searchParams.toString();
     return this.request(`/reports/financial${queryString ? `?${queryString}` : ''}`);
+  }
+
+  // Store statistics endpoints
+  async getStoreStats(storeId: string) {
+    return this.request(`/stores/${storeId}/stats`);
+  }
+
+  async getStoreSyncLogs(storeId: string, params?: { limit?: number }) {
+    const searchParams = new URLSearchParams();
+    if (params?.limit) searchParams.set('limit', params.limit.toString());
+    const queryString = searchParams.toString();
+    return this.request(`/stores/${storeId}/sync-logs${queryString ? `?${queryString}` : ''}`);
+  }
+
+  // Customer statistics endpoints
+  async getCustomerStats(customerId: string) {
+    return this.request(`/customers/${customerId}/stats`);
+  }
+
+  async getCustomerOrders(customerId: string, params?: { limit?: number; status?: string }) {
+    const searchParams = new URLSearchParams();
+    if (params?.limit) searchParams.set('limit', params.limit.toString());
+    if (params?.status) searchParams.set('status', params.status);
+    const queryString = searchParams.toString();
+    return this.request(`/customers/${customerId}/orders${queryString ? `?${queryString}` : ''}`);
   }
 }
 

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useParams } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
 import { useRBAC } from "@/hooks/useRBAC";
-import { useCustomer, useUpdateCustomer, useDeleteCustomer } from "@/hooks/useApi";
+import { useCustomer, useUpdateCustomer, useDeleteCustomer, useCustomerStats, useCustomerOrders } from "@/hooks/useApi";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import ProtectedComponent from "@/components/ProtectedComponent";
 import { ApiError } from "@/lib/api-client";
@@ -121,21 +121,20 @@ export default function CustomerDetailPage() {
     }
   };
 
-  // Mock data for customer statistics
-  const customerStats = {
-    totalOrders: 12,
-    totalSpent: 12500,
-    averageOrderValue: 1041.67,
-    lastOrderDate: "2024-01-15",
+  // Get real customer statistics from API
+  const { data: customerStats } = useCustomerStats(customerId);
+  const { data: recentOrders } = useCustomerOrders(customerId, { limit: 5 });
+
+  // Fallback data structure for display
+  const displayStats = {
+    totalOrders: (customerStats as any)?.totalOrders || 0,
+    totalSpent: (customerStats as any)?.totalSpent || 0,
+    averageOrderValue: (customerStats as any)?.averageOrderValue || 0,
+    lastOrderDate: (customerStats as any)?.lastOrderDate || null,
     memberSince: customer.createdAt,
   };
 
-  // Mock data for recent orders
-  const recentOrders = [
-    { id: "1", orderNumber: "ORD-001", date: "2024-01-15", total: 1250, status: "delivered" },
-    { id: "2", orderNumber: "ORD-002", date: "2024-01-10", total: 850, status: "shipped" },
-    { id: "3", orderNumber: "ORD-003", date: "2024-01-05", total: 2100, status: "delivered" },
-  ];
+  const displayOrders = Array.isArray(recentOrders) ? recentOrders : [];
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -246,7 +245,7 @@ export default function CustomerDetailPage() {
               <div className="bg-card p-6 rounded-lg border border-border">
                 <h3 className="text-lg font-semibold text-foreground mb-4">Recent Orders</h3>
                 <div className="space-y-4">
-                  {recentOrders.map((order) => (
+                  {displayOrders.map((order) => (
                     <div key={order.id} className="flex items-center justify-between p-4 border border-border rounded-lg">
                       <div>
                         <h4 className="font-medium">{order.orderNumber}</h4>
@@ -274,23 +273,23 @@ export default function CustomerDetailPage() {
                 <div className="space-y-4">
                   <div className="text-center">
                     <div className="text-3xl font-bold text-primary mb-2">
-                      {customerStats.totalOrders}
+                      {displayStats.totalOrders}
                     </div>
                     <p className="text-sm text-muted-foreground">Total Orders</p>
                   </div>
                   <div className="space-y-3">
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Total Spent</span>
-                      <span className="font-medium">₺{customerStats.totalSpent.toFixed(2)}</span>
+                      <span className="font-medium">₺{displayStats.totalSpent.toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Average Order</span>
-                      <span className="font-medium">₺{customerStats.averageOrderValue.toFixed(2)}</span>
+                      <span className="font-medium">₺{displayStats.averageOrderValue.toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Last Order</span>
                       <span className="font-medium">
-                        {new Date(customerStats.lastOrderDate).toLocaleDateString()}
+                        {displayStats.lastOrderDate ? new Date(displayStats.lastOrderDate).toLocaleDateString() : 'No orders'}
                       </span>
                     </div>
                   </div>
