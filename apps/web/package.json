@@ -25,6 +25,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "critters": "^0.0.23",
+    "date-fns": "^4.1.0",
     "framer-motion": "^11.15.0",
     "jose": "^6.0.13",
     "js-cookie": "^3.0.5",
