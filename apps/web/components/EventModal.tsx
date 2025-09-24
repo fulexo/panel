@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { X, Calendar, Clock } from 'lucide-react';
+import { X } from 'lucide-react';
 
 interface CalendarEvent {
   id: string;
@@ -56,9 +56,9 @@ export default function EventModal({ isOpen, onClose, onSave, event, selectedDat
         title: event.title,
         description: event.description || '',
         type: event.type,
-        startDate: startDate.toISOString().split('T')[0],
+        startDate: startDate.toISOString().split('T')[0] || '',
         startTime: startDate.toTimeString().slice(0, 5),
-        endDate: endDate.toISOString().split('T')[0],
+        endDate: endDate.toISOString().split('T')[0] || '',
         endTime: endDate.toTimeString().slice(0, 5),
         allDay: event.allDay || false,
       });
@@ -68,9 +68,9 @@ export default function EventModal({ isOpen, onClose, onSave, event, selectedDat
         title: '',
         description: '',
         type: 'general',
-        startDate: dateStr,
+        startDate: dateStr || '',
         startTime: '09:00',
-        endDate: dateStr,
+        endDate: dateStr || '',
         endTime: '17:00',
         allDay: false,
       });

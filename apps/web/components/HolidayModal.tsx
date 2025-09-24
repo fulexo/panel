@@ -35,7 +35,7 @@ export default function HolidayModal({ isOpen, onClose, onSave, holiday }: Holid
     if (holiday) {
       setFormData({
         name: holiday.name,
-        date: holiday.date.split('T')[0],
+        date: holiday.date.split('T')[0] || '',
         description: holiday.description || '',
         recurring: holiday.recurring || false,
       });

@@ -10,23 +10,6 @@ import { tr } from 'date-fns/locale';
 import { useCalendarEvents, useHolidays } from '@/hooks/useCalendar';
 import Link from 'next/link';
 
-interface CalendarEvent {
-  id: string;
-  title: string;
-  description?: string;
-  type: string;
-  startAt: string;
-  endAt: string;
-  allDay?: boolean;
-}
-
-interface Holiday {
-  id: string;
-  name: string;
-  date: string;
-  description?: string;
-  recurring?: boolean;
-}
 
 const eventTypes = {
   general: { label: 'Genel', color: 'bg-blue-100 text-blue-800' },
@@ -46,19 +29,19 @@ export default function CalendarWidget() {
   const { data: eventsData, isLoading: eventsLoading } = useCalendarEvents({ from, to });
   const { data: holidaysData, isLoading: holidaysLoading } = useHolidays();
 
-  const events = eventsData?.events || [];
-  const holidays = holidaysData?.holidays || [];
+  const events = (eventsData as any)?.events || [];
+  const holidays = (holidaysData as any)?.holidays || [];
   const loading = eventsLoading || holidaysLoading;
 
   const getEventsForDate = (date: Date) => {
-    return events.filter(event => {
+    return events.filter((event: any) => {
       const eventDate = new Date(event.startAt);
       return isSameDay(eventDate, date);
     });
   };
 
   const getHolidayForDate = (date: Date) => {
-    return holidays.find(holiday => {
+    return holidays.find((holiday: any) => {
       const holidayDate = new Date(holiday.date);
       return isSameDay(holidayDate, date);
     });
@@ -69,11 +52,11 @@ export default function CalendarWidget() {
     const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
     
     return events
-      .filter(event => {
+      .filter((event: any) => {
         const eventDate = new Date(event.startAt);
         return eventDate >= today && eventDate <= nextWeek;
       })
-      .sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime())
+      .sort((a: any, b: any) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime())
       .slice(0, 5);
   };
 
@@ -84,7 +67,6 @@ export default function CalendarWidget() {
     const calendarEnd = endOfMonth(monthEnd);
     
     const days = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
-    const monthDays = days.filter(day => isSameMonth(day, currentDate));
 
     return (
       <div className="grid grid-cols-7 gap-1 text-xs">
@@ -193,7 +175,7 @@ export default function CalendarWidget() {
               Yaklaşan Etkinlikler
             </h4>
             <div className="space-y-2">
-              {upcomingEvents.map(event => (
+              {upcomingEvents.map((event: any) => (
                 <div key={event.id} className="flex items-center gap-2 p-2 bg-gray-50 rounded text-sm">
                   <div className="flex-1">
                     <div className="font-medium">{event.title}</div>
@@ -218,7 +200,7 @@ export default function CalendarWidget() {
               Tatiller
             </h4>
             <div className="space-y-1">
-              {holidays.slice(0, 3).map(holiday => (
+              {holidays.slice(0, 3).map((holiday: any) => (
                 <div key={holiday.id} className="flex items-center gap-2 p-2 bg-red-50 rounded text-sm">
                   <div className="flex-1">
                     <div className="font-medium">{holiday.name}</div>
