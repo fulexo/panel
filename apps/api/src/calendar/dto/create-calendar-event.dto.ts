@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsDateString } from 'class-validator';
+import { IsString, IsOptional, IsDateString, IsBoolean } from 'class-validator';
 
 export class CreateCalendarEventDto {
   @IsString()
@@ -17,4 +17,8 @@ export class CreateCalendarEventDto {
 
   @IsDateString()
   endAt!: string;
+
+  @IsBoolean()
+  @IsOptional()
+  allDay?: boolean;
 }
