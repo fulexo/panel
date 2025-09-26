@@ -382,7 +382,7 @@ export default function ProductsPage() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-background">
+      <div className="bg-background">
         <main className="mobile-container py-6 space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
@@ -548,22 +548,22 @@ export default function ProductsPage() {
             </div>
           )}
 
-          <div className="bg-card p-6 rounded-lg border border-border">
-            <div className="flex items-center justify-between mb-4">
+          <div className="bg-card p-4 sm:p-6 rounded-lg border border-border">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-2">
               <h3 className="text-lg font-semibold text-foreground">All Products</h3>
               <ProtectedComponent permission="products.manage">
                 <div className="flex gap-2">
-                  <button className="btn btn-outline btn-sm">Export</button>
-                  <button className="btn btn-outline btn-sm">Import</button>
+                  <button className="btn btn-outline btn-sm text-xs">Export</button>
+                  <button className="btn btn-outline btn-sm text-xs">Import</button>
                 </div>
               </ProtectedComponent>
             </div>
             
             <div className="overflow-x-auto">
-              <table className="w-full">
+              <table className="w-full min-w-[800px]">
                 <thead>
                   <tr className="border-b border-border">
-                    <th className="text-left p-3">
+                    <th className="text-left p-2 sm:p-3">
                       <input
                         type="checkbox"
                         checked={selectedProducts.length === products.length && products.length > 0}
@@ -577,21 +577,21 @@ export default function ProductsPage() {
                         className="form-checkbox"
                       />
                     </th>
-                    <th className="text-left p-3">Product</th>
-                    <th className="text-left p-3">SKU</th>
-                    <th className="text-left p-3">Price</th>
-                    <th className="text-left p-3">Stock</th>
-                    <th className="text-left p-3">Status</th>
-                    {isAdmin() && <th className="text-left p-3">Store</th>}
+                    <th className="text-left p-2 sm:p-3 text-sm">Product</th>
+                    <th className="text-left p-2 sm:p-3 text-sm">SKU</th>
+                    <th className="text-left p-2 sm:p-3 text-sm">Price</th>
+                    <th className="text-left p-2 sm:p-3 text-sm">Stock</th>
+                    <th className="text-left p-2 sm:p-3 text-sm">Status</th>
+                    {isAdmin() && <th className="text-left p-2 sm:p-3 text-sm">Store</th>}
                     <ProtectedComponent permission="products.manage">
-                      <th className="text-left p-3">Actions</th>
+                      <th className="text-left p-2 sm:p-3 text-sm">Actions</th>
                     </ProtectedComponent>
                   </tr>
                 </thead>
                 <tbody>
                   {products.map((product: { id: string; name: string; sku: string; price: number; salePrice?: number; stockQuantity: number; category?: string; status: string; createdAt: string; store?: { name: string }; isBundle?: boolean; bundleProducts?: Array<{ id: string; product: { name: string; sku: string } }> }) => (
                     <tr key={product.id} className="border-b border-border">
-                      <td className="p-3">
+                      <td className="p-2 sm:p-3">
                         <input
                           type="checkbox"
                           checked={selectedProducts.includes(product.id)}
@@ -605,17 +605,17 @@ export default function ProductsPage() {
                           className="form-checkbox"
                         />
                       </td>
-                      <td className="p-3">
+                      <td className="p-2 sm:p-3">
                         <div>
-                          <div className="font-medium flex items-center gap-2">
-                            {product.name}
+                          <div className="font-medium flex items-center gap-2 text-sm">
+                            <span className="truncate max-w-[150px]">{product.name}</span>
                             {product.isBundle && (
-                              <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
+                              <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full flex-shrink-0">
                                 Bundle
                               </span>
                             )}
                           </div>
-                          <div className="text-sm text-muted-foreground">
+                          <div className="text-xs text-muted-foreground">
                             {product.category}
                             {product.isBundle && product.bundleProducts && (
                               <span className="ml-2">
@@ -625,17 +625,17 @@ export default function ProductsPage() {
                           </div>
                         </div>
                       </td>
-                      <td className="p-3">{product.sku}</td>
-                      <td className="p-3">
+                      <td className="p-2 sm:p-3 text-sm">{product.sku}</td>
+                      <td className="p-2 sm:p-3">
                         <div>
-                          <div className="font-medium">${product.price}</div>
+                          <div className="font-medium text-sm">${product.price}</div>
                           {product.salePrice && (
-                            <div className="text-sm text-green-600">Sale: ${product.salePrice}</div>
+                            <div className="text-xs text-green-600">Sale: ${product.salePrice}</div>
                           )}
                         </div>
                       </td>
-                      <td className="p-3">
-                        <div className={`font-medium ${
+                      <td className="p-2 sm:p-3">
+                        <div className={`font-medium text-sm ${
                           product.stockQuantity <= 10 ? 'text-red-600' : 
                           product.stockQuantity <= 50 ? 'text-yellow-600' : 
                           'text-green-600'
@@ -643,8 +643,8 @@ export default function ProductsPage() {
                           {product.stockQuantity}
                         </div>
                       </td>
-                      <td className="p-3">
-                        <span className={`px-2 py-1 rounded-full text-sm ${
+                      <td className="p-2 sm:p-3">
+                        <span className={`px-2 py-1 rounded-full text-xs ${
                           product.status === 'active' ? 'bg-green-100 text-green-800' :
                           product.status === 'draft' ? 'bg-yellow-100 text-yellow-800' :
                           'bg-gray-100 text-gray-800'
@@ -653,28 +653,28 @@ export default function ProductsPage() {
                         </span>
                       </td>
                       {isAdmin() && (
-                        <td className="p-3">{product.store?.name || 'N/A'}</td>
+                        <td className="p-2 sm:p-3 text-sm">{product.store?.name || 'N/A'}</td>
                       )}
                       <ProtectedComponent permission="products.manage">
-                        <td className="p-3">
-                          <div className="flex gap-2">
+                        <td className="p-2 sm:p-3">
+                          <div className="flex flex-col sm:flex-row gap-1">
                             <button 
                               onClick={() => handleEditProduct(product)}
-                              className="btn btn-sm btn-outline"
+                              className="btn btn-xs btn-outline"
                             >
                               Edit
                             </button>
                             {product.isBundle && (
                               <button 
                                 onClick={() => handleOpenBundleModal(product.id)}
-                                className="btn btn-sm btn-outline"
+                                className="btn btn-xs btn-outline"
                               >
-                                Manage Bundle
+                                Bundle
                               </button>
                             )}
                             <button 
                               onClick={() => deleteProduct.mutate(product.id)}
-                              className="btn btn-sm btn-destructive"
+                              className="btn btn-xs btn-destructive"
                             >
                               Delete
                             </button>
@@ -720,8 +720,8 @@ export default function ProductsPage() {
 
           {/* Create Product Modal */}
           {showCreateModal && (
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-              <div className="bg-card p-6 rounded-lg border border-border w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+              <div className="bg-card p-4 sm:p-6 rounded-lg border border-border w-full max-w-2xl max-h-[90vh] overflow-y-auto">
                 <h3 className="text-lg font-semibold text-foreground mb-4">Create Product</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
@@ -910,8 +910,8 @@ export default function ProductsPage() {
 
           {/* Edit Product Modal */}
           {editingProduct && (
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-              <div className="bg-card p-6 rounded-lg border border-border w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+              <div className="bg-card p-4 sm:p-6 rounded-lg border border-border w-full max-w-2xl max-h-[90vh] overflow-y-auto">
                 <h3 className="text-lg font-semibold text-foreground mb-4">Edit Product</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
@@ -1100,8 +1100,8 @@ export default function ProductsPage() {
 
           {/* Bundle Management Modal */}
           {showBundleModal && (
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-              <div className="bg-card p-6 rounded-lg border border-border w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+              <div className="bg-card p-4 sm:p-6 rounded-lg border border-border w-full max-w-4xl max-h-[90vh] overflow-y-auto">
                 <h3 className="text-lg font-semibold text-foreground mb-4">Manage Bundle Items</h3>
                 
                 <div className="space-y-4">

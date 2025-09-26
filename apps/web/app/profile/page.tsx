@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import { User, Shield, Settings } from 'lucide-react';
 import { logger } from "@/lib/logger";
 
 export default function ProfilePage() {
@@ -40,9 +41,9 @@ export default function ProfilePage() {
   });
 
   const tabs = [
-    { id: "personal", label: "Kişisel Bilgiler", icon: "👤" },
-    { id: "security", label: "Güvenlik", icon: "🔒" },
-    { id: "preferences", label: "Tercihler", icon: "⚙️" },
+    { id: "personal", label: "Kişisel Bilgiler", icon: User },
+    { id: "security", label: "Güvenlik", icon: Shield },
+    { id: "preferences", label: "Tercihler", icon: Settings },
   ];
 
   const handleSave = (section: string) => {
@@ -81,20 +82,23 @@ export default function ProfilePage() {
             <div className="lg:col-span-1">
               <div className="bg-card p-4 rounded-lg border border-border">
                 <nav className="space-y-2">
-                  {tabs.map((tab) => (
-                    <button
-                      key={tab.id}
-                      onClick={() => setActiveTab(tab.id)}
-                      className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
-                        activeTab === tab.id
-                          ? "bg-primary text-primary-foreground"
-                          : "hover:bg-accent text-foreground"
-                      }`}
-                    >
-                      <span className="text-lg">{tab.icon}</span>
-                      <span className="font-medium">{tab.label}</span>
-                    </button>
-                  ))}
+                  {tabs.map((tab) => {
+                    const IconComponent = tab.icon as React.ComponentType<{ className?: string }>;
+                    return (
+                      <button
+                        key={tab.id}
+                        onClick={() => setActiveTab(tab.id)}
+                        className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
+                          activeTab === tab.id
+                            ? "bg-primary text-primary-foreground"
+                            : "hover:bg-accent text-foreground"
+                        }`}
+                      >
+                        <IconComponent className="w-5 h-5" />
+                        <span className="font-medium">{tab.label}</span>
+                      </button>
+                    );
+                  })}
                 </nav>
               </div>
             </div>

@@ -6,6 +6,7 @@ import { useState } from "react";
 import { useParams } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
 import { useRBAC } from "@/hooks/useRBAC";
+import { Package } from 'lucide-react';
 import { useReturn, useUpdateReturnStatus } from "@/hooks/useApi";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import ProtectedComponent from "@/components/ProtectedComponent";
@@ -169,7 +170,7 @@ export default function ReturnDetailPage() {
                   {returnData.items.map((item) => (
                     <div key={item.id} className="flex items-center gap-4 p-4 border border-border rounded-lg">
                       <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center">
-                        <span className="text-2xl">📦</span>
+                        <Package className="w-8 h-8 text-gray-600" />
                       </div>
                       <div className="flex-1">
                         <h4 className="font-medium">{item.productName}</h4>

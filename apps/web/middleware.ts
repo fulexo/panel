@@ -8,12 +8,18 @@ export function middleware(request: NextRequest) {
   const userCookie = request.cookies.get('user');
   const accessToken = request.cookies.get('access_token');
   
+  console.log('Middleware - pathname:', pathname);
+  console.log('Middleware - userCookie:', userCookie?.value);
+  console.log('Middleware - accessToken:', accessToken?.value);
+  
   let user = null;
   try {
     if (userCookie?.value) {
       user = JSON.parse(userCookie.value);
+      console.log('Middleware - parsed user:', user);
     }
-  } catch {
+  } catch (error) {
+    console.log('Middleware - cookie parse error:', error);
     // Invalid user cookie, clear it
   }
 
@@ -54,6 +60,7 @@ export function middleware(request: NextRequest) {
 
   // Redirect unauthenticated users to login
   if (!isPublicRoute && !user && !accessToken) {
+    console.log('Middleware - Redirecting to login. isPublicRoute:', isPublicRoute, 'user:', user, 'accessToken:', accessToken);
     const loginUrl = new URL('/login', request.url);
     loginUrl.searchParams.set('from', pathname);
     return NextResponse.redirect(loginUrl);

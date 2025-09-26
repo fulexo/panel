@@ -3,7 +3,6 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AuthContextType, User } from '@/types/auth';
-import { ApiResponse } from '@/types/api';
 import { AuthUtils } from '@/lib/auth-utils';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -19,39 +18,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const checkAuth = async () => {
     try {
-      // Use the frontend API route which will forward to backend
       const response = await fetch('/api/auth/me', {
         method: 'GET',
-        credentials: 'include', // Include httpOnly cookies
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         },
       });
 
       if (response.ok) {
-        const userData: ApiResponse<User> = await response.json();
-        setUser(userData.data);
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          const data = await response.json();
+          console.log('Auth check successful:', data);
+          setUser(data.data || data);
+        } else {
+          console.log('Auth check failed: Invalid response format');
+          setUser(null);
+        }
       } else {
-        // If auth fails, clear any local data and redirect to login
-        await AuthUtils.clearTokens();
+        console.log('Auth check failed:', response.status);
         setUser(null);
       }
     } catch (error) {
-      // Log error to monitoring service instead of console
-      if (typeof window !== 'undefined') {
-        fetch('/api/errors', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            type: 'auth_check_failed',
-            message: error instanceof Error ? error.message : 'Unknown error',
-            stack: error instanceof Error ? error.stack : undefined,
-            timestamp: new Date().toISOString(),
-            url: window.location.href,
-          }),
-        }).catch(() => {}); // Silent fail for error logging
-      }
-      await AuthUtils.clearTokens();
+      console.log('Auth check error:', error);
       setUser(null);
     } finally {
       setLoading(false);
@@ -60,24 +50,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (email: string, password: string) => {
     try {
+      console.log('Starting login process...');
       const response = await fetch('/api/auth/login', {
         method: 'POST',
-        credentials: 'include', // Include httpOnly cookies
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ email, password }),
       });
 
+      console.log('Login response status:', response.status);
+
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || errorData.error || 'Login failed');
+        console.log('Login error data:', errorData);
+        throw new Error(errorData.error || errorData.message || 'Login failed');
       }
 
       const data = await response.json();
+      console.log('Login response data:', data);
       
       if (data.requiresTwoFactor) {
-        // tempToken'ı güvenli şekilde sakla - localStorage kullan (2FA sayfası localStorage'dan okuyor)
         if (data.tempToken) {
           if (typeof window !== 'undefined') {
             localStorage.setItem('temp_2fa_token', data.tempToken);
@@ -86,25 +80,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw new Error('2FA_REQUIRED');
       }
 
-      // Tokens are now set as httpOnly cookies by the server
-      // We just need to set the user data locally
+      if (!data.success || !data.data) {
+        throw new Error('Invalid response from server');
+      }
+
+      console.log('Setting user data:', data.data);
       setUser(data.data);
+      
+      // Set user cookie for middleware
+      if (typeof window !== 'undefined') {
+        const cookieValue = JSON.stringify(data.data);
+        document.cookie = `user=${cookieValue}; path=/; max-age=86400; SameSite=Strict`;
+        console.log('User cookie set:', cookieValue);
+      }
+      
+      console.log('Login successful, navigating to dashboard...');
+      
+      // Navigate immediately without setTimeout
       router.push('/dashboard');
     } catch (error) {
-      // Log error to monitoring service
-      if (typeof window !== 'undefined') {
-        fetch('/api/errors', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            type: 'login_error',
-            message: error instanceof Error ? error.message : 'Unknown error',
-            stack: error instanceof Error ? error.stack : undefined,
-            timestamp: new Date().toISOString(),
-            url: window.location.href,
-          }),
-        }).catch(() => {}); // Silent fail for error logging
-      }
+      console.error('Login error:', error);
       throw error;
     }
   };
@@ -136,6 +131,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     
     await AuthUtils.clearTokens();
     setUser(null);
+    
+    // Clear user cookie
+    if (typeof window !== 'undefined') {
+      document.cookie = 'user=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+      console.log('User cookie cleared');
+    }
+    
     router.push('/login');
   };
 

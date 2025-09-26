@@ -14,8 +14,17 @@ export default function ProtectedRoute({ children, fallback }: ProtectedRoutePro
   const router = useRouter();
 
   useEffect(() => {
+    console.log('ProtectedRoute - user:', user, 'loading:', loading);
     if (!loading && !user) {
-      router.push('/login');
+      console.log('ProtectedRoute - No user, redirecting to login');
+      // Add a small delay to prevent immediate redirect during login
+      setTimeout(() => {
+        if (!user) {
+          router.push('/login');
+        }
+      }, 200);
+    } else if (!loading && user) {
+      console.log('ProtectedRoute - User authenticated, allowing access');
     }
   }, [user, loading, router]);
 

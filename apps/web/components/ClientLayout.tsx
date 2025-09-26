@@ -44,7 +44,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
       <ProtectedRoute>
         <div className="min-h-screen bg-background text-foreground">
         {/* Mobile Header */}
-        <div className="lg:hidden bg-card border-b border-border sticky top-0 z-40">
+        <div className="lg:hidden bg-card border-b border-border fixed top-0 left-0 right-0 z-40">
           <div className="mobile-container py-3 flex items-center justify-between">
             <button
               onClick={() => setSidebarOpen(true)}
@@ -61,44 +61,31 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
           </div>
         </div>
 
-        {/* Desktop Header */}
-        <div className="hidden lg:block bg-card border-b border-border sticky top-0 z-30">
+        {/* Desktop Header - Sadece search ve user info */}
+        <div className="hidden lg:block bg-card border-b border-border fixed top-0 z-50" style={{ left: desktopSidebarCollapsed ? '64px' : '320px', right: '0' }}>
           <div className="flex items-center justify-between px-6 py-3">
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="p-2 rounded-md hover:bg-accent transition-colors"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-              </button>
-              <Link href="/dashboard" className="font-bold text-xl text-foreground">
-                Fulexo
-              </Link>
+            <div className="flex-1 max-w-md mx-8">
+              {/* Search Bar */}
+              <form action="/search" className="w-full">
+                <div className="relative">
+                  <input 
+                    name="q" 
+                    placeholder="Search orders, products, customers..."
+                    aria-label="Search orders, products, customers" 
+                    className="w-full px-4 py-2 pl-10 bg-input border border-border rounded-lg form-input text-foreground placeholder-muted-foreground" 
+                  />
+                  <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+              </form>
             </div>
-            
-            {/* Search Bar */}
-            <form action="/search" className="flex-1 max-w-md mx-8">
-              <div className="relative">
-                <input 
-                  name="q" 
-                  placeholder="Search orders, products, customers..."
-                  aria-label="Search orders, products, customers" 
-                  className="w-full px-4 py-2 pl-10 bg-input border border-border rounded-lg form-input text-foreground placeholder-muted-foreground" 
-                />
-                <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-              </div>
-            </form>
-
             {/* User Info */}
             <div className="flex items-center gap-3">
               <ThemeToggle />
               <div className="text-right">
-                <div className="text-sm font-medium text-primary">{user?.email}</div>
-                <div className="text-xs text-muted">{user?.role?.replace('_', ' ')}</div>
+                <div className="text-sm font-medium text-foreground">{user?.email}</div>
+                <div className="text-xs text-muted-foreground font-medium">{user?.role?.replace('_', ' ')}</div>
               </div>
               <Link 
                 href="/profile"
@@ -119,7 +106,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
         />
 
         {/* Main Content */}
-        <main className={`transition-all duration-300 ease-in-out ${desktopSidebarCollapsed ? 'lg:ml-16' : 'lg:ml-80'}`}>
+        <main className={`transition-all duration-300 ease-in-out ${desktopSidebarCollapsed ? 'lg:ml-16' : 'lg:ml-80'} pt-20 lg:pt-16 min-h-screen`} style={{ marginLeft: desktopSidebarCollapsed ? '64px' : '320px' }}>
           {children}
         </main>
         </div>

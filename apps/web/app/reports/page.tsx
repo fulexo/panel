@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import { useRBAC } from "@/hooks/useRBAC";
+import { BarChart3, DollarSign, Package, Users, ClipboardList, CreditCard } from 'lucide-react';
 import { 
   useDashboardStats, 
   useSalesReport, 
@@ -20,12 +21,12 @@ export default function ReportsPage() {
   const [dateRange, setDateRange] = useState("30d");
 
   const tabs = [
-    { id: "overview", label: "Genel Bakış", icon: "📊" },
-    { id: "sales", label: "Satış Raporları", icon: "💰" },
-    { id: "products", label: "Ürün Raporları", icon: "📦" },
-    { id: "customers", label: "Müşteri Raporları", icon: "👥" },
-    { id: "inventory", label: "Stok Raporları", icon: "📋" },
-    { id: "financial", label: "Mali Raporlar", icon: "💳" },
+    { id: "overview", label: "Genel Bakış", icon: BarChart3 },
+    { id: "sales", label: "Satış Raporları", icon: DollarSign },
+    { id: "products", label: "Ürün Raporları", icon: Package },
+    { id: "customers", label: "Müşteri Raporları", icon: Users },
+    { id: "inventory", label: "Stok Raporları", icon: ClipboardList },
+    { id: "financial", label: "Mali Raporlar", icon: CreditCard },
   ];
 
   // Get user's store ID for customer view
@@ -173,7 +174,10 @@ export default function ReportsPage() {
                           : "hover:bg-accent text-foreground"
                       }`}
                     >
-                      <span className="text-lg">{tab.icon}</span>
+                      {(() => {
+                        const IconComponent = tab.icon as React.ComponentType<{ className?: string }>;
+                        return <IconComponent className="w-5 h-5" />;
+                      })()}
                       <span className="font-medium">{tab.label}</span>
                     </button>
                   ))}

@@ -6,6 +6,7 @@ import { useState } from "react";
 import { useParams } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
 import { useRBAC } from "@/hooks/useRBAC";
+import { Package, ClipboardList, Users } from 'lucide-react';
 import { useStore, useUpdateStore, useDeleteStore, useSyncStore, useTestStoreConnection, useStoreStats, useStoreSyncLogs } from "@/hooks/useApi";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import ProtectedComponent from "@/components/ProtectedComponent";
@@ -306,10 +307,10 @@ export default function StoreDetailPage() {
                   {displaySyncLogs.map((log) => (
                     <div key={log.id} className="flex items-center justify-between p-3 border border-border rounded-lg">
                       <div className="flex items-center gap-3">
-                        <span className="text-lg">
-                          {log.type === 'products' ? '📦' : 
-                           log.type === 'orders' ? '📋' : '👥'}
-                        </span>
+                        <div className="text-lg">
+                          {log.type === 'products' ? <Package className="w-5 h-5" /> : 
+                           log.type === 'orders' ? <ClipboardList className="w-5 h-5" /> : <Users className="w-5 h-5" />}
+                        </div>
                         <div>
                           <p className="font-medium capitalize">{log.type}</p>
                           <p className="text-sm text-muted-foreground">{log.timestamp}</p>

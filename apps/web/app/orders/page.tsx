@@ -53,7 +53,7 @@ export default function OrdersPage() {
   if (isLoading) {
     return (
       <ProtectedRoute>
-        <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="bg-background flex items-center justify-center py-20">
           <div className="flex flex-col items-center gap-4">
             <div className="spinner"></div>
             <div className="text-lg text-foreground">Loading orders...</div>
@@ -77,7 +77,7 @@ export default function OrdersPage() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-background">
+      <div className="bg-background">
         <main className="mobile-container py-6 space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
@@ -86,34 +86,34 @@ export default function OrdersPage() {
                 {isAdmin() ? 'Manage all orders across all stores' : 'View your store orders'}
               </p>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <ProtectedComponent permission="orders.manage">
-                <button className="btn btn-primary">
+                <button className="btn btn-primary text-sm">
                   Create Order
                 </button>
               </ProtectedComponent>
               <ProtectedComponent permission="orders.create">
-                <Link href="/orders/create" className="btn btn-outline">
+                <Link href="/orders/create" className="btn btn-outline text-sm">
                   New Customer Order
                 </Link>
               </ProtectedComponent>
               <ProtectedComponent permission="orders.approve">
-                <Link href="/orders/approvals" className="btn btn-warning">
+                <Link href="/orders/approvals" className="btn btn-warning text-sm">
                   Pending Approvals
                 </Link>
               </ProtectedComponent>
               <ProtectedComponent permission="shipping.manage">
-                <Link href="/shipping" className="btn btn-outline">
+                <Link href="/shipping" className="btn btn-outline text-sm">
                   Shipping Prices
                 </Link>
               </ProtectedComponent>
               <ProtectedComponent permission="inventory.manage">
-                <Link href="/inventory" className="btn btn-outline">
+                <Link href="/inventory" className="btn btn-outline text-sm">
                   Inventory Management
                 </Link>
               </ProtectedComponent>
               <ProtectedComponent permission="inventory.approve">
-                <Link href="/inventory/approvals" className="btn btn-warning">
+                <Link href="/inventory/approvals" className="btn btn-warning text-sm">
                   Inventory Approvals
                 </Link>
               </ProtectedComponent>
@@ -202,31 +202,31 @@ export default function OrdersPage() {
             </div>
           </div>
 
-          <div className="bg-card p-6 rounded-lg border border-border">
+          <div className="bg-card p-4 sm:p-6 rounded-lg border border-border">
             <h3 className="text-lg font-semibold text-foreground mb-4">All Orders</h3>
             <div className="overflow-x-auto">
-              <table className="w-full">
+              <table className="w-full min-w-[600px]">
                 <thead>
                   <tr className="border-b border-border">
-                    <th className="text-left p-3">Order #</th>
-                    <th className="text-left p-3">Customer</th>
-                    <th className="text-left p-3">Status</th>
-                    <th className="text-left p-3">Total</th>
-                    <th className="text-left p-3">Date</th>
+                    <th className="text-left p-2 sm:p-3 text-sm">Order #</th>
+                    <th className="text-left p-2 sm:p-3 text-sm">Customer</th>
+                    <th className="text-left p-2 sm:p-3 text-sm">Status</th>
+                    <th className="text-left p-2 sm:p-3 text-sm">Total</th>
+                    <th className="text-left p-2 sm:p-3 text-sm">Date</th>
                     <ProtectedComponent permission="orders.manage">
-                      <th className="text-left p-3">Actions</th>
+                      <th className="text-left p-2 sm:p-3 text-sm">Actions</th>
                     </ProtectedComponent>
                   </tr>
                 </thead>
                 <tbody>
                   {orders.map((order: { id: string; orderNumber: string; status: string; total: number; createdAt: string; customerEmail: string; billingInfo?: { first_name: string; last_name: string } }) => (
                     <tr key={order.id} className="border-b border-border">
-                      <td className="p-3">#{order.orderNumber}</td>
-                      <td className="p-3">
+                      <td className="p-2 sm:p-3 text-sm">#{order.orderNumber}</td>
+                      <td className="p-2 sm:p-3 text-sm">
                         {order.billingInfo?.first_name} {order.billingInfo?.last_name}
                       </td>
-                      <td className="p-3">
-                        <span className={`px-2 py-1 rounded-full text-sm ${
+                      <td className="p-2 sm:p-3">
+                        <span className={`px-2 py-1 rounded-full text-xs ${
                           order.status === 'completed' ? 'bg-green-100 text-green-800' :
                           order.status === 'processing' ? 'bg-yellow-100 text-yellow-800' :
                           order.status === 'cancelled' ? 'bg-red-100 text-red-800' :
@@ -235,23 +235,25 @@ export default function OrdersPage() {
                           {order.status}
                         </span>
                       </td>
-                      <td className="p-3">${order.total}</td>
-                      <td className="p-3">
+                      <td className="p-2 sm:p-3 text-sm">${order.total}</td>
+                      <td className="p-2 sm:p-3 text-sm">
                         {new Date(order.createdAt).toLocaleDateString()}
                       </td>
                       <ProtectedComponent permission="orders.manage">
-                        <td className="p-3">
-                          <button className="btn btn-sm btn-outline mr-2">View</button>
-                          <select
-                            value={order.status}
-                            onChange={(e) => handleStatusUpdate(order.id, e.target.value)}
-                            className="btn btn-sm btn-outline mr-2"
-                          >
-                            <option value="pending">Pending</option>
-                            <option value="processing">Processing</option>
-                            <option value="completed">Completed</option>
-                            <option value="cancelled">Cancelled</option>
-                          </select>
+                        <td className="p-2 sm:p-3">
+                          <div className="flex flex-col sm:flex-row gap-1">
+                            <button className="btn btn-xs btn-outline">View</button>
+                            <select
+                              value={order.status}
+                              onChange={(e) => handleStatusUpdate(order.id, e.target.value)}
+                              className="btn btn-xs btn-outline text-xs"
+                            >
+                              <option value="pending">Pending</option>
+                              <option value="processing">Processing</option>
+                              <option value="completed">Completed</option>
+                              <option value="cancelled">Cancelled</option>
+                            </select>
+                          </div>
                         </td>
                       </ProtectedComponent>
                     </tr>

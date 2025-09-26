@@ -2,10 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(request: NextRequest) {
   try {
-    // Forward the request to the backend API
-    const response = await fetch(`${process.env['NEXT_PUBLIC_API_BASE'] || 'http://localhost:3000'}/api/auth/me`, {
+    // Direct call to backend API
+    const response = await fetch('http://localhost:3000/api/auth/me', {
       method: 'GET',
-      credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
         // Forward all cookies from the original request
@@ -22,7 +21,8 @@ export async function GET(request: NextRequest) {
 
     const data = await response.json();
     return NextResponse.json(data);
-  } catch {
+  } catch (error) {
+    console.error('Auth me error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

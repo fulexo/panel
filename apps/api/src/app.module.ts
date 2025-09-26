@@ -42,10 +42,12 @@ import { envValidationSchema } from './config/env.validation';
 import { CookieAuthMiddleware } from './common/middleware/cookie-auth.middleware';
 import { MonitoringService } from './common/services/monitoring.service';
 import { MonitoringModule } from './monitoring/monitoring.module';
+import { ReportsModule } from './reports/reports.module';
 import { SettingsModule } from './modules/settings/settings.module';
 import { FileUploadModule } from './modules/file-upload/file-upload.module';
 import { JobService } from './jobs/job.service';
 import { HealthService } from './health/health.service';
+import { EnvService } from './config/env.service';
 
 /**
  * Main application module that configures the entire Fulexo API
@@ -110,6 +112,7 @@ import { HealthService } from './health/health.service';
     CacheModule,
     AuditModule,
     MonitoringModule,
+    ReportsModule,
     SettingsModule,
     FileUploadModule,
   ],
@@ -118,6 +121,7 @@ import { HealthService } from './health/health.service';
     MonitoringService,
     JobService,
     HealthService,
+    EnvService,
     {
       provide: APP_FILTER,
       useClass: GlobalExceptionFilter,

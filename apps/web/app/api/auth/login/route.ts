@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('Login endpoint called');
     const { email, password } = await request.json();
+    console.log('Email:', email);
 
     if (!email || !password) {
       return NextResponse.json(
@@ -12,77 +13,64 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Call the backend login endpoint
-    const response = await fetch(`${process.env['NEXT_PUBLIC_API_BASE'] || 'http://localhost:3000'}/api/auth/login`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ email, password }),
-      credentials: 'include', // Include cookies from backend
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
+    // Check if backend is running
+    let backendResponse;
+    try {
+      console.log('Calling backend API...');
+      backendResponse = await fetch('http://localhost:3000/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+    } catch (fetchError) {
+      console.error('Backend connection error:', fetchError);
       return NextResponse.json(
-        { error: errorData.message || 'Login failed' },
-        { status: response.status }
+        { error: 'Backend service is not available. Please check if API server is running.' },
+        { status: 503 }
       );
     }
 
-    const data = await response.json();
+    console.log('Backend response status:', backendResponse.status);
 
-    // Forward cookies from backend response
-    const cookieStore = cookies();
-    const setCookieHeaders = response.headers.get('set-cookie');
-    
-    if (setCookieHeaders) {
-      // Parse and forward backend cookies
-      const cookies = setCookieHeaders.split(',').map(cookie => cookie.trim());
-      for (const cookie of cookies) {
-        const [nameValue, ...options] = cookie.split(';');
-        if (!nameValue) continue;
-        const [name, value] = nameValue.split('=');
-        
-        if (name && value) {
-          const cookieOptions: Record<string, unknown> = {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'strict',
-            path: '/',
-          };
-          
-          // Parse cookie options
-          for (const option of options) {
-            const [optName, optValue] = option.trim().split('=');
-            if (!optName) continue;
-            switch (optName.toLowerCase()) {
-              case 'max-age':
-                if (optValue) cookieOptions['maxAge'] = parseInt(optValue, 10);
-                break;
-              case 'expires':
-                if (optValue) cookieOptions['expires'] = new Date(optValue);
-                break;
-              case 'domain':
-                cookieOptions['domain'] = optValue;
-                break;
-            }
-          }
-          
-          cookieStore.set(name, value, cookieOptions);
-        }
+    if (!backendResponse.ok) {
+      let errorData;
+      try {
+        errorData = await backendResponse.json();
+      } catch {
+        errorData = { message: 'Backend returned an error' };
       }
+      console.log('Backend error:', errorData);
+      return NextResponse.json(
+        { error: errorData.message || 'Login failed' },
+        { status: backendResponse.status }
+      );
     }
 
-    // Return the response without sensitive data
-    return NextResponse.json({
+    const data = await backendResponse.json();
+    console.log('Backend success data:', data);
+
+    // Set cookies for authentication
+    const response = NextResponse.json({
       success: data.success,
       data: data.data,
       message: data.message,
       requiresTwoFactor: data.data?.requiresTwoFactor,
       tempToken: data.data?.tempToken,
     });
-  } catch {
+
+    // Copy Set-Cookie headers from backend
+    const setCookieHeaders = backendResponse.headers.getSetCookie();
+    if (setCookieHeaders && setCookieHeaders.length > 0) {
+      setCookieHeaders.forEach(cookie => {
+        response.headers.append('Set-Cookie', cookie);
+      });
+    }
+
+    return response;
+  } catch (error) {
+    console.error('Login error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

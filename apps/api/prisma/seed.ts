@@ -45,6 +45,18 @@ async function main() {
   });
   console.log('✅ Created customer user:', customer.email);
 
+  // Create default store
+  const store = await prisma.store.create({
+    data: {
+      customerId: customer.id,
+      name: 'Demo Store',
+      url: 'https://demo-store.com',
+      consumerKey: 'demo_key',
+      consumerSecret: 'demo_secret',
+      status: 'connected',
+    },
+  });
+  console.log('✅ Created default store:', store.name);
 
   // Create default policy
   const policy = await prisma.policy.create({
@@ -83,7 +95,7 @@ async function main() {
   console.log('✅ Created default policy:', policy.name);
 
   // Create sample ownership rule
-  const rule = await prisma.ownershipRule.create({
+  await prisma.ownershipRule.create({
     data: {
       tenantId: tenant.id,
       entityType: 'order',
@@ -128,7 +140,10 @@ async function main() {
 
   for (const customerData of sampleCustomers) {
     const customer = await prisma.customer.create({
-      data: customerData,
+      data: {
+        ...customerData,
+        storeId: store.id,
+      },
     });
     console.log('✅ Created sample customer:', customer.name);
   }
@@ -157,7 +172,11 @@ async function main() {
 
   for (const productData of sampleProducts) {
     const product = await prisma.product.create({
-      data: productData,
+      data: {
+        ...productData,
+        storeId: store.id,
+        regularPrice: productData.price,
+      },
     });
     console.log('✅ Created sample product:', product.name);
   }

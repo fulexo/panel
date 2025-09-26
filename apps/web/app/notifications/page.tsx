@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import { Package, ClipboardList, User, Settings, RotateCcw, Bell } from 'lucide-react';
 
 export default function NotificationsPage() {
   useAuth();
@@ -120,12 +121,12 @@ export default function NotificationsPage() {
 
   const getTypeIcon = (type: string) => {
     switch (type) {
-      case "order": return "📦";
-      case "inventory": return "📋";
-      case "customer": return "👤";
-      case "system": return "⚙️";
-      case "return": return "↩️";
-      default: return "🔔";
+      case "order": return Package;
+      case "inventory": return ClipboardList;
+      case "customer": return User;
+      case "system": return Settings;
+      case "return": return RotateCcw;
+      default: return Bell;
     }
   };
 
@@ -185,7 +186,7 @@ export default function NotificationsPage() {
                 <div className="divide-y divide-border">
                   {filteredNotifications.length === 0 ? (
                     <div className="p-8 text-center text-muted-foreground">
-                      <div className="text-4xl mb-4">🔔</div>
+                      <Bell className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
                       <p>No notifications found</p>
                     </div>
                   ) : (
@@ -198,7 +199,10 @@ export default function NotificationsPage() {
                       >
                         <div className="flex items-start gap-4">
                           <div className="text-2xl">
-                            {getTypeIcon(notification.type)}
+                            {(() => {
+                              const IconComponent = getTypeIcon(notification.type) as React.ComponentType<{ className?: string }>;
+                              return <IconComponent className="w-6 h-6" />;
+                            })()}
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-1">
@@ -318,7 +322,10 @@ export default function NotificationsPage() {
 
                   {/* Push Notifications */}
                   <div>
-                    <h4 className="font-medium text-foreground mb-3">🔔 Push Notifications</h4>
+                    <h4 className="font-medium text-foreground mb-3 flex items-center gap-2">
+                      <Bell className="w-4 h-4" />
+                      Push Notifications
+                    </h4>
                     <div className="space-y-3">
                       <label className="flex items-center gap-3">
                         <input

@@ -72,7 +72,7 @@ export default function CustomersPage() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-background">
+      <div className="bg-background">
         <main className="mobile-container py-6 space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>

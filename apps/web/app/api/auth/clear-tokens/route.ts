@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const API_BASE = process.env['NEXT_PUBLIC_API_BASE'] || 'http://localhost:3000';
-
 export async function POST(_request: NextRequest) {
   try {
-    const response = await fetch(`${API_BASE}/api/auth/clear-tokens`, {
+    const response = await fetch('http://localhost:3000/api/auth/clear-tokens', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -29,7 +27,8 @@ export async function POST(_request: NextRequest) {
     }
     
     return nextResponse;
-  } catch {
+  } catch (error) {
+    console.error('Clear tokens error:', error);
     return NextResponse.json(
       { error: 'Internal Server Error' },
       { status: 500 }

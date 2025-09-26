@@ -25,6 +25,8 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
     restart: unless-stopped
 
   valkey:
@@ -32,6 +34,8 @@ services:
     command: ["valkey-server", "--appendonly", "yes"]
     volumes:
       - valkeydata:/data
+    ports:
+      - "6380:6379"
     restart: unless-stopped
 
   minio:
@@ -47,7 +51,8 @@ services:
 
   api:
     build: 
-      context: ../apps/api
+      context: ..
+      dockerfile: apps/api/Dockerfile
       args:
         - NODE_ENV=production
     env_file: ${ENV_FILE:-.env}
@@ -71,8 +76,8 @@ services:
 
   web:
     build:
-      context: ../apps/web
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: apps/web/Dockerfile
       args:
         - NODE_ENV=production
     env_file: ${ENV_FILE:-.env}

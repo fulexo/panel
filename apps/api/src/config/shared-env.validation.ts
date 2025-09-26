@@ -1,5 +1,5 @@
 import { plainToClass } from 'class-transformer';
-import { IsString, IsEnum, IsOptional, validateSync, MinLength, IsPort, IsUrl } from 'class-validator';
+import { IsString, IsEnum, IsOptional, validateSync, MinLength, IsPort } from 'class-validator';
 import { Logger } from '@nestjs/common';
 
 enum Environment {
@@ -35,30 +35,24 @@ export class SharedEnvironmentVariables {
 
   // Domains
   @IsString()
-  @IsUrl()
   DOMAIN_API!: string;
 
   @IsString()
-  @IsUrl()
   DOMAIN_APP!: string;
 
   // Frontend URLs
   @IsString()
-  @IsUrl()
   NEXT_PUBLIC_API_BASE!: string;
 
   @IsString()
-  @IsUrl()
   NEXT_PUBLIC_APP_URL!: string;
 
   @IsString()
   @IsOptional()
-  @IsUrl()
   SHARE_BASE_URL?: string;
 
   // S3/MinIO
   @IsString()
-  @IsUrl()
   S3_ENDPOINT!: string;
 
   @IsString()

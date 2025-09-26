@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Clear frontend cookies regardless of backend response
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     
     // Clear all auth-related cookies
     cookieStore.delete('access_token');
@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
     });
   } catch {
     // Even if there's an error, clear cookies
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     cookieStore.delete('access_token');
     cookieStore.delete('refresh_token');
     cookieStore.delete('user');

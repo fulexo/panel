@@ -1,4 +1,4 @@
-const API_BASE_URL = process.env['NEXT_PUBLIC_API_URL'] || 'http://localhost:3001';
+const API_BASE_URL = process.env['NEXT_PUBLIC_API_BASE'] || 'http://localhost:3000';
 
 class ApiError extends Error {
   constructor(
@@ -75,20 +75,20 @@ class ApiClient {
 
   // Auth endpoints
   async login(email: string, password: string) {
-    return this.request('/auth/login', {
+    return this.request('/api/auth/login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     });
   }
 
   async logout() {
-    return this.request('/auth/logout', {
+    return this.request('/api/auth/logout', {
       method: 'POST',
     });
   }
 
   async getMe() {
-    return this.request('/auth/me');
+    return this.request('/api/auth/me');
   }
 
   // Stores endpoints
@@ -99,11 +99,11 @@ class ApiClient {
     if (params?.search) searchParams.set('search', params.search);
     
     const queryString = searchParams.toString();
-    return this.request(`/stores${queryString ? `?${queryString}` : ''}`);
+    return this.request(`/api/stores${queryString ? `?${queryString}` : ''}`);
   }
 
   async getStore(id: string) {
-    return this.request(`/stores/${id}`);
+    return this.request(`/api/stores/${id}`);
   }
 
   async createStore(data: {
@@ -113,7 +113,7 @@ class ApiClient {
     consumerSecret: string;
     customerId: string;
   }) {
-    return this.request('/stores', {
+    return this.request('/api/stores', {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -125,32 +125,32 @@ class ApiClient {
     consumerKey?: string;
     consumerSecret?: string;
   }) {
-    return this.request(`/stores/${id}`, {
+    return this.request(`/api/stores/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     });
   }
 
   async deleteStore(id: string) {
-    return this.request(`/stores/${id}`, {
+    return this.request(`/api/stores/${id}`, {
       method: 'DELETE',
     });
   }
 
   async syncStore(id: string) {
-    return this.request(`/stores/${id}/sync`, {
+    return this.request(`/api/stores/${id}/sync`, {
       method: 'POST',
     });
   }
 
   async testStoreConnection(id: string) {
-    return this.request(`/stores/${id}/test-connection`, {
+    return this.request(`/api/stores/${id}/test-connection`, {
       method: 'POST',
     });
   }
 
   async getStoreStatus(id: string) {
-    return this.request(`/stores/${id}/status`);
+    return this.request(`/api/stores/${id}/status`);
   }
 
   // Orders endpoints
@@ -169,15 +169,15 @@ class ApiClient {
     if (params?.storeId) searchParams.set('storeId', params.storeId);
     
     const queryString = searchParams.toString();
-    return this.request(`/orders${queryString ? `?${queryString}` : ''}`);
+    return this.request(`/api/orders${queryString ? `?${queryString}` : ''}`);
   }
 
   async getOrder(id: string) {
-    return this.request(`/orders/${id}`);
+    return this.request(`/api/orders/${id}`);
   }
 
   async updateOrderStatus(id: string, status: string) {
-    return this.request(`/orders/${id}/status`, {
+    return this.request(`/api/orders/${id}/status`, {
       method: 'PUT',
       body: JSON.stringify({ status }),
     });
@@ -188,7 +188,7 @@ class ApiClient {
     carrier?: string;
     status?: string;
   }) {
-    return this.request(`/orders/${id}/shipping`, {
+    return this.request(`/api/orders/${id}/shipping`, {
       method: 'PUT',
       body: JSON.stringify(data),
     });
@@ -210,11 +210,11 @@ class ApiClient {
     if (params?.category) searchParams.set('category', params.category);
     
     const queryString = searchParams.toString();
-    return this.request(`/products${queryString ? `?${queryString}` : ''}`);
+    return this.request(`/api/products${queryString ? `?${queryString}` : ''}`);
   }
 
   async getProduct(id: string) {
-    return this.request(`/products/${id}`);
+    return this.request(`/api/products/${id}`);
   }
 
   async createProduct(data: {
@@ -245,7 +245,7 @@ class ApiClient {
     maxBundleItems?: number;
     bundleStock?: 'parent' | 'children' | 'both';
   }) {
-    return this.request('/products', {
+    return this.request('/api/products', {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -279,14 +279,14 @@ class ApiClient {
     maxBundleItems?: number;
     bundleStock?: 'parent' | 'children' | 'both';
   }) {
-    return this.request(`/products/${id}`, {
+    return this.request(`/api/products/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     });
   }
 
   async deleteProduct(id: string) {
-    return this.request(`/products/${id}`, {
+    return this.request(`/api/products/${id}`, {
       method: 'DELETE',
     });
   }
@@ -295,7 +295,7 @@ class ApiClient {
     productIds: string[];
     updates: Record<string, unknown>;
   }) {
-    return this.request('/products/bulk-update', {
+    return this.request('/api/products/bulk-update', {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -303,7 +303,7 @@ class ApiClient {
 
   // Bundle Product endpoints
   async getBundleItems(bundleId: string) {
-    return this.request(`/products/${bundleId}/bundle-items`);
+    return this.request(`/api/products/${bundleId}/bundle-items`);
   }
 
   async addBundleItem(bundleId: string, data: {
@@ -315,7 +315,7 @@ class ApiClient {
     discount?: number;
     sortOrder?: number;
   }) {
-    return this.request(`/products/${bundleId}/bundle-items`, {
+    return this.request(`/api/products/${bundleId}/bundle-items`, {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -329,14 +329,14 @@ class ApiClient {
     discount?: number;
     sortOrder?: number;
   }) {
-    return this.request(`/products/${bundleId}/bundle-items/${productId}`, {
+    return this.request(`/api/products/${bundleId}/bundle-items/${productId}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     });
   }
 
   async removeBundleItem(bundleId: string, productId: string) {
-    return this.request(`/products/${bundleId}/bundle-items/${productId}`, {
+    return this.request(`/api/products/${bundleId}/bundle-items/${productId}`, {
       method: 'DELETE',
     });
   }
@@ -347,7 +347,7 @@ class ApiClient {
       quantity: number;
     }>;
   }) {
-    return this.request(`/products/${bundleId}/calculate-bundle-price`, {
+    return this.request(`/api/products/${bundleId}/calculate-bundle-price`, {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -367,11 +367,11 @@ class ApiClient {
     if (params?.storeId) searchParams.set('storeId', params.storeId);
     
     const queryString = searchParams.toString();
-    return this.request(`/customers${queryString ? `?${queryString}` : ''}`);
+    return this.request(`/api/customers${queryString ? `?${queryString}` : ''}`);
   }
 
   async getCustomer(id: string) {
-    return this.request(`/customers/${id}`);
+    return this.request(`/api/customers/${id}`);
   }
 
   async createCustomer(data: {
@@ -381,7 +381,7 @@ class ApiClient {
     phone?: string;
     storeId: string;
   }) {
-    return this.request('/customers', {
+    return this.request('/api/customers', {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -393,14 +393,14 @@ class ApiClient {
     email?: string;
     phone?: string;
   }) {
-    return this.request(`/customers/${id}`, {
+    return this.request(`/api/customers/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     });
   }
 
   async deleteCustomer(id: string) {
-    return this.request(`/customers/${id}`, {
+    return this.request(`/api/customers/${id}`, {
       method: 'DELETE',
     });
   }
@@ -421,14 +421,14 @@ class ApiClient {
     if (params?.lowStock) searchParams.set('lowStock', params.lowStock.toString());
     
     const queryString = searchParams.toString();
-    return this.request(`/inventory${queryString ? `?${queryString}` : ''}`);
+    return this.request(`/api/inventory${queryString ? `?${queryString}` : ''}`);
   }
 
   async updateInventory(id: string, data: {
     quantity: number;
     reason?: string;
   }) {
-    return this.request(`/inventory/${id}`, {
+    return this.request(`/api/inventory/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     });
@@ -445,18 +445,18 @@ class ApiClient {
     if (params?.status) searchParams.set('status', params.status);
     
     const queryString = searchParams.toString();
-    return this.request(`/inventory/approvals${queryString ? `?${queryString}` : ''}`);
+    return this.request(`/api/inventory/approvals${queryString ? `?${queryString}` : ''}`);
   }
 
   async approveInventoryChange(id: string, approved: boolean) {
-    return this.request(`/inventory/approvals/${id}`, {
+    return this.request(`/api/inventory/approvals/${id}`, {
       method: 'PUT',
       body: JSON.stringify({ approved }),
     });
   }
 
   async rejectInventoryChange(id: string, reason: string) {
-    return this.request(`/inventory/approvals/${id}/reject`, {
+    return this.request(`/api/inventory/approvals/${id}/reject`, {
       method: 'PUT',
       body: JSON.stringify({ reason }),
     });
@@ -467,7 +467,7 @@ class ApiClient {
     newQuantity: number;
     reason: string;
   }) {
-    return this.request('/inventory/requests', {
+    return this.request('/api/inventory/requests', {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -489,11 +489,11 @@ class ApiClient {
     if (params?.storeId) searchParams.set('storeId', params.storeId);
     
     const queryString = searchParams.toString();
-    return this.request(`/returns${queryString ? `?${queryString}` : ''}`);
+    return this.request(`/api/returns${queryString ? `?${queryString}` : ''}`);
   }
 
   async getReturn(id: string) {
-    return this.request(`/returns/${id}`);
+    return this.request(`/api/returns/${id}`);
   }
 
   async createReturn(data: {
@@ -504,14 +504,14 @@ class ApiClient {
     description?: string;
     storeId: string;
   }) {
-    return this.request('/returns', {
+    return this.request('/api/returns', {
       method: 'POST',
       body: JSON.stringify(data),
     });
   }
 
   async updateReturnStatus(id: string, status: string) {
-    return this.request(`/returns/${id}/status`, {
+    return this.request(`/api/returns/${id}/status`, {
       method: 'PUT',
       body: JSON.stringify({ status }),
     });
@@ -535,11 +535,11 @@ class ApiClient {
     if (params?.storeId) searchParams.set('storeId', params.storeId);
     
     const queryString = searchParams.toString();
-    return this.request(`/support/tickets${queryString ? `?${queryString}` : ''}`);
+    return this.request(`/api/support/tickets${queryString ? `?${queryString}` : ''}`);
   }
 
   async getSupportTicket(id: string) {
-    return this.request(`/support/tickets/${id}`);
+    return this.request(`/api/support/tickets/${id}`);
   }
 
   async createSupportTicket(data: {
@@ -548,7 +548,7 @@ class ApiClient {
     priority?: string;
     storeId?: string;
   }) {
-    return this.request('/support/tickets', {
+    return this.request('/api/support/tickets', {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -559,14 +559,14 @@ class ApiClient {
     priority?: string;
     assignedTo?: string;
   }) {
-    return this.request(`/support/tickets/${id}`, {
+    return this.request(`/api/support/tickets/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     });
   }
 
   async getSupportTicketMessages(ticketId: string) {
-    return this.request(`/support/tickets/${ticketId}/messages`);
+    return this.request(`/api/support/tickets/${ticketId}/messages`);
   }
 
   async sendSupportMessage(ticketId: string, message: string, attachments?: File[]) {
@@ -578,7 +578,7 @@ class ApiClient {
       });
     }
     
-    return this.request(`/support/tickets/${ticketId}/messages`, {
+    return this.request(`/api/support/tickets/${ticketId}/messages`, {
       method: 'POST',
       body: formData,
       headers: {}, // Let browser set Content-Type for FormData
@@ -594,15 +594,15 @@ class ApiClient {
     if (params?.search) searchParams.set('search', params.search);
     
     const queryString = searchParams.toString();
-    return this.request(`/file-upload/files${queryString ? `?${queryString}` : ''}`);
+    return this.request(`/api/file-upload/files${queryString ? `?${queryString}` : ''}`);
   }
 
   async getFile(id: string) {
-    return this.request(`/file-upload/files/${id}`);
+    return this.request(`/api/file-upload/files/${id}`);
   }
 
   async deleteFile(id: string) {
-    return this.request(`/file-upload/files/${id}`, {
+    return this.request(`/api/file-upload/files/${id}`, {
       method: 'DELETE',
     });
   }
@@ -611,47 +611,47 @@ class ApiClient {
     const searchParams = new URLSearchParams();
     searchParams.set('expiresIn', expiresIn.toString());
     
-    return this.request(`/file-upload/files/${id}/download-url?${searchParams.toString()}`);
+    return this.request(`/api/file-upload/files/${id}/download-url?${searchParams.toString()}`);
   }
 
   // Cart endpoints
   async getCart(storeId: string) {
-    return this.request(`/orders/cart/${storeId}`);
+    return this.request(`/api/orders/cart/${storeId}`);
   }
 
   async getCartSummary(storeId: string) {
-    return this.request(`/orders/cart/${storeId}/summary`);
+    return this.request(`/api/orders/cart/${storeId}/summary`);
   }
 
   async addToCart(storeId: string, data: { productId: string; quantity: number }) {
-    return this.request(`/orders/cart/${storeId}/items`, {
+    return this.request(`/api/orders/cart/${storeId}/items`, {
       method: 'POST',
       body: JSON.stringify(data),
     });
   }
 
   async updateCartItem(storeId: string, productId: string, data: { quantity: number }) {
-    return this.request(`/orders/cart/${storeId}/items/${productId}`, {
+    return this.request(`/api/orders/cart/${storeId}/items/${productId}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     });
   }
 
   async removeFromCart(storeId: string, productId: string) {
-    return this.request(`/orders/cart/${storeId}/items/${productId}`, {
+    return this.request(`/api/orders/cart/${storeId}/items/${productId}`, {
       method: 'DELETE',
     });
   }
 
   async clearCart(storeId: string) {
-    return this.request(`/orders/cart/${storeId}`, {
+    return this.request(`/api/orders/cart/${storeId}`, {
       method: 'DELETE',
     });
   }
 
   // Customer order creation
   async createCustomerOrder(data: any) {
-    return this.request('/orders/customer', {
+    return this.request('/api/orders/customer', {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -659,18 +659,18 @@ class ApiClient {
 
   // Order approvals
   async getPendingApprovals() {
-    return this.request('/orders/pending-approvals');
+    return this.request('/api/orders/pending-approvals');
   }
 
   async approveOrder(id: string, data: { notes?: string }) {
-    return this.request(`/orders/${id}/approve`, {
+    return this.request(`/api/orders/${id}/approve`, {
       method: 'PUT',
       body: JSON.stringify(data),
     });
   }
 
   async rejectOrder(id: string, data: { reason: string; notes?: string }) {
-    return this.request(`/orders/${id}/reject`, {
+    return this.request(`/api/orders/${id}/reject`, {
       method: 'PUT',
       body: JSON.stringify(data),
     });
@@ -681,32 +681,32 @@ class ApiClient {
     const searchParams = new URLSearchParams();
     if (includeInactive) searchParams.set('includeInactive', 'true');
     const queryString = searchParams.toString();
-    return this.request(`/shipping/zones${queryString ? `?${queryString}` : ''}`);
+    return this.request(`/api/shipping/zones${queryString ? `?${queryString}` : ''}`);
   }
 
   async getShippingPrices(zoneId?: string) {
     const searchParams = new URLSearchParams();
     if (zoneId) searchParams.set('zoneId', zoneId);
     const queryString = searchParams.toString();
-    return this.request(`/shipping/prices${queryString ? `?${queryString}` : ''}`);
+    return this.request(`/api/shipping/prices${queryString ? `?${queryString}` : ''}`);
   }
 
   async getShippingOptions(customerId?: string) {
     const searchParams = new URLSearchParams();
     if (customerId) searchParams.set('customerId', customerId);
     const queryString = searchParams.toString();
-    return this.request(`/shipping/options${queryString ? `?${queryString}` : ''}`);
+    return this.request(`/api/shipping/options${queryString ? `?${queryString}` : ''}`);
   }
 
   async getCustomerShippingPrices(customerId?: string) {
     const searchParams = new URLSearchParams();
     if (customerId) searchParams.set('customerId', customerId);
     const queryString = searchParams.toString();
-    return this.request(`/shipping/customer-prices${queryString ? `?${queryString}` : ''}`);
+    return this.request(`/api/shipping/customer-prices${queryString ? `?${queryString}` : ''}`);
   }
 
   async calculateShipping(data: { zoneId: string; customerId?: string; orderTotal: number }) {
-    return this.request('/shipping/calculate', {
+    return this.request('/api/shipping/calculate', {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -714,63 +714,63 @@ class ApiClient {
 
   // Shipping zone CRUD
   async createShippingZone(data: any) {
-    return this.request('/shipping/zones', {
+    return this.request('/api/shipping/zones', {
       method: 'POST',
       body: JSON.stringify(data),
     });
   }
 
   async updateShippingZone(id: string, data: any) {
-    return this.request(`/shipping/zones/${id}`, {
+    return this.request(`/api/shipping/zones/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     });
   }
 
   async deleteShippingZone(id: string) {
-    return this.request(`/shipping/zones/${id}`, {
+    return this.request(`/api/shipping/zones/${id}`, {
       method: 'DELETE',
     });
   }
 
   // Shipping price CRUD
   async createShippingPrice(data: any) {
-    return this.request('/shipping/prices', {
+    return this.request('/api/shipping/prices', {
       method: 'POST',
       body: JSON.stringify(data),
     });
   }
 
   async updateShippingPrice(id: string, data: any) {
-    return this.request(`/shipping/prices/${id}`, {
+    return this.request(`/api/shipping/prices/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     });
   }
 
   async deleteShippingPrice(id: string) {
-    return this.request(`/shipping/prices/${id}`, {
+    return this.request(`/api/shipping/prices/${id}`, {
       method: 'DELETE',
     });
   }
 
   // Customer shipping price CRUD
   async createCustomerShippingPrice(data: any) {
-    return this.request('/shipping/customer-prices', {
+    return this.request('/api/shipping/customer-prices', {
       method: 'POST',
       body: JSON.stringify(data),
     });
   }
 
   async updateCustomerShippingPrice(id: string, data: any) {
-    return this.request(`/shipping/customer-prices/${id}`, {
+    return this.request(`/api/shipping/customer-prices/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     });
   }
 
   async deleteCustomerShippingPrice(id: string) {
-    return this.request(`/shipping/customer-prices/${id}`, {
+    return this.request(`/api/shipping/customer-prices/${id}`, {
       method: 'DELETE',
     });
   }
@@ -786,35 +786,35 @@ class ApiClient {
       });
     }
     const queryString = searchParams.toString();
-    return this.request(`/inventory-requests${queryString ? `?${queryString}` : ''}`);
+    return this.request(`/api/inventory-requests${queryString ? `?${queryString}` : ''}`);
   }
 
   async getInventoryRequest(id: string) {
-    return this.request(`/inventory-requests/${id}`);
+    return this.request(`/api/inventory-requests/${id}`);
   }
 
   async createInventoryRequest(data: any) {
-    return this.request('/inventory-requests', {
+    return this.request('/api/inventory-requests', {
       method: 'POST',
       body: JSON.stringify(data),
     });
   }
 
   async updateInventoryRequest(id: string, data: any) {
-    return this.request(`/inventory-requests/${id}`, {
+    return this.request(`/api/inventory-requests/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     });
   }
 
   async deleteInventoryRequest(id: string) {
-    return this.request(`/inventory-requests/${id}`, {
+    return this.request(`/api/inventory-requests/${id}`, {
       method: 'DELETE',
     });
   }
 
   async getInventoryRequestStats() {
-    return this.request('/inventory-requests/stats');
+    return this.request('/api/inventory-requests/stats');
   }
 
   // Fulfillment billing endpoints
@@ -822,25 +822,25 @@ class ApiClient {
     const searchParams = new URLSearchParams();
     if (includeInactive) searchParams.set('includeInactive', 'true');
     const queryString = searchParams.toString();
-    return this.request(`/fulfillment-billing/services${queryString ? `?${queryString}` : ''}`);
+    return this.request(`/api/fulfillment-billing/services${queryString ? `?${queryString}` : ''}`);
   }
 
   async createFulfillmentService(data: any) {
-    return this.request('/fulfillment-billing/services', {
+    return this.request('/api/fulfillment-billing/services', {
       method: 'POST',
       body: JSON.stringify(data),
     });
   }
 
   async updateFulfillmentService(id: string, data: any) {
-    return this.request(`/fulfillment-billing/services/${id}`, {
+    return this.request(`/api/fulfillment-billing/services/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     });
   }
 
   async deleteFulfillmentService(id: string) {
-    return this.request(`/fulfillment-billing/services/${id}`, {
+    return this.request(`/api/fulfillment-billing/services/${id}`, {
       method: 'DELETE',
     });
   }
@@ -855,29 +855,29 @@ class ApiClient {
       });
     }
     const queryString = searchParams.toString();
-    return this.request(`/fulfillment-billing/billing-items${queryString ? `?${queryString}` : ''}`);
+    return this.request(`/api/fulfillment-billing/billing-items${queryString ? `?${queryString}` : ''}`);
   }
 
   async getFulfillmentBillingItem(id: string) {
-    return this.request(`/fulfillment-billing/billing-items/${id}`);
+    return this.request(`/api/fulfillment-billing/billing-items/${id}`);
   }
 
   async createFulfillmentBillingItem(data: any) {
-    return this.request('/fulfillment-billing/billing-items', {
+    return this.request('/api/fulfillment-billing/billing-items', {
       method: 'POST',
       body: JSON.stringify(data),
     });
   }
 
   async updateFulfillmentBillingItem(id: string, data: any) {
-    return this.request(`/fulfillment-billing/billing-items/${id}`, {
+    return this.request(`/api/fulfillment-billing/billing-items/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     });
   }
 
   async deleteFulfillmentBillingItem(id: string) {
-    return this.request(`/fulfillment-billing/billing-items/${id}`, {
+    return this.request(`/api/fulfillment-billing/billing-items/${id}`, {
       method: 'DELETE',
     });
   }
@@ -892,22 +892,22 @@ class ApiClient {
       });
     }
     const queryString = searchParams.toString();
-    return this.request(`/fulfillment-billing/invoices${queryString ? `?${queryString}` : ''}`);
+    return this.request(`/api/fulfillment-billing/invoices${queryString ? `?${queryString}` : ''}`);
   }
 
   async getFulfillmentInvoice(id: string) {
-    return this.request(`/fulfillment-billing/invoices/${id}`);
+    return this.request(`/api/fulfillment-billing/invoices/${id}`);
   }
 
   async generateMonthlyInvoice(data: any) {
-    return this.request('/fulfillment-billing/invoices/generate', {
+    return this.request('/api/fulfillment-billing/invoices/generate', {
       method: 'POST',
       body: JSON.stringify(data),
     });
   }
 
   async updateFulfillmentInvoice(id: string, data: any) {
-    return this.request(`/fulfillment-billing/invoices/${id}`, {
+    return this.request(`/api/fulfillment-billing/invoices/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     });
@@ -917,7 +917,7 @@ class ApiClient {
     const searchParams = new URLSearchParams();
     if (customerId) searchParams.set('customerId', customerId);
     const queryString = searchParams.toString();
-    return this.request(`/fulfillment-billing/stats${queryString ? `?${queryString}` : ''}`);
+    return this.request(`/api/fulfillment-billing/stats${queryString ? `?${queryString}` : ''}`);
   }
 
   // Reports endpoints
@@ -925,7 +925,7 @@ class ApiClient {
     const searchParams = new URLSearchParams();
     if (storeId) searchParams.set('storeId', storeId);
     const queryString = searchParams.toString();
-    return this.request(`/reports/dashboard${queryString ? `?${queryString}` : ''}`);
+    return this.request(`/api/reports/dashboard${queryString ? `?${queryString}` : ''}`);
   }
 
   async getSalesReport(params?: {
@@ -943,7 +943,7 @@ class ApiClient {
       });
     }
     const queryString = searchParams.toString();
-    return this.request(`/reports/sales${queryString ? `?${queryString}` : ''}`);
+    return this.request(`/api/reports/sales${queryString ? `?${queryString}` : ''}`);
   }
 
   async getProductReport(params?: {
@@ -961,7 +961,7 @@ class ApiClient {
       });
     }
     const queryString = searchParams.toString();
-    return this.request(`/reports/products${queryString ? `?${queryString}` : ''}`);
+    return this.request(`/api/reports/products${queryString ? `?${queryString}` : ''}`);
   }
 
   async getCustomerReport(params?: {
@@ -978,7 +978,7 @@ class ApiClient {
       });
     }
     const queryString = searchParams.toString();
-    return this.request(`/reports/customers${queryString ? `?${queryString}` : ''}`);
+    return this.request(`/api/reports/customers${queryString ? `?${queryString}` : ''}`);
   }
 
   async getInventoryReport(params?: {
@@ -995,7 +995,7 @@ class ApiClient {
       });
     }
     const queryString = searchParams.toString();
-    return this.request(`/reports/inventory${queryString ? `?${queryString}` : ''}`);
+    return this.request(`/api/reports/inventory${queryString ? `?${queryString}` : ''}`);
   }
 
   async getFinancialReport(params?: {
@@ -1012,24 +1012,24 @@ class ApiClient {
       });
     }
     const queryString = searchParams.toString();
-    return this.request(`/reports/financial${queryString ? `?${queryString}` : ''}`);
+    return this.request(`/api/reports/financial${queryString ? `?${queryString}` : ''}`);
   }
 
   // Store statistics endpoints
   async getStoreStats(storeId: string) {
-    return this.request(`/stores/${storeId}/stats`);
+    return this.request(`/api/stores/${storeId}/stats`);
   }
 
   async getStoreSyncLogs(storeId: string, params?: { limit?: number }) {
     const searchParams = new URLSearchParams();
     if (params?.limit) searchParams.set('limit', params.limit.toString());
     const queryString = searchParams.toString();
-    return this.request(`/stores/${storeId}/sync-logs${queryString ? `?${queryString}` : ''}`);
+    return this.request(`/api/stores/${storeId}/sync-logs${queryString ? `?${queryString}` : ''}`);
   }
 
   // Customer statistics endpoints
   async getCustomerStats(customerId: string) {
-    return this.request(`/customers/${customerId}/stats`);
+    return this.request(`/api/customers/${customerId}/stats`);
   }
 
   async getCustomerOrders(customerId: string, params?: { limit?: number; status?: string }) {
@@ -1037,7 +1037,7 @@ class ApiClient {
     if (params?.limit) searchParams.set('limit', params.limit.toString());
     if (params?.status) searchParams.set('status', params.status);
     const queryString = searchParams.toString();
-    return this.request(`/customers/${customerId}/orders${queryString ? `?${queryString}` : ''}`);
+    return this.request(`/api/customers/${customerId}/orders${queryString ? `?${queryString}` : ''}`);
   }
 
   // Calendar methods
@@ -1047,7 +1047,7 @@ class ApiClient {
     if (params?.to) searchParams.set('to', params.to);
     
     const queryString = searchParams.toString();
-    return this.request(`/calendar/events${queryString ? `?${queryString}` : ''}`);
+    return this.request(`/api/calendar/events${queryString ? `?${queryString}` : ''}`);
   }
 
   async createCalendarEvent(data: {
@@ -1058,7 +1058,7 @@ class ApiClient {
     endDate: string;
     allDay?: boolean;
   }) {
-    return this.request('/calendar/events', {
+    return this.request('/api/calendar/events', {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -1072,20 +1072,20 @@ class ApiClient {
     endDate?: string;
     allDay?: boolean;
   }) {
-    return this.request(`/calendar/events/${id}`, {
+    return this.request(`/api/calendar/events/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     });
   }
 
   async deleteCalendarEvent(id: string) {
-    return this.request(`/calendar/events/${id}`, {
+    return this.request(`/api/calendar/events/${id}`, {
       method: 'DELETE',
     });
   }
 
   async getBusinessHours() {
-    return this.request('/calendar/business-hours');
+    return this.request('/api/calendar/business-hours');
   }
 
   async setBusinessHours(data: {
@@ -1096,14 +1096,14 @@ class ApiClient {
       isWorkingDay?: boolean;
     }>;
   }) {
-    return this.request('/calendar/business-hours', {
+    return this.request('/api/calendar/business-hours', {
       method: 'POST',
       body: JSON.stringify(data),
     });
   }
 
   async getHolidays() {
-    return this.request('/calendar/holidays');
+    return this.request('/api/calendar/holidays');
   }
 
   async createHoliday(data: {
@@ -1112,14 +1112,14 @@ class ApiClient {
     description?: string;
     recurring?: boolean;
   }) {
-    return this.request('/calendar/holidays', {
+    return this.request('/api/calendar/holidays', {
       method: 'POST',
       body: JSON.stringify(data),
     });
   }
 
   async deleteHoliday(id: string) {
-    return this.request(`/calendar/holidays/${id}`, {
+    return this.request(`/api/calendar/holidays/${id}`, {
       method: 'DELETE',
     });
   }

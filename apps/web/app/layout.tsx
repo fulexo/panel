@@ -25,7 +25,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="h-full">
+    <html lang="en" className="h-full" suppressHydrationWarning>
       <head>
         <title>Fulexo - AI-Powered File Management Platform</title>
         <meta name="description" content="Advanced file management with AI-powered features" />

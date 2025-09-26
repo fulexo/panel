@@ -211,7 +211,7 @@ async function bootstrap() {
       // Check database connection
       let dbHealthy = false;
       try {
-        await app.get(PrismaService).$queryRaw`SELECT 1`;
+        await (app.get(PrismaService) as any).$queryRaw`SELECT 1`;
         dbHealthy = true;
       } catch (error) {
         // Log database health check failure

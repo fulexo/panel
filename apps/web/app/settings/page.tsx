@@ -6,6 +6,7 @@ import { useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import { useRBAC } from "@/hooks/useRBAC";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import { Settings, Shield, Link, Palette } from 'lucide-react';
 
 export default function SettingsPage() {
   useAuth();
@@ -51,10 +52,10 @@ export default function SettingsPage() {
   });
 
   const tabs = [
-    { id: "general", label: "Genel Ayarlar", icon: "⚙️" },
-    { id: "security", label: "Güvenlik", icon: "🔒" },
-    { id: "integrations", label: "Entegrasyonlar", icon: "🔗" },
-    { id: "appearance", label: "Görünüm", icon: "🎨" },
+    { id: "general", label: "Genel Ayarlar", icon: Settings },
+    { id: "security", label: "Güvenlik", icon: Shield },
+    { id: "integrations", label: "Entegrasyonlar", icon: Link },
+    { id: "appearance", label: "Görünüm", icon: Palette },
   ];
 
   const handleSave = (section: string) => {
@@ -80,20 +81,23 @@ export default function SettingsPage() {
             <div className="lg:col-span-1">
               <div className="bg-card p-4 rounded-lg border border-border">
                 <nav className="space-y-2">
-                  {tabs.map((tab) => (
-                    <button
-                      key={tab.id}
-                      onClick={() => setActiveTab(tab.id)}
-                      className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
-                        activeTab === tab.id
-                          ? "bg-primary text-primary-foreground"
-                          : "hover:bg-accent text-foreground"
-                      }`}
-                    >
-                      <span className="text-lg">{tab.icon}</span>
-                      <span className="font-medium">{tab.label}</span>
-                    </button>
-                  ))}
+                  {tabs.map((tab) => {
+                    const IconComponent = tab.icon as React.ComponentType<{ className?: string }>;
+                    return (
+                      <button
+                        key={tab.id}
+                        onClick={() => setActiveTab(tab.id)}
+                        className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
+                          activeTab === tab.id
+                            ? "bg-primary text-primary-foreground"
+                            : "hover:bg-accent text-foreground"
+                        }`}
+                      >
+                        <IconComponent className="w-5 h-5" />
+                        <span className="font-medium">{tab.label}</span>
+                      </button>
+                    );
+                  })}
                 </nav>
               </div>
             </div>
