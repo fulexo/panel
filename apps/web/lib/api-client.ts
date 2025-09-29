@@ -238,6 +238,10 @@ class ApiClient {
     return this.request(`/api/products/${id}`);
   }
 
+  async getProductSales(id: string) {
+    return this.request(`/api/products/${id}/sales`);
+  }
+
   async createProduct(data: {
     name: string;
     description?: string;

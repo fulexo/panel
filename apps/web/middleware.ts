@@ -34,6 +34,7 @@ export function middleware(request: NextRequest) {
     '/api/auth/register',
     '/api/auth/forgot-password',
     '/api/auth/reset-password',
+    '/api/auth/me', // Allow auth check without authentication
     '/api/errors',
     '/api/auth/clear-tokens',
     '/api/auth/set-tokens',
@@ -49,7 +50,6 @@ export function middleware(request: NextRequest) {
 
   // API routes that require authentication
   const protectedApiRoutes = [
-    '/api/auth/me',
     '/api/auth/logout',
     '/api/auth/2fa',
   ];
@@ -111,11 +111,13 @@ export function middleware(request: NextRequest) {
       );
     }
     
-    // Check for suspicious patterns
+    // Check for suspicious patterns (relaxed for development)
     const userAgent = request.headers.get('user-agent') || '';
-    if (userAgent.length < 10 || /bot|crawler|spider|scraper/i.test(userAgent)) {
-      // Allow but log suspicious activity
-      console.warn(`Suspicious user agent detected: ${userAgent}`);
+    if (userAgent.length < 5 || /bot|crawler|spider|scraper|curl|wget/i.test(userAgent)) {
+      // Allow but log suspicious activity (relaxed for development)
+      if (process.env.NODE_ENV !== 'development') {
+        console.warn(`Suspicious user agent detected: ${userAgent}`);
+      }
     }
   }
 

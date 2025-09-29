@@ -6,6 +6,14 @@ const BACKEND_API_BASE = getBackendApiBaseUrl();
 export async function POST(request: NextRequest) {
   try {
     console.log('Login endpoint called');
+    console.log('BACKEND_API_BASE:', BACKEND_API_BASE);
+    console.log('Environment variables:', {
+      BACKEND_API_BASE: process.env['BACKEND_API_BASE'],
+      API_BASE_URL: process.env['API_BASE_URL'],
+      NEXT_PUBLIC_API_BASE: process.env['NEXT_PUBLIC_API_BASE'],
+      DOMAIN_API: process.env['DOMAIN_API'],
+      NODE_ENV: process.env['NODE_ENV']
+    });
     const { email, password } = await request.json();
     console.log('Email:', email);
 
@@ -22,13 +30,21 @@ export async function POST(request: NextRequest) {
     let backendResponse;
     try {
       console.log('Calling backend API...');
+      
+      // Add timeout to prevent hanging
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+      
       backendResponse = await fetch(backendUrl.toString(), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ email, password }),
+        signal: controller.signal,
       });
+      
+      clearTimeout(timeoutId);
     } catch (fetchError) {
       console.error('Backend connection error:', fetchError);
       return NextResponse.json(

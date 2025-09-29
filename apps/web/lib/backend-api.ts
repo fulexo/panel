@@ -1,4 +1,4 @@
-﻿const DEFAULT_LOCAL_API_BASE = 'http://localhost:3000';
+﻿const DEFAULT_LOCAL_API_BASE = 'http://127.0.0.1:4000';
 
 const ensureHttpUrl = (value?: string | null): string | undefined => {
   if (!value) {
@@ -39,11 +39,12 @@ export const getBackendApiBaseUrl = (): string => {
 
   const candidate = (
     ensureHttpUrl(process.env['API_BASE_URL']) ||
-    ensureHttpUrl(process.env['NEXT_PUBLIC_API_BASE']) ||  
+    // Intentionally ignore NEXT_PUBLIC_API_BASE on the server to avoid self-proxying to port 3000
     ensureHttpUrl(process.env['DOMAIN_API'])
   );
 
   if (!candidate) {
+    console.log('No candidate found, using default:', DEFAULT_LOCAL_API_BASE);
     return DEFAULT_LOCAL_API_BASE;
   }
 

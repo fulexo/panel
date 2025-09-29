@@ -39,7 +39,7 @@ export default function Sidebar({ isOpen, onClose, isDesktopCollapsed = false, o
     { href: '/dashboard', label: 'Dashboard', icon: BarChart3 },
     { href: '/orders', label: 'Orders', icon: Package },
     { href: '/products', label: 'Products', icon: Smartphone },
-    { href: '/customers', label: 'Customers', icon: Users },
+    { href: '/customers', label: 'Users', icon: Users },
     { href: '/inventory', label: 'Inventory', icon: Package },
     { href: '/cart', label: 'Shopping Cart', icon: ShoppingCart },
     

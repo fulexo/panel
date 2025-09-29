@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useAuth } from "@/components/AuthProvider";
 import { useRBAC } from "@/hooks/useRBAC";
 import { useOrders, useUpdateOrderStatus } from "@/hooks/useOrders";
+import { useStores } from "@/hooks/useApi";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import ProtectedComponent from "@/components/ProtectedComponent";
 import { 
@@ -30,9 +31,14 @@ export default function OrdersPage() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [storeFilter, setStoreFilter] = useState("");
   
   // Get user's store ID for customer view
   const userStoreId = user?.stores?.[0]?.id;
+  
+  // Fetch stores data (for admin store filter)
+  const { data: storesData } = useStores();
+  const stores = (storesData as any)?.data || [];
   
   // Fetch orders data
   const { 
@@ -43,11 +49,12 @@ export default function OrdersPage() {
     limit: 10,
     ...(search ? { search } : {}),
     ...(statusFilter ? { status: statusFilter } : {}),
-    ...(isAdmin() ? {} : userStoreId ? { storeId: userStoreId } : {}),
+    // For admin users, allow store filtering. For customers, use their store
+    ...(isAdmin() && storeFilter ? { storeId: storeFilter } : {}),
+    ...(!isAdmin() && userStoreId ? { storeId: userStoreId } : {}),
   }) as { data: { data: Array<{ id: string; orderNumber: string; status: string; total: number; createdAt: string; customerEmail: string }>; pagination: { total: number; pages: number } } | undefined; isLoading: boolean; error: unknown };
 
   const updateOrderStatus = useUpdateOrderStatus();
-  // const updateOrderShipping = useUpdateOrderShipping();
 
   const handleStatusUpdate = async (orderId: string, newStatus: string) => {
     try {
@@ -104,17 +111,11 @@ export default function OrdersPage() {
                 {isAdmin() ? 'Manage all orders across all stores' : 'View your store orders'}
               </p>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
               <ProtectedComponent permission="orders.manage">
-                <button className="btn btn-primary btn-md flex flex-col items-center justify-center gap-1 shadow-lg hover:shadow-xl transition-all duration-200 w-full h-16">
+                <Link href="/orders/create" className="btn btn-primary btn-md flex flex-col items-center justify-center gap-1 shadow-lg hover:shadow-xl transition-all duration-200 w-full h-16">
                   <Plus className="h-5 w-5" />
                   <span className="text-xs font-medium leading-tight">Create Order</span>
-                </button>
-              </ProtectedComponent>
-              <ProtectedComponent permission="orders.create">
-                <Link href="/orders/create" className="btn btn-outline btn-md flex flex-col items-center justify-center gap-1 hover:bg-accent/50 transition-all duration-200 w-full h-16">
-                  <ShoppingCart className="h-5 w-5" />
-                  <span className="text-xs font-medium leading-tight">New Order</span>
                 </Link>
               </ProtectedComponent>
               <ProtectedComponent permission="orders.approve">
@@ -172,6 +173,23 @@ export default function OrdersPage() {
                     <option value="cancelled">Cancelled</option>
                   </select>
                 </div>
+                {isAdmin() && (
+                  <div className="relative w-full sm:w-auto sm:min-w-[180px]">
+                    <ShoppingCart className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <select
+                      value={storeFilter}
+                      onChange={(e) => setStoreFilter(e.target.value)}
+                      className="w-full pl-10 pr-8 py-3 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200 appearance-none cursor-pointer"
+                    >
+                      <option value="">All Stores ({stores.length})</option>
+                      {stores.map((store: any) => (
+                        <option key={store.id} value={store.id}>
+                          {store.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
               </div>
               <div className="flex flex-col sm:flex-row gap-3">
                 <button className="btn btn-outline btn-md flex items-center justify-center gap-2 hover:bg-accent/50 transition-all duration-200 w-full sm:w-auto sm:min-w-[100px] h-10">

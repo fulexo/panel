@@ -9,6 +9,7 @@ export const queryKeys = {
   order: (id: string) => ['orders', id] as const,
   products: (params?: Record<string, unknown>) => ['products', params] as const,
   product: (id: string) => ['products', id] as const,
+  productSales: (id: string) => ['products', id, 'sales'] as const,
   customers: (params?: Record<string, unknown>) => ['customers', params] as const,
   customer: (id: string) => ['customers', id] as const,
   inventoryApprovals: (params?: Record<string, unknown>) => ['inventory-approvals', params] as const,
@@ -177,6 +178,15 @@ export const useProduct = (id: string) => {
     queryKey: queryKeys.product(id),
     queryFn: () => apiClient.getProduct(id),
     enabled: !!id,
+  });
+};
+
+export const useProductSales = (id: string) => {
+  return useQuery({
+    queryKey: queryKeys.productSales(id),
+    queryFn: () => apiClient.getProductSales(id),
+    enabled: !!id,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 };
 

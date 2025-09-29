@@ -71,7 +71,7 @@ export default function CalendarWidget() {
     return (
       <div className="grid grid-cols-7 gap-1 text-xs">
         {['P', 'S', 'Ç', 'P', 'C', 'C', 'P'].map(day => (
-          <div key={day} className="p-1 text-center font-medium text-muted-foreground">
+          <div key={day} className="p-1 text-center font-medium text-foreground/80">
             {day}
           </div>
         ))}
@@ -86,7 +86,7 @@ export default function CalendarWidget() {
               key={day.toISOString()}
               className={`
                 p-1 text-center cursor-pointer rounded hover:bg-gray-100
-                ${!isCurrentMonth ? 'text-gray-400' : ''}
+                ${!isCurrentMonth ? 'text-gray-500' : 'text-gray-700'}
                 ${isToday ? 'bg-blue-100 text-blue-600 font-bold' : ''}
                 ${holiday ? 'bg-red-100 text-red-600' : ''}
                 ${dayEvents.length > 0 ? 'bg-green-100' : ''}

@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/components/AuthProvider";
-import { useRBAC } from "@/hooks/useRBAC";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { useApp } from "@/contexts/AppContext";
 import { useProducts } from "@/hooks/useProducts";
@@ -38,7 +37,6 @@ interface Address {
 
 export default function CreateOrderPage() {
   const { user } = useAuth();
-  const { isCustomer } = useRBAC();
   const { addNotification } = useApp();
   const [storeId, setStoreId] = useState<string>("");
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
@@ -231,18 +229,7 @@ export default function CreateOrderPage() {
     );
   }
 
-  if (!isCustomer()) {
-    return (
-      <ProtectedRoute>
-        <div className="min-h-screen bg-background flex items-center justify-center">
-          <div className="text-center">
-            <h1 className="text-2xl font-bold text-foreground mb-4">Erişim Reddedildi</h1>
-            <p className="text-muted-foreground">Bu sayfaya erişim yetkiniz yok.</p>
-          </div>
-        </div>
-      </ProtectedRoute>
-    );
-  }
+  // Remove incorrect access control - both ADMIN and CUSTOMER should be able to create orders
 
   return (
     <ProtectedRoute>

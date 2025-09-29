@@ -8,6 +8,20 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import { ApiError } from "@/lib/api-client";
 import CalendarWidget from "@/components/CalendarWidget";
 import Link from "next/link";
+import { 
+  ShoppingCart, 
+  Package, 
+  Users, 
+  BarChart3,
+  Truck,
+  ClipboardList,
+  Clock,
+  CheckCircle,
+  Plus,
+  TrendingUp,
+  AlertTriangle,
+  Building
+} from "lucide-react";
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -45,10 +59,44 @@ export default function DashboardPage() {
     return (
       <ProtectedRoute>
         <div className="min-h-screen bg-background flex items-center justify-center">
-          <div className="flex flex-col items-center gap-4">
-            <div className="text-red-500 text-lg">Error loading dashboard</div>
-            <div className="text-muted-foreground">
-              {statsError instanceof ApiError ? statsError.message : 'Unknown error'}
+          <div className="flex flex-col items-center gap-4 max-w-md mx-auto p-6">
+            <div className="p-3 bg-red-100 dark:bg-red-900/30 rounded-full">
+              <AlertTriangle className="h-8 w-8 text-red-600" />
+            </div>
+            <div className="text-center">
+              <div className="text-red-500 text-lg font-semibold mb-2">Dashboard Error</div>
+              <div className="text-muted-foreground text-sm mb-4">
+                {statsError instanceof ApiError ? statsError.message : 'Failed to load dashboard data'}
+              </div>
+              <div className="text-xs text-muted-foreground mb-6">
+                {statsError instanceof ApiError && statsError.message.includes('token') ? 
+                  'Authentication token missing. Please login again.' :
+                  'This usually happens when your session has expired or the API server is not responding.'
+                }
+              </div>
+              <div className="text-xs bg-muted/20 p-3 rounded-lg mb-6">
+                <strong>Debug Info:</strong><br/>
+                User: {user ? `${user.email} (${user.role})` : 'Not logged in'}<br/>
+                Error: {statsError instanceof ApiError ? `${statsError.status} - ${statsError.message}` : 'Unknown error'}
+              </div>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-3 w-full">
+              <button 
+                onClick={() => window.location.reload()} 
+                className="btn btn-primary flex-1"
+              >
+                Retry Dashboard
+              </button>
+              <button 
+                onClick={() => {
+                  sessionStorage.clear();
+                  localStorage.clear();
+                  window.location.href = '/login';
+                }} 
+                className="btn btn-outline flex-1"
+              >
+                Re-login
+              </button>
             </div>
           </div>
         </div>
@@ -60,76 +108,127 @@ export default function DashboardPage() {
     <ProtectedRoute>
       <div className="bg-background">
         <main className="mobile-container py-6 space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <h1 className="mobile-heading text-foreground">Dashboard</h1>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
+            <div className="space-y-1">
+              <h1 className="mobile-heading text-foreground flex items-center gap-3">
+                <BarChart3 className="h-8 w-8 text-primary" />
+                Dashboard
+              </h1>
               <p className="text-muted-foreground mobile-text">
                 {isAdmin() ? 'Overview of all stores and operations' : 'Your store overview and statistics'}
               </p>
             </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <Link href="/orders/create" className="btn btn-primary btn-md flex flex-col items-center justify-center gap-1 shadow-lg hover:shadow-xl transition-all duration-200 w-full h-16">
+                <Plus className="h-5 w-5" />
+                <span className="text-xs font-medium leading-tight">Create Order</span>
+              </Link>
+              <Link href="/products" className="btn btn-outline btn-md flex flex-col items-center justify-center gap-1 hover:bg-accent/50 transition-all duration-200 w-full h-16">
+                <Package className="h-5 w-5" />
+                <span className="text-xs font-medium leading-tight">Products</span>
+              </Link>
+              <Link href="/inventory" className="btn btn-outline btn-md flex flex-col items-center justify-center gap-1 hover:bg-accent/50 transition-all duration-200 w-full h-16">
+                <BarChart3 className="h-5 w-5" />
+                <span className="text-xs font-medium leading-tight">Inventory</span>
+              </Link>
+            </div>
           </div>
 
+          {/* Statistics Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="bg-card p-6 rounded-lg border border-border">
-              <h3 className="text-lg font-semibold text-foreground mb-2">Total Orders</h3>
-              <div className="text-3xl font-bold text-primary">
-                {stats?.totalOrders || 0}
+            <div className="bg-card p-6 rounded-xl border border-border shadow-sm hover:shadow-md transition-shadow duration-200">
+              <div className="flex items-center justify-between mb-4">
+                <div className="p-2 bg-blue-50 dark:bg-blue-900/30 rounded-lg">
+                  <ShoppingCart className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                </div>
+                <div className="text-right">
+                  <div className="text-2xl font-bold text-foreground">{stats?.totalOrders || 0}</div>
+                  <p className="text-sm text-foreground font-medium">Total Orders</p>
+                </div>
               </div>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-xs text-blue-800 dark:text-blue-400 font-medium">
                 {isAdmin() ? 'Across all stores' : 'This month'}
               </p>
             </div>
 
-            <div className="bg-card p-6 rounded-lg border border-border">
-              <h3 className="text-lg font-semibold text-foreground mb-2">Products</h3>
-              <div className="text-3xl font-bold text-primary">
-                {stats?.totalProducts || 0}
+            <div className="bg-card p-6 rounded-xl border border-border shadow-sm hover:shadow-md transition-shadow duration-200">
+              <div className="flex items-center justify-between mb-4">
+                <div className="p-2 bg-green-50 dark:bg-green-900/30 rounded-lg">
+                  <Package className="h-6 w-6 text-green-600 dark:text-green-400" />
+                </div>
+                <div className="text-right">
+                  <div className="text-2xl font-bold text-foreground">{stats?.totalProducts || 0}</div>
+                  <p className="text-sm text-foreground font-medium">Products</p>
+                </div>
               </div>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-xs text-green-800 dark:text-green-400 font-medium">
                 {isAdmin() ? 'Total products' : 'In your store'}
               </p>
             </div>
 
-            <div className="bg-card p-6 rounded-lg border border-border">
-              <h3 className="text-lg font-semibold text-foreground mb-2">Customers</h3>
-              <div className="text-3xl font-bold text-primary">
-                {stats?.totalCustomers || 0}
+            <div className="bg-card p-6 rounded-xl border border-border shadow-sm hover:shadow-md transition-shadow duration-200">
+              <div className="flex items-center justify-between mb-4">
+                <div className="p-2 bg-purple-50 dark:bg-purple-900/30 rounded-lg">
+                  <Users className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                </div>
+                <div className="text-right">
+                  <div className="text-2xl font-bold text-foreground">{stats?.totalCustomers || 0}</div>
+                  <p className="text-sm text-foreground font-medium">Users</p>
+                </div>
               </div>
-              <p className="text-sm text-muted-foreground">
-                {isAdmin() ? 'Total customers' : 'In your store'}
+              <p className="text-xs text-purple-800 dark:text-purple-400 font-medium">
+                {isAdmin() ? 'Panel users' : 'Store customers'}
               </p>
             </div>
 
-            <div className="bg-card p-6 rounded-lg border border-border">
-              <h3 className="text-lg font-semibold text-foreground mb-2">Revenue</h3>
-              <div className="text-3xl font-bold text-primary">
-                ${stats?.totalRevenue || 0}
+            <div className="bg-card p-6 rounded-xl border border-border shadow-sm hover:shadow-md transition-shadow duration-200">
+              <div className="flex items-center justify-between mb-4">
+                <div className="p-2 bg-emerald-50 dark:bg-emerald-900/30 rounded-lg">
+                  <TrendingUp className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
+                </div>
+                <div className="text-right">
+                  <div className="text-2xl font-bold text-foreground">${stats?.totalRevenue || 0}</div>
+                  <p className="text-sm text-foreground font-medium">Revenue</p>
+                </div>
               </div>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-xs text-emerald-800 dark:text-emerald-400 font-medium">
                 {isAdmin() ? 'Total revenue' : 'This month'}
               </p>
             </div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="bg-card p-6 rounded-lg border border-border">
-              <h3 className="text-lg font-semibold text-foreground mb-4">Recent Orders</h3>
+            <div className="bg-card p-6 rounded-xl border border-border shadow-sm">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-2 bg-blue-50 dark:bg-blue-900/30 rounded-lg">
+                  <ShoppingCart className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground">Recent Orders</h3>
+                  <p className="text-sm text-muted-foreground">Latest order activity</p>
+                </div>
+              </div>
               <div className="space-y-3">
                 {recentOrders?.data && recentOrders.data.length > 0 ? (
                   recentOrders.data.map((order: { id: string; orderNumber: string; createdAt: string; status: string; total: number }) => (
-                    <div key={order.id} className="flex justify-between items-center p-3 bg-accent rounded-lg">
-                      <div>
-                        <div className="font-medium">Order #{order.orderNumber}</div>
-                        <div className="text-sm text-muted-foreground">
-                          {new Date(order.createdAt).toLocaleString()}
+                    <div key={order.id} className="flex justify-between items-center p-4 bg-gradient-to-r from-accent/30 to-accent/20 rounded-lg border border-border/50 hover:shadow-md transition-all duration-200">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-primary/10 rounded-lg">
+                          <ShoppingCart className="h-4 w-4 text-primary" />
+                        </div>
+                        <div>
+                          <div className="font-semibold text-foreground">Order #{order.orderNumber}</div>
+                          <div className="text-sm text-muted-foreground">
+                            {new Date(order.createdAt).toLocaleString()}
+                          </div>
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className="font-medium">${order.total}</div>
-                        <div className={`text-sm ${
-                          order.status === 'completed' ? 'text-green-600' :
-                          order.status === 'processing' ? 'text-yellow-600' :
-                          'text-gray-600'
+                        <div className="font-bold text-foreground">${order.total}</div>
+                        <div className={`text-sm font-medium ${
+                          order.status === 'completed' ? 'text-green-700 dark:text-green-400' :
+                          order.status === 'processing' ? 'text-yellow-600 dark:text-yellow-400' :
+                          'text-gray-600 dark:text-gray-400'
                         }`}>
                           {order.status}
                         </div>
@@ -137,41 +236,58 @@ export default function DashboardPage() {
                     </div>
                   ))
                 ) : (
-                  <div className="text-center py-4 text-muted-foreground">
+                  <div className="text-center py-4 text-foreground/80 font-medium">
                     No recent orders
                   </div>
                 )}
               </div>
             </div>
 
-            <div className="bg-card p-6 rounded-lg border border-border">
-              <h3 className="text-lg font-semibold text-foreground mb-4">Low Stock Alerts</h3>
+            <div className="bg-card p-6 rounded-xl border border-border shadow-sm">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-2 bg-red-50 dark:bg-red-900/30 rounded-lg">
+                  <AlertTriangle className="h-6 w-6 text-red-600 dark:text-red-400" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground">Low Stock Alerts</h3>
+                  <p className="text-sm text-muted-foreground">Products needing attention</p>
+                </div>
+              </div>
               <div className="space-y-3">
                 {stats?.lowStockProducts && stats.lowStockProducts.length > 0 ? (
                   stats.lowStockProducts.map((product: { id: string; name: string; sku: string; stock: number }) => (
-                    <div key={product.id} className={`flex justify-between items-center p-3 rounded-lg ${
-                      product.stock <= 5 ? 'bg-red-50 border border-red-200' : 'bg-yellow-50 border border-yellow-200'
+                    <div key={product.id} className={`flex justify-between items-center p-4 rounded-lg border transition-all duration-200 hover:shadow-md ${
+                      product.stock <= 5 ? 
+                        'bg-gradient-to-r from-red-50/80 to-red-100/80 dark:from-red-900/20 dark:to-red-800/20 border-red-200/60 dark:border-red-800/30' : 
+                        'bg-gradient-to-r from-yellow-50/80 to-yellow-100/80 dark:from-yellow-900/20 dark:to-yellow-800/20 border-yellow-200/60 dark:border-yellow-800/30'
                     }`}>
-                      <div>
-                        <div className={`font-medium ${
-                          product.stock <= 5 ? 'text-red-800' : 'text-yellow-800'
+                      <div className="flex items-center gap-3">
+                        <div className={`p-2 rounded-lg ${
+                          product.stock <= 5 ? 'bg-red-500' : 'bg-yellow-500'
                         }`}>
-                          {product.name}
+                          <Package className="h-4 w-4 text-white" />
                         </div>
-                        <div className={`text-sm ${
-                          product.stock <= 5 ? 'text-red-600' : 'text-yellow-600'
-                        }`}>
-                          SKU: {product.sku}
+                        <div>
+                          <div className={`font-semibold ${
+                            product.stock <= 5 ? 'text-red-800 dark:text-red-200' : 'text-yellow-800 dark:text-yellow-200'
+                          }`}>
+                            {product.name}
+                          </div>
+                          <div className={`text-sm ${
+                            product.stock <= 5 ? 'text-red-600 dark:text-red-400' : 'text-yellow-600 dark:text-yellow-400'
+                          }`}>
+                            SKU: {product.sku}
+                          </div>
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className={`font-medium ${
-                          product.stock <= 5 ? 'text-red-800' : 'text-yellow-800'
+                        <div className={`font-bold ${
+                          product.stock <= 5 ? 'text-red-800 dark:text-red-200' : 'text-yellow-800 dark:text-yellow-200'
                         }`}>
                           {product.stock} left
                         </div>
-                        <div className={`text-sm ${
-                          product.stock <= 5 ? 'text-red-600' : 'text-yellow-600'
+                        <div className={`text-sm font-medium ${
+                          product.stock <= 5 ? 'text-red-600 dark:text-red-400' : 'text-yellow-600 dark:text-yellow-400'
                         }`}>
                           {product.stock <= 5 ? 'Critical' : 'Warning'}
                         </div>
@@ -179,7 +295,7 @@ export default function DashboardPage() {
                     </div>
                   ))
                 ) : (
-                  <div className="text-center py-4 text-muted-foreground">
+                  <div className="text-center py-4 text-foreground/80 font-medium">
                     No low stock alerts
                   </div>
                 )}
@@ -188,45 +304,124 @@ export default function DashboardPage() {
           </div>
 
           {/* Quick Actions */}
-          <div className="bg-card p-6 rounded-lg border border-border">
-            <h3 className="text-lg font-semibold text-foreground mb-4">Quick Actions</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <Link href="/orders" className="p-4 bg-accent rounded-lg hover:bg-accent/80 transition-colors">
-                <div className="font-medium text-foreground">Orders</div>
-                <div className="text-sm text-muted-foreground">Manage orders</div>
+          <div className="bg-card p-6 rounded-xl border border-border shadow-sm">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <TrendingUp className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-foreground">Quick Actions</h3>
+                <p className="text-sm text-muted-foreground font-medium">Frequently used features and shortcuts</p>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+              {/* Core Actions */}
+              <Link href="/orders" className="group p-5 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-xl border border-blue-200 dark:border-blue-800/30 hover:shadow-lg hover:scale-[1.02] transition-all duration-200 min-h-[120px] flex flex-col justify-center">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="p-2.5 bg-blue-500 rounded-lg shadow-sm">
+                    <ShoppingCart className="h-5 w-5 text-white" />
+                  </div>
+                  <div className="font-semibold text-foreground">Orders</div>
+                </div>
+                  <div className="text-sm text-muted-foreground leading-relaxed font-medium">Manage orders & shipping</div>
               </Link>
-              <Link href="/products" className="p-4 bg-accent rounded-lg hover:bg-accent/80 transition-colors">
-                <div className="font-medium text-foreground">Products</div>
-                <div className="text-sm text-muted-foreground">Manage inventory</div>
+              
+              <Link href="/products" className="group p-5 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 rounded-xl border border-green-200 dark:border-green-800/30 hover:shadow-lg hover:scale-[1.02] transition-all duration-200 min-h-[120px] flex flex-col justify-center">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="p-2.5 bg-green-500 rounded-lg shadow-sm">
+                    <Package className="h-5 w-5 text-white" />
+                  </div>
+                  <div className="font-semibold text-foreground">Products</div>
+                </div>
+                  <div className="text-sm text-muted-foreground leading-relaxed font-medium">Manage product catalog</div>
               </Link>
-              <Link href="/cart" className="p-4 bg-accent rounded-lg hover:bg-accent/80 transition-colors">
-                <div className="font-medium text-foreground">Shopping Cart</div>
-                <div className="text-sm text-muted-foreground">View cart</div>
+              
+              <Link href="/customers" className="group p-5 bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 rounded-xl border border-purple-200 dark:border-purple-800/30 hover:shadow-lg hover:scale-[1.02] transition-all duration-200 min-h-[120px] flex flex-col justify-center">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="p-2.5 bg-purple-500 rounded-lg shadow-sm">
+                    <Users className="h-5 w-5 text-white" />
+                  </div>
+                  <div className="font-semibold text-foreground">Users</div>
+                </div>
+                  <div className="text-sm text-muted-foreground leading-relaxed font-medium">Manage panel users</div>
               </Link>
-              <Link href="/inventory" className="p-4 bg-accent rounded-lg hover:bg-accent/80 transition-colors">
-                <div className="font-medium text-foreground">Inventory</div>
-                <div className="text-sm text-muted-foreground">Manage stock</div>
+              
+              <Link href="/inventory" className="group p-5 bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20 rounded-xl border border-orange-200 dark:border-orange-800/30 hover:shadow-lg hover:scale-[1.02] transition-all duration-200 min-h-[120px] flex flex-col justify-center">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="p-2.5 bg-orange-500 rounded-lg shadow-sm">
+                    <BarChart3 className="h-5 w-5 text-white" />
+                  </div>
+                  <div className="font-semibold text-foreground">Inventory</div>
+                </div>
+                  <div className="text-sm text-muted-foreground leading-relaxed font-medium">Stock management</div>
               </Link>
+
+              {/* Admin Only Actions */}
               {isAdmin() && (
                 <>
-                  <Link href="/shipping" className="p-4 bg-accent rounded-lg hover:bg-accent/80 transition-colors">
-                    <div className="font-medium text-foreground">Shipping</div>
-                    <div className="text-sm text-muted-foreground">Manage shipping</div>
+                  <Link href="/stores" className="group p-5 bg-gradient-to-br from-indigo-50 to-indigo-100 dark:from-indigo-900/20 dark:to-indigo-800/20 rounded-xl border border-indigo-200 dark:border-indigo-800/30 hover:shadow-lg hover:scale-[1.02] transition-all duration-200 min-h-[120px] flex flex-col justify-center">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="p-2.5 bg-indigo-500 rounded-lg shadow-sm">
+                        <Building className="h-5 w-5 text-white" />
+                      </div>
+                      <div className="font-semibold text-foreground">Stores</div>
+                    </div>
+                    <div className="text-sm text-muted-foreground leading-relaxed font-medium">Manage customer stores</div>
                   </Link>
-                  <Link href="/fulfillment" className="p-4 bg-accent rounded-lg hover:bg-accent/80 transition-colors">
-                    <div className="font-medium text-foreground">Fulfillment</div>
-                    <div className="text-sm text-muted-foreground">Billing & services</div>
+                  
+                  <Link href="/shipping" className="group p-5 bg-gradient-to-br from-teal-50 to-teal-100 dark:from-teal-900/20 dark:to-teal-800/20 rounded-xl border border-teal-200 dark:border-teal-800/30 hover:shadow-lg hover:scale-[1.02] transition-all duration-200 min-h-[120px] flex flex-col justify-center">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="p-2.5 bg-teal-500 rounded-lg shadow-sm">
+                        <Truck className="h-5 w-5 text-white" />
+                      </div>
+                      <div className="font-semibold text-foreground">Shipping</div>
+                    </div>
+                    <div className="text-sm text-muted-foreground leading-relaxed font-medium">Logistics & delivery</div>
                   </Link>
-                  <Link href="/orders/approvals" className="p-4 bg-accent rounded-lg hover:bg-accent/80 transition-colors">
-                    <div className="font-medium text-foreground">Approvals</div>
-                    <div className="text-sm text-muted-foreground">Pending approvals</div>
+                  
+                  <Link href="/orders/approvals" className="group p-5 bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-900/20 dark:to-amber-800/20 rounded-xl border border-amber-200 dark:border-amber-800/30 hover:shadow-lg hover:scale-[1.02] transition-all duration-200 min-h-[120px] flex flex-col justify-center">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="p-2.5 bg-amber-500 rounded-lg shadow-sm">
+                        <Clock className="h-5 w-5 text-white" />
+                      </div>
+                      <div className="font-semibold text-foreground">Order Approvals</div>
+                    </div>
+                    <div className="text-sm text-muted-foreground leading-relaxed font-medium">Review pending orders</div>
                   </Link>
-                  <Link href="/inventory/approvals" className="p-4 bg-accent rounded-lg hover:bg-accent/80 transition-colors">
-                    <div className="font-medium text-foreground">Inventory</div>
-                    <div className="text-sm text-muted-foreground">Approve requests</div>
+                  
+                  <Link href="/inventory/approvals" className="group p-5 bg-gradient-to-br from-rose-50 to-rose-100 dark:from-rose-900/20 dark:to-rose-800/20 rounded-xl border border-rose-200 dark:border-rose-800/30 hover:shadow-lg hover:scale-[1.02] transition-all duration-200 min-h-[120px] flex flex-col justify-center">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="p-2.5 bg-rose-500 rounded-lg shadow-sm">
+                        <CheckCircle className="h-5 w-5 text-white" />
+                      </div>
+                      <div className="font-semibold text-foreground">Inventory Approvals</div>
+                    </div>
+                    <div className="text-sm text-muted-foreground leading-relaxed font-medium">Review stock requests</div>
                   </Link>
                 </>
               )}
+
+              {/* Universal Actions */}
+              <Link href="/support" className="group p-5 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800/20 dark:to-gray-700/20 rounded-xl border border-gray-200 dark:border-gray-700/30 hover:shadow-lg hover:scale-[1.02] transition-all duration-200 min-h-[120px] flex flex-col justify-center">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="p-2.5 bg-gray-500 rounded-lg shadow-sm">
+                    <ClipboardList className="h-5 w-5 text-white" />
+                  </div>
+                  <div className="font-semibold text-foreground">Support</div>
+                </div>
+                <div className="text-sm text-muted-foreground leading-relaxed font-medium">Help & tickets</div>
+              </Link>
+              
+              <Link href="/reports" className="group p-5 bg-gradient-to-br from-cyan-50 to-cyan-100 dark:from-cyan-900/20 dark:to-cyan-800/20 rounded-xl border border-cyan-200 dark:border-cyan-800/30 hover:shadow-lg hover:scale-[1.02] transition-all duration-200 min-h-[120px] flex flex-col justify-center">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="p-2.5 bg-cyan-500 rounded-lg shadow-sm">
+                    <BarChart3 className="h-5 w-5 text-white" />
+                  </div>
+                  <div className="font-semibold text-foreground">Reports</div>
+                </div>
+                <div className="text-sm text-muted-foreground leading-relaxed font-medium">Analytics & insights</div>
+              </Link>
             </div>
           </div>
 
@@ -234,19 +429,41 @@ export default function DashboardPage() {
           <CalendarWidget />
 
           {isAdmin() && stores?.data && (
-            <div className="bg-card p-6 rounded-lg border border-border">
-              <h3 className="text-lg font-semibold text-foreground mb-4">Store Overview</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-card p-6 rounded-xl border border-border shadow-sm">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-2 bg-indigo-50 dark:bg-indigo-900/30 rounded-lg">
+                  <Building className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground">Store Overview</h3>
+                  <p className="text-sm text-muted-foreground">Monitor all connected customer stores</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {stores.data.map((store: { id: string; name: string; status: string; url: string; _count?: { orders: number } }) => (
-                  <div key={store.id} className="p-4 bg-accent rounded-lg">
-                    <div className="font-medium">{store.name}</div>
-                    <div className="text-sm text-muted-foreground">
-                      {store._count?.orders || 0} orders this month
+                  <div key={store.id} className="p-4 bg-gradient-to-br from-accent/20 to-accent/10 rounded-xl border border-border hover:shadow-md transition-all duration-200">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className={`p-2 rounded-lg ${
+                        store.status === 'connected' ? 'bg-green-500' : 'bg-red-500'
+                      }`}>
+                        <Building className="h-4 w-4 text-white" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-semibold text-foreground truncate">{store.name}</div>
+                        <div className="text-xs text-muted-foreground truncate">{store.url}</div>
+                      </div>
                     </div>
-                    <div className={`text-sm ${
-                      store.status === 'connected' ? 'text-green-600' : 'text-red-600'
-                    }`}>
-                      {store.status}
+                    <div className="flex justify-between items-center">
+                    <div className="text-sm text-foreground/80 font-medium">
+                      {store._count?.orders || 0} orders
+                    </div>
+                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                        store.status === 'connected' ? 
+                          'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' : 
+                          'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'
+                      }`}>
+                        {store.status}
+                      </span>
                     </div>
                   </div>
                 ))}

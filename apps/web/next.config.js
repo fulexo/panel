@@ -38,7 +38,7 @@ const nextConfig = {
           },
           {
             key: 'Content-Security-Policy',
-            value: "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https: http://localhost:3000; frame-ancestors 'none';",
+            value: "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https: http://localhost:3000 http://localhost:4000 http://127.0.0.1:4000; frame-ancestors 'none';",
           },
           {
             key: 'Permissions-Policy',
@@ -49,12 +49,7 @@ const nextConfig = {
     ];
   },
 
-  // Environment variables validation
-  env: {
-    NEXT_PUBLIC_API_BASE: process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:3000',
-    NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001',
-    SHARE_BASE_URL: process.env.SHARE_BASE_URL,
-  },
+  // Environment variables validation - removed to fix caching issues
 
   // Webpack configuration
   webpack: (config, { dev, isServer }) => {
