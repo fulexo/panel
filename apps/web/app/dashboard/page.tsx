@@ -111,24 +111,24 @@ export default function DashboardPage() {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
             <div className="space-y-1">
               <h1 className="mobile-heading text-foreground flex items-center gap-3">
-                <BarChart3 className="h-8 w-8 text-primary" />
+                <BarChart3 className="h-8 w-8 text-blue-600 dark:text-primary" />
                 Dashboard
               </h1>
-              <p className="text-muted-foreground mobile-text">
+              <p className="text-gray-700 dark:text-gray-400 mobile-text font-medium">
                 {isAdmin() ? 'Overview of all stores and operations' : 'Your store overview and statistics'}
               </p>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               <Link href="/orders/create" className="btn btn-primary btn-md flex flex-col items-center justify-center gap-1 shadow-lg hover:shadow-xl transition-all duration-200 w-full h-16">
-                <Plus className="h-5 w-5" />
+                <Plus className="h-5 w-5 text-white" />
                 <span className="text-xs font-medium leading-tight">Create Order</span>
               </Link>
               <Link href="/products" className="btn btn-outline btn-md flex flex-col items-center justify-center gap-1 hover:bg-accent/50 transition-all duration-200 w-full h-16">
-                <Package className="h-5 w-5" />
+                <Package className="h-5 w-5 text-gray-700 dark:text-gray-300" />
                 <span className="text-xs font-medium leading-tight">Products</span>
               </Link>
               <Link href="/inventory" className="btn btn-outline btn-md flex flex-col items-center justify-center gap-1 hover:bg-accent/50 transition-all duration-200 w-full h-16">
-                <BarChart3 className="h-5 w-5" />
+                <BarChart3 className="h-5 w-5 text-gray-700 dark:text-gray-300" />
                 <span className="text-xs font-medium leading-tight">Inventory</span>
               </Link>
             </div>
@@ -138,60 +138,60 @@ export default function DashboardPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <div className="bg-card p-6 rounded-xl border border-border shadow-sm hover:shadow-md transition-shadow duration-200">
               <div className="flex items-center justify-between mb-4">
-                <div className="p-2 bg-blue-50 dark:bg-blue-900/30 rounded-lg">
-                  <ShoppingCart className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                <div className="p-2 bg-blue-50/50 dark:bg-blue-900/30 rounded-lg">
+                  <ShoppingCart className="h-6 w-6 text-blue-700 dark:text-blue-400" />
                 </div>
                 <div className="text-right">
                   <div className="text-2xl font-bold text-foreground">{stats?.totalOrders || 0}</div>
                   <p className="text-sm text-foreground font-medium">Total Orders</p>
                 </div>
               </div>
-              <p className="text-xs text-blue-800 dark:text-blue-400 font-medium">
+              <p className="text-xs text-blue-700 dark:text-blue-400 font-semibold">
                 {isAdmin() ? 'Across all stores' : 'This month'}
               </p>
             </div>
 
             <div className="bg-card p-6 rounded-xl border border-border shadow-sm hover:shadow-md transition-shadow duration-200">
               <div className="flex items-center justify-between mb-4">
-                <div className="p-2 bg-green-50 dark:bg-green-900/30 rounded-lg">
-                  <Package className="h-6 w-6 text-green-600 dark:text-green-400" />
+                <div className="p-2 bg-green-50/50 dark:bg-green-900/30 rounded-lg">
+                  <Package className="h-6 w-6 text-green-700 dark:text-green-400" />
                 </div>
                 <div className="text-right">
                   <div className="text-2xl font-bold text-foreground">{stats?.totalProducts || 0}</div>
                   <p className="text-sm text-foreground font-medium">Products</p>
                 </div>
               </div>
-              <p className="text-xs text-green-800 dark:text-green-400 font-medium">
+              <p className="text-xs text-green-700 dark:text-green-400 font-semibold">
                 {isAdmin() ? 'Total products' : 'In your store'}
               </p>
             </div>
 
             <div className="bg-card p-6 rounded-xl border border-border shadow-sm hover:shadow-md transition-shadow duration-200">
               <div className="flex items-center justify-between mb-4">
-                <div className="p-2 bg-purple-50 dark:bg-purple-900/30 rounded-lg">
-                  <Users className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                <div className="p-2 bg-purple-50/50 dark:bg-purple-900/30 rounded-lg">
+                  <Users className="h-6 w-6 text-purple-700 dark:text-purple-400" />
                 </div>
                 <div className="text-right">
                   <div className="text-2xl font-bold text-foreground">{stats?.totalCustomers || 0}</div>
                   <p className="text-sm text-foreground font-medium">Users</p>
                 </div>
               </div>
-              <p className="text-xs text-purple-800 dark:text-purple-400 font-medium">
+              <p className="text-xs text-purple-700 dark:text-purple-400 font-semibold">
                 {isAdmin() ? 'Panel users' : 'Store customers'}
               </p>
             </div>
 
             <div className="bg-card p-6 rounded-xl border border-border shadow-sm hover:shadow-md transition-shadow duration-200">
               <div className="flex items-center justify-between mb-4">
-                <div className="p-2 bg-emerald-50 dark:bg-emerald-900/30 rounded-lg">
-                  <TrendingUp className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
+                <div className="p-2 bg-emerald-50/50 dark:bg-emerald-900/30 rounded-lg">
+                  <TrendingUp className="h-6 w-6 text-emerald-700 dark:text-emerald-400" />
                 </div>
                 <div className="text-right">
                   <div className="text-2xl font-bold text-foreground">${stats?.totalRevenue || 0}</div>
                   <p className="text-sm text-foreground font-medium">Revenue</p>
                 </div>
               </div>
-              <p className="text-xs text-emerald-800 dark:text-emerald-400 font-medium">
+              <p className="text-xs text-emerald-700 dark:text-emerald-400 font-semibold">
                 {isAdmin() ? 'Total revenue' : 'This month'}
               </p>
             </div>
@@ -200,12 +200,12 @@ export default function DashboardPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="bg-card p-6 rounded-xl border border-border shadow-sm">
               <div className="flex items-center gap-3 mb-6">
-                <div className="p-2 bg-blue-50 dark:bg-blue-900/30 rounded-lg">
-                  <ShoppingCart className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                <div className="p-2 bg-blue-50/50 dark:bg-blue-900/30 rounded-lg">
+                  <ShoppingCart className="h-6 w-6 text-blue-700 dark:text-blue-400" />
                 </div>
                 <div>
                   <h3 className="text-lg font-semibold text-foreground">Recent Orders</h3>
-                  <p className="text-sm text-muted-foreground">Latest order activity</p>
+                  <p className="text-sm text-gray-700 dark:text-gray-400 font-medium">Latest order activity</p>
                 </div>
               </div>
               <div className="space-y-3">
@@ -245,12 +245,12 @@ export default function DashboardPage() {
 
             <div className="bg-card p-6 rounded-xl border border-border shadow-sm">
               <div className="flex items-center gap-3 mb-6">
-                <div className="p-2 bg-red-50 dark:bg-red-900/30 rounded-lg">
-                  <AlertTriangle className="h-6 w-6 text-red-600 dark:text-red-400" />
+                <div className="p-2 bg-red-50/50 dark:bg-red-900/30 rounded-lg">
+                  <AlertTriangle className="h-6 w-6 text-red-700 dark:text-red-400" />
                 </div>
                 <div>
                   <h3 className="text-lg font-semibold text-foreground">Low Stock Alerts</h3>
-                  <p className="text-sm text-muted-foreground">Products needing attention</p>
+                  <p className="text-sm text-gray-700 dark:text-gray-400 font-medium">Products needing attention</p>
                 </div>
               </div>
               <div className="space-y-3">
@@ -311,116 +311,116 @@ export default function DashboardPage() {
               </div>
               <div>
                 <h3 className="text-lg font-semibold text-foreground">Quick Actions</h3>
-                <p className="text-sm text-muted-foreground font-medium">Frequently used features and shortcuts</p>
+                <p className="text-sm text-gray-800 dark:text-gray-300 font-semibold">Frequently used features and shortcuts</p>
               </div>
             </div>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
               {/* Core Actions */}
-              <Link href="/orders" className="group p-5 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-xl border border-blue-200 dark:border-blue-800/30 hover:shadow-lg hover:scale-[1.02] transition-all duration-200 min-h-[120px] flex flex-col justify-center">
+              <Link href="/orders" className="group p-5 bg-card dark:bg-gradient-to-br dark:from-blue-900/20 dark:to-blue-800/20 rounded-xl border border-blue-200 dark:border-blue-800/30 hover:shadow-lg hover:scale-[1.02] transition-all duration-200 min-h-[120px] flex flex-col justify-center">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="p-2.5 bg-blue-500 rounded-lg shadow-sm">
                     <ShoppingCart className="h-5 w-5 text-white" />
                   </div>
-                  <div className="font-semibold text-foreground">Orders</div>
+                  <div className="font-semibold text-card-foreground">Orders</div>
                 </div>
-                  <div className="text-sm text-muted-foreground leading-relaxed font-medium">Manage orders & shipping</div>
+                  <div className="text-sm text-card-foreground/80 leading-relaxed font-semibold">Manage orders & shipping</div>
               </Link>
               
-              <Link href="/products" className="group p-5 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 rounded-xl border border-green-200 dark:border-green-800/30 hover:shadow-lg hover:scale-[1.02] transition-all duration-200 min-h-[120px] flex flex-col justify-center">
+              <Link href="/products" className="group p-5 bg-card dark:bg-gradient-to-br dark:from-green-900/20 dark:to-green-800/20 rounded-xl border border-green-200 dark:border-green-800/30 hover:shadow-lg hover:scale-[1.02] transition-all duration-200 min-h-[120px] flex flex-col justify-center">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="p-2.5 bg-green-500 rounded-lg shadow-sm">
                     <Package className="h-5 w-5 text-white" />
                   </div>
-                  <div className="font-semibold text-foreground">Products</div>
+                  <div className="font-semibold text-card-foreground">Products</div>
                 </div>
-                  <div className="text-sm text-muted-foreground leading-relaxed font-medium">Manage product catalog</div>
+                  <div className="text-sm text-card-foreground/80 leading-relaxed font-semibold">Manage product catalog</div>
               </Link>
               
-              <Link href="/customers" className="group p-5 bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 rounded-xl border border-purple-200 dark:border-purple-800/30 hover:shadow-lg hover:scale-[1.02] transition-all duration-200 min-h-[120px] flex flex-col justify-center">
+              <Link href="/customers" className="group p-5 bg-card dark:bg-gradient-to-br dark:from-purple-900/20 dark:to-purple-800/20 rounded-xl border border-purple-200 dark:border-purple-800/30 hover:shadow-lg hover:scale-[1.02] transition-all duration-200 min-h-[120px] flex flex-col justify-center">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="p-2.5 bg-purple-500 rounded-lg shadow-sm">
                     <Users className="h-5 w-5 text-white" />
                   </div>
-                  <div className="font-semibold text-foreground">Users</div>
+                  <div className="font-semibold text-card-foreground">Users</div>
                 </div>
-                  <div className="text-sm text-muted-foreground leading-relaxed font-medium">Manage panel users</div>
+                  <div className="text-sm text-card-foreground/80 leading-relaxed font-semibold">Manage panel users</div>
               </Link>
               
-              <Link href="/inventory" className="group p-5 bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20 rounded-xl border border-orange-200 dark:border-orange-800/30 hover:shadow-lg hover:scale-[1.02] transition-all duration-200 min-h-[120px] flex flex-col justify-center">
+              <Link href="/inventory" className="group p-5 bg-card dark:bg-gradient-to-br dark:from-orange-900/20 dark:to-orange-800/20 rounded-xl border border-orange-200 dark:border-orange-800/30 hover:shadow-lg hover:scale-[1.02] transition-all duration-200 min-h-[120px] flex flex-col justify-center">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="p-2.5 bg-orange-500 rounded-lg shadow-sm">
                     <BarChart3 className="h-5 w-5 text-white" />
                   </div>
-                  <div className="font-semibold text-foreground">Inventory</div>
+                  <div className="font-semibold text-card-foreground">Inventory</div>
                 </div>
-                  <div className="text-sm text-muted-foreground leading-relaxed font-medium">Stock management</div>
+                  <div className="text-sm text-card-foreground/80 leading-relaxed font-semibold">Stock management</div>
               </Link>
 
               {/* Admin Only Actions */}
               {isAdmin() && (
                 <>
-                  <Link href="/stores" className="group p-5 bg-gradient-to-br from-indigo-50 to-indigo-100 dark:from-indigo-900/20 dark:to-indigo-800/20 rounded-xl border border-indigo-200 dark:border-indigo-800/30 hover:shadow-lg hover:scale-[1.02] transition-all duration-200 min-h-[120px] flex flex-col justify-center">
+                  <Link href="/stores" className="group p-5 bg-card dark:bg-gradient-to-br dark:from-indigo-900/20 dark:to-indigo-800/20 rounded-xl border border-indigo-200 dark:border-indigo-800/30 hover:shadow-lg hover:scale-[1.02] transition-all duration-200 min-h-[120px] flex flex-col justify-center">
                     <div className="flex items-center gap-3 mb-3">
                       <div className="p-2.5 bg-indigo-500 rounded-lg shadow-sm">
                         <Building className="h-5 w-5 text-white" />
                       </div>
-                      <div className="font-semibold text-foreground">Stores</div>
+                      <div className="font-semibold text-card-foreground">Stores</div>
                     </div>
-                    <div className="text-sm text-muted-foreground leading-relaxed font-medium">Manage customer stores</div>
+                    <div className="text-sm text-card-foreground/80 leading-relaxed font-semibold">Manage customer stores</div>
                   </Link>
                   
-                  <Link href="/shipping" className="group p-5 bg-gradient-to-br from-teal-50 to-teal-100 dark:from-teal-900/20 dark:to-teal-800/20 rounded-xl border border-teal-200 dark:border-teal-800/30 hover:shadow-lg hover:scale-[1.02] transition-all duration-200 min-h-[120px] flex flex-col justify-center">
+                  <Link href="/shipping" className="group p-5 bg-card dark:bg-gradient-to-br dark:from-teal-900/20 dark:to-teal-800/20 rounded-xl border border-teal-200 dark:border-teal-800/30 hover:shadow-lg hover:scale-[1.02] transition-all duration-200 min-h-[120px] flex flex-col justify-center">
                     <div className="flex items-center gap-3 mb-3">
                       <div className="p-2.5 bg-teal-500 rounded-lg shadow-sm">
                         <Truck className="h-5 w-5 text-white" />
                       </div>
-                      <div className="font-semibold text-foreground">Shipping</div>
+                      <div className="font-semibold text-card-foreground">Shipping</div>
                     </div>
-                    <div className="text-sm text-muted-foreground leading-relaxed font-medium">Logistics & delivery</div>
+                    <div className="text-sm text-card-foreground/80 leading-relaxed font-semibold">Logistics & delivery</div>
                   </Link>
                   
-                  <Link href="/orders/approvals" className="group p-5 bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-900/20 dark:to-amber-800/20 rounded-xl border border-amber-200 dark:border-amber-800/30 hover:shadow-lg hover:scale-[1.02] transition-all duration-200 min-h-[120px] flex flex-col justify-center">
+                  <Link href="/orders/approvals" className="group p-5 bg-card dark:bg-gradient-to-br dark:from-amber-900/20 dark:to-amber-800/20 rounded-xl border border-amber-200 dark:border-amber-800/30 hover:shadow-lg hover:scale-[1.02] transition-all duration-200 min-h-[120px] flex flex-col justify-center">
                     <div className="flex items-center gap-3 mb-3">
                       <div className="p-2.5 bg-amber-500 rounded-lg shadow-sm">
                         <Clock className="h-5 w-5 text-white" />
                       </div>
-                      <div className="font-semibold text-foreground">Order Approvals</div>
+                      <div className="font-semibold text-card-foreground">Order Approvals</div>
                     </div>
-                    <div className="text-sm text-muted-foreground leading-relaxed font-medium">Review pending orders</div>
+                    <div className="text-sm text-card-foreground/80 leading-relaxed font-semibold">Review pending orders</div>
                   </Link>
                   
-                  <Link href="/inventory/approvals" className="group p-5 bg-gradient-to-br from-rose-50 to-rose-100 dark:from-rose-900/20 dark:to-rose-800/20 rounded-xl border border-rose-200 dark:border-rose-800/30 hover:shadow-lg hover:scale-[1.02] transition-all duration-200 min-h-[120px] flex flex-col justify-center">
+                  <Link href="/inventory/approvals" className="group p-5 bg-card dark:bg-gradient-to-br dark:from-rose-900/20 dark:to-rose-800/20 rounded-xl border border-rose-200 dark:border-rose-800/30 hover:shadow-lg hover:scale-[1.02] transition-all duration-200 min-h-[120px] flex flex-col justify-center">
                     <div className="flex items-center gap-3 mb-3">
                       <div className="p-2.5 bg-rose-500 rounded-lg shadow-sm">
                         <CheckCircle className="h-5 w-5 text-white" />
                       </div>
-                      <div className="font-semibold text-foreground">Inventory Approvals</div>
+                      <div className="font-semibold text-card-foreground">Inventory Approvals</div>
                     </div>
-                    <div className="text-sm text-muted-foreground leading-relaxed font-medium">Review stock requests</div>
+                    <div className="text-sm text-card-foreground/80 leading-relaxed font-semibold">Review stock requests</div>
                   </Link>
                 </>
               )}
 
               {/* Universal Actions */}
-              <Link href="/support" className="group p-5 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800/20 dark:to-gray-700/20 rounded-xl border border-gray-200 dark:border-gray-700/30 hover:shadow-lg hover:scale-[1.02] transition-all duration-200 min-h-[120px] flex flex-col justify-center">
+              <Link href="/support" className="group p-5 bg-card dark:bg-gradient-to-br dark:from-gray-800/20 dark:to-gray-700/20 rounded-xl border border-gray-200 dark:border-gray-700/30 hover:shadow-lg hover:scale-[1.02] transition-all duration-200 min-h-[120px] flex flex-col justify-center">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="p-2.5 bg-gray-500 rounded-lg shadow-sm">
                     <ClipboardList className="h-5 w-5 text-white" />
                   </div>
-                  <div className="font-semibold text-foreground">Support</div>
+                  <div className="font-semibold text-card-foreground">Support</div>
                 </div>
-                <div className="text-sm text-muted-foreground leading-relaxed font-medium">Help & tickets</div>
+                <div className="text-sm text-card-foreground/80 leading-relaxed font-semibold">Help & tickets</div>
               </Link>
               
-              <Link href="/reports" className="group p-5 bg-gradient-to-br from-cyan-50 to-cyan-100 dark:from-cyan-900/20 dark:to-cyan-800/20 rounded-xl border border-cyan-200 dark:border-cyan-800/30 hover:shadow-lg hover:scale-[1.02] transition-all duration-200 min-h-[120px] flex flex-col justify-center">
+              <Link href="/reports" className="group p-5 bg-card dark:bg-gradient-to-br dark:from-cyan-900/20 dark:to-cyan-800/20 rounded-xl border border-cyan-200 dark:border-cyan-800/30 hover:shadow-lg hover:scale-[1.02] transition-all duration-200 min-h-[120px] flex flex-col justify-center">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="p-2.5 bg-cyan-500 rounded-lg shadow-sm">
                     <BarChart3 className="h-5 w-5 text-white" />
                   </div>
-                  <div className="font-semibold text-foreground">Reports</div>
+                  <div className="font-semibold text-card-foreground">Reports</div>
                 </div>
-                <div className="text-sm text-muted-foreground leading-relaxed font-medium">Analytics & insights</div>
+                <div className="text-sm text-card-foreground/80 leading-relaxed font-semibold">Analytics & insights</div>
               </Link>
             </div>
           </div>
@@ -436,7 +436,7 @@ export default function DashboardPage() {
                 </div>
                 <div>
                   <h3 className="text-lg font-semibold text-foreground">Store Overview</h3>
-                  <p className="text-sm text-muted-foreground">Monitor all connected customer stores</p>
+                  <p className="text-sm text-gray-700 dark:text-gray-400 font-medium">Monitor all connected customer stores</p>
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -459,8 +459,8 @@ export default function DashboardPage() {
                     </div>
                       <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
                         store.status === 'connected' ? 
-                          'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' : 
-                          'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'
+                          'bg-green-100 text-gray-900 dark:bg-green-900/30 dark:text-green-300' : 
+                          'bg-red-100 text-gray-900 dark:bg-red-900/30 dark:text-red-300'
                       }`}>
                         {store.status}
                       </span>

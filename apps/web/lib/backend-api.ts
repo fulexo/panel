@@ -1,4 +1,4 @@
-﻿const DEFAULT_LOCAL_API_BASE = 'http://127.0.0.1:4000';
+﻿const DEFAULT_LOCAL_API_BASE = 'http://127.0.0.1:3000';
 
 const ensureHttpUrl = (value?: string | null): string | undefined => {
   if (!value) {

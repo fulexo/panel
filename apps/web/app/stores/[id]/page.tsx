@@ -417,7 +417,7 @@ export default function StoreDetailPage() {
                       <div className={`w-2 h-2 rounded-full ${
                         store.connectionStatus === 'connected' ? 'bg-green-500' : 'bg-red-500'
                       }`}></div>
-                      <span className="text-sm font-medium">{store.connectionStatus}</span>
+                      <span className="text-sm font-medium text-gray-900 dark:text-foreground">{store.connectionStatus}</span>
                     </div>
                   </div>
                   <div className="flex items-center justify-between">
