@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
+import { getBackendApiBaseUrl } from '@/lib/backend-api';
 
-const API_BASE = process.env['NEXT_PUBLIC_API_BASE'] || 'http://localhost:3000';
+const BACKEND_API_BASE = getBackendApiBaseUrl();
 
 export async function GET(
   request: NextRequest,
@@ -44,7 +45,7 @@ async function handleRequest(
 ) {
   try {
     const path = pathSegments.join('/');
-    const url = new URL(`${API_BASE}/api/${path}`);
+    const url = new URL(`/api/${path}`, BACKEND_API_BASE);
     
     // Copy query parameters
     request.nextUrl.searchParams.forEach((value, key) => {
@@ -222,3 +223,9 @@ async function handleRequest(
     );
   }
 }
+
+
+
+
+
+

@@ -1,8 +1,12 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
+import { getBackendApiBaseUrl } from '@/lib/backend-api';
+
+const BACKEND_API_BASE = getBackendApiBaseUrl();
 
 export async function POST(_request: NextRequest) {
   try {
-    const response = await fetch('http://localhost:3000/api/auth/clear-tokens', {
+    const backendUrl = new URL('/api/auth/clear-tokens', BACKEND_API_BASE);
+    const response = await fetch(backendUrl.toString(), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

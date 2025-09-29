@@ -1,5 +1,8 @@
 import { logger } from "@/lib/logger";
 import { NextRequest, NextResponse } from 'next/server';
+import { getBackendApiBaseUrl } from '@/lib/backend-api';
+
+const BACKEND_API_BASE = getBackendApiBaseUrl();
 
 export async function POST(request: NextRequest) {
   try {
@@ -12,7 +15,8 @@ export async function POST(request: NextRequest) {
     
     // Send to backend monitoring service
     try {
-      const response = await fetch(`${process.env['NEXT_PUBLIC_API_BASE'] || 'http://localhost:3000'}/api/monitoring/errors`, {
+      const backendUrl = new URL('/api/monitoring/errors', BACKEND_API_BASE);
+      const response = await fetch(backendUrl.toString(), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -1,9 +1,14 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
+import { getBackendApiBaseUrl } from '@/lib/backend-api';
+
+const BACKEND_API_BASE = getBackendApiBaseUrl();
 
 export async function GET(request: NextRequest) {
   try {
+    const backendUrl = new URL('/api/auth/me', BACKEND_API_BASE);
+
     // Direct call to backend API
-    const response = await fetch('http://localhost:3000/api/auth/me', {
+    const response = await fetch(backendUrl.toString(), {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -29,3 +34,4 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+

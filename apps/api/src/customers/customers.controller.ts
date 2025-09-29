@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Put, Delete, Param, Body, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { normalizeLimit, normalizePage } from '../common/utils/number.util';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { CustomersService } from './customers.service';
 import { CreateCustomerDto } from './dto/create-customer.dto';
@@ -21,15 +22,17 @@ export class CustomersController {
   @ApiQuery({ name: 'tag', required: false, type: String })
   @ApiQuery({ name: 'storeId', required: false, type: String })
   async list(
-    @CurrentUser() user: { id: string; email: string; role: string; tenantId: string }, 
-    @Query('page') page = 1, 
-    @Query('limit') limit = 50, 
+    @CurrentUser() user: { id: string; email: string; role: string; tenantId: string },
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
     @Query('search') search?: string,
     @Query('status') status?: string,
     @Query('tag') tag?: string,
     @Query('storeId') storeId?: string,
   ) {
-    return this.customers.list(user.tenantId, Number(page), Number(limit), search, status, tag, storeId);
+    const pageNumber = normalizePage(page, 1);
+    const limitNumber = normalizeLimit(limit, 50, 200);
+    return this.customers.list(user.tenantId, pageNumber, limitNumber, search, status, tag, storeId);
   }
 
   @Get(':id')

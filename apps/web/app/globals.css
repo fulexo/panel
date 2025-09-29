@@ -192,19 +192,19 @@
   
   /* Enhanced button styles */
   .btn {
-    @apply inline-flex items-center justify-center rounded-lg font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none;
+    @apply inline-flex items-center justify-center rounded-lg font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none relative overflow-hidden;
   }
   
   .btn-primary {
-    @apply btn bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-primary;
+    @apply btn bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-primary shadow-lg hover:shadow-xl;
   }
   
   .btn-secondary {
-    @apply btn bg-secondary text-secondary-foreground hover:bg-secondary/80 focus:ring-secondary;
+    @apply btn bg-secondary text-secondary-foreground hover:bg-secondary/80 focus:ring-secondary shadow-md hover:shadow-lg;
   }
   
   .btn-outline {
-    @apply btn border border-border bg-transparent hover:bg-accent hover:text-accent-foreground focus:ring-primary;
+    @apply btn border border-border bg-transparent hover:bg-accent hover:text-accent-foreground focus:ring-primary hover:border-primary/50 shadow-sm hover:shadow-md;
   }
   
   .btn-ghost {
@@ -212,35 +212,64 @@
   }
   
   .btn-destructive {
-    @apply btn bg-destructive text-destructive-foreground hover:bg-destructive/90 focus:ring-destructive;
+    @apply btn bg-destructive text-destructive-foreground hover:bg-destructive/90 focus:ring-destructive shadow-lg hover:shadow-xl;
   }
 
   .btn-danger {
-    @apply btn bg-red-600 text-white hover:bg-red-700 focus:ring-red-500;
+    @apply btn bg-red-600 text-white hover:bg-red-700 focus:ring-red-500 shadow-lg hover:shadow-xl;
   }
   
   .btn-success {
-    @apply btn bg-green-600 text-white hover:bg-green-700 focus:ring-green-600;
+    @apply btn bg-green-600 text-white hover:bg-green-700 focus:ring-green-600 shadow-lg hover:shadow-xl;
   }
 
   .btn-warning {
-    @apply btn bg-yellow-600 text-white hover:bg-yellow-700 focus:ring-yellow-500;
+    @apply btn bg-yellow-600 text-white hover:bg-yellow-700 focus:ring-yellow-500 shadow-lg hover:shadow-xl;
   }
   
   .btn-sm {
-    @apply px-3 py-1.5 text-sm;
+    @apply px-3 py-1.5 text-xs h-8;
   }
   
   .btn-md {
-    @apply px-4 py-2 text-sm;
+    @apply px-4 py-2 text-sm h-10;
   }
   
   .btn-lg {
-    @apply px-6 py-3 text-base;
+    @apply px-6 py-3 text-base h-12;
+  }
+
+  /* Special button heights for different layouts */
+  .btn-tall {
+    @apply h-16;
+  }
+
+  .btn-compact {
+    @apply h-8;
   }
   
   .btn-animate {
-    @apply active:scale-95;
+    @apply active:scale-95 hover:scale-105;
+  }
+
+  /* Button hover effects */
+  .btn::before {
+    @apply absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full transition-transform duration-700;
+    content: '';
+  }
+  
+  .btn:hover::before {
+    @apply translate-x-full;
+  }
+
+  /* Button focus states */
+  .btn:focus-visible {
+    @apply ring-2 ring-offset-2 ring-primary/50;
+  }
+
+  /* Button disabled states */
+  .btn:disabled {
+    @apply opacity-50 cursor-not-allowed hover:scale-100 hover:shadow-none;
   }
   
   /* Enhanced form styles */
@@ -458,6 +487,67 @@
 
   .btn-mobile-sm {
     @apply w-full sm:w-auto text-sm px-3 py-2;
+  }
+
+  /* Responsive button grid */
+  .btn-grid {
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3;
+  }
+
+  .btn-grid-2 {
+    @apply grid grid-cols-1 sm:grid-cols-2 gap-3;
+  }
+
+  .btn-grid-3 {
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3;
+  }
+
+  /* Button responsive text */
+  .btn-text-responsive {
+    @apply hidden sm:inline;
+  }
+
+  .btn-text-mobile {
+    @apply sm:hidden;
+  }
+
+  /* Button minimum widths */
+  .btn-min-w-sm {
+    @apply min-w-[80px];
+  }
+
+  .btn-min-w-md {
+    @apply min-w-[100px];
+  }
+
+  .btn-min-w-lg {
+    @apply min-w-[120px];
+  }
+
+  /* Vertical button layout for icon + text */
+  .btn-vertical {
+    @apply flex flex-col items-center justify-center gap-1;
+  }
+
+  .btn-vertical .btn-icon {
+    @apply h-5 w-5;
+  }
+
+  .btn-vertical .btn-text {
+    @apply text-xs font-medium leading-tight;
+  }
+
+  /* Compact button layout */
+  .btn-compact {
+    @apply flex items-center justify-center gap-1;
+  }
+
+  .btn-compact .btn-icon {
+    @apply h-4 w-4;
+  }
+
+  .btn-compact .btn-text {
+    @apply text-xs font-medium;
   }
 
   /* Mobile card utilities */

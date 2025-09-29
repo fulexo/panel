@@ -8,8 +8,8 @@ import { Rocket, Eye, EyeOff, AlertCircle } from 'lucide-react';
 export default function LoginPage() {
   const { login } = useAuth();
   const router = useRouter();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('admin@fulexo.com');
+  const [password, setPassword] = useState('demo123');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -122,14 +122,6 @@ export default function LoginPage() {
             </button>
           </form>
 
-          {/* Demo Credentials */}
-          <div className="mt-6 p-4 bg-accent/50 rounded-lg">
-            <h3 className="text-sm font-medium text-primary mb-2">Demo Credentials</h3>
-            <div className="text-xs text-muted space-y-1">
-              <div><strong>Email:</strong> admin@fulexo.com</div>
-              <div><strong>Password:</strong> demo123</div>
-            </div>
-          </div>
         </div>
 
         {/* Footer */}

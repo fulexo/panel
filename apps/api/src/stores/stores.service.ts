@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+﻿import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { CreateStoreDto, UpdateStoreDto } from './dto/stores.dto';
 import { WooCommerceService } from '../woocommerce/woo.service';
@@ -12,7 +12,9 @@ export class StoresService {
   ) {}
 
   async findAll({ page, limit, search }: { page: number; limit: number; search?: string }, user?: any) {
-    const skip = (page - 1) * limit;
+    const safePage = Number.isFinite(Number(page)) && Number(page) > 0 ? Number(page) : 1;
+    const safeLimit = Number.isFinite(Number(limit)) && Number(limit) > 0 ? Math.min(Number(limit), 100) : 20;
+    const skip = (safePage - 1) * safeLimit;
     
     // Build where clause based on user role
     const where: any = {};
@@ -35,7 +37,7 @@ export class StoresService {
       this.prisma.store.findMany({
         where,
         skip,
-        take: limit,
+        take: safeLimit,
         include: {
           customer: {
             select: {
@@ -61,10 +63,10 @@ export class StoresService {
     return {
       data: stores,
       pagination: {
-        page,
-        limit,
+        page: safePage,
+        limit: safeLimit,
         total,
-        pages: Math.ceil(total / limit),
+        pages: Math.ceil(total / safeLimit),
       },
     };
   }

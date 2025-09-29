@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import { normalizeLimit, normalizePage } from '../common/utils/number.util';
 import { PrismaService } from '../prisma.service';
 import { CreateInventoryApprovalDto } from './dto/inventory.dto';
 import { User } from '../users/entities/user.entity';
@@ -15,7 +16,9 @@ export class InventoryService {
     status?: string;
     storeId?: string;
   }) {
-    const skip = (page - 1) * limit;
+    const safePage = normalizePage(page, 1);
+    const safeLimit = normalizeLimit(limit, 10, 200);
+    const skip = (safePage - 1) * safeLimit;
     const where: Record<string, unknown> = {};
 
     if (status) {
@@ -302,7 +305,9 @@ export class InventoryService {
     storeId?: string;
     lowStock?: boolean;
   }) {
-    const skip = (page - 1) * limit;
+    const safePage = normalizePage(page, 1);
+    const safeLimit = normalizeLimit(limit, 25, 200);
+    const skip = (safePage - 1) * safeLimit;
     const where: Record<string, unknown> = {};
 
     if (storeId) {

@@ -7,6 +7,21 @@ import { useRBAC } from "@/hooks/useRBAC";
 import { useOrders, useUpdateOrderStatus } from "@/hooks/useOrders";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import ProtectedComponent from "@/components/ProtectedComponent";
+import { 
+  Plus, 
+  ShoppingCart, 
+  Clock, 
+  Truck, 
+  Package, 
+  CheckCircle, 
+  Eye, 
+  ChevronLeft, 
+  ChevronRight,
+  Search,
+  Filter,
+  Download,
+  RefreshCw
+} from "lucide-react";
 // import { ApiError } from "@/lib/api-client";
 
 export default function OrdersPage() {
@@ -79,67 +94,96 @@ export default function OrdersPage() {
     <ProtectedRoute>
       <div className="bg-background">
         <main className="mobile-container py-6 space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <h1 className="mobile-heading text-foreground">Orders</h1>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
+            <div className="space-y-1">
+              <h1 className="mobile-heading text-foreground flex items-center gap-3">
+                <ShoppingCart className="h-8 w-8 text-primary" />
+                Orders
+              </h1>
               <p className="text-muted-foreground mobile-text">
                 {isAdmin() ? 'Manage all orders across all stores' : 'View your store orders'}
               </p>
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
               <ProtectedComponent permission="orders.manage">
-                <button className="btn btn-primary text-sm">
-                  Create Order
+                <button className="btn btn-primary btn-md flex flex-col items-center justify-center gap-1 shadow-lg hover:shadow-xl transition-all duration-200 w-full h-16">
+                  <Plus className="h-5 w-5" />
+                  <span className="text-xs font-medium leading-tight">Create Order</span>
                 </button>
               </ProtectedComponent>
               <ProtectedComponent permission="orders.create">
-                <Link href="/orders/create" className="btn btn-outline text-sm">
-                  New Customer Order
+                <Link href="/orders/create" className="btn btn-outline btn-md flex flex-col items-center justify-center gap-1 hover:bg-accent/50 transition-all duration-200 w-full h-16">
+                  <ShoppingCart className="h-5 w-5" />
+                  <span className="text-xs font-medium leading-tight">New Order</span>
                 </Link>
               </ProtectedComponent>
               <ProtectedComponent permission="orders.approve">
-                <Link href="/orders/approvals" className="btn btn-warning text-sm">
-                  Pending Approvals
+                <Link href="/orders/approvals" className="btn btn-warning btn-md flex flex-col items-center justify-center gap-1 shadow-lg hover:shadow-xl transition-all duration-200 w-full h-16">
+                  <Clock className="h-5 w-5" />
+                  <span className="text-xs font-medium leading-tight">Approvals</span>
                 </Link>
               </ProtectedComponent>
               <ProtectedComponent permission="shipping.manage">
-                <Link href="/shipping" className="btn btn-outline text-sm">
-                  Shipping Prices
+                <Link href="/shipping" className="btn btn-outline btn-md flex flex-col items-center justify-center gap-1 hover:bg-accent/50 transition-all duration-200 w-full h-16">
+                  <Truck className="h-5 w-5" />
+                  <span className="text-xs font-medium leading-tight">Shipping</span>
                 </Link>
               </ProtectedComponent>
               <ProtectedComponent permission="inventory.manage">
-                <Link href="/inventory" className="btn btn-outline text-sm">
-                  Inventory Management
+                <Link href="/inventory" className="btn btn-outline btn-md flex flex-col items-center justify-center gap-1 hover:bg-accent/50 transition-all duration-200 w-full h-16">
+                  <Package className="h-5 w-5" />
+                  <span className="text-xs font-medium leading-tight">Inventory</span>
                 </Link>
               </ProtectedComponent>
               <ProtectedComponent permission="inventory.approve">
-                <Link href="/inventory/approvals" className="btn btn-warning text-sm">
-                  Inventory Approvals
+                <Link href="/inventory/approvals" className="btn btn-warning btn-md flex flex-col items-center justify-center gap-1 shadow-lg hover:shadow-xl transition-all duration-200 w-full h-16">
+                  <CheckCircle className="h-5 w-5" />
+                  <span className="text-xs font-medium leading-tight">Inv. Approvals</span>
                 </Link>
               </ProtectedComponent>
             </div>
           </div>
 
-          {/* Filters */}
-          <div className="flex flex-col sm:flex-row gap-4">
-            <input
-              type="text"
-              placeholder="Search orders..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="flex-1 px-3 py-2 border border-border rounded-lg bg-background text-foreground"
-            />
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-2 border border-border rounded-lg bg-background text-foreground"
-            >
-              <option value="">All Statuses</option>
-              <option value="pending">Pending</option>
-              <option value="processing">Processing</option>
-              <option value="completed">Completed</option>
-              <option value="cancelled">Cancelled</option>
-            </select>
+          {/* Enhanced Filters */}
+          <div className="bg-card p-4 sm:p-6 rounded-xl border border-border shadow-sm">
+            <div className="space-y-4">
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="flex-1 relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <input
+                    type="text"
+                    placeholder="Search orders by number, customer, or email..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="w-full pl-10 pr-4 py-3 border border-border rounded-lg bg-background text-foreground placeholder-muted-foreground focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200"
+                  />
+                </div>
+                <div className="relative w-full sm:w-auto sm:min-w-[160px]">
+                  <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                    className="w-full pl-10 pr-8 py-3 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200 appearance-none cursor-pointer"
+                  >
+                    <option value="">All Statuses</option>
+                    <option value="pending">Pending</option>
+                    <option value="processing">Processing</option>
+                    <option value="completed">Completed</option>
+                    <option value="cancelled">Cancelled</option>
+                  </select>
+                </div>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <button className="btn btn-outline btn-md flex items-center justify-center gap-2 hover:bg-accent/50 transition-all duration-200 w-full sm:w-auto sm:min-w-[100px] h-10">
+                  <RefreshCw className="h-4 w-4" />
+                  <span className="text-sm font-medium">Refresh</span>
+                </button>
+                <button className="btn btn-outline btn-md flex items-center justify-center gap-2 hover:bg-accent/50 transition-all duration-200 w-full sm:w-auto sm:min-w-[100px] h-10">
+                  <Download className="h-4 w-4" />
+                  <span className="text-sm font-medium">Export</span>
+                </button>
+              </div>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -241,12 +285,15 @@ export default function OrdersPage() {
                       </td>
                       <ProtectedComponent permission="orders.manage">
                         <td className="p-2 sm:p-3">
-                          <div className="flex flex-col sm:flex-row gap-1">
-                            <button className="btn btn-xs btn-outline">View</button>
+                          <div className="flex flex-col sm:flex-row gap-2 w-full">
+                            <button className="btn btn-outline btn-sm flex items-center justify-center gap-1 hover:bg-accent/50 transition-all duration-200 w-full sm:w-auto h-8">
+                              <Eye className="h-3 w-3" />
+                              <span className="text-xs font-medium">View</span>
+                            </button>
                             <select
                               value={order.status}
                               onChange={(e) => handleStatusUpdate(order.id, e.target.value)}
-                              className="btn btn-xs btn-outline text-xs"
+                              className="btn btn-outline btn-sm text-xs hover:bg-accent/50 transition-all duration-200 appearance-none cursor-pointer px-3 py-1.5 w-full sm:w-auto h-8"
                             >
                               <option value="pending">Pending</option>
                               <option value="processing">Processing</option>
@@ -269,26 +316,48 @@ export default function OrdersPage() {
               </table>
             </div>
 
-            {/* Pagination */}
+            {/* Enhanced Pagination */}
             {totalPages > 1 && (
-              <div className="flex justify-center mt-6 gap-2">
-                <button
-                  onClick={() => setPage(p => Math.max(1, p - 1))}
-                  disabled={page === 1}
-                  className="btn btn-outline btn-sm"
-                >
-                  Previous
-                </button>
-                <span className="px-4 py-2 text-sm text-muted-foreground">
-                  Page {page} of {totalPages}
-                </span>
-                <button
-                  onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                  disabled={page === totalPages}
-                  className="btn btn-outline btn-sm"
-                >
-                  Next
-                </button>
+              <div className="flex flex-col sm:flex-row items-center justify-between mt-8 gap-4">
+                <div className="text-sm text-muted-foreground text-center sm:text-left">
+                  Showing {((page - 1) * 10) + 1} to {Math.min(page * 10, totalOrders)} of {totalOrders} orders
+                </div>
+                <div className="flex items-center gap-2 flex-wrap justify-center">
+                  <button
+                    onClick={() => setPage(p => Math.max(1, p - 1))}
+                    disabled={page === 1}
+                    className="btn btn-outline btn-sm flex items-center gap-2 hover:bg-accent/50 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed min-w-[80px] h-8"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    <span className="text-xs font-medium">Prev</span>
+                  </button>
+                  <div className="flex items-center gap-1 flex-wrap justify-center">
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      const pageNum = Math.max(1, Math.min(totalPages - 4, page - 2)) + i;
+                      return (
+                        <button
+                          key={pageNum}
+                          onClick={() => setPage(pageNum)}
+                          className={`px-3 py-2 text-xs font-medium rounded-lg transition-all duration-200 min-w-[32px] h-8 ${
+                            page === pageNum
+                              ? 'bg-primary text-primary-foreground shadow-lg'
+                              : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'
+                          }`}
+                        >
+                          {pageNum}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <button
+                    onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                    disabled={page === totalPages}
+                    className="btn btn-outline btn-sm flex items-center gap-2 hover:bg-accent/50 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed min-w-[80px] h-8"
+                  >
+                    <span className="text-xs font-medium">Next</span>
+                    <ChevronRight className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
             )}
           </div>

@@ -45,6 +45,7 @@ import { MonitoringModule } from './monitoring/monitoring.module';
 import { ReportsModule } from './reports/reports.module';
 import { SettingsModule } from './modules/settings/settings.module';
 import { FileUploadModule } from './modules/file-upload/file-upload.module';
+// import { SupportModule } from './support/support.module';
 import { JobService } from './jobs/job.service';
 import { HealthService } from './health/health.service';
 import { EnvService } from './config/env.service';

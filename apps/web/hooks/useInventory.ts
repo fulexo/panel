@@ -20,8 +20,8 @@ export const useApproveInventoryChange = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: ({ id, approved }: { id: string; approved: boolean }) => 
-      apiClient.approveInventoryChange(id, approved),
+    mutationFn: (id: string) =>
+      apiClient.approveInventoryChange(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.inventoryApprovals() });
     },

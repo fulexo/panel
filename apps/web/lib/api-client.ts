@@ -1,4 +1,10 @@
-const API_BASE_URL = process.env['NEXT_PUBLIC_API_BASE'] || 'http://localhost:3000';
+﻿import { getClientApiBaseUrl } from '@/lib/backend-api';
+
+const API_BASE_URL = getClientApiBaseUrl();
+
+// Debug logging
+console.log('API_BASE_URL (resolved):', API_BASE_URL || '[relative]');
+console.log('NEXT_PUBLIC_API_BASE env:', process.env['NEXT_PUBLIC_API_BASE']);
 
 class ApiError extends Error {
   constructor(
@@ -22,7 +28,8 @@ class ApiClient {
     endpoint: string,
     options: RequestInit = {}
   ): Promise<T> {
-    const url = `${this.baseUrl}${endpoint}`;
+    // Use relative URL for Next.js API routes
+    const url = this.baseUrl ? `${this.baseUrl}${endpoint}` : endpoint;
     
     const defaultHeaders: HeadersInit = {
       'Content-Type': 'application/json',
@@ -94,8 +101,10 @@ class ApiClient {
   // Stores endpoints
   async getStores(params?: { page?: number; limit?: number; search?: string }) {
     const searchParams = new URLSearchParams();
-    if (params?.page) searchParams.set('page', params.page.toString());
-    if (params?.limit) searchParams.set('limit', params.limit.toString());
+    const page = params?.page ?? 1;
+    const limit = params?.limit ?? 20;
+    searchParams.set('page', page.toString());
+    searchParams.set('limit', limit.toString());
     if (params?.search) searchParams.set('search', params.search);
     
     const queryString = searchParams.toString();
@@ -202,15 +211,27 @@ class ApiClient {
     storeId?: string;
     category?: string;
   }) {
-    const searchParams = new URLSearchParams();
-    if (params?.page) searchParams.set('page', params.page.toString());
-    if (params?.limit) searchParams.set('limit', params.limit.toString());
-    if (params?.search) searchParams.set('search', params.search);
-    if (params?.storeId) searchParams.set('storeId', params.storeId);
-    if (params?.category) searchParams.set('category', params.category);
-    
-    const queryString = searchParams.toString();
-    return this.request(`/api/products${queryString ? `?${queryString}` : ''}`);
+    try {
+      const searchParams = new URLSearchParams();
+      if (params?.page) searchParams.set('page', params.page.toString());
+      if (params?.limit) searchParams.set('limit', params.limit.toString());
+      if (params?.search) searchParams.set('search', params.search);
+      if (params?.storeId) searchParams.set('storeId', params.storeId);
+      if (params?.category) searchParams.set('category', params.category);
+      
+      const queryString = searchParams.toString();
+      return await this.request(`/api/products${queryString ? `?${queryString}` : ''}`);
+    } catch (error) {
+      console.error('getProducts error:', error);
+      if (error instanceof ApiError) {
+        throw error;
+      }
+      throw new ApiError(
+        'Failed to fetch products',
+        500,
+        'Internal Server Error'
+      );
+    }
   }
 
   async getProduct(id: string) {
@@ -421,16 +442,20 @@ class ApiClient {
     if (params?.lowStock) searchParams.set('lowStock', params.lowStock.toString());
     
     const queryString = searchParams.toString();
-    return this.request(`/api/inventory${queryString ? `?${queryString}` : ''}`);
+    return this.request(`/api/inventory/stock-levels${queryString ? `?${queryString}` : ''}`);
   }
 
-  async updateInventory(id: string, data: {
+    async updateInventory(id: string, data: {
     quantity: number;
     reason?: string;
   }) {
-    return this.request(`/api/inventory/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
+    return this.request('/api/inventory/stock-update', {
+      method: 'POST',
+      body: JSON.stringify({
+        productId: id,
+        newQuantity: data.quantity,
+        reason: data.reason,
+      }),
     });
   }
 
@@ -448,10 +473,9 @@ class ApiClient {
     return this.request(`/api/inventory/approvals${queryString ? `?${queryString}` : ''}`);
   }
 
-  async approveInventoryChange(id: string, approved: boolean) {
-    return this.request(`/api/inventory/approvals/${id}`, {
+  async approveInventoryChange(id: string) {
+    return this.request(`/api/inventory/approvals/${id}/approve`, {
       method: 'PUT',
-      body: JSON.stringify({ approved }),
     });
   }
 
@@ -467,7 +491,7 @@ class ApiClient {
     newQuantity: number;
     reason: string;
   }) {
-    return this.request('/api/inventory/requests', {
+    return this.request('/api/inventory/stock-update', {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -570,18 +594,16 @@ class ApiClient {
   }
 
   async sendSupportMessage(ticketId: string, message: string, attachments?: File[]) {
-    const formData = new FormData();
-    formData.append('message', message);
-    if (attachments) {
-      attachments.forEach((file, index) => {
-        formData.append(`attachment_${index}`, file);
-      });
-    }
-    
     return this.request(`/api/support/tickets/${ticketId}/messages`, {
       method: 'POST',
-      body: formData,
-      headers: {}, // Let browser set Content-Type for FormData
+      body: JSON.stringify({
+        message,
+        attachments: attachments?.map(file => ({
+          name: file.name,
+          size: file.size,
+          type: file.type,
+        })),
+      }),
     });
   }
 

@@ -314,7 +314,8 @@ export default function ProductsPage() {
     limit: 10,
     ...(search ? { search } : {}),
     ...(category ? { category } : {}),
-    ...(isAdmin() ? {} : userStoreId ? { storeId: userStoreId } : {}),
+    // Always include storeId if user has one, but don't require it
+    ...(userStoreId ? { storeId: userStoreId } : {}),
   }) as { data: { data: Array<{ id: string; name: string; sku: string; price: number; salePrice?: number; stockQuantity: number; category?: string; status: string; createdAt: string; store?: { name: string }; isBundle?: boolean; bundleProducts?: Array<{ id: string; product: { name: string; sku: string } }> }>; pagination: { total: number; pages: number } } | undefined; isLoading: boolean; error: ApiError | null };
 
   const deleteProduct = useDeleteProduct();
@@ -334,14 +335,24 @@ export default function ProductsPage() {
   }
 
   if (error) {
+    console.error('Products page error:', error);
     return (
       <ProtectedRoute>
         <div className="min-h-screen bg-background flex items-center justify-center">
-          <div className="flex flex-col items-center gap-4">
-            <div className="text-red-500 text-lg">Error loading products</div>
-            <div className="text-muted-foreground">
-              {error instanceof ApiError ? error.message : 'Unknown error'}
+          <div className="flex flex-col items-center gap-4 max-w-md mx-auto p-6">
+            <div className="text-red-500 text-lg font-semibold">Error loading products</div>
+            <div className="text-muted-foreground text-center">
+              {error instanceof ApiError ? error.message : 'Database operation failed'}
             </div>
+            <div className="text-sm text-muted-foreground text-center">
+              Please check if the API server is running and try again.
+            </div>
+            <button 
+              onClick={() => window.location.reload()} 
+              className="btn btn-primary btn-sm"
+            >
+              Retry
+            </button>
           </div>
         </div>
       </ProtectedRoute>

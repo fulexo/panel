@@ -5,7 +5,7 @@ import { Decimal } from 'decimal.js';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { toPrismaJsonValue } from '../common/utils/prisma-json.util';
-// import { ProductQueryDto } from './dto/product-query.dto';
+import { normalizeLimit, normalizePage } from '../common/utils/number.util';
 
 @Injectable()
 export class ProductsService {
@@ -16,8 +16,9 @@ export class ProductsService {
   }
 
   async list(tenantId: string, page = 1, limit = 50, search?: string, status?: string, category?: string, storeId?: string) {
-    const take = Math.min(limit, 200);
-    const skip = (page - 1) * take;
+    const safePage = normalizePage(page, 1);
+    const safeLimit = normalizeLimit(limit, 50, 200);
+    const skip = (safePage - 1) * safeLimit;
     const where: Record<string, unknown> = { tenantId };
     
     if (search) {
@@ -32,7 +33,7 @@ export class ProductsService {
     }
     
     if (category) {
-      where['category'] = { slug: category };
+      where['categories'] = { has: category };
     }
     
     if (storeId) {
@@ -43,13 +44,14 @@ export class ProductsService {
       db.product.findMany({ 
         where, 
         orderBy: { createdAt: 'desc' }, 
-        take, 
+        take: safeLimit, 
         skip,
         // include: { category: true }
       }),
       db.product.count({ where }),
     ]));
-    return { data, pagination: { page, limit: take, total, totalPages: Math.ceil(total / take) } };
+    const totalPages = safeLimit > 0 ? Math.ceil(total / safeLimit) : 0;
+    return { data, pagination: { page: safePage, limit: safeLimit, total, totalPages } };
   }
 
   async get(tenantId: string, id: string) {

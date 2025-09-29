@@ -1,4 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
+import { getBackendApiBaseUrl } from '@/lib/backend-api';
+
+const BACKEND_API_BASE = getBackendApiBaseUrl();
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,11 +16,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const backendUrl = new URL('/api/auth/login', BACKEND_API_BASE);
+
     // Check if backend is running
     let backendResponse;
     try {
       console.log('Calling backend API...');
-      backendResponse = await fetch('http://localhost:3000/api/auth/login', {
+      backendResponse = await fetch(backendUrl.toString(), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

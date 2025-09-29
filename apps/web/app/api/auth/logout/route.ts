@@ -1,5 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
+import { getBackendApiBaseUrl } from '@/lib/backend-api';
 import { cookies } from 'next/headers';
+
+const BACKEND_API_BASE = getBackendApiBaseUrl();
 
 export async function POST(request: NextRequest) {
   try {
@@ -7,7 +10,8 @@ export async function POST(request: NextRequest) {
     const authHeader = request.headers.get('authorization');
     
     // Call the backend logout endpoint
-    const response = await fetch(`${process.env['NEXT_PUBLIC_API_BASE'] || 'http://localhost:3000'}/api/auth/logout`, {
+    const backendUrl = new URL('/api/auth/logout', BACKEND_API_BASE);
+    const response = await fetch(backendUrl.toString(), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

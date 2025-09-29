@@ -1,5 +1,6 @@
 import { IsString, IsOptional, IsNumber, IsEnum } from 'class-validator';
 import { Transform } from 'class-transformer';
+import { parseOptionalPositiveInt } from '../../common/utils/number.util';
 
 export class BillingQueryDto {
   @IsString()
@@ -10,12 +11,12 @@ export class BillingQueryDto {
   @IsOptional()
   status?: string;
 
-  @Transform(({ value }) => parseInt(value))
+  @Transform(({ value }) => parseOptionalPositiveInt(value), { toClassOnly: true })
   @IsNumber()
   @IsOptional()
   page?: number = 1;
 
-  @Transform(({ value }) => parseInt(value))
+  @Transform(({ value }) => parseOptionalPositiveInt(value), { toClassOnly: true })
   @IsNumber()
   @IsOptional()
   limit?: number = 20;

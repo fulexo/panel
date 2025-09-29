@@ -27,6 +27,14 @@ export class AuthGuard implements CanActivate {
     const request = context.switchToHttp().getRequest();
     const token = this.extractTokenFromHeader(request);
 
+    console.log('Auth Guard - Request headers:', {
+      authorization: request.headers.authorization,
+      cookie: request.headers.cookie,
+      extractedToken: token ? 'present' : 'missing',
+      url: request.url,
+      method: request.method
+    });
+
     if (!token) {
       throw new UnauthorizedException('No token provided');
     }
@@ -48,8 +56,22 @@ export class AuthGuard implements CanActivate {
     }
   }
 
-  private extractTokenFromHeader(request: { headers: { authorization?: string } }): string | undefined {
+  private extractTokenFromHeader(request: { headers: { authorization?: string; cookie?: string } }): string | undefined {
+    // Try Bearer token first (set by cookie middleware)
     const [type, token] = request.headers.authorization?.split(' ') ?? [];
-    return type === 'Bearer' ? token : undefined;
+    if (type === 'Bearer' && token) {
+      return token;
+    }
+
+    // Try cookie-based authentication directly
+    const cookies = request.headers.cookie;
+    if (cookies) {
+      const tokenMatch = cookies.match(/access_token=([^;]+)/);
+      if (tokenMatch) {
+        return tokenMatch[1];
+      }
+    }
+
+    return undefined;
   }
 }

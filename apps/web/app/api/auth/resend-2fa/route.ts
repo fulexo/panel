@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getBackendApiBaseUrl } from '@/lib/backend-api';
+
+const BACKEND_API_BASE = getBackendApiBaseUrl();
 
 export async function POST(request: NextRequest) {
   try {
@@ -11,8 +14,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Forward to backend
-    const response = await fetch(`${process.env['NEXT_PUBLIC_API_BASE'] || 'http://localhost:3000'}/api/auth/resend-2fa`, {
+    const backendUrl = new URL('/api/auth/resend-2fa', BACKEND_API_BASE);
+    const response = await fetch(backendUrl.toString(), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

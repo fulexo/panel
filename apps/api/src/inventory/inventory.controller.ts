@@ -2,6 +2,7 @@ import { Controller, Get, Post, Put, Body, Param, Query, UseGuards } from '@nest
 import { InventoryService } from './inventory.service';
 import { CreateInventoryApprovalDto } from './dto/inventory.dto';
 import { AuthGuard } from '../auth/auth.guard';
+import { normalizeLimit, normalizePage } from '../common/utils/number.util';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
@@ -15,14 +16,15 @@ export class InventoryController {
   @Get('approvals')
   async getApprovals(
     @CurrentUser() user: User,
-    @Query('page') page: number = 1,
-    @Query('limit') limit: number = 10,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
     @Query('status') status?: string,
     @Query('storeId') storeId?: string,
   ) {
-    // Filter by user's store if customer
+    const safePage = normalizePage(page, 1);
+    const safeLimit = normalizeLimit(limit, 10, 200);
     const userStoreId = user.role === 'CUSTOMER' ? user.stores?.[0]?.id : storeId;
-    return this.inventoryService.getApprovals({ page, limit, status, storeId: userStoreId });
+    return this.inventoryService.getApprovals({ page: safePage, limit: safeLimit, status, storeId: userStoreId });
   }
 
   @Post('approvals')
@@ -61,18 +63,20 @@ export class InventoryController {
   @Get('stock-levels')
   async getStockLevels(
     @CurrentUser() user: User,
-    @Query('page') page: number = 1,
-    @Query('limit') limit: number = 10,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
     @Query('storeId') storeId?: string,
-    @Query('lowStock') lowStock?: boolean,
+    @Query('lowStock') lowStock?: string,
   ) {
-    // Filter by user's store if customer
+    const safePage = normalizePage(page, 1);
+    const safeLimit = normalizeLimit(limit, 25, 200);
     const userStoreId = user.role === 'CUSTOMER' ? user.stores?.[0]?.id : storeId;
-    return this.inventoryService.getStockLevels({ 
-      page, 
-      limit, 
-      storeId: userStoreId, 
-      lowStock: lowStock === true 
+    const lowStockFlag = typeof lowStock === 'string' ? ['true', '1'].includes(lowStock.toLowerCase()) : false;
+    return this.inventoryService.getStockLevels({
+      page: safePage,
+      limit: safeLimit,
+      storeId: userStoreId,
+      lowStock: lowStockFlag,
     });
   }
 

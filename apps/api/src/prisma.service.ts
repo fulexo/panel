@@ -1,4 +1,4 @@
-import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+﻿import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 
 @Injectable()
@@ -112,9 +112,9 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
   // Set PostgreSQL session variable for RLS per transaction
   async withTenant<T>(tenantId: string, fn: (tx: PrismaClient) => Promise<T>, userId?: string): Promise<T> {
     return this.$transaction(async (tx) => {
-      await tx.$executeRaw`SET LOCAL app.tenant_id = ${tenantId}::uuid`;
+      await tx.$executeRaw`SELECT set_config('app.tenant_id', ${tenantId}, true)`;
       if (userId) {
-        await tx.$executeRaw`SET LOCAL app.user_id = ${userId}::uuid`;
+        await tx.$executeRaw`SELECT set_config('app.user_id', ${userId}, true)`;
       }
       return fn(tx as PrismaClient);
     });
@@ -122,7 +122,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
 
   async withUser<T>(userId: string, fn: (tx: PrismaClient) => Promise<T>): Promise<T> {
     return this.$transaction(async (tx) => {
-      await tx.$executeRaw`SET LOCAL app.user_id = ${userId}::uuid`;
+      await tx.$executeRaw`SELECT set_config('app.user_id', ${userId}, true)`;
       return fn(tx as PrismaClient);
     });
   }

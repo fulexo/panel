@@ -3,7 +3,7 @@ import { PrismaService } from '../prisma.service';
 import { PrismaClient } from '@prisma/client';
 import { CreateCustomerDto } from './dto/create-customer.dto';
 import { UpdateCustomerDto } from './dto/update-customer.dto';
-// import { CustomerQueryDto } from './dto/customer-query.dto';
+import { normalizeLimit, normalizePage } from '../common/utils/number.util';
 
 @Injectable()
 export class CustomersService {
@@ -14,8 +14,9 @@ export class CustomersService {
   }
 
   async list(tenantId: string, page = 1, limit = 50, search?: string, status?: string, tag?: string, storeId?: string) {
-    const take = Math.min(limit, 200);
-    const skip = (page - 1) * take;
+    const safePage = normalizePage(page, 1);
+    const safeLimit = normalizeLimit(limit, 50, 200);
+    const skip = (safePage - 1) * safeLimit;
     const where: Record<string, unknown> = { tenantId };
     
     if (search) {
@@ -49,7 +50,7 @@ export class CustomersService {
       db.customer.findMany({ 
         where, 
         orderBy: { createdAt: 'desc' }, 
-        take, 
+        take: safeLimit, 
         skip,
         include: {
           orders: {
@@ -84,7 +85,8 @@ export class CustomersService {
       };
     });
     
-    return { data: customersWithStats, pagination: { page, limit: take, total, totalPages: Math.ceil(total / take) } };
+    const totalPages = safeLimit > 0 ? Math.ceil(total / safeLimit) : 0;
+    return { data: customersWithStats, pagination: { page: safePage, limit: safeLimit, total, totalPages } };
   }
 
   async get(tenantId: string, id: string) {
