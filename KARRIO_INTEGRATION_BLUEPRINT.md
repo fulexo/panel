@@ -103,9 +103,9 @@ graph TD
       postgres:
         image: postgres:16
         environment:
-          POSTGRES_DB: ${FULEXO_POSTGRES_DB}
-          POSTGRES_USER: ${FULEXO_POSTGRES_USER}
-          POSTGRES_PASSWORD: ${FULEXO_POSTGRES_PASSWORD}
+          POSTGRES_DB: ${POSTGRES_DB}
+          POSTGRES_USER: ${POSTGRES_USER}
+          POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
         volumes:
           - pgdata:/var/lib/postgresql/data
         ports:
@@ -146,7 +146,7 @@ graph TD
             - NODE_ENV=production
         env_file: ${ENV_FILE:-.env}
         environment:
-          DATABASE_URL: postgresql://${FULEXO_POSTGRES_USER}:${FULEXO_POSTGRES_PASSWORD}@postgres:5432/${FULEXO_POSTGRES_DB}
+          DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
           REDIS_URL: ${REDIS_URL}
           S3_ENDPOINT: ${S3_ENDPOINT}
           S3_ACCESS_KEY: ${S3_ACCESS_KEY}
@@ -196,7 +196,7 @@ graph TD
             - NODE_ENV=production
         env_file: ${ENV_FILE:-.env}
         environment:
-          DATABASE_URL: postgresql://${FULEXO_POSTGRES_USER}:${FULEXO_POSTGRES_PASSWORD}@postgres:5432/${FULEXO_POSTGRES_DB}
+          DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
           REDIS_URL: ${REDIS_URL}
           NODE_ENV: ${NODE_ENV}
           FULEXO_API_URL: http://api:3000
@@ -269,12 +269,12 @@ graph TD
         networks:
           - fulexo-network
 
-      uptimekuma:
-        image: louislam/uptime-kuma:1
-        volumes:
-          - kumadata:/app/data
-        ports: ["3001:3001"]
-        restart: unless-stopped
+  uptimekuma:
+    image: louislam/uptime-kuma:1
+    volumes:
+      - kumadata:/app/data
+    ports: ["3004:3001"]
+    restart: unless-stopped
         networks:
           - fulexo-network
 
@@ -344,7 +344,6 @@ graph TD
           context: ../karrio
           dockerfile: ./docker/api/Dockerfile
         container_name: karrio-server
-        command: "sh /app/docker/server/boot.sh"
         ports:
           - "5002:5002"
         environment:
@@ -376,7 +375,7 @@ graph TD
           dockerfile: ./docker/dashboard/Dockerfile
         container_name: karrio-dashboard
         ports:
-          - "5001:3000"
+          - "5001:3002"
         environment:
           - NEXT_PUBLIC_KARRIO_API_URL=http://localhost:5002
         depends_on:
@@ -386,14 +385,18 @@ graph TD
         restart: always
       # --- KARRIO SERVICES END ---
 
-    volumes:
-      pgdata:
-      valkeydata:
-      miniodata:
-      prometheusdata:
-      grafanadata:
-      lokidata:
-      kumadata:
+volumes:
+  pgdata:
+  valkeydata:
+  miniodata:
+  prometheusdata:
+  grafanadata:
+  lokidata:
+  kumadata:
+
+networks:
+  fulexo-network:
+    driver: bridge
       karrio_db_data:
       karrio_redis_data:
     ```
@@ -407,9 +410,9 @@ graph TD
     # Note: These variables are for the main Fulexo database.
     # They are prefixed with FULEXO_ to avoid conflicts with Karrio's DB.
     # ----------------------------------------------------------------------
-    FULEXO_POSTGRES_USER=fulexo
-    FULEXO_POSTGRES_PASSWORD=fulexo
-    FULEXO_POSTGRES_DB=fulexo
+    POSTGRES_USER=fulexo_user
+    POSTGRES_PASSWORD=your_secure_postgres_password
+    POSTGRES_DB=fulexo
     FULEXO_API_URL=http://localhost:3000
 
     # ----------------------------------------------------------------------
@@ -504,7 +507,7 @@ graph TD
             ssl_session_timeout 10m;
 
             location / {
-                proxy_pass http://karrio-dashboard:3000;
+                proxy_pass http://karrio-dashboard:3002;
                 proxy_set_header Host $host;
                 proxy_set_header X-Real-IP $remote_addr;
                 proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -919,7 +922,7 @@ graph TD
         for (const shipment of shipments) {
           if (shipment.carrier && shipment.trackingNo) {
             try {
-              const trackUrl = `${FULEXO_API_URL}/shipments/track/${shipment.carrier}/${shipment.trackingNo}`;
+              const trackUrl = `${FULEXO_API_URL}/api/shipments/track/${shipment.carrier}/${shipment.trackingNo}`;
               
               const response = await fetch(trackUrl, {
                 headers: {
