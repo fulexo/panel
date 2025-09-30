@@ -377,7 +377,8 @@ graph TD
         ports:
           - "5001:3002"
         environment:
-          - NEXT_PUBLIC_KARRIO_API_URL=http://localhost:5002
+          - NEXT_PUBLIC_KARRIO_PUBLIC_URL=http://localhost:5002
+          - KARRIO_URL=http://karrio-server:5002
         depends_on:
           - karrio-server
         networks:
@@ -441,6 +442,15 @@ networks:
     UPS_PASSWORD=
     UPS_ACCESS_LICENSE_NUMBER=
     # Add other carrier variables as needed
+
+    # Shipping Origin Settings
+    SHIPPING_ORIGIN_COMPANY_NAME=Your Company Name
+    SHIPPING_ORIGIN_ADDRESS_LINE1=123 Main Street
+    SHIPPING_ORIGIN_CITY=Istanbul
+    SHIPPING_ORIGIN_POSTAL_CODE=34000
+    SHIPPING_ORIGIN_COUNTRY_CODE=TR
+    SHIPPING_ORIGIN_PERSON_NAME=John Doe
+    SHIPPING_ORIGIN_PHONE=+905551234567
     ```
 
 3.  **Update Nginx Configuration:**
@@ -760,14 +770,17 @@ networks:
       }
 
       private async _mapOrderToKarrioPayload(tenantId: string, order: any, parcels: any[]) {
-        const shipperSettings = await this.runTenant(tenantId, (db) =>
-          db.settings.findMany({ where: { category: 'shipping_origin' } }),
-        );
-
-        const shipper = shipperSettings.reduce((acc, setting) => {
-          acc[setting.key.replace('shipping_origin_', '')] = setting.value;
-          return acc;
-        }, {} as any);
+        // TODO: Implement shipping origin settings in Settings table
+        // For now, use default values or environment variables
+        const shipper = {
+          company_name: process.env.SHIPPING_ORIGIN_COMPANY_NAME || 'Your Company',
+          address_line1: process.env.SHIPPING_ORIGIN_ADDRESS_LINE1 || '123 Main St',
+          city: process.env.SHIPPING_ORIGIN_CITY || 'Istanbul',
+          postal_code: process.env.SHIPPING_ORIGIN_POSTAL_CODE || '34000',
+          country_code: process.env.SHIPPING_ORIGIN_COUNTRY_CODE || 'TR',
+          person_name: process.env.SHIPPING_ORIGIN_PERSON_NAME || 'John Doe',
+          phone: process.env.SHIPPING_ORIGIN_PHONE || '+905551234567',
+        };
 
         return {
           shipper: {
@@ -781,12 +794,12 @@ networks:
           },
           recipient: {
             company_name: order.shippingAddress?.company,
-            address_line1: order.shippingAddress?.addressLine1,
-            address_line2: order.shippingAddress?.addressLine2,
+            address_line1: order.shippingAddress?.address,
+            address_line2: order.shippingAddress?.address2,
             city: order.shippingAddress?.city,
-            postal_code: order.shippingAddress?.postalCode,
+            postal_code: order.shippingAddress?.postcode,
             country_code: order.shippingAddress?.country,
-            person_name: `${order.shippingAddress?.firstName} ${order.shippingAddress?.lastName}`,
+            person_name: order.shippingAddress?.fullName,
             phone: order.customerPhone,
             email: order.customerEmail,
           },
