@@ -744,6 +744,15 @@ networks:
         const karrioPayload = await this._mapOrderToKarrioPayload(tenantId, order, payload.parcels);
         karrioPayload.service = payload.service;
         karrioPayload.label_type = 'PDF';
+        
+        // Karrio API requires selected_rate_id or rates list
+        if (payload.selected_rate_id) {
+          karrioPayload.selected_rate_id = payload.selected_rate_id;
+        } else if (payload.rates && payload.rates.length > 0) {
+          karrioPayload.rates = payload.rates;
+        } else {
+          throw new BadRequestException('Either selected_rate_id or rates list is required for shipment creation');
+        }
 
         const karrioShipment = await this.karrio.createShipment(karrioPayload);
 
@@ -794,12 +803,12 @@ networks:
           },
           recipient: {
             company_name: order.shippingAddress?.company,
-            address_line1: order.shippingAddress?.address,
-            address_line2: order.shippingAddress?.address2,
+            address_line1: order.shippingAddress?.addressLine1,
+            address_line2: order.shippingAddress?.addressLine2,
             city: order.shippingAddress?.city,
-            postal_code: order.shippingAddress?.postcode,
+            postal_code: order.shippingAddress?.postalCode,
             country_code: order.shippingAddress?.country,
-            person_name: order.shippingAddress?.fullName,
+            person_name: `${order.shippingAddress?.firstName || ''} ${order.shippingAddress?.lastName || ''}`.trim(),
             phone: order.customerPhone,
             email: order.customerEmail,
           },
@@ -903,7 +912,12 @@ networks:
       async createShipment(
         @CurrentUser() user: AuthenticatedUser,
         @Param('orderId') orderId: string,
-        @Body() payload: any,
+        @Body() payload: { 
+          parcels: any[]; 
+          service: string; 
+          selected_rate_id?: string; 
+          rates?: any[]; 
+        },
       ) {
         return this.shipments.createShipment(user.tenantId, orderId, payload);
       }
