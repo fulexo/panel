@@ -850,11 +850,16 @@ networks:
           throw new UnauthorizedException('Invalid internal API token');
         }
         
-        // Set a minimal user object for internal requests
+        // Set a complete user object for internal requests
         request.user = { 
-          id: 'internal-worker', 
+          id: 'internal-worker',
+          sub: 'internal-worker',
+          email: 'internal@fulexo.com',
           role: 'INTERNAL', 
-          tenantId: 'system' 
+          tenantId: 'system',
+          iat: Math.floor(Date.now() / 1000),
+          exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60), // 24 hours
+          jti: `internal_${Date.now()}`
         };
         
         return true;
