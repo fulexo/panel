@@ -275,8 +275,8 @@ graph TD
       - kumadata:/app/data
     ports: ["3004:3001"]
     restart: unless-stopped
-        networks:
-          - fulexo-network
+    networks:
+      - fulexo-network
 
       node-exporter:
         image: prom/node-exporter:latest
@@ -393,12 +393,12 @@ volumes:
   grafanadata:
   lokidata:
   kumadata:
+  karrio_db_data:
+  karrio_redis_data:
 
 networks:
   fulexo-network:
     driver: bridge
-      karrio_db_data:
-      karrio_redis_data:
     ```
 
 2.  **Update `.env.example`:**
@@ -444,7 +444,7 @@ networks:
     ```
 
 3.  **Update Nginx Configuration:**
-    - Add the following server blocks to your `nginx/nginx.conf` file to expose the Karrio dashboard and API.
+    - Add the following server blocks to your `nginx/conf.d/app.conf.template` file to expose the Karrio dashboard and API.
 
     ```nginx
     # nginx/nginx.conf
@@ -522,7 +522,7 @@ networks:
     1.  Create a new feature branch: `git checkout -b feature/karrio-integration-final`.
     2.  Modify `compose/docker-compose.yml` exactly as specified in **Step 1.1**.
     3.  Add the new variables from **Step 1.2** to your local `.env` file (sourcing secrets from a password manager or secure store).
-    4.  Modify `nginx/nginx.conf` as specified in **Step 1.3**.
+    4.  Modify `nginx/conf.d/app.conf.template` as specified in **Step 1.3**.
     5.  Run `docker-compose up --build` and verify that all services start without errors.
     6.  Access the Karrio dashboard at `http://localhost:5001` and create the API Token for Fulexo. Place this token in the `.env` file for the `FULEXO_TO_KARRIO_API_TOKEN` variable.
 
