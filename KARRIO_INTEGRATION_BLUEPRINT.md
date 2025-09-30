@@ -429,12 +429,9 @@ networks:
     ADMIN_EMAIL=admin@fulexo.com
     ADMIN_PASSWORD= # Set a secure initial password for Karrio admin
 
-    # Fulexo <-> Karrio Authentication
-    # This token will be created within Karrio and used by Fulexo to authenticate.
-    FULEXO_TO_KARRIO_API_TOKEN= # Generate a secure token, e.g., using `openssl rand -hex 32`
-
-    # Internal Fulexo Authentication (Worker <-> API)
-    # Secure token for internal service-to-service communication.
+    # Karrio Integration
+    KARRIO_API_URL=http://karrio-server:5002
+    FULEXO_TO_KARRIO_API_TOKEN= # Get this from Karrio dashboard
     FULEXO_INTERNAL_API_TOKEN= # Generate a secure token, e.g., using `openssl rand -hex 32`
 
     # Carrier Credentials (Example for UPS)

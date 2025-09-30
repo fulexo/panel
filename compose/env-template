@@ -76,6 +76,18 @@ NEXT_PUBLIC_API_BASE=https://api.fulexo.com
 SHARE_BASE_URL=https://panel.fulexo.com
 
 # =============================================================================
+# KARRIO INTEGRATION CONFIGURATION
+# =============================================================================
+# Karrio API URL (internal service communication)
+KARRIO_API_URL=http://karrio-server:5002
+
+# Karrio API Token (for Fulexo to Karrio communication)
+FULEXO_TO_KARRIO_API_TOKEN=your_karrio_api_token_here
+
+# Internal API Token (for Worker to API communication)
+FULEXO_INTERNAL_API_TOKEN=your_internal_api_token_here
+
+# =============================================================================
 # ADDITIONAL CONFIGURATION
 # =============================================================================
 # API Port (default: 3000)
