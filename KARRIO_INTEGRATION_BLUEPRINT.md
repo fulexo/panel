@@ -269,14 +269,14 @@ graph TD
         networks:
           - fulexo-network
 
-  uptimekuma:
-    image: louislam/uptime-kuma:1
-    volumes:
-      - kumadata:/app/data
-    ports: ["3004:3001"]
-    restart: unless-stopped
-    networks:
-      - fulexo-network
+      uptimekuma:
+        image: louislam/uptime-kuma:1
+        volumes:
+          - kumadata:/app/data
+        ports: ["3004:3001"]
+        restart: unless-stopped
+        networks:
+          - fulexo-network
 
       node-exporter:
         image: prom/node-exporter:latest
@@ -614,13 +614,16 @@ networks:
     @Injectable()
     export class KarrioService {
       private readonly logger = new Logger(KarrioService.name);
-      private readonly karrioApiUrl = this.configService.get<string>('KARRIO_API_URL');
-      private readonly apiToken = this.configService.get<string>('FULEXO_TO_KARRIO_API_TOKEN');
+      private readonly karrioApiUrl: string;
+      private readonly apiToken: string;
 
       constructor(
         private readonly httpService: HttpService,
         private readonly configService: ConfigService,
-      ) {}
+      ) {
+        this.karrioApiUrl = this.configService.get<string>('KARRIO_API_URL');
+        this.apiToken = this.configService.get<string>('FULEXO_TO_KARRIO_API_TOKEN');
+      }
 
       private getHeaders() {
         return {
@@ -858,6 +861,7 @@ networks:
     import { Controller, Get, Param, Query, Post, Put, Delete, Body, UseGuards } from '@nestjs/common';
     import { ApiBearerAuth, ApiOperation, ApiTags, ApiQuery } from '@nestjs/swagger';
     import { InternalAuthGuard } from '../auth/internal-auth.guard';
+    import { Public } from '../auth/decorators/public.decorator';
     import { ShipmentsService } from './shipments.service';
     import { CurrentUser } from '../auth/decorators/current-user.decorator';
     import { Roles } from '../auth/decorators/roles.decorator';
@@ -892,6 +896,7 @@ networks:
       }
 
       @Get('track/:carrier/:trackingNo')
+      @Public()
       @UseGuards(InternalAuthGuard)
       @ApiOperation({ summary: 'Track a shipment (Internal)' })
       async track(
