@@ -778,12 +778,12 @@ networks:
           },
           recipient: {
             company_name: order.shippingAddress?.company,
-            address_line1: order.shippingAddress?.address_1,
-            address_line2: order.shippingAddress?.address_2,
+            address_line1: order.shippingAddress?.addressLine1,
+            address_line2: order.shippingAddress?.addressLine2,
             city: order.shippingAddress?.city,
-            postal_code: order.shippingAddress?.postcode,
+            postal_code: order.shippingAddress?.postalCode,
             country_code: order.shippingAddress?.country,
-            person_name: `${order.shippingAddress?.first_name} ${order.shippingAddress?.last_name}`,
+            person_name: `${order.shippingAddress?.firstName} ${order.shippingAddress?.lastName}`,
             phone: order.customerPhone,
             email: order.customerEmail,
           },
@@ -794,14 +794,70 @@ networks:
     }
     ```
 
+    - **File:** `apps/api/src/auth/internal-auth.guard.ts`
+      - Create a new internal authentication guard for service-to-service calls.
+      
+    - **File:** `apps/api/src/auth/auth.module.ts`
+      - Add the InternalAuthGuard to the providers array.
+      
     - **File:** `apps/api/src/shipments/shipments.controller.ts`
       - Add new endpoints for getting rates, creating shipments, and tracking shipments.
-      - **Note:** The `track` endpoint should be protected. For service-to-service calls from the worker, consider implementing a separate auth guard that validates a shared secret (`FULEXO_INTERNAL_API_TOKEN`).
+      - Use InternalAuthGuard for the track endpoint to allow worker access.
 
     ```typescript
+    // apps/api/src/auth/internal-auth.guard.ts
+    import { Injectable, CanActivate, ExecutionContext, UnauthorizedException } from '@nestjs/common';
+
+    @Injectable()
+    export class InternalAuthGuard implements CanActivate {
+      canActivate(context: ExecutionContext): boolean {
+        const request = context.switchToHttp().getRequest();
+        const authHeader = request.headers.authorization;
+        
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+          throw new UnauthorizedException('Missing or invalid authorization header');
+        }
+        
+        const token = authHeader.substring(7);
+        const expectedToken = process.env.FULEXO_INTERNAL_API_TOKEN;
+        
+        if (!expectedToken || token !== expectedToken) {
+          throw new UnauthorizedException('Invalid internal API token');
+        }
+        
+        // Set a minimal user object for internal requests
+        request.user = { 
+          id: 'internal-worker', 
+          role: 'INTERNAL', 
+          tenantId: 'system' 
+        };
+        
+        return true;
+      }
+    }
+
+    // apps/api/src/auth/auth.module.ts
+    import { Module } from '@nestjs/common';
+    import { InternalAuthGuard } from './internal-auth.guard';
+    // ... existing imports ...
+
+    @Module({
+      // ... existing module configuration ...
+      providers: [
+        // ... existing providers ...
+        InternalAuthGuard,
+      ],
+      exports: [
+        // ... existing exports ...
+        InternalAuthGuard,
+      ],
+    })
+    export class AuthModule {}
+
     // apps/api/src/shipments/shipments.controller.ts
-    import { Controller, Get, Param, Query, Post, Put, Delete, Body } from '@nestjs/common';
+    import { Controller, Get, Param, Query, Post, Put, Delete, Body, UseGuards } from '@nestjs/common';
     import { ApiBearerAuth, ApiOperation, ApiTags, ApiQuery } from '@nestjs/swagger';
+    import { InternalAuthGuard } from '../auth/internal-auth.guard';
     import { ShipmentsService } from './shipments.service';
     import { CurrentUser } from '../auth/decorators/current-user.decorator';
     import { Roles } from '../auth/decorators/roles.decorator';
@@ -836,9 +892,10 @@ networks:
       }
 
       @Get('track/:carrier/:trackingNo')
-      @ApiOperation({ summary: 'Track a shipment' })
+      @UseGuards(InternalAuthGuard)
+      @ApiOperation({ summary: 'Track a shipment (Internal)' })
       async track(
-        @CurrentUser() user: AuthenticatedUser, // Note: Protect this for internal calls
+        @CurrentUser() user: AuthenticatedUser,
         @Param('carrier') carrier: string,
         @Param('trackingNo') trackingNo: string,
       ) {
