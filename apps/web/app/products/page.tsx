@@ -253,7 +253,7 @@ export default function ProductsPage() {
     const newImageFiles = [...imageFiles, ...newFiles];
     setImageFiles(newImageFiles);
     
-    const newPreviewUrls = newFiles.map(file => URL.createObjectURL(file));
+    const newPreviewUrls = newFiles.map(file => window.URL.createObjectURL(file));
     setImagePreviewUrls([...imagePreviewUrls, ...newPreviewUrls]);
   };
 
@@ -262,7 +262,7 @@ export default function ProductsPage() {
     const newPreviewUrls = imagePreviewUrls.filter((_, i) => i !== index);
     
     if (imagePreviewUrls[index]) {
-      URL.revokeObjectURL(imagePreviewUrls[index]);
+      window.URL.revokeObjectURL(imagePreviewUrls[index]);
     }
     
     setImageFiles(newImageFiles);
@@ -649,7 +649,7 @@ export default function ProductsPage() {
                         ...csvData.map(row => Object.values(row || {}).join(','))
                       ].join('\n') : 'No data to export';
                       
-                      const blob = new Blob([csv], { type: 'text/csv' });
+                      const blob = new window.Blob([csv], { type: 'text/csv' });
                       const url = window.URL.createObjectURL(blob);
                       const a = document.createElement('a');
                       a.href = url;

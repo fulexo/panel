@@ -7,6 +7,7 @@ import { useRBAC } from "@/hooks/useRBAC";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { useApp } from "@/contexts/AppContext";
 import { useOrder } from "@/hooks/useOrders";
+import { CreateShipmentModal } from "@/components/modals/CreateShipmentModal";
 import { 
   useFulfillmentServices,
   useFulfillmentBillingItems,
@@ -24,6 +25,7 @@ export default function OrderDetailPage() {
   const [activeTab, setActiveTab] = useState<'details' | 'fulfillment'>('details');
   const [showAddFulfillment, setShowAddFulfillment] = useState(false);
   const [editingItem, setEditingItem] = useState<string | null>(null);
+  const [isShipmentModalOpen, setShipmentModalOpen] = useState(false);
 
   // Form state
   const [fulfillmentForm, setFulfillmentForm] = useState({
@@ -211,6 +213,12 @@ export default function OrderDetailPage() {
               </p>
             </div>
             <div className="flex gap-2">
+              <button
+                onClick={() => setShipmentModalOpen(true)}
+                className="btn btn-primary"
+              >
+                Gönderi Oluştur
+              </button>
               <button
                 onClick={() => window.history.back()}
                 className="btn btn-outline"
@@ -610,6 +618,13 @@ export default function OrderDetailPage() {
             </div>
           )}
         </main>
+        {isShipmentModalOpen && (
+          <CreateShipmentModal
+            isOpen={isShipmentModalOpen}
+            onClose={() => setShipmentModalOpen(false)}
+            orderId={orderId}
+          />
+        )}
       </div>
     </ProtectedRoute>
   );

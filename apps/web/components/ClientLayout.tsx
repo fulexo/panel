@@ -8,6 +8,7 @@ import ProtectedRoute from './ProtectedRoute';
 import ErrorBoundary from './ErrorBoundary';
 import Link from 'next/link';
 import { ThemeToggle } from './ThemeToggle';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -15,6 +16,12 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
   const isLoginPage = pathname === '/login';
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [desktopSidebarCollapsed, setDesktopSidebarCollapsed] = useState(false);
+  const isDesktop = useMediaQuery('(min-width: 1024px)');
+
+  const sidebarOffset = desktopSidebarCollapsed ? '4rem' : '20rem';
+  const sidebarOffsetPx = desktopSidebarCollapsed ? '64px' : '320px';
+  const mainStyle = isDesktop ? { marginLeft: sidebarOffset } : { marginLeft: 0 };
+  const headerStyle = { left: isDesktop ? sidebarOffsetPx : 0, right: 0 };
 
   if (loading) {
     return (
@@ -62,7 +69,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
         </div>
 
         {/* Desktop Header - Sadece search ve user info */}
-        <div className="hidden lg:block bg-card border-b border-border fixed top-0 z-50" style={{ left: desktopSidebarCollapsed ? '64px' : '320px', right: '0' }}>
+        <div className="hidden lg:block bg-card border-b border-border fixed top-0 z-50" style={headerStyle}>
           <div className="flex items-center justify-between px-6 py-3">
             <div className="flex-1 max-w-md mx-8">
               {/* Search Bar */}
@@ -106,7 +113,10 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
         />
 
         {/* Main Content */}
-        <main className={`transition-all duration-300 ease-in-out ${desktopSidebarCollapsed ? 'lg:ml-16' : 'lg:ml-80'} pt-20 lg:pt-16 min-h-screen`} style={{ marginLeft: desktopSidebarCollapsed ? '64px' : '320px' }}>
+        <main
+          className={`transition-all duration-300 ease-in-out ${desktopSidebarCollapsed ? 'lg:ml-16' : 'lg:ml-80'} pt-20 lg:pt-16 min-h-screen`}
+          style={mainStyle}
+        >
           {children}
         </main>
         </div>

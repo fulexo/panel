@@ -311,11 +311,15 @@ model Shipment {
   dimensions  Json?
   shippedAt   DateTime?
   deliveredAt DateTime?
+  karrioShipmentId String?
+  trackingUrl      String?
+  rate             Json?
+  meta             Json?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  
+
   @@index([trackingNo])
   @@index([orderId])
   @@index([tenantId, status])

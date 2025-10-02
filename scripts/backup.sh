@@ -1,123 +1,126 @@
 #!/bin/bash
 
-# Backup Script
-# Usage: ./scripts/backup.sh [--full] [--database-only] [--code-only]
+# Fulexo Platform backup helper
 
-set -e
+source "$(dirname "$0")/common.sh"
 
-# Colors for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+usage() {
+  cat <<USAGE
+Kullanım: $0 [--dev|--prod] [--code-only|--database-only|--full]
 
-# Default values
-BACKUP_TYPE=${1:-full}
-BACKUP_DIR="/var/backups/fulexo"
-TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
-BACKUP_NAME="fulexo_backup_${TIMESTAMP}"
-
-log() {
-    echo -e "${BLUE}[$(date +'%Y-%m-%d %H:%M:%S')]${NC} $1"
+Varsayılan olarak üretim compose dosyasını kullanır ve tam yedek alır.
+USAGE
 }
 
-success() {
-    echo -e "${GREEN}[SUCCESS]${NC} $1"
-}
+SCOPE=prod
+MODE=full
 
-error() {
-    echo -e "${RED}[ERROR]${NC} $1"
-    exit 1
-}
+for arg in "$@"; do
+  case "$arg" in
+    --dev)
+      SCOPE=dev
+      ;;
+    --prod)
+      SCOPE=prod
+      ;;
+    --code-only)
+      MODE=code
+      ;;
+    --database-only)
+      MODE=db
+      ;;
+    --full)
+      MODE=full
+      ;;
+    --help|-h)
+      usage
+      exit 0
+      ;;
+    *)
+      log warn "Bilinmeyen argüman: $arg"
+      usage
+      exit 1
+      ;;
+  esac
+done
 
-warning() {
-    echo -e "${YELLOW}[WARNING]${NC} $1"
-}
+BACKUP_ROOT="${BACKUP_DIR:-$PROJECT_ROOT/backups}"
+mkdir -p "$BACKUP_ROOT"
+TIMESTAMP="$(date +%Y%m%d_%H%M%S)"
+DEST_DIR="$BACKUP_ROOT/$TIMESTAMP"
+mkdir -p "$DEST_DIR"
 
-# Create backup directory
-mkdir -p "$BACKUP_DIR"
+log info "Yedekleme başlatılıyor (mod: $MODE, scope: $SCOPE)"
 
-log "Starting backup process - Type: $BACKUP_TYPE"
-
-# Full backup
-if [ "$BACKUP_TYPE" = "--full" ] || [ "$BACKUP_TYPE" = "full" ]; then
-    log "Creating full backup..."
-    
-    # Create backup directory
-    mkdir -p "$BACKUP_DIR/$BACKUP_NAME"
-    
-    # Backup code
-    log "Backing up code..."
-    tar -czf "$BACKUP_DIR/$BACKUP_NAME/code.tar.gz" \
-        --exclude=node_modules \
-        --exclude=.next \
-        --exclude=dist \
-        --exclude=.git \
-        --exclude=*.log \
-        .
-    success "Code backed up"
-    
-    # Backup database
-    log "Backing up database..."
-    docker exec fulexo-postgres pg_dump -U postgres -d fulexo > "$BACKUP_DIR/$BACKUP_NAME/database.sql"
-    success "Database backed up"
-    
-    # Backup Redis data
-    log "Backing up Redis data..."
-    docker exec fulexo-redis redis-cli --rdb /data/dump.rdb
-    docker cp fulexo-redis:/data/dump.rdb "$BACKUP_DIR/$BACKUP_NAME/redis.rdb"
-    success "Redis data backed up"
-    
-    # Backup environment files
-    log "Backing up environment files..."
-    cp .env "$BACKUP_DIR/$BACKUP_NAME/.env" 2>/dev/null || warning "No .env file found"
-    cp docker-compose.prod.yml "$BACKUP_DIR/$BACKUP_NAME/" 2>/dev/null || warning "No docker-compose.prod.yml found"
-    success "Environment files backed up"
-    
-    # Create backup info file
-    cat > "$BACKUP_DIR/$BACKUP_NAME/backup_info.txt" << EOF
-Backup Date: $(date)
-Backup Type: Full
-Git Commit: $(git rev-parse HEAD 2>/dev/null || echo "Unknown")
-Git Branch: $(git branch --show-current 2>/dev/null || echo "Unknown")
-Docker Images: $(docker images --format "table {{.Repository}}:{{.Tag}}" | grep fulexo)
-EOF
-    
-    success "Full backup completed: $BACKUP_NAME"
+if [[ "$MODE" == "full" || "$MODE" == "code" ]]; then
+  ARCHIVE_PATH="$DEST_DIR/code.tar.gz"
+  log info "Kod yedeği oluşturuluyor -> $ARCHIVE_PATH"
+  tar -czf "$ARCHIVE_PATH" \
+    --exclude="*/node_modules" \
+    --exclude="*/.next" \
+    --exclude="*/dist" \
+    --exclude="*/coverage" \
+    --exclude="*/playwright-report" \
+    --exclude="*/cypress" \
+    --exclude=".git" \
+    -C "$PROJECT_ROOT" .
+  log success "Kod yedeği tamamlandı"
 fi
 
-# Database only backup
-if [ "$BACKUP_TYPE" = "--database-only" ]; then
-    log "Creating database-only backup..."
-    
-    mkdir -p "$BACKUP_DIR/$BACKUP_NAME"
-    
-    docker exec fulexo-postgres pg_dump -U postgres -d fulexo > "$BACKUP_DIR/$BACKUP_NAME/database.sql"
-    success "Database backup completed: $BACKUP_NAME"
+if [[ "$MODE" == "full" || "$MODE" == "db" ]]; then
+  log info "PostgreSQL yedeği alınıyor"
+  DB_DUMP="$DEST_DIR/database.sql"
+  compose_cmd "$SCOPE" exec postgres sh -c 'pg_dump "$POSTGRES_DB" -U "$POSTGRES_USER"' > "$DB_DUMP"
+  gzip "$DB_DUMP"
+  log success "Veritabanı yedeği: ${DB_DUMP}.gz"
+
+  log info "Redis snapshot çıkartılıyor"
+  compose_cmd "$SCOPE" exec valkey sh -c 'redis-cli --rdb /data/dump.rdb'
+  compose_cmd "$SCOPE" cp valkey:/data/dump.rdb "$DEST_DIR/valkey.rdb"
+  log success "Redis yedeği alındı"
+
+  if compose_has_service "$SCOPE" minio; then
+    if compose_cmd "$SCOPE" exec minio sh -c 'command -v mc >/dev/null'; then
+      log info "MinIO veri yedeği alınıyor"
+      compose_cmd "$SCOPE" exec minio sh -c 'mkdir -p /tmp/minio-backup && mc alias set local http://localhost:9000 "$MINIO_ROOT_USER" "$MINIO_ROOT_PASSWORD" >/dev/null && mc mirror --overwrite local /data /tmp/minio-backup'
+      if compose_cmd "$SCOPE" cp minio:/tmp/minio-backup "$DEST_DIR/minio"; then
+        compose_cmd "$SCOPE" exec minio rm -rf /tmp/minio-backup >/dev/null 2>&1 || true
+        tar -czf "$DEST_DIR/minio.tar.gz" -C "$DEST_DIR" minio
+        rm -rf "$DEST_DIR/minio"
+        log success "MinIO yedeği alındı"
+      else
+        log warn "MinIO yedeği alınamadı (veri kopyalanamadı)"
+      fi
+    else
+      log warn "MinIO container'ında 'mc' aracı bulunamadı; yedek atlandı"
+    fi
+  fi
 fi
 
-# Code only backup
-if [ "$BACKUP_TYPE" = "--code-only" ]; then
-    log "Creating code-only backup..."
-    
-    mkdir -p "$BACKUP_DIR/$BACKUP_NAME"
-    
-    tar -czf "$BACKUP_DIR/$BACKUP_NAME/code.tar.gz" \
-        --exclude=node_modules \
-        --exclude=.next \
-        --exclude=dist \
-        --exclude=.git \
-        --exclude=*.log \
-        .
-    success "Code backup completed: $BACKUP_NAME"
-fi
+log info "Yedek meta bilgisi yazılıyor"
+{
+  echo "{";
+  echo "  \"createdAt\": \"$(date --iso-8601=seconds)\",";
+  echo "  \"mode\": \"$MODE\",";
+  echo "  \"scope\": \"$SCOPE\",";
+  echo "  \"gitCommit\": \"$(git -C "$PROJECT_ROOT" rev-parse HEAD 2>/dev/null || echo unknown)\",";
+  echo "  \"artifacts\": [";
+  first=true
+  for file in "$DEST_DIR"/*; do
+    name="$(basename "$file")"
+    if [[ "$first" == true ]]; then
+      first=false
+    else
+      echo ","
+    fi
+    echo "    \"$name\""
+  done
+  echo "  ]";
+  echo "}";
+} > "$DEST_DIR/manifest.json"
 
-# Clean up old backups (keep last 10)
-log "Cleaning up old backups..."
-cd "$BACKUP_DIR"
-ls -t | tail -n +11 | xargs -r rm -rf
-success "Old backups cleaned up"
+log success "Yedekleme tamamlandı: $DEST_DIR"
 
-log "Backup process completed successfully!"
-success "Backup location: $BACKUP_DIR/$BACKUP_NAME"
+log info "Eski yedekler temizleniyor (yalnızca son 10 tutulur)"
+ls -1dt "$BACKUP_ROOT"/* 2>/dev/null | tail -n +11 | xargs -r rm -rf
+log success "Temizlik tamamlandı"

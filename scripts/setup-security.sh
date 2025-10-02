@@ -1,190 +1,78 @@
 #!/bin/bash
 
-# Fulexo Platform - Güvenlik Kurulum Script'i
-# Bu script sunucu güvenliğini artırır
+# Applies baseline hardening for Ubuntu hosts running the Fulexo stack
 
-set -euo pipefail
+source "$(dirname "$0")/common.sh"
 
-# Color codes
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m'
+require_root
 
-print_status() { echo -e "${GREEN}[✓]${NC} $1"; }
-print_error() { echo -e "${RED}[✗]${NC} $1"; }
-print_warning() { echo -e "${YELLOW}[!]${NC} $1"; }
-print_info() { echo -e "${BLUE}[i]${NC} $1"; }
+usage() {
+  cat <<USAGE
+Kullanım: $0 [--skip-swap]
+USAGE
+}
 
-# Check if running as root
-if [[ $EUID -ne 0 ]]; then
-   print_error "Bu script root olarak çalıştırılmalıdır"
-   exit 1
-fi
+SKIP_SWAP=false
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --skip-swap)
+      SKIP_SWAP=true
+      shift
+      ;;
+    --help|-h)
+      usage
+      exit 0
+      ;;
+    *)
+      log warn "Bilinmeyen argüman: $1"
+      usage
+      exit 1
+      ;;
+  esac
+done
 
-echo ""
-echo "🔒 Fulexo Platform - Güvenlik Kurulumu"
-echo "====================================="
-echo ""
+log info "Paket listeleri güncelleniyor"
+apt-get update
+apt-get upgrade -y
 
-# 1. SSH güvenliği (sadece fail2ban ile)
-print_status "1/6 - SSH güvenliği yapılandırılıyor..."
-print_info "SSH ayarları değiştirilmiyor, sadece fail2ban koruması aktifleştiriliyor"
+log info "Güvenlik paketleri kuruluyor"
+apt-get install -y ufw fail2ban unattended-upgrades
 
-# 2. Swap alanı ekleme
-print_status "2/6 - Swap alanı ekleniyor..."
-
-# Mevcut swap kontrolü
-if [ $(swapon --show | wc -l) -eq 0 ]; then
-    # 2GB swap dosyası oluştur
+if [[ "$SKIP_SWAP" == false ]]; then
+  if ! swapon --show | grep -q '/swapfile'; then
+    log info "2GB swap dosyası oluşturuluyor"
     fallocate -l 2G /swapfile
     chmod 600 /swapfile
     mkswap /swapfile
     swapon /swapfile
-    
-    # Fstab'a ekle
-    echo '/swapfile none swap sw 0 0' >> /etc/fstab
-    
-    # Swap ayarları
-    echo 'vm.swappiness=10' >> /etc/sysctl.conf
-    echo 'vm.vfs_cache_pressure=50' >> /etc/sysctl.conf
-    
-    print_status "2GB swap alanı eklendi"
-else
-    print_warning "Swap alanı zaten mevcut"
+    if ! grep -q '/swapfile' /etc/fstab; then
+      echo '/swapfile none swap sw 0 0' >> /etc/fstab
+    fi
+  else
+    log info "Swap dosyası zaten mevcut"
+  fi
 fi
 
-# 3. Sistem güncellemeleri
-print_status "3/6 - Sistem güncellemeleri yapılıyor..."
-apt-get update
-apt-get upgrade -y
-apt-get autoremove -y
-apt-get autoclean
+log info "UFW yapılandırılıyor"
+ufw allow OpenSSH
+ufw allow 80
+ufw allow 443
+ufw --force enable
 
-print_status "Sistem güncellemeleri tamamlandı"
+log info "Fail2ban yapılandırması"
+cat >/etc/fail2ban/jail.d/fulexo.conf <<'JAIL'
+[sshd]
+enabled = true
+bantime = 1h
+maxretry = 5
+findtime = 15m
+JAIL
+systemctl restart fail2ban
 
-# 4. Güvenlik paketleri
-print_status "4/6 - Güvenlik paketleri kuruluyor..."
-apt-get install -y \
-    ufw \
-    fail2ban \
-    rkhunter \
-    chkrootkit \
-    unattended-upgrades \
-    apt-listchanges
+log info "Unattended upgrades yapılandırılıyor"
+cat >/etc/apt/apt.conf.d/20auto-upgrades <<'AUTO'
+APT::Periodic::Update-Package-Lists "1";
+APT::Periodic::Unattended-Upgrade "1";
+AUTO
 
-# Otomatik güncellemeleri yapılandır
-cat > /etc/apt/apt.conf.d/50unattended-upgrades << 'EOF'
-Unattended-Upgrade::Allowed-Origins {
-    "${distro_id}:${distro_codename}-security";
-    "${distro_id}ESMApps:${distro_codename}-apps-security";
-    "${distro_id}ESM:${distro_codename}-infra-security";
-};
-Unattended-Upgrade::AutoFixInterruptedDpkg "true";
-Unattended-Upgrade::MinimalSteps "true";
-Unattended-Upgrade::Remove-Unused-Dependencies "true";
-Unattended-Upgrade::Automatic-Reboot "false";
-EOF
-
-# Otomatik güncellemeleri etkinleştir
-echo 'Unattended-Upgrade::Automatic-Reboot "false";' > /etc/apt/apt.conf.d/20auto-upgrades
-echo 'Unattended-Upgrade::Remove-Unused-Dependencies "true";' >> /etc/apt/apt.conf.d/20auto-upgrades
-
-systemctl enable unattended-upgrades
-systemctl start unattended-upgrades
-
-print_status "Güvenlik paketleri kuruldu"
-
-# 5. Log rotasyonu
-print_status "5/6 - Log rotasyonu yapılandırılıyor..."
-
-cat > /etc/logrotate.d/fulexo-security << 'EOF'
-/var/log/auth.log {
-    daily
-    rotate 30
-    compress
-    delaycompress
-    missingok
-    notifempty
-    create 640 root adm
-}
-
-/var/log/syslog {
-    daily
-    rotate 30
-    compress
-    delaycompress
-    missingok
-    notifempty
-    create 640 root adm
-}
-
-/var/log/fail2ban.log {
-    daily
-    rotate 30
-    compress
-    delaycompress
-    missingok
-    notifempty
-    create 640 root adm
-}
-EOF
-
-print_status "Log rotasyonu yapılandırıldı"
-
-# 6. Güvenlik taraması
-print_status "6/6 - Güvenlik taraması yapılıyor..."
-
-# Rootkit taraması
-if command -v rkhunter &> /dev/null; then
-    rkhunter --update
-    rkhunter --check --skip-keypress
-fi
-
-# Chkrootkit taraması
-if command -v chkrootkit &> /dev/null; then
-    chkrootkit
-fi
-
-print_status "Güvenlik taraması tamamlandı"
-
-# Final status
-echo ""
-echo "🔒 GÜVENLİK KURULUMU TAMAMLANDI!"
-echo "==============================="
-echo ""
-echo "✅ Yapılan güvenlik iyileştirmeleri:"
-echo ""
-echo "🛡️  SSH Güvenliği:"
-echo "   - Fail2ban koruması aktif"
-echo "   - Brute force saldırı koruması"
-echo ""
-echo "🔥 Firewall:"
-echo "   - UFW aktif"
-echo "   - Sadece gerekli portlar açık"
-echo "   - Brute force koruması"
-echo ""
-echo "🚫 Fail2ban:"
-echo "   - SSH brute force koruması"
-echo "   - Nginx auth koruması"
-echo "   - Otomatik IP engelleme"
-echo ""
-echo "💾 Swap Alanı:"
-echo "   - 2GB swap dosyası eklendi"
-echo "   - Optimize edilmiş ayarlar"
-echo ""
-echo "🔄 Otomatik Güncellemeler:"
-echo "   - Güvenlik güncellemeleri otomatik"
-echo "   - Sistem güncellemeleri otomatik"
-echo ""
-echo "📊 Log Yönetimi:"
-echo "   - 30 günlük log rotasyonu"
-echo "   - Sıkıştırma aktif"
-echo ""
-echo "⚠️  ÖNEMLİ UYARILAR:"
-echo "1. Firewall durumunu kontrol edin: ufw status"
-echo "2. Fail2ban durumunu kontrol edin: systemctl status fail2ban"
-echo "3. Sistem güncellemelerini düzenli yapın"
-echo ""
-echo "🎊 Güvenlik kurulumu başarıyla tamamlandı!"
+log success "Güvenlik yapılandırması tamamlandı"

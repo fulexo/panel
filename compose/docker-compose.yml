@@ -1,5 +1,11 @@
 version: "3.9"
+
+networks:
+  fulexo-network:
+    driver: bridge
+
 services:
+  # --- FULEXO SERVICES START ---
   nginx:
     image: nginx:1.25
     volumes:
@@ -16,6 +22,8 @@ services:
         envsubst '$$DOMAIN_API $$DOMAIN_APP' < /etc/nginx/conf.d/app.conf.template > /etc/nginx/conf.d/app.conf &&
         nginx -g 'daemon off;'
       "
+    networks:
+      - fulexo-network
 
   postgres:
     image: postgres:16
@@ -28,6 +36,8 @@ services:
     ports:
       - "5433:5432"
     restart: unless-stopped
+    networks:
+      - fulexo-network
 
   valkey:
     image: valkey/valkey:7
@@ -37,6 +47,8 @@ services:
     ports:
       - "6380:6379"
     restart: unless-stopped
+    networks:
+      - fulexo-network
 
   minio:
     image: minio/minio:latest
@@ -48,9 +60,11 @@ services:
     volumes:
       - miniodata:/data
     restart: unless-stopped
+    networks:
+      - fulexo-network
 
   api:
-    build: 
+    build:
       context: ..
       dockerfile: apps/api/Dockerfile
       args:
@@ -71,8 +85,13 @@ services:
       FRONTEND_URL: ${FRONTEND_URL}
       WEB_URL: ${WEB_URL}
       NODE_ENV: ${NODE_ENV}
+      KARRIO_API_URL: http://karrio-server:5002
+      FULEXO_TO_KARRIO_API_TOKEN: ${FULEXO_TO_KARRIO_API_TOKEN}
+      FULEXO_INTERNAL_API_TOKEN: ${FULEXO_INTERNAL_API_TOKEN}
     depends_on: [postgres, valkey, minio]
     restart: unless-stopped
+    networks:
+      - fulexo-network
 
   web:
     build:
@@ -92,6 +111,8 @@ services:
     restart: unless-stopped
     ports:
       - "3001:3000"
+    networks:
+      - fulexo-network
 
   worker:
     build:
@@ -104,9 +125,15 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       REDIS_URL: ${REDIS_URL}
       NODE_ENV: ${NODE_ENV}
+      FULEXO_API_URL: http://api:3000
+      KARRIO_API_URL: http://karrio-server:5002
+      FULEXO_TO_KARRIO_API_TOKEN: ${FULEXO_TO_KARRIO_API_TOKEN}
+      FULEXO_INTERNAL_API_TOKEN: ${FULEXO_INTERNAL_API_TOKEN}
     ports: ["3002:3002"]
-    depends_on: [postgres, valkey]
+    depends_on: [postgres, valkey, api]
     restart: unless-stopped
+    networks:
+      - fulexo-network
 
   prometheus:
     image: prom/prometheus:latest
@@ -115,6 +142,8 @@ services:
       - ./prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
       - prometheusdata:/prometheus
     restart: unless-stopped
+    networks:
+      - fulexo-network
 
   alertmanager:
     image: prom/alertmanager:latest
@@ -123,6 +152,8 @@ services:
     ports: ["9093:9093"]
     depends_on: [prometheus]
     restart: unless-stopped
+    networks:
+      - fulexo-network
 
   grafana:
     image: grafana/grafana:latest
@@ -133,6 +164,8 @@ services:
     ports: ["3003:3000"]
     depends_on: [prometheus]
     restart: unless-stopped
+    networks:
+      - fulexo-network
 
   loki:
     image: grafana/loki:2.9.0
@@ -141,6 +174,8 @@ services:
       - lokidata:/loki
     command: ["-config.file=/etc/loki/config.yml"]
     restart: unless-stopped
+    networks:
+      - fulexo-network
 
   promtail:
     image: grafana/promtail:3.0.0
@@ -150,18 +185,24 @@ services:
     command: ["-config.file=/etc/promtail/config.yml"]
     depends_on: [loki]
     restart: unless-stopped
+    networks:
+      - fulexo-network
 
   jaeger:
     image: jaegertracing/all-in-one:1.57
     ports: ["16686:16686"]
     restart: unless-stopped
+    networks:
+      - fulexo-network
 
   uptimekuma:
     image: louislam/uptime-kuma:1
     volumes:
       - kumadata:/app/data
-    ports: ["3001:3001"]
+    ports: ["3004:3001"]
     restart: unless-stopped
+    networks:
+      - fulexo-network
 
   node-exporter:
     image: prom/node-exporter:latest
@@ -176,6 +217,8 @@ services:
       - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
     ports: ["9100:9100"]
     restart: unless-stopped
+    networks:
+      - fulexo-network
 
   cadvisor:
     image: gcr.io/cadvisor/cadvisor:latest
@@ -190,6 +233,84 @@ services:
     privileged: true
     devices:
       - /dev/kmsg
+    networks:
+      - fulexo-network
+  # --- FULEXO SERVICES END ---
+
+  # --- KARRIO SERVICES START ---
+  karrio-db:
+    image: postgres:13-alpine
+    container_name: karrio-db
+    volumes:
+      - karrio_db_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=${KARRIO_POSTGRES_USER:-karrio}
+      - POSTGRES_PASSWORD=${KARRIO_POSTGRES_PASSWORD:-karrio}
+      - POSTGRES_DB=${KARRIO_POSTGRES_DB:-karrio}
+    networks:
+      - fulexo-network
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  karrio-redis:
+    image: redis:6.2-alpine
+    container_name: karrio-redis
+    volumes:
+      - karrio_redis_data:/data
+    networks:
+      - fulexo-network
+    restart: always
+
+  karrio-server:
+    build:
+      context: ../karrio
+      dockerfile: ./docker/api/Dockerfile
+    container_name: karrio-server
+    ports:
+      - "5002:5002"
+    environment:
+      # --- Sourced from root .env file ---
+      - SECRET_KEY=${KARRIO_SECRET_KEY}
+      - DATABASE_URL=postgres://${KARRIO_POSTGRES_USER:-karrio}:${KARRIO_POSTGRES_PASSWORD:-karrio}@karrio-db:5432/${KARRIO_POSTGRES_DB:-karrio}
+      - REDIS_URL=redis://karrio-redis:6379/1
+      - ADMIN_EMAIL=${ADMIN_EMAIL:-admin@example.com}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-changeme}
+      - ALLOWED_HOSTS=${KARRIO_ALLOWED_HOSTS:-localhost,127.0.0.1,karrio-server}
+      - CORS_ALLOWED_ORIGINS=${KARRIO_CORS_ALLOWED_ORIGINS:-http://localhost:3001,http://localhost:5001}
+      - KARRIO_ADMIN_URL=http://localhost:5001
+      # --- Carrier Credentials ---
+      - UPS_USERNAME=${UPS_USERNAME}
+      - UPS_PASSWORD=${UPS_PASSWORD}
+      - UPS_ACCESS_LICENSE_NUMBER=${UPS_ACCESS_LICENSE_NUMBER}
+    depends_on:
+      karrio-db:
+        condition: service_healthy
+      karrio-redis:
+        condition: service_started
+    networks:
+      - fulexo-network
+    restart: always
+
+  karrio-dashboard:
+    build:
+      context: ../karrio
+      dockerfile: ./docker/dashboard/Dockerfile
+    container_name: karrio-dashboard
+    ports:
+      - "5001:3002"
+    environment:
+      - NEXT_PUBLIC_KARRIO_PUBLIC_URL=http://localhost:5002
+      - KARRIO_URL=http://karrio-server:5002
+    depends_on:
+      - karrio-server
+    networks:
+      - fulexo-network
+    restart: always
+  # --- KARRIO SERVICES END ---
 
 volumes:
   pgdata:
@@ -199,3 +320,5 @@ volumes:
   grafanadata:
   lokidata:
   kumadata:
+  karrio_db_data:
+  karrio_redis_data:

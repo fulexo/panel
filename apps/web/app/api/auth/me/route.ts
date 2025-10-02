@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
     const backendUrl = new URL('/api/auth/me', BACKEND_API_BASE);
 
     // Direct call to backend API with timeout
-    const controller = new AbortController();
+    const controller = new globalThis.AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
 
     const response = await fetch(backendUrl.toString(), {

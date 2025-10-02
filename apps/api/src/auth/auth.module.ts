@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { SessionService } from './session.service';
@@ -10,8 +11,10 @@ import { AuthGuard } from './auth.guard';
 import { RolesGuard } from './roles.guard';
 import { RateLimitGuard } from '../rate-limit.guard';
 import { JwtService } from '../jwt';
+import { InternalAuthGuard } from './internal-auth.guard';
 
 @Module({
+  imports: [ConfigModule],
   controllers: [AuthController],
   providers: [
     AuthService,
@@ -32,7 +35,8 @@ import { JwtService } from '../jwt';
       provide: APP_GUARD,
       useClass: RolesGuard,
     },
+    InternalAuthGuard,
   ],
-  exports: [AuthService, SessionService],
+  exports: [AuthService, SessionService, InternalAuthGuard],
 })
 export class AuthModule {}

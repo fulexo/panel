@@ -522,6 +522,86 @@ const jobProcessors = {
     await new Promise(r => setTimeout(r, 1000));
     return { success: true, tenantId, period };
   },
+  'shipment-tracking-update': async (_job: { data: Record<string, unknown> }) => {
+    logger.info('Starting shipment tracking update job...');
+
+    const FULEXO_API_URL = process.env['FULEXO_API_URL'];
+    const FULEXO_INTERNAL_API_TOKEN = process.env['FULEXO_INTERNAL_API_TOKEN'];
+
+    if (!FULEXO_API_URL || !FULEXO_INTERNAL_API_TOKEN) {
+      logger.error('FULEXO_API_URL or FULEXO_INTERNAL_API_TOKEN is not configured for the worker.');
+      throw new Error('Worker is not configured for internal API calls.');
+    }
+
+    const trackableStatuses = ['created', 'purchased', 'label_purchased', 'shipped', 'in_transit', 'out_for_delivery'];
+    const shipments = await prisma.shipment.findMany({
+      where: {
+        status: { in: trackableStatuses },
+        trackingNo: { not: null },
+        carrier: { not: null },
+      },
+      take: 100,
+    });
+
+    logger.info(`Found ${shipments.length} shipments to track.`);
+
+    for (const shipment of shipments) {
+      if (shipment.carrier && shipment.trackingNo) {
+        try {
+          const trackUrl = `${FULEXO_API_URL}/api/shipments/track/${shipment.carrier}/${shipment.trackingNo}`;
+
+          const response = await fetch(trackUrl, {
+            headers: {
+              Authorization: `Bearer ${FULEXO_INTERNAL_API_TOKEN}`,
+              'Content-Type': 'application/json',
+              'x-tenant-id': String(shipment.tenantId ?? 'system'),
+            },
+          });
+
+          if (!response.ok) {
+            const errorBody = await response.text();
+            throw new Error(`API call failed with status ${response.status}: ${errorBody}`);
+          }
+
+          const trackingInfo = await response.json();
+          const nextStatus = typeof trackingInfo?.status === 'string' ? trackingInfo.status : '';
+
+          if (nextStatus && nextStatus !== shipment.status) {
+            const normalizedNextStatus = nextStatus.toLowerCase();
+            const updateData: Record<string, unknown> = {
+              status: nextStatus,
+            };
+
+            if (['shipped', 'in_transit', 'out_for_delivery', 'delivered'].includes(normalizedNextStatus)) {
+              updateData.shippedAt = shipment.shippedAt ?? new Date();
+            }
+
+            if (normalizedNextStatus === 'delivered') {
+              updateData.deliveredAt = shipment.deliveredAt ?? new Date();
+            }
+
+            if (
+              typeof trackingInfo?.tracking_url === 'string' &&
+              trackingInfo.tracking_url !== shipment.trackingUrl
+            ) {
+              updateData.trackingUrl = trackingInfo.tracking_url;
+            }
+
+            await prisma.shipment.update({
+              where: { id: shipment.id },
+              data: updateData,
+            });
+            logger.info(`Updated shipment ${shipment.id} to status ${nextStatus}`);
+          }
+        } catch (error) {
+          logger.error(`Failed to track shipment ${shipment.id}:`, { error });
+        }
+      }
+    }
+
+    logger.info('Shipment tracking update job finished.');
+    return { processed: shipments.length };
+  },
 };
 
 // Create worker with enhanced error handling and retry logic
@@ -766,6 +846,12 @@ async function scheduleRecurringJobs() {
     removeOnComplete: true,
     priority: 1, // Low priority
     delay: 10000, // 10 second delay
+  });
+
+  await schedulerQueue.add('shipment-tracking-update', {}, {
+    repeat: { pattern: '0 * * * *' },
+    removeOnComplete: true,
+    priority: 2, // Medium-low priority
   });
 
   await schedulerQueue.add('cleanup-sessions', {}, {

@@ -57,6 +57,9 @@ services:
       ENCRYPTION_KEY: ${ENCRYPTION_KEY:-your-32-character-encryption-key}
       SHARE_TOKEN_SECRET: ${SHARE_TOKEN_SECRET:-your-share-token-secret}
       LOG_LEVEL: ${LOG_LEVEL:-info}
+      KARRIO_API_URL: http://karrio-server:5002
+      FULEXO_TO_KARRIO_API_TOKEN: ${FULEXO_TO_KARRIO_API_TOKEN:-}
+      FULEXO_INTERNAL_API_TOKEN: ${FULEXO_INTERNAL_API_TOKEN:-}
     ports:
       - "3000:3000"
     depends_on:
@@ -114,6 +117,10 @@ services:
       REDIS_URL: redis://redis:6379/0
       WORKER_PORT: ${WORKER_PORT:-3002}
       LOG_LEVEL: ${LOG_LEVEL:-info}
+      FULEXO_API_URL: http://api:3000
+      KARRIO_API_URL: http://karrio-server:5002
+      FULEXO_TO_KARRIO_API_TOKEN: ${FULEXO_TO_KARRIO_API_TOKEN:-}
+      FULEXO_INTERNAL_API_TOKEN: ${FULEXO_INTERNAL_API_TOKEN:-}
     ports:
       - "3002:3002"
     depends_on:
@@ -153,6 +160,79 @@ services:
       - DOMAIN_API=api.fulexo.com
       - DOMAIN_APP=panel.fulexo.com
       - DOMAIN_MONITORING=monitor.fulexo.com
+      - DOMAIN_KARRIO_API=karrio.fulexo.com
+      - DOMAIN_KARRIO_DASHBOARD=dashboard.karrio.fulexo.com
+
+  karrio-db:
+    image: postgres:13-alpine
+    container_name: karrio-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${KARRIO_POSTGRES_USER:-karrio}
+      POSTGRES_PASSWORD: ${KARRIO_POSTGRES_PASSWORD:-karrio}
+      POSTGRES_DB: ${KARRIO_POSTGRES_DB:-karrio}
+    volumes:
+      - karrio_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - fulexo-network
+
+  karrio-redis:
+    image: redis:6.2-alpine
+    container_name: karrio-redis
+    restart: unless-stopped
+    volumes:
+      - karrio_redis_data:/data
+    networks:
+      - fulexo-network
+
+  karrio-server:
+    build:
+      context: ./karrio
+      dockerfile: ./docker/api/Dockerfile
+    container_name: karrio-server
+    restart: unless-stopped
+    environment:
+      SECRET_KEY: ${KARRIO_SECRET_KEY:-change-me}
+      DATABASE_URL: postgres://${KARRIO_POSTGRES_USER:-karrio}:${KARRIO_POSTGRES_PASSWORD:-karrio}@karrio-db:5432/${KARRIO_POSTGRES_DB:-karrio}
+      REDIS_URL: redis://karrio-redis:6379/1
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@example.com}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-changeme}
+      ALLOWED_HOSTS: ${KARRIO_ALLOWED_HOSTS:-localhost,127.0.0.1,karrio-server}
+      CORS_ALLOWED_ORIGINS: ${KARRIO_CORS_ALLOWED_ORIGINS:-https://panel.fulexo.com,https://dashboard.karrio.fulexo.com}
+      KARRIO_ADMIN_URL: https://dashboard.karrio.fulexo.com
+      UPS_USERNAME: ${UPS_USERNAME:-}
+      UPS_PASSWORD: ${UPS_PASSWORD:-}
+      UPS_ACCESS_LICENSE_NUMBER: ${UPS_ACCESS_LICENSE_NUMBER:-}
+    depends_on:
+      karrio-db:
+        condition: service_healthy
+      karrio-redis:
+        condition: service_started
+    ports:
+      - "5002:5002"
+    networks:
+      - fulexo-network
+
+  karrio-dashboard:
+    build:
+      context: ./karrio
+      dockerfile: ./docker/dashboard/Dockerfile
+    container_name: karrio-dashboard
+    restart: unless-stopped
+    environment:
+      NEXT_PUBLIC_KARRIO_PUBLIC_URL: https://karrio.fulexo.com
+      KARRIO_URL: http://karrio-server:5002
+    depends_on:
+      - karrio-server
+    ports:
+      - "5001:3002"
+    networks:
+      - fulexo-network
 
 volumes:
   postgres_data:
@@ -160,6 +240,10 @@ volumes:
   redis_data:
     driver: local
   nginx_logs:
+    driver: local
+  karrio_db_data:
+    driver: local
+  karrio_redis_data:
     driver: local
 
 networks:

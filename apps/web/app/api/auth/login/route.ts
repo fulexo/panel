@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
       console.log('Calling backend API...');
       
       // Add timeout to prevent hanging
-      const controller = new AbortController();
+      const controller = new globalThis.AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
       
       backendResponse = await fetch(backendUrl.toString(), {

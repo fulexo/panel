@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { logger } from "@/lib/logger";
 import { useAuth } from "@/components/AuthProvider";
 import { useRBAC } from "@/hooks/useRBAC";
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -112,7 +113,7 @@ export default function InventoryPage() {
     const newImageFiles = [...imageFiles, ...newFiles];
     setImageFiles(newImageFiles);
     
-    const newPreviewUrls = newFiles.map(file => URL.createObjectURL(file));
+    const newPreviewUrls = newFiles.map(file => window.URL.createObjectURL(file));
     setImagePreviewUrls([...imagePreviewUrls, ...newPreviewUrls]);
   };
 
@@ -121,7 +122,7 @@ export default function InventoryPage() {
     const newPreviewUrls = imagePreviewUrls.filter((_, i) => i !== index);
     
     if (imagePreviewUrls[index]) {
-      URL.revokeObjectURL(imagePreviewUrls[index]);
+      window.URL.revokeObjectURL(imagePreviewUrls[index]);
     }
     
     setImageFiles(newImageFiles);
@@ -132,7 +133,7 @@ export default function InventoryPage() {
   const handleCsvUpload = (file: File) => {
     setCsvFile(file);
     
-    const reader = new FileReader();
+    const reader = new window.FileReader();
     reader.onload = (e) => {
       const text = e.target?.result as string;
       const lines = text.split('\n');
@@ -201,6 +202,7 @@ export default function InventoryPage() {
       setCsvFile(null);
       setCsvPreviewData([]);
     } catch (error) {
+      logger.error("CSV processing failed", error);
       addNotification({
         type: 'error',
         title: 'Hata',
@@ -248,6 +250,7 @@ export default function InventoryPage() {
         message: 'Stok düzenleme talebi oluşturuldu'
       });
     } catch (error) {
+      logger.error("Stock adjustment request failed", error);
       addNotification({
         type: 'error',
         title: 'Hata',
@@ -277,7 +280,7 @@ export default function InventoryPage() {
         }
       }
     } catch (error) {
-      console.error('Image upload failed:', error);
+      logger.error('Image upload failed', error);
     }
     
     return uploadedUrls;
@@ -333,6 +336,7 @@ export default function InventoryPage() {
         message: 'Yeni ürün talebi oluşturuldu'
       });
     } catch (error) {
+      logger.error("New product request failed", error);
       addNotification({
         type: 'error',
         title: 'Hata',
@@ -344,7 +348,7 @@ export default function InventoryPage() {
   };
 
   const handleDeleteRequest = async (id: string) => {
-    if (confirm("Bu talebi silmek istediğinizden emin misiniz?")) {
+    if (window.confirm("Bu talebi silmek istediğinizden emin misiniz?")) {
       try {
         await deleteRequestMutation.mutateAsync(id);
         addNotification({
@@ -412,7 +416,7 @@ export default function InventoryPage() {
                         ...csvData.map((row: any) => Object.values(row).join(','))
                       ].join('\n');
                       
-                      const blob = new Blob([csv], { type: 'text/csv' });
+                      const blob = new window.Blob([csv], { type: 'text/csv' });
                       const url = window.URL.createObjectURL(blob);
                       const a = document.createElement('a');
                       a.href = url;
@@ -1129,7 +1133,7 @@ export default function InventoryPage() {
                     <button
                       onClick={() => {
                         const csvContent = 'SKU,CurrentStock,NewStock,Reason\nSAMPLE-001,10,25,Restock from supplier\nSAMPLE-002,5,0,Discontinued product';
-                        const blob = new Blob([csvContent], { type: 'text/csv' });
+                        const blob = new window.Blob([csvContent], { type: 'text/csv' });
                         const url = window.URL.createObjectURL(blob);
                         const a = document.createElement('a');
                         a.href = url;
@@ -1170,7 +1174,7 @@ export default function InventoryPage() {
                 <button
                       onClick={() => {
                         const csvContent = 'Name,SKU,Price,Stock,Description,Category\nSample Phone,PHONE-001,299.99,50,Premium smartphone,Electronics\nSample Case,CASE-001,29.99,100,Protective phone case,Accessories';
-                        const blob = new Blob([csvContent], { type: 'text/csv' });
+                        const blob = new window.Blob([csvContent], { type: 'text/csv' });
                         const url = window.URL.createObjectURL(blob);
                         const a = document.createElement('a');
                         a.href = url;

@@ -1,9 +1,8 @@
 /**
- * @fileoverview Root Layout Component for Fulexo Web Application
- * @description This is the root layout component that wraps all pages in the application.
- * It provides global providers, theme configuration, and error boundaries.
- * @author Fulexo Team
- * @version 1.0.0
+ * @fileoverview Root layout for the Fulexo fulfillment control panel.
+ * @description Wraps every page with the shared providers, theme configuration,
+ * application context, and global error boundary so that the dashboard renders
+ * consistently across routes.
  */
 
 // "use client"; // This should be removed for root layout
@@ -27,8 +26,11 @@ export default function RootLayout({
   return (
     <html lang="en" className="h-full" suppressHydrationWarning>
       <head>
-        <title>Fulexo - AI-Powered File Management Platform</title>
-        <meta name="description" content="Advanced file management with AI-powered features" />
+        <title>Fulexo Fulfillment Platform</title>
+        <meta
+          name="description"
+          content="Multi-tenant fulfillment operations with integrated WooCommerce syncing and Karrio-powered shipping tools"
+        />
       </head>
       <body className="h-full bg-background text-foreground antialiased">
         <ErrorBoundary>

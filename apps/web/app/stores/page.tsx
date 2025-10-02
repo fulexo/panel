@@ -8,26 +8,23 @@ import { useStores, useDeleteStore, useSyncStore, useTestStoreConnection } from 
 import ProtectedRoute from "@/components/ProtectedRoute";
 import ProtectedComponent from "@/components/ProtectedComponent";
 import { ApiError } from "@/lib/api-client";
-import Link from "next/link";
-import { 
-  Building, 
-  Plus, 
-  Search, 
+import {
+  Building,
+  Plus,
+  Search,
   Filter,
   Download,
   RefreshCw,
   TestTube,
   Edit,
   Trash2,
-  ExternalLink,
   AlertTriangle,
   CheckCircle,
   XCircle,
   Clock,
-  User,
-  Globe,
-  Settings,
-  X
+  X,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react";
 
 export default function StoresPage() {
@@ -117,7 +114,7 @@ export default function StoresPage() {
 
   const handleExportStores = () => {
     if (!storesData?.data || storesData.data.length === 0) {
-      alert('No stores to export.');
+      window.alert('No stores to export.');
       return;
     }
     
@@ -135,7 +132,7 @@ export default function StoresPage() {
       ...csvData.map(row => Object.values(row || {}).join(','))
     ].join('\n') : 'No data to export';
     
-    const blob = new Blob([csv], { type: 'text/csv' });
+    const blob = new window.Blob([csv], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -146,18 +143,18 @@ export default function StoresPage() {
 
   const handleBulkSync = async () => {
     if (!storesData?.data || storesData.data.length === 0) {
-      alert('No stores to sync.');
+      window.alert('No stores to sync.');
       return;
     }
 
     const connectedStores = storesData.data.filter((store: any) => store.status === 'connected');
     
     if (connectedStores.length === 0) {
-      alert('No connected stores to sync.');
+      window.alert('No connected stores to sync.');
       return;
     }
 
-    if (!confirm(`Sync ${connectedStores.length} connected stores? This may take a few minutes.`)) {
+    if (!window.confirm(`Sync ${connectedStores.length} connected stores? This may take a few minutes.`)) {
       return;
     }
 
@@ -173,10 +170,10 @@ export default function StoresPage() {
       const successful = results.filter(r => r.status === 'fulfilled').length;
       const failed = results.filter(r => r.status === 'rejected').length;
 
-      alert(`Bulk sync completed!\nSuccessful: ${successful}\nFailed: ${failed}`);
+      window.alert(`Bulk sync completed!\nSuccessful: ${successful}\nFailed: ${failed}`);
     } catch (error) {
       logger.error('Bulk sync failed:', error);
-      alert('Bulk sync failed. Please try again.');
+      window.alert('Bulk sync failed. Please try again.');
     }
   };
 
