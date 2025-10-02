@@ -8,12 +8,14 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Edit, Trash2, Clock, MapPin } from 'lucide-react';
+import { Plus, Edit, Trash2, Clock, MapPin, CalendarDays } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths } from 'date-fns';
 import { tr } from 'date-fns/locale';
 import EventModal from '@/components/EventModal';
 import BusinessHoursModal from '@/components/BusinessHoursModal';
 import HolidayModal from '@/components/HolidayModal';
+import { PageHeader } from '@/components/PageHeader';
+import { cn } from '@/lib/utils';
 
 interface CalendarEvent {
   id: string;
@@ -28,11 +30,11 @@ interface CalendarEvent {
 
 
 const eventTypes = {
-  general: { label: 'Genel', color: 'bg-blue-100 text-blue-800' },
-  meeting: { label: 'Toplantı', color: 'bg-green-100 text-green-800' },
-  holiday: { label: 'Tatil', color: 'bg-red-100 text-red-800' },
-  maintenance: { label: 'Bakım', color: 'bg-yellow-100 text-yellow-800' },
-  closed: { label: 'Kapalı', color: 'bg-gray-100 text-gray-800' },
+  general: { label: 'Genel', tone: 'bg-primary/15 text-primary' },
+  meeting: { label: 'Toplantı', tone: 'bg-[hsl(var(--info))]/15 text-[hsl(var(--info))]' },
+  holiday: { label: 'Tatil', tone: 'bg-destructive/15 text-destructive' },
+  maintenance: { label: 'Bakım', tone: 'bg-[hsl(var(--warning))]/15 text-[hsl(var(--warning))]' },
+  closed: { label: 'Kapalı', tone: 'bg-muted text-muted-foreground' },
 };
 
 const weekdays = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
@@ -109,45 +111,48 @@ export default function CalendarPage() {
           const isWorking = isWorkingDay(day);
           const isToday = isSameDay(day, new Date());
           const isCurrentMonth = isSameMonth(day, currentDate);
+          const isSelected = selectedDate ? isSameDay(day, selectedDate) : false;
 
           return (
-            <div
+            <button
               key={day.toISOString()}
-              className={`
-                min-h-[100px] p-2 border border-gray-200 cursor-pointer hover:bg-gray-50
-                ${!isCurrentMonth ? 'bg-gray-50 text-gray-400' : ''}
-                ${isToday ? 'bg-blue-50 border-blue-300' : ''}
-                ${!isWorking ? 'bg-red-50' : ''}
-              `}
+              type="button"
               onClick={() => setSelectedDate(day)}
+              className={cn(
+                'group flex min-h-[110px] flex-col rounded-xl border border-border/70 p-3 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+                !isCurrentMonth && 'bg-muted/40 text-muted-foreground',
+                isToday && 'border-primary bg-primary/10 text-primary',
+                !isWorking && 'border-destructive/40 bg-destructive/5',
+                isSelected && 'ring-2 ring-offset-2 ring-ring',
+                'hover:border-primary hover:bg-primary/10'
+              )}
             >
-              <div className="flex justify-between items-start mb-1">
-                <span className={`text-sm font-medium ${isToday ? 'text-blue-600' : ''}`}>
-                  {format(day, 'd')}
-                </span>
+              <div className="mb-2 flex items-start justify-between">
+                <span className={cn('text-sm font-semibold', isToday && 'text-primary')}>{format(day, 'd')}</span>
                 {holiday && (
-                  <Badge variant="destructive" className="text-xs">
+                  <Badge variant="destructive" className="text-[10px] uppercase tracking-wide">
                     Tatil
                   </Badge>
                 )}
               </div>
-              
+
               <div className="space-y-1">
                 {dayEvents.slice(0, 2).map((event: any) => (
                   <div
                     key={event.id}
-                    className={`text-xs p-1 rounded truncate ${eventTypes[event.type as keyof typeof eventTypes]?.color || 'bg-gray-100 text-gray-800'}`}
+                    className={cn(
+                      'line-clamp-2 rounded-md px-2 py-1 text-xs font-medium shadow-sm',
+                      eventTypes[event.type as keyof typeof eventTypes]?.tone || 'bg-muted text-muted-foreground'
+                    )}
                   >
                     {event.title}
                   </div>
                 ))}
                 {dayEvents.length > 2 && (
-                  <div className="text-xs text-muted-foreground">
-                    +{dayEvents.length - 2} daha
-                  </div>
+                  <div className="text-xs text-muted-foreground">+{dayEvents.length - 2} daha</div>
                 )}
               </div>
-            </div>
+            </button>
           );
         })}
       </div>
@@ -242,46 +247,31 @@ export default function CalendarPage() {
   return (
     <ProtectedRoute>
       <div className="min-h-screen bg-background">
-        <main className="mobile-container py-6 space-y-6">
-          {/* Header */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <h1 className="mobile-heading text-foreground">Takvim</h1>
-              <p className="text-muted-foreground mobile-text">
-                Çalışma günleri, tatiller ve etkinlikleri yönetin
-              </p>
-            </div>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                onClick={() => setCurrentDate(subMonths(currentDate, 1))}
-              >
-                ← Önceki
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => setCurrentDate(new Date())}
-              >
-                Bugün
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => setCurrentDate(addMonths(currentDate, 1))}
-              >
-                Sonraki →
-              </Button>
-              <Button onClick={handleCreateEvent}>
-                <Plus className="w-4 h-4 mr-2" />
-                Etkinlik Ekle
-              </Button>
-            </div>
-          </div>
+        <main className="mobile-container py-8 space-y-6">
+          <PageHeader
+            title="Takvim Yönetimi"
+            description="Mağaza operasyonlarınızı, çalışma saatlerini ve özel günleri tek ekrandan planlayın."
+            icon={CalendarDays}
+            actions={
+              <div className="flex flex-wrap items-center gap-2">
+                <Button variant="outline" size="sm" onClick={() => setCurrentDate(subMonths(currentDate, 1))}>
+                  ← Önceki
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => setCurrentDate(new Date())}>
+                  Bugün
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => setCurrentDate(addMonths(currentDate, 1))}>
+                  Sonraki →
+                </Button>
+                <Button size="sm" onClick={handleCreateEvent} className="gap-2">
+                  <Plus className="h-4 w-4" /> Etkinlik Ekle
+                </Button>
+              </div>
+            }
+          />
 
-          {/* Current Month */}
-          <div className="text-center">
-            <h2 className="text-2xl font-bold text-foreground">
-              {format(currentDate, 'MMMM yyyy', { locale: tr })}
-            </h2>
+          <div className="text-center text-sm font-medium text-muted-foreground">
+            {format(currentDate, 'MMMM yyyy', { locale: tr })}
           </div>
 
           {/* Calendar */}
@@ -304,9 +294,12 @@ export default function CalendarPage() {
                 <CardContent>
                   <div className="space-y-2">
                     {businessHours.map((bh: any) => (
-                      <div key={bh.id} className="flex justify-between items-center p-2 bg-gray-50 rounded">
-                        <span className="font-medium">{weekdays[bh.weekday]}</span>
-                        <span className="text-sm text-muted-foreground">
+                      <div
+                        key={bh.id}
+                        className="flex items-center justify-between rounded-lg border border-border/70 bg-muted/40 px-3 py-2"
+                      >
+                        <span className="text-sm font-semibold text-foreground">{weekdays[bh.weekday]}</span>
+                        <span className="text-xs text-muted-foreground">
                           {bh.startTime} - {bh.endTime}
                         </span>
                       </div>
@@ -332,10 +325,13 @@ export default function CalendarPage() {
                 <CardContent>
                   <div className="space-y-2">
                     {holidays.slice(0, 5).map((holiday: any) => (
-                      <div key={holiday.id} className="flex justify-between items-center p-2 bg-red-50 rounded">
-                        <span className="font-medium">{holiday.name}</span>
-                        <span className="text-sm text-muted-foreground">
-                          {format(new Date(holiday.date), 'dd MMM')}
+                      <div
+                        key={holiday.id}
+                        className="flex items-center justify-between rounded-lg border border-destructive/40 bg-destructive/5 px-3 py-2"
+                      >
+                        <span className="text-sm font-semibold text-destructive">{holiday.name}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {format(new Date(holiday.date), 'dd MMM', { locale: tr })}
                         </span>
                       </div>
                     ))}
@@ -368,14 +364,14 @@ export default function CalendarPage() {
               <CardContent>
                 <div className="space-y-2">
                   {getEventsForDate(selectedDate).map((event: any) => (
-                    <div key={event.id} className="flex items-center justify-between p-3 border rounded">
+                    <div key={event.id} className="flex items-center justify-between rounded-lg border border-border/70 bg-background/80 p-3">
                       <div className="flex-1">
                         <h4 className="font-medium">{event.title}</h4>
                         {event.description && (
                           <p className="text-sm text-muted-foreground">{event.description}</p>
                         )}
                         <div className="flex items-center gap-2 mt-1">
-                          <Badge className={eventTypes[event.type as keyof typeof eventTypes]?.color || 'bg-gray-100 text-gray-800'}>
+                          <Badge className={eventTypes[event.type as keyof typeof eventTypes]?.tone || 'bg-muted text-muted-foreground'}>
                             {eventTypes[event.type as keyof typeof eventTypes]?.label || event.type}
                           </Badge>
                           <span className="text-xs text-muted-foreground">

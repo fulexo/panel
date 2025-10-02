@@ -1,439 +1,89 @@
-# 🚀 Fulexo Platform - WooCommerce Multi-Tenant Fulfillment Management
+# Fulexo Fulfillment Platform
 
-## 📋 Overview
+Fulexo is a multi-tenant fulfillment platform that centralises WooCommerce store management, warehouse operations, and parcel shipping. The monorepo contains a Next.js control panel, a NestJS API, a BullMQ worker, and the Karrio shipping gateway so carriers, rates, and labels are available directly inside the order flow.
 
-Fulexo is a comprehensive self-hosted platform for managing multiple WooCommerce stores with multi-tenant support, designed specifically for fulfillment companies. It provides centralized management of all customer stores from a single panel with real-time WooCommerce synchronization.
+## Repository layout
 
-### 🎯 Key Features
+- `apps/api` – NestJS API with Prisma, tenant isolation, WooCommerce sync jobs, and the Karrio integration layer.
+- `apps/web` – Next.js 14 front-end that surfaces dashboards, store configuration, shipment tools, and customer workflows.
+- `apps/worker` – BullMQ worker that processes background jobs such as WooCommerce webhooks and shipment tracking updates.
+- `compose/` – Docker Compose definitions for local development, observability, and the co-located Karrio stack.
+- `scripts/` – Operational scripts for deployments, backups, monitoring, and server hardening.
+- `karrio/` – Karrio API and dashboard sources that are built into the local Docker stack.
 
-- 🏪 **Multi-Store Management** - Manage all customer WooCommerce stores from one panel
-- 🔐 **Role-Based Access Control** - Admin vs Customer permissions with approval system
-- 🔄 **Real-time WooCommerce Sync** - Bidirectional synchronization of orders, products, customers, and inventory
-- 📊 **Centralized Dashboard** - Overview of all stores and operations
-- 📦 **Inventory Management** - Stock management with customer approval workflow
-- ↩️ **Returns Management** - Handle product returns and customer notifications
-- 🆘 **Support System** - Customer communication and ticket management
-- 🛡️ **Security First** - JWT authentication, 2FA support, encrypted data storage
-- 📈 **Monitoring** - Prometheus, Grafana, Loki integration
-- 🎯 **Self-hosted** - Complete control over your infrastructure
+## Core capabilities
 
-## 🏗️ Architecture
+- **Multi-tenant operations** – Tenants, users, and WooCommerce stores are isolated in the database and protected through tenant-aware guards across the API.
+- **WooCommerce synchronisation** – Store imports, order syncing, and reconciliation utilities keep data aligned across the API, worker, and storefront.
+- **Integrated shipping** – The order detail page launches the Create Shipment flow, surfaces Karrio rates, creates labels, and records carrier metadata for downstream fulfilment.
+- **Observability and tooling** – Prometheus, Grafana, Loki, Jaeger, and Uptime Kuma ship in the default Docker stack for metrics, logging, and tracing.
+- **Security features** – JWT authentication, optional TOTP-based two-factor, encryption helpers, and configurable rate limiting underpin the API.
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                         Nginx (Reverse Proxy)                │
-│                    SSL/TLS, Rate Limiting, WAF               │
-└─────────────────────────────────────────────────────────────┘
-                                  │
-        ┌─────────────────────────┼─────────────────────────┐
-        │                         │                         │
-┌───────▼────────┐       ┌────────▼────────┐      ┌────────▼────────┐
-│   Next.js Web  │       │   NestJS API    │      │   BullMQ Worker │
-│   (Frontend)   │       │    (Backend)    │      │     (Jobs)      │
-└────────────────┘       └─────────────────┘      └─────────────────┘
-        │                         │                         │
-        └─────────────────────────┼─────────────────────────┘
-                                  │
-    ┌──────────────┬──────────────┼──────────────┬──────────────┐
-    │              │              │              │              │
-┌───▼────┐   ┌────▼────┐   ┌─────▼────┐   ┌────▼────┐   ┌─────▼────┐
-│Postgres│   │ Valkey  │   │  MinIO   │   │Prometheus│   │  Loki    │
-│  (DB)  │   │ (Cache) │   │(Storage) │   │(Metrics) │   │  (Logs)  │
-└────────┘   └─────────┘   └──────────┘   └──────────┘   └──────────┘
-```
+## Prerequisites
 
-## 🔐 User Roles & Permissions
-
-### ADMIN (Fulexo Manager) - Full Access
-- **Dashboard**: Overview of all stores and operations
-- **Stores**: Manage all customer stores and WooCommerce connections
-- **Orders**: Full order management across all stores
-- **Products**: Full product management across all stores
-- **Customers**: Full customer management across all stores
-- **Inventory**: Full inventory management + approval system
-- **Returns**: Full returns management across all stores
-- **Support**: Full support ticket management
-
-### CUSTOMER (Store Owner + Manager) - Full Store Access
-- **Dashboard**: Their store overview and statistics
-- **Stores**: Manage their own stores and WooCommerce connections
-- **Orders**: Full order management for their stores
-- **Products**: Full product management for their stores
-- **Customers**: Full customer management for their stores
-- **Inventory**: Full inventory management with approval workflow
-- **Returns**: Full returns management for their stores
-- **Support**: Manage their own support tickets
-
-## 📊 Panel Pages
-
-### 1. 📊 Dashboard
-- **Admin**: All stores overview, statistics, recent orders, low stock alerts
-- **Customer**: Their store overview, statistics, recent orders, low stock alerts
-
-### 2. 🏪 Stores
-- **Admin**: All stores management and overview
-- **Customer**: Their own stores management
-- WooCommerce connection management
-- API key management
-- Sync status monitoring
-
-### 3. 📦 Orders
-- **Admin**: Full order management across all stores
-- **Customer**: Full order management for their stores
-- Integrated shipping management
-- Order status updates
-- Tracking number management
-
-### 4. 📱 Products
-- **Admin**: Full product management across all stores
-- **Customer**: Full product management for their stores
-- Stock management
-- Price management
-- Category management
-
-### 5. 👥 Customers
-- **Admin**: Full customer management across all stores
-- **Customer**: Full customer management for their stores
-- Customer details and history
-- Order tracking
-
-### 6. 📦 Inventory
-- **Admin**: Full inventory management + approval system
-- **Customer**: Limited inventory management with approval workflow
-- Stock level monitoring
-- Low stock alerts
-- Approval system for customer changes
-
-### 7. ↩️ Returns
-- **Admin**: Full returns management across all stores
-- **Customer**: View-only access to their store returns
-- Return processing
-- Customer notifications
-
-### 8. 🆘 Support
-- **Admin**: Full support ticket management
-- **Customer**: Manage only their own support tickets
-- Ticket system
-- File sharing
-- Communication history
-
-## 🔄 WooCommerce Integration
-
-### Supported Entities
-- ✅ Orders, Products, Customers, Inventory
-- ✅ Real-time synchronization via webhooks
-- ✅ Bidirectional data sync
-- ✅ Stock level updates
-- ✅ Order status updates
-
-### Sync Strategy
-- Incremental synchronization (pull) + Webhook ingestion (push)
-- Rate limit/backoff handling
-- Checkpoint-based recovery & idempotent processing
-- Real-time updates for critical operations
-
-## 🚀 Quick Installation
-
-### Prerequisites
 - Docker Engine 24+ and Docker Compose v2
-- Node.js 20+ (for development)
-- PostgreSQL 16+ (via Docker)
-- 4GB RAM minimum, 8GB recommended
-- Ubuntu 22.04+ or similar Linux distribution
+- Node.js 20+ and npm 10+
+- Git and a Unix-like shell environment
 
-### 1. Clone Repository
+## Getting started
+
+1. **Install dependencies**
+   ```bash
+   npm install
+   npm run install:all
+   ```
+2. **Prepare environment variables**
+   ```bash
+   cp .env.example .env
+   # Edit .env with database credentials, JWT keys, S3/MinIO access, and Karrio tokens
+   ```
+3. **Start local services** – Launch the full stack (API, web, worker, databases, monitoring, and Karrio) with Docker Compose:
+   ```bash
+   docker compose -f compose/docker-compose.yml up -d
+   ```
+4. **Apply database migrations**
+   ```bash
+   cd apps/api
+   npm run prisma:migrate
+   cd ../..
+   ```
+5. **Run the applications in development mode**
+   ```bash
+   npm run dev:all
+   ```
+6. **Access the stack**
+   - Panel (Next.js): http://localhost:3001 directly, or http://localhost via the bundled Nginx reverse proxy when `DOMAIN_APP` is set to `localhost`.
+   - API (NestJS): served through Nginx at http://localhost/api by default (Swagger is proxied at http://localhost/api/docs). If you expose the container port (e.g. with the production compose file) it is available on http://localhost:3000 with Swagger at http://localhost:3000/docs.
+   - Karrio dashboard: http://localhost:5001
+   - Karrio API: http://localhost:5002
+
+## Testing and quality
+
+The workspace exposes Jest, Playwright, ESLint, and TypeScript checks from the repository root:
+
 ```bash
-git clone https://github.com/fulexo/panel.git
-cd panel
+npm run lint           # Lint API, web, and worker packages
+npm run type-check     # TypeScript project references
+npm run test           # Jest unit tests
+npm run test:e2e       # Playwright end-to-end tests
+npm run test:cypress   # Cypress UI tests
 ```
 
-### 2. Environment Setup
-```bash
-# Copy environment file
-cp .env.example .env
+## Production operations
 
-# Update with your configuration
-nano .env
-```
+- `docker-compose.prod.yml` defines the production stack, including the API, web, worker, and the Karrio services.
+- `scripts/deploy.sh` builds containers, performs health checks, and ensures the Karrio services are bootstrapped.
+- `scripts/backup.sh`, `scripts/backup-restore.sh`, and `scripts/rollback.sh` help manage backups and recoveries.
+- `scripts/health-check.sh`, `scripts/setup-security.sh`, and `scripts/setup-ssl.sh` assist with ongoing maintenance of production hosts.
 
-### 3. Start Development Environment
-```bash
-# Start all services
-docker compose -f compose/docker-compose.yml up -d
+## Additional documentation
 
-# Run database migrations
-cd apps/api && npm run prisma:migrate
-```
+- [ARCHITECTURE.md](ARCHITECTURE.md) – System architecture, component responsibilities, and integration flows.
+- [SECURITY.md](SECURITY.md) – Security controls, configuration guidance, and incident handling references.
+- [TROUBLESHOOTING.md](TROUBLESHOOTING.md) – Diagnostic commands and remediation steps for common issues.
+- [KARRIO_INTEGRATION_BLUEPRINT.md](KARRIO_INTEGRATION_BLUEPRINT.md) – Detailed rollout plan for the Karrio integration.
+- [scripts/README.md](scripts/README.md) – Operational script catalogue and usage notes.
 
-### 4. Access the Platform
-- **Panel**: http://localhost:3000
-- **API**: http://localhost:3001
-- **API Docs**: http://localhost:3001/docs
+## Community
 
-## 🔧 Development
-
-### Project Structure
-```
-apps/
-├── api/          # NestJS backend API
-├── web/          # Next.js frontend
-└── worker/       # Background job processor
-
-compose/          # Docker configurations
-scripts/          # Management scripts
-```
-
-### Available Scripts
-```bash
-# Development
-npm run dev              # Start all services
-npm run dev:api          # Start API only
-npm run dev:web          # Start web only
-npm run dev:worker       # Start worker only
-
-# Database
-npm run prisma:migrate   # Run migrations
-npm run prisma:seed      # Seed database
-npm run prisma:studio    # Open Prisma Studio
-
-# Testing
-npm run test             # Run all tests
-npm run test:api         # Run API tests
-npm run test:web         # Run web tests
-npm run test:e2e         # Run E2E tests
-
-# Production
-npm run build            # Build all apps
-npm run start            # Start production
-```
-
-## 🔒 Security Features
-
-### Authentication & Authorization
-- JWT tokens with RS256 in production
-- Multi-factor authentication (TOTP)
-- Role-based access control (RBAC)
-- Session management with fingerprinting
-- Account lockout after failed attempts
-
-### Data Protection
-- AES-256-GCM encryption for sensitive data
-- bcrypt password hashing (cost factor 10)
-- SQL injection prevention via Prisma
-- XSS protection
-- CSRF protection
-
-### Network Security
-- Rate limiting at multiple layers
-- Security headers (HSTS, CSP, X-Frame-Options)
-- HTTPS enforcement
-- Firewall configuration
-
-## 📊 Monitoring & Observability
-
-### Metrics (Prometheus)
-- API request rates and latencies
-- Database connection pool stats
-- Cache hit rates
-- Sync lag metrics
-- Business KPIs
-
-### Logging (Loki + Promtail)
-- Centralized log aggregation
-- Structured logging
-- Log retention policies
-- Search and filtering
-
-### Tracing (Jaeger)
-- Distributed tracing
-- Performance bottleneck identification
-- Request flow visualization
-
-## 🚢 Production Deployment
-
-### 1. Server Setup
-```bash
-# Update system
-apt update && apt upgrade -y
-
-# Install Docker
-curl -fsSL https://get.docker.com -o get-docker.sh
-sh get-docker.sh
-
-# Install Docker Compose
-curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-chmod +x /usr/local/bin/docker-compose
-```
-
-### 2. Domain Configuration
-```bash
-# Update environment variables
-nano .env
-
-# Set your domains
-DOMAIN_API=api.fulexo.com
-DOMAIN_APP=panel.fulexo.com
-NEXT_PUBLIC_API_BASE=https://api.fulexo.com
-NEXT_PUBLIC_APP_URL=https://panel.fulexo.com
-```
-
-### 3. SSL Setup
-```bash
-# Install Certbot
-snap install --classic certbot
-
-# Generate certificates
-certbot --nginx -d api.fulexo.com -d panel.fulexo.com
-```
-
-### 4. Start Production
-```bash
-# Start production services
-docker-compose -f docker-compose.prod.yml up -d
-
-# Run migrations
-cd apps/api && npm run prisma:migrate:deploy
-```
-
-## 🛠️ Management Commands
-
-### Service Management
-```bash
-# Start services
-docker-compose -f docker-compose.prod.yml up -d
-
-# Stop services
-docker-compose -f docker-compose.prod.yml down
-
-# Restart services
-docker-compose -f docker-compose.prod.yml restart
-
-# View logs
-docker-compose -f docker-compose.prod.yml logs -f
-```
-
-### Backup Management
-```bash
-# Full backup
-./scripts/backup.sh --full
-
-# Database backup
-./scripts/backup.sh --database
-
-# Storage backup
-./scripts/backup.sh --storage
-```
-
-### Health Checks
-```bash
-# Health check
-./scripts/health-check.sh
-
-# System monitoring
-./scripts/monitor.sh
-
-# Cache clearing
-./scripts/clear-cache.sh --all
-```
-
-## 📚 API Documentation
-
-The API documentation is automatically generated using Swagger/OpenAPI:
-
-- **Development**: http://localhost:3001/docs
-- **Production**: https://api.fulexo.com/docs
-
-### Main Endpoints
-
-#### Authentication
-- `POST /auth/login` - User login
-- `POST /auth/logout` - User logout
-- `POST /auth/refresh` - Refresh token
-- `POST /auth/2fa/enable` - Enable 2FA
-- `GET /auth/me` - Current user info
-
-#### Stores
-- `GET /stores` - List stores
-- `POST /stores` - Create store
-- `GET /stores/:id` - Get store details
-- `PUT /stores/:id` - Update store
-- `DELETE /stores/:id` - Delete store
-- `POST /stores/:id/sync` - Sync store data
-
-#### Orders
-- `GET /orders` - List orders
-- `GET /orders/:id` - Get order details
-- `PUT /orders/:id` - Update order
-- `GET /orders/stats` - Order statistics
-
-#### Products
-- `GET /products` - List products
-- `GET /products/:id` - Get product details
-- `PUT /products/:id` - Update product
-- `GET /products/stats` - Product statistics
-
-#### Inventory
-- `GET /inventory` - List inventory
-- `PUT /inventory/:id` - Update inventory
-- `GET /inventory/approvals` - List pending approvals
-- `POST /inventory/approvals` - Create approval request
-- `PUT /inventory/approvals/:id` - Approve/reject request
-
-#### Support
-- `GET /support/tickets` - List support tickets
-- `POST /support/tickets` - Create support ticket
-- `GET /support/tickets/:id` - Get ticket details
-- `PUT /support/tickets/:id` - Update ticket
-
-## 🐛 Troubleshooting
-
-### Common Issues
-
-#### Database Connection Failed
-```bash
-# Check PostgreSQL status
-docker compose logs postgres
-
-# Verify connection string
-echo $DATABASE_URL
-```
-
-#### Rate Limit Exceeded
-```bash
-# Check Redis for rate limit status
-docker compose exec valkey redis-cli
-> KEYS rl:*
-```
-
-#### Authentication Issues
-```bash
-# Check JWT configuration
-docker compose exec api node -e "console.log(process.env.JWT_SECRET)"
-
-# View auth logs
-docker compose logs api | grep auth
-```
-
-#### WooCommerce Sync Issues
-```bash
-# Check sync logs
-docker compose logs worker | grep sync
-
-# Test WooCommerce connection
-curl -X POST http://localhost:3001/stores/test-connection
-```
-
-## 📞 Support
-
-- **GitHub Issues**: https://github.com/fulexo/panel/issues
-- **Documentation**: README.md
-- **Security**: SECURITY.md
-- **Troubleshooting**: TROUBLESHOOTING.md
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
-
-**Version**: 1.0.0 | **Status**: Production Ready | **Last Updated**: 2024
+Report issues or feature requests via [GitHub Issues](https://github.com/fulexo/panel/issues). Contributions and feedback that improve the Fulexo fulfilment experience are welcome.

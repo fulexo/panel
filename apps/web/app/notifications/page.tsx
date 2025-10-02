@@ -1,19 +1,67 @@
 "use client";
 
-import { useState } from "react";
-import { useAuth } from "@/components/AuthProvider";
+import { ComponentProps, useMemo, useState } from "react";
+import {
+  Bell,
+  Package,
+  ClipboardList,
+  User,
+  Settings,
+  RotateCcw,
+  CheckCircle2,
+  Filter,
+  Trash2,
+  Inbox,
+  ShieldAlert,
+} from "lucide-react";
+
 import ProtectedRoute from "@/components/ProtectedRoute";
-import { Package, ClipboardList, User, Settings, RotateCcw, Bell } from 'lucide-react';
+import { useAuth } from "@/components/AuthProvider";
+import { PageHeader } from "@/components/PageHeader";
+import { EmptyState } from "@/components/EmptyState";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Switch } from "@/components/ui/switch";
+
+type NotificationType = "order" | "inventory" | "customer" | "system" | "return";
+type NotificationPriority = "urgent" | "high" | "medium" | "low";
+
+interface Notification {
+  id: number;
+  type: NotificationType;
+  title: string;
+  message: string;
+  time: string;
+  read: boolean;
+  priority: NotificationPriority;
+}
+
+const typeMeta: Record<NotificationType, { label: string; icon: typeof Bell }> = {
+  order: { label: "Sipariş", icon: Package },
+  inventory: { label: "Stok", icon: ClipboardList },
+  customer: { label: "Müşteri", icon: User },
+  system: { label: "Sistem", icon: Settings },
+  return: { label: "İade", icon: RotateCcw },
+};
+
+const priorityMeta: Record<NotificationPriority, { label: string; badge: ComponentProps<typeof Badge>["variant"]; tone: string }> = {
+  urgent: { label: "Acil", badge: "destructive", tone: "border-destructive/50 bg-destructive/10 text-destructive" },
+  high: { label: "Yüksek", badge: "warning", tone: "border-[hsl(var(--warning))]/40 bg-[hsl(var(--warning))]/10 text-[hsl(var(--warning))]" },
+  medium: { label: "Orta", badge: "info", tone: "border-[hsl(var(--info))]/40 bg-[hsl(var(--info))]/10 text-[hsl(var(--info))]" },
+  low: { label: "Düşük", badge: "muted", tone: "border-border/70 bg-muted/60 text-muted-foreground" },
+};
 
 export default function NotificationsPage() {
   useAuth();
-  const [activeTab, setActiveTab] = useState("all");
-  const [notifications, setNotifications] = useState([
+  const [activeTab, setActiveTab] = useState<string>("all");
+  const [notifications, setNotifications] = useState<Notification[]>([
     {
       id: 1,
       type: "order",
       title: "Yeni Sipariş",
-      message: "Sipariş #12345 alındı - 1,250.00 TL",
+      message: "Sipariş #12345 alındı - 1.250,00 TL",
       time: "2 dakika önce",
       read: false,
       priority: "high",
@@ -80,391 +128,179 @@ export default function NotificationsPage() {
     },
   });
 
-  const tabs = [
-    { id: "all", label: "Tümü", count: notifications.length },
-    { id: "unread", label: "Okunmamış", count: notifications.filter(n => !n.read).length },
-    { id: "orders", label: "Siparişler", count: notifications.filter(n => n.type === "order").length },
-    { id: "inventory", label: "Stok", count: notifications.filter(n => n.type === "inventory").length },
-    { id: "customers", label: "Müşteriler", count: notifications.filter(n => n.type === "customer").length },
-    { id: "system", label: "Sistem", count: notifications.filter(n => n.type === "system").length },
-  ];
+  const tabs = useMemo(() => {
+    return [
+      { id: "all", label: "Tümü", count: notifications.length, icon: Bell },
+      { id: "unread", label: "Okunmamış", count: notifications.filter((n) => !n.read).length, icon: Inbox },
+      { id: "order", label: "Siparişler", count: notifications.filter((n) => n.type === "order").length, icon: Package },
+      { id: "inventory", label: "Stok", count: notifications.filter((n) => n.type === "inventory").length, icon: ClipboardList },
+      { id: "customer", label: "Müşteri", count: notifications.filter((n) => n.type === "customer").length, icon: User },
+      { id: "system", label: "Sistem", count: notifications.filter((n) => n.type === "system").length, icon: Settings },
+      { id: "return", label: "İadeler", count: notifications.filter((n) => n.type === "return").length, icon: RotateCcw },
+    ];
+  }, [notifications]);
 
-  const filteredNotifications = notifications.filter(notification => {
-    if (activeTab === "all") return true;
-    if (activeTab === "unread") return !notification.read;
-    return notification.type === activeTab;
-  });
+  const filteredNotifications = useMemo(() => {
+    if (activeTab === "all") return notifications;
+    if (activeTab === "unread") return notifications.filter((notification) => !notification.read);
+    return notifications.filter((notification) => notification.type === activeTab);
+  }, [notifications, activeTab]);
 
   const markAsRead = (id: number) => {
-    setNotifications(notifications.map(n => 
-      n.id === id ? { ...n, read: true } : n
-    ));
+    setNotifications((prev) => prev.map((notification) => (notification.id === id ? { ...notification, read: true } : notification)));
   };
 
   const markAllAsRead = () => {
-    setNotifications(notifications.map(n => ({ ...n, read: true })));
+    setNotifications((prev) => prev.map((notification) => ({ ...notification, read: true })));
   };
 
   const deleteNotification = (id: number) => {
-    setNotifications(notifications.filter(n => n.id !== id));
-  };
-
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case "urgent": return "text-red-600 bg-red-100";
-      case "high": return "text-orange-600 bg-orange-100";
-      case "medium": return "text-blue-600 bg-blue-100";
-      case "low": return "text-gray-600 bg-gray-100";
-      default: return "text-gray-600 bg-gray-100";
-    }
-  };
-
-  const getTypeIcon = (type: string) => {
-    switch (type) {
-      case "order": return Package;
-      case "inventory": return ClipboardList;
-      case "customer": return User;
-      case "system": return Settings;
-      case "return": return RotateCcw;
-      default: return Bell;
-    }
+    setNotifications((prev) => prev.filter((notification) => notification.id !== id));
   };
 
   return (
     <ProtectedRoute>
       <div className="min-h-screen bg-background">
-        <main className="mobile-container py-6 space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <h1 className="mobile-heading text-foreground">Notifications</h1>
-              <p className="text-muted-foreground mobile-text">
-                Manage your notifications and alerts
-              </p>
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={markAllAsRead}
-                className="btn btn-outline btn-sm"
-              >
-                Mark All Read
-              </button>
-              <button className="btn btn-outline btn-sm">
-                Settings
-              </button>
-            </div>
-          </div>
+        <main className="mobile-container space-y-8 py-8">
+          <PageHeader
+            title="Bildirimler"
+            description="Siparişler, stok durumları ve sistem uyarıları için gerçek zamanlı bildirimleri yönetin."
+            icon={Bell}
+            actions={
+              <div className="flex flex-wrap items-center gap-2">
+                <Button variant="outline" size="sm" className="gap-2" onClick={markAllAsRead}>
+                  <CheckCircle2 className="h-4 w-4" /> Tümünü okundu işaretle
+                </Button>
+                <Button variant="outline" size="sm" className="gap-2">
+                  <Filter className="h-4 w-4" /> Filtrele
+                </Button>
+              </div>
+            }
+          />
 
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-            {/* Notifications List */}
-            <div className="lg:col-span-3">
-              <div className="bg-card rounded-lg border border-border">
-                {/* Tabs */}
-                <div className="border-b border-border p-4">
-                  <div className="flex flex-wrap gap-2">
+          <div className="grid gap-6 lg:grid-cols-[3fr_2fr]">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg font-semibold">Gelen Kutusu</CardTitle>
+                <CardDescription>Öncelik sırasına göre bildirimlerinizi takip edin.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <Tabs value={activeTab} onValueChange={setActiveTab}>
+                  <TabsList className="flex w-full flex-wrap justify-start gap-2 bg-transparent p-0">
                     {tabs.map((tab) => (
-                      <button
+                      <TabsTrigger
                         key={tab.id}
-                        onClick={() => setActiveTab(tab.id)}
-                        className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                          activeTab === tab.id
-                            ? "bg-primary text-primary-foreground"
-                            : "hover:bg-accent text-foreground"
-                        }`}
+                        value={tab.id}
+                        className="flex items-center gap-2 rounded-full border border-transparent bg-muted/60 px-4 py-2 text-sm font-medium data-[state=active]:border-primary data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
                       >
+                        <tab.icon className="h-4 w-4" />
                         {tab.label}
-                        {tab.count > 0 && (
-                          <span className="ml-2 px-2 py-1 bg-muted text-muted-foreground rounded-full text-xs">
-                            {tab.count}
-                          </span>
-                        )}
-                      </button>
+                        <Badge variant="muted">{tab.count}</Badge>
+                      </TabsTrigger>
                     ))}
-                  </div>
-                </div>
+                  </TabsList>
+                  <TabsContent value={activeTab} className="mt-4 space-y-3">
+                    {filteredNotifications.length === 0 ? (
+                      <EmptyState
+                        icon={ShieldAlert}
+                        title="Görüntülenecek bildirim yok"
+                        description="Seçtiğiniz filtre için herhangi bir bildirim bulunamadı."
+                      />
+                    ) : (
+                      filteredNotifications.map((notification) => {
+                        const meta = typeMeta[notification.type];
+                        const priority = priorityMeta[notification.priority];
 
-                {/* Notifications */}
-                <div className="divide-y divide-border">
-                  {filteredNotifications.length === 0 ? (
-                    <div className="p-8 text-center text-muted-foreground">
-                      <Bell className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-                      <p>No notifications found</p>
-                    </div>
-                  ) : (
-                    filteredNotifications.map((notification) => (
-                      <div
-                        key={notification.id}
-                        className={`p-4 hover:bg-accent transition-colors ${
-                          !notification.read ? "bg-blue-50/50" : ""
-                        }`}
-                      >
-                        <div className="flex items-start gap-4">
-                          <div className="text-2xl">
-                            {(() => {
-                              const IconComponent = getTypeIcon(notification.type) as React.ComponentType<{ className?: string }>;
-                              return <IconComponent className="w-6 h-6" />;
-                            })()}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              <h3 className="font-medium text-foreground">
-                                {notification.title}
-                              </h3>
-                              <span className={`px-2 py-1 rounded-full text-xs ${getPriorityColor(notification.priority)}`}>
-                                {notification.priority}
+                        return (
+                          <div
+                            key={notification.id}
+                            className={`flex flex-col gap-3 rounded-2xl border px-4 py-4 shadow-sm transition hover:shadow-md lg:flex-row lg:items-center lg:justify-between ${priority.tone}`}
+                          >
+                            <div className="flex flex-1 items-start gap-3">
+                              <span className="mt-1 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-background/80">
+                                <meta.icon className="h-5 w-5" />
                               </span>
-                              {!notification.read && (
-                                <div className="w-2 h-2 bg-primary rounded-full"></div>
-                              )}
+                              <div className="space-y-1">
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <h3 className="text-sm font-semibold text-foreground">{notification.title}</h3>
+                                  <Badge variant={priority.badge}>{priority.label}</Badge>
+                                  {!notification.read && <Badge variant="info">Yeni</Badge>}
+                                </div>
+                                <p className="text-sm text-muted-foreground">{notification.message}</p>
+                                <span className="text-xs text-muted-foreground/80">{notification.time}</span>
+                              </div>
                             </div>
-                            <p className="text-sm text-muted-foreground mb-2">
-                              {notification.message}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              {notification.time}
-                            </p>
-                          </div>
-                          <div className="flex gap-2">
-                            {!notification.read && (
-                              <button
-                                onClick={() => markAsRead(notification.id)}
-                                className="btn btn-sm btn-outline"
+                            <div className="flex flex-wrap items-center gap-2">
+                              {!notification.read && (
+                                <Button variant="muted" size="sm" onClick={() => markAsRead(notification.id)}>
+                                  Okundu işaretle
+                                </Button>
+                              )}
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => deleteNotification(notification.id)}
+                                className="text-muted-foreground hover:text-destructive"
                               >
-                                Mark Read
-                              </button>
-                            )}
-                            <button
-                              onClick={() => deleteNotification(notification.id)}
-                              className="btn btn-sm btn-ghost text-muted-foreground hover:text-destructive"
-                            >
-                              ✕
-                            </button>
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
                           </div>
+                        );
+                      })
+                    )}
+                  </TabsContent>
+                </Tabs>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg font-semibold">Bildirim Tercihleri</CardTitle>
+                <CardDescription>Email, push ve SMS kanallarını dilediğiniz gibi yapılandırın.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {([
+                  { key: "email", label: "E-posta Bildirimleri" },
+                  { key: "push", label: "Push Bildirimleri" },
+                  { key: "sms", label: "SMS Bildirimleri" },
+                ] as const).map((channel) => (
+                  <div key={channel.key} className="space-y-3 rounded-xl border border-border/70 bg-muted/30 p-4">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-sm font-semibold text-foreground">{channel.label}</h3>
+                      <Badge variant="muted" className="uppercase tracking-wide">
+                        {channel.key}
+                      </Badge>
+                    </div>
+                    <div className="space-y-3">
+                      {Object.entries(settings[channel.key]).map(([settingKey, value]) => (
+                        <div key={settingKey} className="flex items-center justify-between gap-3 rounded-lg bg-background/80 px-3 py-2">
+                          <span className="text-sm font-medium text-foreground">
+                            {settingKey === "newOrders" && "Yeni siparişler"}
+                            {settingKey === "lowStock" && "Düşük stok uyarıları"}
+                            {settingKey === "customerMessages" && "Müşteri mesajları"}
+                            {settingKey === "systemUpdates" && "Sistem güncellemeleri"}
+                            {settingKey === "returns" && "İade süreçleri"}
+                          </span>
+                          <Switch
+                            checked={value}
+                            onCheckedChange={(checked) =>
+                              setSettings((prev) => ({
+                                ...prev,
+                                [channel.key]: {
+                                  ...prev[channel.key],
+                                  [settingKey]: checked,
+                                },
+                              }))
+                            }
+                          />
                         </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Settings Sidebar */}
-            <div className="lg:col-span-1">
-              <div className="bg-card p-6 rounded-lg border border-border">
-                <h3 className="text-lg font-semibold text-foreground mb-4">Notification Settings</h3>
-                
-                <div className="space-y-6">
-                  {/* Email Notifications */}
-                  <div>
-                    <h4 className="font-medium text-foreground mb-3">📧 Email Notifications</h4>
-                    <div className="space-y-3">
-                      <label className="flex items-center gap-3">
-                        <input
-                          type="checkbox"
-                          checked={settings.email.newOrders}
-                          onChange={(e) => setSettings({
-                            ...settings,
-                            email: { ...settings.email, newOrders: e.target.checked }
-                          })}
-                          className="form-checkbox"
-                        />
-                        <span className="text-sm">New Orders</span>
-                      </label>
-                      <label className="flex items-center gap-3">
-                        <input
-                          type="checkbox"
-                          checked={settings.email.lowStock}
-                          onChange={(e) => setSettings({
-                            ...settings,
-                            email: { ...settings.email, lowStock: e.target.checked }
-                          })}
-                          className="form-checkbox"
-                        />
-                        <span className="text-sm">Low Stock Alerts</span>
-                      </label>
-                      <label className="flex items-center gap-3">
-                        <input
-                          type="checkbox"
-                          checked={settings.email.customerMessages}
-                          onChange={(e) => setSettings({
-                            ...settings,
-                            email: { ...settings.email, customerMessages: e.target.checked }
-                          })}
-                          className="form-checkbox"
-                        />
-                        <span className="text-sm">Customer Messages</span>
-                      </label>
-                      <label className="flex items-center gap-3">
-                        <input
-                          type="checkbox"
-                          checked={settings.email.systemUpdates}
-                          onChange={(e) => setSettings({
-                            ...settings,
-                            email: { ...settings.email, systemUpdates: e.target.checked }
-                          })}
-                          className="form-checkbox"
-                        />
-                        <span className="text-sm">System Updates</span>
-                      </label>
-                      <label className="flex items-center gap-3">
-                        <input
-                          type="checkbox"
-                          checked={settings.email.returns}
-                          onChange={(e) => setSettings({
-                            ...settings,
-                            email: { ...settings.email, returns: e.target.checked }
-                          })}
-                          className="form-checkbox"
-                        />
-                        <span className="text-sm">Returns</span>
-                      </label>
+                      ))}
                     </div>
                   </div>
-
-                  {/* Push Notifications */}
-                  <div>
-                    <h4 className="font-medium text-foreground mb-3 flex items-center gap-2">
-                      <Bell className="w-4 h-4" />
-                      Push Notifications
-                    </h4>
-                    <div className="space-y-3">
-                      <label className="flex items-center gap-3">
-                        <input
-                          type="checkbox"
-                          checked={settings.push.newOrders}
-                          onChange={(e) => setSettings({
-                            ...settings,
-                            push: { ...settings.push, newOrders: e.target.checked }
-                          })}
-                          className="form-checkbox"
-                        />
-                        <span className="text-sm">New Orders</span>
-                      </label>
-                      <label className="flex items-center gap-3">
-                        <input
-                          type="checkbox"
-                          checked={settings.push.lowStock}
-                          onChange={(e) => setSettings({
-                            ...settings,
-                            push: { ...settings.push, lowStock: e.target.checked }
-                          })}
-                          className="form-checkbox"
-                        />
-                        <span className="text-sm">Low Stock Alerts</span>
-                      </label>
-                      <label className="flex items-center gap-3">
-                        <input
-                          type="checkbox"
-                          checked={settings.push.customerMessages}
-                          onChange={(e) => setSettings({
-                            ...settings,
-                            push: { ...settings.push, customerMessages: e.target.checked }
-                          })}
-                          className="form-checkbox"
-                        />
-                        <span className="text-sm">Customer Messages</span>
-                      </label>
-                      <label className="flex items-center gap-3">
-                        <input
-                          type="checkbox"
-                          checked={settings.push.systemUpdates}
-                          onChange={(e) => setSettings({
-                            ...settings,
-                            push: { ...settings.push, systemUpdates: e.target.checked }
-                          })}
-                          className="form-checkbox"
-                        />
-                        <span className="text-sm">System Updates</span>
-                      </label>
-                      <label className="flex items-center gap-3">
-                        <input
-                          type="checkbox"
-                          checked={settings.push.returns}
-                          onChange={(e) => setSettings({
-                            ...settings,
-                            push: { ...settings.push, returns: e.target.checked }
-                          })}
-                          className="form-checkbox"
-                        />
-                        <span className="text-sm">Returns</span>
-                      </label>
-                    </div>
-                  </div>
-
-                  {/* SMS Notifications */}
-                  <div>
-                    <h4 className="font-medium text-foreground mb-3">📱 SMS Notifications</h4>
-                    <div className="space-y-3">
-                      <label className="flex items-center gap-3">
-                        <input
-                          type="checkbox"
-                          checked={settings.sms.newOrders}
-                          onChange={(e) => setSettings({
-                            ...settings,
-                            sms: { ...settings.sms, newOrders: e.target.checked }
-                          })}
-                          className="form-checkbox"
-                        />
-                        <span className="text-sm">New Orders</span>
-                      </label>
-                      <label className="flex items-center gap-3">
-                        <input
-                          type="checkbox"
-                          checked={settings.sms.lowStock}
-                          onChange={(e) => setSettings({
-                            ...settings,
-                            sms: { ...settings.sms, lowStock: e.target.checked }
-                          })}
-                          className="form-checkbox"
-                        />
-                        <span className="text-sm">Low Stock Alerts</span>
-                      </label>
-                      <label className="flex items-center gap-3">
-                        <input
-                          type="checkbox"
-                          checked={settings.sms.customerMessages}
-                          onChange={(e) => setSettings({
-                            ...settings,
-                            sms: { ...settings.sms, customerMessages: e.target.checked }
-                          })}
-                          className="form-checkbox"
-                        />
-                        <span className="text-sm">Customer Messages</span>
-                      </label>
-                      <label className="flex items-center gap-3">
-                        <input
-                          type="checkbox"
-                          checked={settings.sms.systemUpdates}
-                          onChange={(e) => setSettings({
-                            ...settings,
-                            sms: { ...settings.sms, systemUpdates: e.target.checked }
-                          })}
-                          className="form-checkbox"
-                        />
-                        <span className="text-sm">System Updates</span>
-                      </label>
-                      <label className="flex items-center gap-3">
-                        <input
-                          type="checkbox"
-                          checked={settings.sms.returns}
-                          onChange={(e) => setSettings({
-                            ...settings,
-                            sms: { ...settings.sms, returns: e.target.checked }
-                          })}
-                          className="form-checkbox"
-                        />
-                        <span className="text-sm">Returns</span>
-                      </label>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-6 pt-6 border-t border-border">
-                  <button className="btn btn-primary w-full">
-                    Save Settings
-                  </button>
-                </div>
-              </div>
-            </div>
+                ))}
+              </CardContent>
+            </Card>
           </div>
         </main>
       </div>

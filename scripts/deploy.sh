@@ -1,127 +1,104 @@
 #!/bin/bash
 
-# Production Deployment Script
-# Usage: ./scripts/deploy.sh [environment] [--no-cache] [--force]
+# Production deployment workflow
 
-set -e
+source "$(dirname "$0")/common.sh"
 
-# Colors for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+require_not_root
+ensure_command docker
+ensure_command git
 
-# Default values
-ENVIRONMENT=${1:-production}
-NO_CACHE=${2:-false}
-FORCE=${3:-false}
-BACKUP_DIR="/var/backups/fulexo"
-LOG_FILE="/var/log/fulexo/deploy.log"
+SCOPE=prod
+NO_CACHE=false
+FORCE=false
+SKIP_BACKUP=false
 
-# Create log directory if it doesn't exist
-mkdir -p "$(dirname "$LOG_FILE")"
+usage() {
+  cat <<USAGE
+Kullanım: $0 [--dev|--prod] [--no-cache] [--force] [--skip-backup]
 
-# Logging function
-log() {
-    echo -e "${BLUE}[$(date +'%Y-%m-%d %H:%M:%S')]${NC} $1" | tee -a "$LOG_FILE"
+Varsayılan olarak production compose dosyasını kullanır.
+USAGE
 }
 
-error() {
-    echo -e "${RED}[ERROR]${NC} $1" | tee -a "$LOG_FILE"
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --dev)
+      SCOPE=dev
+      shift
+      ;;
+    --prod)
+      SCOPE=prod
+      shift
+      ;;
+    --no-cache)
+      NO_CACHE=true
+      shift
+      ;;
+    --force)
+      FORCE=true
+      shift
+      ;;
+    --skip-backup)
+      SKIP_BACKUP=true
+      shift
+      ;;
+    --help|-h)
+      usage
+      exit 0
+      ;;
+    *)
+      log warn "Bilinmeyen argüman: $1"
+      usage
+      exit 1
+      ;;
+  esac
+done
+
+log info "Dağıtım başlatılıyor (scope: $SCOPE)"
+
+if [[ "$SKIP_BACKUP" == false ]]; then
+  log info "Dağıtım öncesi yedek alınıyor"
+  "$SCRIPT_DIR/backup.sh" --$SCOPE --full
+fi
+
+log info "Git deposu güncelleniyor"
+if ! git -C "$PROJECT_ROOT" pull --ff-only; then
+  if [[ "$FORCE" == true ]]; then
+    log warn "Git pull başarısız oldu ancak --force verildiği için devam ediliyor"
+  else
+    log error "Git deposu güncellenemedi"
     exit 1
-}
-
-success() {
-    echo -e "${GREEN}[SUCCESS]${NC} $1" | tee -a "$LOG_FILE"
-}
-
-warning() {
-    echo -e "${YELLOW}[WARNING]${NC} $1" | tee -a "$LOG_FILE"
-}
-
-# Check if running as root or with sudo
-if [[ $EUID -eq 0 ]]; then
-    error "This script should not be run as root for security reasons"
+  fi
 fi
 
-# Check if Docker is running
-if ! docker info > /dev/null 2>&1; then
-    error "Docker is not running. Please start Docker and try again."
-fi
+log info "Hizmetler durduruluyor"
+compose_cmd "$SCOPE" down --remove-orphans
 
-log "Starting deployment for environment: $ENVIRONMENT"
-
-# Create backup before deployment
-if [ "$FORCE" != "--force" ]; then
-    log "Creating backup before deployment..."
-    ./scripts/backup.sh
-    if [ $? -ne 0 ]; then
-        error "Backup failed. Aborting deployment."
-    fi
-    success "Backup created successfully"
-fi
-
-# Stop services gracefully
-log "Stopping services..."
-docker-compose -f docker-compose.prod.yml down --timeout 30
-
-# Clean up old containers and images if no-cache flag is set
-if [ "$NO_CACHE" = "--no-cache" ]; then
-    log "Cleaning up old containers and images..."
-    docker system prune -f
-    docker volume prune -f
-    success "Cleanup completed"
-fi
-
-# Pull latest code
-log "Pulling latest code..."
-git pull origin main
-if [ $? -ne 0 ]; then
-    error "Failed to pull latest code"
-fi
-success "Code updated successfully"
-
-# Build and start services
-log "Building and starting services..."
-
-if [ "$NO_CACHE" = "--no-cache" ]; then
-    docker-compose -f docker-compose.prod.yml build --no-cache --parallel
+log info "Container'lar inşa ediliyor"
+if [[ "$NO_CACHE" == true ]]; then
+  compose_cmd "$SCOPE" build --no-cache
 else
-    docker-compose -f docker-compose.prod.yml build --parallel
+  compose_cmd "$SCOPE" build
 fi
 
-if [ $? -ne 0 ]; then
-    error "Build failed"
+log info "Hizmetler başlatılıyor"
+compose_cmd "$SCOPE" up -d
+
+if [[ "$SCOPE" == prod ]]; then
+  log info "Karrio servisleri doğrulanıyor"
+  compose_cmd "$SCOPE" up -d karrio-db karrio-redis karrio-server karrio-dashboard || true
 fi
 
-# Start services
-docker-compose -f docker-compose.prod.yml up -d
-
-if [ $? -ne 0 ]; then
-    error "Failed to start services"
-fi
-
-# Wait for services to be ready
-log "Waiting for services to be ready..."
-sleep 30
-
-# Health check
-log "Performing health check..."
-./scripts/health-check.sh
-
-if [ $? -eq 0 ]; then
-    success "Deployment completed successfully!"
-    log "Services are running and healthy"
-    
-    # Show service status
-    docker-compose -f docker-compose.prod.yml ps
-    
-    # Clean up old images (keep last 3)
-    log "Cleaning up old images..."
-    docker image prune -f
-    success "Deployment completed and cleaned up"
+log info "Servislerin sağlığı kontrol ediliyor"
+if "$SCRIPT_DIR/health-check.sh" --$SCOPE --quiet; then
+  log success "Dağıtım tamamlandı"
 else
-    error "Health check failed. Rolling back..."
-    ./scripts/rollback.sh
+  log warn "Sağlık kontrolü başarısız oldu, rollback çalıştırılıyor"
+  "$SCRIPT_DIR/rollback.sh" latest --$SCOPE
+  exit 1
 fi
+
+log info "Gereksiz imajlar temizleniyor"
+docker image prune -f >/dev/null
+log success "Dağıtım süreci tamamlandı"

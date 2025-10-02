@@ -1,48 +1,151 @@
 "use client";
 
-import { logger } from "@/lib/logger";
+import { ComponentProps, useMemo, useState } from "react";
+import { RotateCcw, Download, Filter, PackageSearch, CalendarDays, CheckCircle2, AlertTriangle, XCircle } from "lucide-react";
 
-import { useState } from "react";
+import { PageHeader } from "@/components/PageHeader";
+import { EmptyState } from "@/components/EmptyState";
+import ProtectedRoute from "@/components/ProtectedRoute";
+import ProtectedComponent from "@/components/ProtectedComponent";
 import { useAuth } from "@/components/AuthProvider";
 import { useRBAC } from "@/hooks/useRBAC";
 import { useReturns, useUpdateReturnStatus } from "@/hooks/useApi";
-import ProtectedRoute from "@/components/ProtectedRoute";
-import ProtectedComponent from "@/components/ProtectedComponent";
 import { ApiError } from "@/lib/api-client";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { logger } from "@/lib/logger";
+
+type ReturnStatus = "pending" | "approved" | "rejected" | "processed" | string;
+
+const statusMeta: Record<ReturnStatus, { label: string; badge: ComponentProps<typeof Badge>["variant"]; description: string }>
+  = {
+    pending: {
+      label: "Pending",
+      badge: "warning",
+      description: "Awaiting team review and decision",
+    },
+    approved: {
+      label: "Approved",
+      badge: "success",
+      description: "Return accepted and ready for processing",
+    },
+    rejected: {
+      label: "Rejected",
+      badge: "destructive",
+      description: "Return was rejected and is closed",
+    },
+    processed: {
+      label: "Processed",
+      badge: "info",
+      description: "Return has been processed and finalised",
+    },
+  } as const;
+
+const statusOrder: ReturnStatus[] = ["pending", "approved", "processed", "rejected"];
 
 export default function ReturnsPage() {
   const { user } = useAuth();
   const { isAdmin } = useRBAC();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  
-  // Get user's store ID for customer view
+  const [statusFilter, setStatusFilter] = useState<ReturnStatus | "">("");
+  const [activeTab, setActiveTab] = useState<ReturnStatus | "all">("all");
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [createForm, setCreateForm] = useState({
+    orderNumber: "",
+    product: "",
+    quantity: 1,
+    reason: "",
+    description: "",
+  });
+
   const userStoreId = user?.stores?.[0]?.id;
-  
-  // Fetch returns data
-  const { 
-    data: returnsData, 
+
+  const {
+    data: returnsData,
     isLoading,
-    error
+    error,
   } = useReturns({
     page,
     limit: 10,
     ...(search ? { search } : {}),
     ...(statusFilter ? { status: statusFilter } : {}),
     ...(isAdmin() ? {} : userStoreId ? { storeId: userStoreId } : {}),
-  }) as { data: { data: Array<{ id: string; orderNumber: string; productName: string; quantity: number; reason: string; status: string; requestedAt: string; processedAt?: string; notes?: string; store?: { name: string } }>; pagination: { total: number; pages: number } } | undefined; isLoading: boolean; error: ApiError | null };
+  }) as {
+    data:
+      | {
+          data: Array<{
+            id: string;
+            orderNumber: string;
+            productName: string;
+            quantity: number;
+            reason: string;
+            status: ReturnStatus;
+            requestedAt: string;
+            processedAt?: string;
+            notes?: string;
+            store?: { name: string };
+          }>;
+          pagination: { total: number; pages: number };
+        }
+      | undefined;
+    isLoading: boolean;
+    error: ApiError | null;
+  };
 
   const updateReturnStatus = useUpdateReturnStatus();
+
+  const returns = returnsData?.data ?? [];
+  const totalReturns = returnsData?.pagination?.total ?? 0;
+  const totalPages = returnsData?.pagination?.pages ?? 1;
+
+  const groupedReturns = useMemo(() => {
+    return returns.reduce<Record<ReturnStatus, typeof returns>>((acc, item) => {
+      const key = (item.status || "pending") as ReturnStatus;
+      acc[key] = acc[key] ? [...acc[key], item] : [item];
+      return acc;
+    }, {} as Record<ReturnStatus, typeof returns>);
+  }, [returns]);
+
+  const pendingReturns = groupedReturns["pending"] ?? [];
+
+  const handleStatusUpdate = async (returnId: string, newStatus: ReturnStatus) => {
+    try {
+      await updateReturnStatus.mutateAsync({
+        id: returnId,
+        status: newStatus,
+      });
+    } catch (err) {
+      logger.error("Failed to update return status", err);
+    }
+  };
+
+  const filteredReturns = useMemo(() => {
+    if (activeTab === "all") return returns;
+    return returns.filter((item) => item.status === activeTab);
+  }, [returns, activeTab]);
 
   if (isLoading) {
     return (
       <ProtectedRoute>
         <div className="min-h-screen bg-background flex items-center justify-center">
-          <div className="flex flex-col items-center gap-4">
-            <div className="spinner"></div>
-            <div className="text-lg text-foreground">Loading returns...</div>
+          <div className="flex flex-col items-center gap-4 text-muted-foreground">
+            <div className="spinner" />
+            <span className="text-base font-medium">İadeler yükleniyor...</span>
           </div>
         </div>
       </ProtectedRoute>
@@ -52,334 +155,390 @@ export default function ReturnsPage() {
   if (error) {
     return (
       <ProtectedRoute>
-        <div className="min-h-screen bg-background flex items-center justify-center">
-          <div className="flex flex-col items-center gap-4">
-            <div className="text-red-500 text-lg">Error loading returns</div>
-            <div className="text-muted-foreground">
-              {error instanceof ApiError ? error.message : 'Unknown error'}
-            </div>
-          </div>
-        </div>
+        <EmptyState
+          icon={XCircle}
+          title="İadeler yüklenemedi"
+          description={error instanceof ApiError ? error.message : "Bilinmeyen bir hata oluştu"}
+        />
       </ProtectedRoute>
     );
   }
 
-  const returns = returnsData?.data || [];
-  const totalReturns = returnsData?.pagination?.total || 0;
-  const totalPages = returnsData?.pagination?.pages || 1;
-
-  // Calculate statistics
-  const statusCounts = returns.reduce((acc: Record<string, number>, returnItem: { id: string; orderNumber: string; productName: string; quantity: number; reason: string; status: string; requestedAt: string; processedAt?: string; notes?: string; store?: { name: string } }) => {
-    acc[returnItem.status] = (acc[returnItem.status] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
-
-  const pendingReturns = returns.filter((returnItem: { id: string; orderNumber: string; productName: string; quantity: number; reason: string; status: string; requestedAt: string; processedAt?: string; notes?: string; store?: { name: string } }) => returnItem.status === 'pending');
-
-  const handleStatusUpdate = async (returnId: string, newStatus: string) => {
-    try {
-      await updateReturnStatus.mutateAsync({
-        id: returnId,
-        status: newStatus
-      });
-    } catch (error) {
-      logger.error('Failed to update return status:', error);
-    }
-  };
-
   return (
     <ProtectedRoute>
       <div className="min-h-screen bg-background">
-        <main className="mobile-container py-6 space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <h1 className="mobile-heading text-foreground">Returns Management</h1>
-              <p className="text-muted-foreground mobile-text">
-                {isAdmin() ? 'Manage all returns across all stores' : 'View your store returns'}
-              </p>
-            </div>
-            <ProtectedComponent permission="returns.manage">
-              <button 
-                onClick={() => setShowCreateModal(true)}
-                className="btn btn-primary"
-              >
-                Create Return
-              </button>
-            </ProtectedComponent>
-          </div>
-
-          {/* Filters */}
-          <div className="flex flex-col sm:flex-row gap-4">
-            <input
-              type="text"
-              placeholder="Search returns..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="flex-1 px-3 py-2 border border-border rounded-lg bg-background text-foreground"
-            />
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-2 border border-border rounded-lg bg-background text-foreground"
-            >
-              <option value="">All Statuses</option>
-              <option value="pending">Pending</option>
-              <option value="approved">Approved</option>
-              <option value="rejected">Rejected</option>
-              <option value="processed">Processed</option>
-            </select>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="bg-card p-6 rounded-lg border border-border">
-              <h3 className="text-lg font-semibold text-foreground mb-2">Total Returns</h3>
-              <div className="text-3xl font-bold text-primary">
-                {totalReturns}
-              </div>
-              <p className="text-sm text-muted-foreground">
-                {isAdmin() ? 'Across all stores' : 'In your store'}
-              </p>
-            </div>
-
-            <div className="bg-card p-6 rounded-lg border border-border">
-              <h3 className="text-lg font-semibold text-foreground mb-2">Pending</h3>
-              <div className="text-3xl font-bold text-yellow-600">
-                {statusCounts['pending'] || 0}
-              </div>
-              <p className="text-sm text-muted-foreground">Awaiting review</p>
-            </div>
-
-            <div className="bg-card p-6 rounded-lg border border-border">
-              <h3 className="text-lg font-semibold text-foreground mb-2">Approved</h3>
-              <div className="text-3xl font-bold text-green-600">
-                {statusCounts['approved'] || 0}
-              </div>
-              <p className="text-sm text-muted-foreground">Approved returns</p>
-            </div>
-
-            <div className="bg-card p-6 rounded-lg border border-border">
-              <h3 className="text-lg font-semibold text-foreground mb-2">Rejected</h3>
-              <div className="text-3xl font-bold text-red-600">
-                {statusCounts['rejected'] || 0}
-              </div>
-              <p className="text-sm text-muted-foreground">Rejected returns</p>
-            </div>
-          </div>
-
-          {/* Pending Returns (Admin only) */}
-          {isAdmin() && pendingReturns.length > 0 && (
-            <div className="bg-card p-6 rounded-lg border border-yellow-200">
-              <h3 className="text-lg font-semibold text-yellow-800 mb-4">Pending Returns ({pendingReturns.length})</h3>
-              <div className="space-y-3">
-                {pendingReturns.slice(0, 5).map((returnItem: { id: string; orderNumber: string; productName: string; quantity: number; reason: string; status: string; requestedAt: string; processedAt?: string; notes?: string; store?: { name: string } }) => (
-                  <div key={returnItem.id} className="flex justify-between items-center p-3 bg-yellow-50 rounded-lg">
-                    <div className="flex-1">
-                      <div className="font-medium text-yellow-800">Order #{returnItem.orderNumber}</div>
-                      <div className="text-sm text-yellow-600">{returnItem.productName} (Qty: {returnItem.quantity})</div>
-                      <div className="text-sm text-yellow-600">Reason: {returnItem.reason}</div>
+        <main className="mobile-container space-y-8 py-8">
+          <PageHeader
+            title="İade Yönetimi"
+            description={
+              isAdmin()
+                ? "Mağazalar arası tüm iade süreçlerini yönetin, durumları güncelleyin ve kritik iadeleri takip edin."
+                : "Mağazanızdaki iadeleri takip edin, durumlarını güncelleyin ve müşteri taleplerini yönetin."
+            }
+            icon={RotateCcw}
+            actions={
+              <ProtectedComponent permission="returns.manage">
+                <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+                  <DialogTrigger asChild>
+                    <Button size="sm">Yeni İade</Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Yeni iade talebi oluştur</DialogTitle>
+                      <DialogDescription>
+                        Müşteriniz için yeni bir iade süreci başlatmak için gerekli bilgileri doldurun.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-2">
+                      <div className="grid gap-2">
+                        <label className="text-sm font-medium text-foreground">Sipariş Numarası</label>
+                        <Input
+                          value={createForm.orderNumber}
+                          onChange={(event) =>
+                            setCreateForm((prev) => ({ ...prev, orderNumber: event.target.value }))
+                          }
+                          placeholder="Örn. 12345"
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <label className="text-sm font-medium text-foreground">Ürün</label>
+                        <Input
+                          value={createForm.product}
+                          onChange={(event) =>
+                            setCreateForm((prev) => ({ ...prev, product: event.target.value }))
+                          }
+                          placeholder="Ürün adı veya SKU"
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <label className="text-sm font-medium text-foreground">Adet</label>
+                        <Input
+                          type="number"
+                          min={1}
+                          value={createForm.quantity}
+                          onChange={(event) =>
+                            setCreateForm((prev) => ({ ...prev, quantity: Number(event.target.value) }))
+                          }
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <label className="text-sm font-medium text-foreground">İade Sebebi</label>
+                        <Select
+                          value={createForm.reason}
+                          onValueChange={(value) =>
+                            setCreateForm((prev) => ({ ...prev, reason: value }))
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Sebep seçin" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="defective">Arızalı / Hasarlı</SelectItem>
+                            <SelectItem value="wrong_item">Yanlış ürün gönderimi</SelectItem>
+                            <SelectItem value="not_as_described">Ürün açıklamasıyla uyumsuz</SelectItem>
+                            <SelectItem value="changed_mind">Müşteri fikrini değiştirdi</SelectItem>
+                            <SelectItem value="other">Diğer</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="grid gap-2">
+                        <label className="text-sm font-medium text-foreground">Açıklama</label>
+                        <Textarea
+                          value={createForm.description}
+                          onChange={(event) =>
+                            setCreateForm((prev) => ({ ...prev, description: event.target.value }))
+                          }
+                          placeholder="İade talebiyle ilgili ek bilgiler"
+                        />
+                      </div>
                     </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => handleStatusUpdate(returnItem.id, 'approved')}
-                        className="btn btn-sm btn-success"
+                    <DialogFooter>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={() => setIsCreateOpen(false)}
                       >
-                        Approve
-                      </button>
-                      <button
-                        onClick={() => handleStatusUpdate(returnItem.id, 'rejected')}
-                        className="btn btn-sm btn-destructive"
+                        İptal
+                      </Button>
+                      <Button type="button" disabled>
+                        Kaydet (yakında)
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </ProtectedComponent>
+            }
+          />
+
+          <div className="grid gap-6 lg:grid-cols-4">
+            <Card className="lg:col-span-1">
+              <CardHeader className="space-y-1">
+                <CardTitle className="text-base font-semibold">Genel Durum</CardTitle>
+                <CardDescription>Toplam {totalReturns} iade kaydı</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {statusOrder.map((status) => {
+                  const meta = statusMeta[status] ?? {
+                    label: status,
+                    badge: "muted" as const,
+                    description: "",
+                  };
+                  const count = groupedReturns[status]?.length ?? 0;
+                  return (
+                    <div key={status} className="flex items-center justify-between rounded-lg border border-border/60 bg-muted/40 px-3 py-2">
+                      <div className="flex flex-col">
+                        <span className="text-sm font-medium text-foreground">{meta.label}</span>
+                        <span className="text-xs text-muted-foreground">{meta.description}</span>
+                      </div>
+                      <Badge variant={meta.badge}>{count}</Badge>
+                    </div>
+                  );
+                })}
+              </CardContent>
+            </Card>
+
+            <Card className="lg:col-span-3">
+              <CardHeader className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <div className="space-y-1">
+                  <CardTitle className="text-base font-semibold">Filtreler</CardTitle>
+                  <CardDescription>Arama, durum veya tarih aralığına göre daraltın</CardDescription>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button variant="outline" size="sm" className="gap-2">
+                    <Download className="h-4 w-4" />
+                    Dışa Aktar
+                  </Button>
+                  <Button variant="outline" size="sm" className="gap-2">
+                    <Filter className="h-4 w-4" />
+                    Gelişmiş Filtre
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid gap-3 md:grid-cols-[2fr_1fr_1fr]">
+                  <div className="flex items-center gap-2 rounded-lg border border-input bg-background px-3 py-2 focus-within:ring-2 focus-within:ring-ring">
+                    <PackageSearch className="h-4 w-4 text-muted-foreground" />
+                    <Input
+                      value={search}
+                      onChange={(event) => setSearch(event.target.value)}
+                      placeholder="Sipariş, müşteri veya ürün ara"
+                      className="border-0 px-0 shadow-none focus-visible:ring-0"
+                    />
+                  </div>
+                  <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as ReturnStatus | "") }>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Tüm durumlar" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Tüm durumlar</SelectItem>
+                      {statusOrder.map((status) => (
+                        <SelectItem key={status} value={status}>
+                          {statusMeta[status]?.label ?? status}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button variant="outline" size="sm" className="justify-start gap-2">
+                    <CalendarDays className="h-4 w-4" />
+                    Tarih Aralığı
+                  </Button>
+                </div>
+
+                <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as ReturnStatus | "all") }>
+                  <TabsList className="w-full justify-start gap-1 overflow-x-auto">
+                    <TabsTrigger value="all" className="gap-2">
+                      Tümü
+                      <Badge variant="muted">{returns.length}</Badge>
+                    </TabsTrigger>
+                    {statusOrder.map((status) => (
+                      <TabsTrigger key={status} value={status} className="gap-2">
+                        {statusMeta[status]?.label ?? status}
+                        <Badge variant={statusMeta[status]?.badge ?? "muted"}>
+                          {groupedReturns[status]?.length ?? 0}
+                        </Badge>
+                      </TabsTrigger>
+                    ))}
+                  </TabsList>
+                  <TabsContent value={activeTab} className="mt-4">
+                    <div className="space-y-4">
+                      {filteredReturns.length === 0 ? (
+                        <EmptyState
+                          icon={PackageSearch}
+                          title="Kriterlere uygun iade bulunamadı"
+                          description="Arama kriterlerinizi değiştirmeyi deneyin veya tüm iadeleri görüntüleyin."
+                        />
+                      ) : (
+                        <div className="overflow-hidden rounded-xl border border-border">
+                          <table className="min-w-full divide-y divide-border/60">
+                            <thead className="bg-muted/60">
+                              <tr>
+                                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">Sipariş</th>
+                                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">Ürün</th>
+                                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">Adet</th>
+                                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">Sebep</th>
+                                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">Durum</th>
+                                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">Talep Tarihi</th>
+                                {isAdmin() && (
+                                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">Mağaza</th>
+                                )}
+                                <ProtectedComponent permission="returns.manage">
+                                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground">İşlemler</th>
+                                </ProtectedComponent>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-border/60">
+                              {filteredReturns.map((returnItem) => {
+                                const meta = statusMeta[returnItem.status] ?? {
+                                  label: returnItem.status,
+                                  badge: "muted" as const,
+                                };
+                                return (
+                                  <tr key={returnItem.id} className="bg-background">
+                                    <td className="px-4 py-3">
+                                      <div className="font-medium text-foreground">#{returnItem.orderNumber}</div>
+                                      {returnItem.notes && (
+                                        <p className="text-xs text-muted-foreground">{returnItem.notes}</p>
+                                      )}
+                                    </td>
+                                    <td className="px-4 py-3">
+                                      <div className="text-sm font-medium text-foreground">{returnItem.productName}</div>
+                                    </td>
+                                    <td className="px-4 py-3 text-sm text-muted-foreground">{returnItem.quantity}</td>
+                                    <td className="px-4 py-3 text-sm text-muted-foreground">{returnItem.reason}</td>
+                                    <td className="px-4 py-3">
+                                      <Badge variant={meta.badge}>{meta.label}</Badge>
+                                    </td>
+                                    <td className="px-4 py-3 text-sm text-muted-foreground">
+                                      {new Date(returnItem.requestedAt).toLocaleDateString("tr-TR")}
+                                    </td>
+                                    {isAdmin() && (
+                                      <td className="px-4 py-3 text-sm text-muted-foreground">
+                                        {returnItem.store?.name ?? "-"}
+                                      </td>
+                                    )}
+                                    <ProtectedComponent permission="returns.manage">
+                                      <td className="px-4 py-3">
+                                        <div className="flex justify-end gap-2">
+                                          <Button
+                                            asChild
+                                            variant="outline"
+                                            size="sm"
+                                            className="gap-2"
+                                          >
+                                            <a href={`/returns/${returnItem.id}`}>Detay</a>
+                                          </Button>
+                                          {returnItem.status === "pending" && (
+                                            <>
+                                              <Button
+                                                variant="success"
+                                                size="sm"
+                                                className="gap-2"
+                                                onClick={() => handleStatusUpdate(returnItem.id, "approved")}
+                                              >
+                                                <CheckCircle2 className="h-4 w-4" />
+                                                Onayla
+                                              </Button>
+                                              <Button
+                                                variant="destructive"
+                                                size="sm"
+                                                className="gap-2"
+                                                onClick={() => handleStatusUpdate(returnItem.id, "rejected")}
+                                              >
+                                                <XCircle className="h-4 w-4" />
+                                                Reddet
+                                              </Button>
+                                            </>
+                                          )}
+                                        </div>
+                                      </td>
+                                    </ProtectedComponent>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </div>
+                  </TabsContent>
+                </Tabs>
+
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-between border-t border-border pt-4">
+                    <span className="text-xs text-muted-foreground">
+                      Toplam {totalReturns} kayıt – Sayfa {page}/{totalPages}
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setPage((prev) => Math.max(1, prev - 1))}
+                        disabled={page === 1}
                       >
-                        Reject
-                      </button>
+                        Önceki
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
+                        disabled={page === totalPages}
+                      >
+                        Sonraki
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {pendingReturns.length > 0 && (
+            <Card className="border-amber-500/40 bg-amber-500/5">
+              <CardHeader className="flex flex-col gap-2">
+                <CardTitle className="flex items-center gap-2 text-amber-700 dark:text-amber-200">
+                  <AlertTriangle className="h-5 w-5" /> Bekleyen kritik iadeler
+                </CardTitle>
+                <CardDescription>
+                  Müşteri memnuniyetini korumak için aşağıdaki iadeleri inceleyip bir aksiyon alın.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {pendingReturns.slice(0, 5).map((returnItem) => (
+                  <div
+                    key={returnItem.id}
+                    className="flex flex-col gap-3 rounded-lg border border-amber-400/40 bg-background/80 p-4 shadow-sm lg:flex-row lg:items-center lg:justify-between"
+                  >
+                    <div>
+                      <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                        #{returnItem.orderNumber}
+                        <Badge variant="warning">Beklemede</Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        {returnItem.productName} · {returnItem.quantity} adet – {returnItem.reason}
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        variant="success"
+                        size="sm"
+                        onClick={() => handleStatusUpdate(returnItem.id, "approved")}
+                        className="gap-2"
+                      >
+                        <CheckCircle2 className="h-4 w-4" /> Onayla
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleStatusUpdate(returnItem.id, "rejected")}
+                        className="gap-2"
+                      >
+                        <XCircle className="h-4 w-4" /> Reddet
+                      </Button>
                     </div>
                   </div>
                 ))}
-              </div>
-            </div>
-          )}
-
-          <div className="bg-card p-6 rounded-lg border border-border">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-foreground">All Returns</h3>
-              <div className="flex gap-2">
-                <button className="btn btn-outline btn-sm">Export</button>
-                <button className="btn btn-outline btn-sm">Filter</button>
-              </div>
-            </div>
-            
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-border">
-                    <th className="text-left p-3">Order #</th>
-                    <th className="text-left p-3">Product</th>
-                    <th className="text-left p-3">Quantity</th>
-                    <th className="text-left p-3">Reason</th>
-                    <th className="text-left p-3">Status</th>
-                    <th className="text-left p-3">Requested</th>
-                    {isAdmin() && <th className="text-left p-3">Store</th>}
-                    <ProtectedComponent permission="returns.manage">
-                      <th className="text-left p-3">Actions</th>
-                    </ProtectedComponent>
-                  </tr>
-                </thead>
-                <tbody>
-                  {returns.map((returnItem: { id: string; orderNumber: string; productName: string; quantity: number; reason: string; status: string; requestedAt: string; processedAt?: string; notes?: string; store?: { name: string } }) => (
-                    <tr key={returnItem.id} className="border-b border-border">
-                      <td className="p-3">
-                        <div className="font-medium">#{returnItem.orderNumber}</div>
-                      </td>
-                      <td className="p-3">
-                        <div className="font-medium">{returnItem.productName}</div>
-                      </td>
-                      <td className="p-3">{returnItem.quantity}</td>
-                      <td className="p-3">
-                        <div className="text-sm text-muted-foreground">{returnItem.reason}</div>
-                      </td>
-                      <td className="p-3">
-                        <span className={`px-2 py-1 rounded-full text-sm ${
-                          returnItem.status === 'approved' ? 'bg-green-100 text-green-800' :
-                          returnItem.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                          returnItem.status === 'rejected' ? 'bg-red-100 text-red-800' :
-                          'bg-gray-100 text-gray-800'
-                        }`}>
-                          {returnItem.status}
-                        </span>
-                      </td>
-                      <td className="p-3">
-                        <div className="text-sm text-muted-foreground">
-                          {new Date(returnItem.requestedAt).toLocaleDateString()}
-                        </div>
-                      </td>
-                      {isAdmin() && (
-                        <td className="p-3">{returnItem.store?.name || 'N/A'}</td>
-                      )}
-                      <ProtectedComponent permission="returns.manage">
-                        <td className="p-3">
-                          <div className="flex gap-2">
-                            <button 
-                              onClick={() => window.location.href = `/returns/${returnItem.id}`}
-                              className="btn btn-sm btn-outline"
-                            >
-                              View
-                            </button>
-                            {returnItem.status === 'pending' && (
-                              <>
-                                <button
-                                  onClick={() => handleStatusUpdate(returnItem.id, 'approved')}
-                                  className="btn btn-sm btn-success"
-                                >
-                                  Approve
-                                </button>
-                                <button
-                                  onClick={() => handleStatusUpdate(returnItem.id, 'rejected')}
-                                  className="btn btn-sm btn-destructive"
-                                >
-                                  Reject
-                                </button>
-                              </>
-                            )}
-                          </div>
-                        </td>
-                      </ProtectedComponent>
-                    </tr>
-                  ))}
-                  {returns.length === 0 && (
-                    <tr>
-                      <td colSpan={isAdmin() ? 8 : 7} className="p-8 text-center text-muted-foreground">
-                        No returns found
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex justify-center mt-6 gap-2">
-                <button
-                  onClick={() => setPage(p => Math.max(1, p - 1))}
-                  disabled={page === 1}
-                  className="btn btn-outline btn-sm"
-                >
-                  Previous
-                </button>
-                <span className="px-4 py-2 text-sm text-muted-foreground">
-                  Page {page} of {totalPages}
-                </span>
-                <button
-                  onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                  disabled={page === totalPages}
-                  className="btn btn-outline btn-sm"
-                >
-                  Next
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* Create Return Modal */}
-          {showCreateModal && (
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-              <div className="bg-card p-6 rounded-lg border border-border w-full max-w-2xl">
-                <h3 className="text-lg font-semibold text-foreground mb-4">Create Return</h3>
-                <div className="space-y-4">
-                  <div>
-                    <label className="form-label">Order Number</label>
-                    <input
-                      type="text"
-                      className="form-input"
-                      placeholder="Enter order number"
-                    />
-                  </div>
-                  <div>
-                    <label className="form-label">Product</label>
-                    <select className="form-select">
-                      <option value="">Select product</option>
-                      <option value="product1">Product 1</option>
-                      <option value="product2">Product 2</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="form-label">Quantity</label>
-                    <input
-                      type="number"
-                      className="form-input"
-                      placeholder="Enter quantity"
-                    />
-                  </div>
-                  <div>
-                    <label className="form-label">Reason</label>
-                    <select className="form-select">
-                      <option value="">Select reason</option>
-                      <option value="defective">Defective</option>
-                      <option value="wrong_item">Wrong Item</option>
-                      <option value="not_as_described">Not as Described</option>
-                      <option value="changed_mind">Changed Mind</option>
-                      <option value="other">Other</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="form-label">Description</label>
-                    <textarea
-                      className="form-textarea"
-                      rows={3}
-                      placeholder="Enter additional details"
-                    />
-                  </div>
-                </div>
-                <div className="flex gap-2 mt-6">
-                  <button className="btn btn-primary">Create Return</button>
-                  <button 
-                    onClick={() => setShowCreateModal(false)}
-                    className="btn btn-outline"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
           )}
         </main>
       </div>

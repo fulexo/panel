@@ -203,6 +203,25 @@ class ApiClient {
     });
   }
 
+  async getShipmentRates(orderId: string, data: { parcels: any[] }) {
+    return this.request(`/api/shipments/${orderId}/rates`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async createShipment(orderId: string, data: {
+    parcels: any[];
+    service: string;
+    selected_rate_id?: string;
+    rates?: any[];
+  }) {
+    return this.request(`/api/shipments/${orderId}`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
   // Products endpoints
   async getProducts(params?: { 
     page?: number; 

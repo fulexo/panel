@@ -1,308 +1,35 @@
-# 🛠️ Fulexo Platform - Management Scripts
-
-This directory contains essential scripts for installing, managing, and maintaining the Fulexo Platform.
-
-## 📋 Script Categories
-
-### 🚀 Installation Scripts
-
-#### `quick-install.sh`
-**Quick installation script (Recommended)**
-- Complete installation in one go
-- Interactive domain configuration
-- Automatic SSL certificate setup
-- Database configuration included
-- Admin user creation included
-- Systemd service installation included
-
-```bash
-chmod +x scripts/quick-install.sh
-./scripts/quick-install.sh
-```
-
-#### `install-from-scratch.sh`
-**Basic installation script**
-- Fresh server setup
-- Installs Docker, Node.js, required packages
-- Creates environment file
-- Creates systemd service
-
-```bash
-chmod +x scripts/install-from-scratch.sh
-./scripts/install-from-scratch.sh
-```
-
-### 🔧 Management Scripts
-
-#### `health-check.sh`
-**Platform health monitoring**
-- Checks service status
-- Verifies container health
-- Tests database connectivity
-- Validates API/Web services
-- Checks SSL certificates
-
-```bash
-chmod +x scripts/health-check.sh
-./scripts/health-check.sh
-```
-
-#### `update-platform.sh`
-**Platform update script**
-- Updates repository
-- Updates dependencies
-- Runs database migrations
-- Restarts services
-
-```bash
-chmod +x scripts/update-platform.sh
-./scripts/update-platform.sh
-```
-
-#### `fix-common-issues.sh`
-**Common issues fix script**
-- Checks Docker service
-- Cleans disk space
-- Restarts containers
-- Fixes database/Redis connectivity
-- Validates Nginx configuration
-
-```bash
-chmod +x scripts/fix-common-issues.sh
-./scripts/fix-common-issues.sh
-```
-
-### 🔐 Security Scripts
-
-#### `setup-ssl.sh`
-**SSL certificate setup script**
-- Installs Let's Encrypt certificates
-- Configures automatic renewal
-- Updates Nginx configuration
-
-```bash
-chmod +x scripts/setup-ssl.sh
-./scripts/setup-ssl.sh
-```
-
-#### `setup-security.sh`
-**Security hardening script**
-- Configures firewall
-- Sets up security headers
-- Implements rate limiting
-- Configures fail2ban
-
-```bash
-chmod +x scripts/setup-security.sh
-./scripts/setup-security.sh
-```
-
-### 💾 Backup Scripts
-
-#### `backup.sh`
-**Automated backup script**
-- Backs up database
-- Backs up volumes
-- Cleans old backups
-- Runs as cron job
-
-```bash
-chmod +x scripts/backup.sh
-./scripts/backup.sh --full
-```
-
-#### `backup-restore.sh`
-**Backup and restore script**
-- Creates platform backups
-- Restores from specified backup
-- Lists available backups
-- Cleans old backups
-
-```bash
-# Create backup
-./scripts/backup-restore.sh backup
-
-# List backups
-./scripts/backup-restore.sh list
-
-# Restore backup
-./scripts/backup-restore.sh restore /path/to/backup/file
-```
-
-### 📊 Monitoring Scripts
-
-#### `setup-monitoring.sh`
-**Monitoring setup script**
-- Creates Grafana dashboards
-- Updates Prometheus alert rules
-- Configures log rotation
-- Installs monitoring services
-
-```bash
-chmod +x scripts/setup-monitoring.sh
-./scripts/setup-monitoring.sh
-```
-
-#### `monitor.sh`
-**System monitoring script**
-- Displays system metrics
-- Shows service status
-- Monitors resource usage
-- Alerts on issues
-
-```bash
-chmod +x scripts/monitor.sh
-./scripts/monitor.sh
-```
-
-### 👤 User Management Scripts
-
-#### `create-admin-user.js`
-**Admin user creation script**
-- Creates default admin user
-- Cleans old admin users
-- Creates tenant
-
-```bash
-cd /opt/fulexo/apps/api
-sudo -u fulexo node /opt/fulexo/scripts/create-admin-user.js
-```
-
-## 🔧 Usage Examples
-
-### New Installation
-```bash
-# 1. Clone repository
-git clone https://github.com/fulexo/panel.git /opt/fulexo
-cd /opt/fulexo
-
-# 2. Quick installation
-chmod +x scripts/quick-install.sh
-./scripts/quick-install.sh
-```
-
-### Update Existing Installation
-```bash
-# 1. Update platform
-chmod +x scripts/update-platform.sh
-./scripts/update-platform.sh
-
-# 2. Health check
-chmod +x scripts/health-check.sh
-./scripts/health-check.sh
-```
-
-### Troubleshooting
-```bash
-# 1. Fix common issues
-chmod +x scripts/fix-common-issues.sh
-./scripts/fix-common-issues.sh
-
-# 2. Health check
-chmod +x scripts/health-check.sh
-./scripts/health-check.sh
-```
-
-### Backup/Restore
-```bash
-# 1. Create backup
-chmod +x scripts/backup.sh
-./scripts/backup.sh --full
-
-# 2. List backups
-./scripts/backup-restore.sh list
-
-# 3. Restore if needed
-./scripts/backup-restore.sh restore /path/to/backup/file
-```
-
-## 📋 Automated Tasks
-
-Scripts automatically create these cron jobs:
-
-```bash
-# Health check (every 10 minutes)
-*/10 * * * * root /opt/fulexo/scripts/health-check.sh
-
-# Backup (daily at 2:00 AM)
-0 2 * * * fulexo /opt/fulexo/scripts/backup.sh
-
-# Build cleanup (every Sunday at 3:00 AM)
-0 3 * * 0 root /opt/fulexo/scripts/cleanup-build.sh
-```
-
-## 🐛 Troubleshooting
-
-### Script Not Working
-```bash
-# Give execute permission
-chmod +x scripts/script-name.sh
-
-# Run as root
-sudo ./scripts/script-name.sh
-```
-
-### Permission Error
-```bash
-# Fix file ownership
-sudo chown -R fulexo:fulexo /opt/fulexo
-
-# Fix permissions
-sudo chmod -R 755 /opt/fulexo
-```
-
-### Environment File Not Found
-```bash
-# Check environment file
-ls -la /etc/fulexo/fulexo.env
-
-# Copy if exists
-sudo cp /opt/fulexo/compose/.env /etc/fulexo/fulexo.env
-```
-
-## 📊 Script Status
-
-### ✅ Working Scripts
-- `quick-install.sh` - Complete installation
-- `health-check.sh` - System health monitoring
-- `backup.sh` - Automated backups
-- `update-platform.sh` - Platform updates
-- `fix-common-issues.sh` - Issue resolution
-
-### 🔧 Maintenance Scripts
-- `clear-cache.sh` - Cache management
-- `cleanup-build.sh` - Build cleanup
-- `migrate-database.sh` - Database migrations
-- `monitor.sh` - System monitoring
-
-### 🚀 Deployment Scripts
-- `deploy.sh` - Production deployment
-- `rollback.sh` - Rollback procedures
-- `setup-production.sh` - Production setup
-
-## 📞 Support
-
-### Log Files
-```bash
-# Systemd logs
-journalctl -u fulexo -f
-
-# Docker logs
-docker logs -f compose-api-1
-
-# Script logs
-tail -f /var/log/fulexo-alerts.log
-```
-
-### Debug Mode
-```bash
-# Run in debug mode
-bash -x scripts/script-name.sh
-
-# Verbose output
-scripts/script-name.sh -v
-```
-
----
-
-**🎊 All scripts are ready to use!**
+# Operational scripts
+
+Bu dizindeki scriptler Docker Compose tabanlı Fulexo kurulumu için güncel tutulmaktadır. Çoğu script hem geliştirme (`--dev`) hem de üretim (`--prod`) yığınlarıyla çalışacak şekilde parametreler içerir. `scripts/common.sh` dosyası ortak değişkenleri ve yardımcı fonksiyonları sağlar.
+
+> **Not**: Scriptler varsayılan olarak repository kökünü `PROJECT_ROOT` olarak kabul eder. Farklı bir Compose dosyası veya proje adı kullanıyorsanız `COMPOSE_FILE` ve `COMPOSE_PROJECT_NAME` ortam değişkenlerini ayarlayabilirsiniz.
+
+## Script kataloğu
+
+| Script | Amaç | Durum | Önemli notlar |
+| --- | --- | --- | --- |
+| `backup.sh` | Kod, PostgreSQL, Redis ve MinIO verilerini yedekler. | Güncel | `backups/` dizinine tarih bazlı klasörler oluşturur. `--dev` bayrağı ile geliştirme yığını hedeflenebilir. |
+| `backup-restore.sh` | Yedekleri listeler, temizler ve geri yükler. | Güncel | `restore latest --prod` ile en güncel yedeği üretime uygular. |
+| `clear-cache.sh` | Next.js, NestJS ve worker cache dizinlerini temizler. | Güncel | Paket bazında temizlik için `--frontend`, `--backend`, `--worker` bayraklarını kullanın. |
+| `cleanup-build.sh` | Build çıktıları ve isteğe bağlı Docker cache'lerini temizler. | Güncel | `--with-docker` eklenirse `docker system prune` çağrılır. |
+| `deploy.sh` | Git'ten güncelleme alır, yedek oluşturur ve Compose yığınını yeniden başlatır. | Güncel | `--skip-backup` ile yedek aşaması atlanabilir. Başarısız sağlık kontrolünde `rollback.sh` çağrılır. |
+| `fix-common-issues.sh` | Bağımlılıkları yeniden yükler, isteğe bağlı migration ve restart yapar. | Güncel | `--migrate` Prisma migration'larını çalıştırır. |
+| `health-check.sh` | API, web, worker ve Karrio servislerinin sağlık durumunu kontrol eder. | Güncel | `--quiet` çıktılarını azaltır; dönüş kodu CI'larda kullanılabilir. |
+| `install-from-scratch.sh` | Yeni Ubuntu sunucusunu Docker ve temel güvenlik için hazırlar. | Güncel | Root yetkisi ister; varsayılan kullanıcı `fulexo`. |
+| `migrate-database.sh` | Prisma client oluşturur ve migrations uygular. | Güncel | `--generate-only` sadece client üretir. |
+| `monitor.sh` | Compose servisleri ve Docker kaynak kullanımını görüntüler. | Güncel | `--continuous` ile belirli aralıklarla tekrarlar. |
+| `quick-install.sh` | Sıfırdan kurulum, güvenlik ve dağıtımı zincirler. | Güncel | Root olarak çalıştırılmalı; son adımda uygulamayı hedef kullanıcıyla dağıtır. |
+| `rollback.sh` | Belirtilen yedekten geri dönüş yapar. | Güncel | `rollback.sh latest --prod` en güncel yedeği uygular. |
+| `setup-monitoring.sh` | Prometheus, Alertmanager, Loki ve Promtail konfigurasyonlarını hedef dizine kopyalar. | Güncel | Varsayılan hedef `/opt/fulexo/monitoring`. |
+| `setup-production.sh` | Systemd servisi oluşturarak üretim Compose yığınını yönetir. | Güncel | `--service-name` ve `--compose` bayraklarıyla özelleştirilebilir. |
+| `setup-security.sh` | UFW, Fail2ban ve unattended-upgrades ile temel güvenlik sağlar. | Güncel | `--skip-swap` bayrağı swap oluşturmayı atlar. |
+| `setup-ssl.sh` | Nginx için self-signed TLS sertifikaları üretir. | Güncel | `--domain` zorunludur; isteğe bağlı `--api-domain`. |
+| `update-platform.sh` | Kodu günceller, bağımlılıkları yükler ve yığını yeniden başlatır. | Güncel | `--migrate` migration çalıştırır. |
+
+## Öneriler
+
+- Scriptleri çalıştırmadan önce `.env` dosyanızın güncel olduğundan emin olun.
+- Root gerektiren scriptler (`setup-security.sh`, `setup-production.sh` vb.) sudo ile çalıştırılmalıdır.
+- Üretim ortamında `backup.sh` ile düzenli yedek oluşturmayı bir cron job'a bağlayın.
+- CI/CD süreçlerinde `health-check.sh --quiet` dönüş kodu hızlı doğrulama için kullanılabilir.
+- Scriptler çıktıları Türkçe olarak loglar; otomasyon senaryolarında sadece çıkış kodunu değerlendirmek yeterlidir.

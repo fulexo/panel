@@ -1,27 +1,31 @@
 'use client';
 
-import { useAuth } from './AuthProvider';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { 
-  BarChart3, 
-  Package, 
-  Smartphone, 
-  Users, 
-  ShoppingCart, 
-  Store, 
-  Truck, 
-  ClipboardList, 
-  CheckCircle, 
-  FileText, 
-  Calendar, 
-  RotateCcw, 
-  HelpCircle, 
-  Bell, 
-  User, 
-  Settings, 
-  LogOut
+import type { LucideIcon } from 'lucide-react';
+import {
+  BarChart3,
+  Bell,
+  Boxes,
+  Calendar,
+  ClipboardList,
+  HelpCircle,
+  LayoutDashboard,
+  LogOut,
+  Package,
+  RotateCcw,
+  Settings,
+  ShoppingBag,
+  ShoppingCart,
+  Store,
+  Truck,
+  User,
+  Users,
 } from 'lucide-react';
+
+import { useAuth } from './AuthProvider';
+
+import type { User as AuthUser } from '@/types/auth';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -30,34 +34,69 @@ interface SidebarProps {
   onDesktopToggle?: () => void;
 }
 
+type UserRole = AuthUser['role'];
+
+type NavigationItem = {
+  href: string;
+  label: string;
+  icon: LucideIcon;
+  roles?: UserRole[];
+};
+
+type NavigationSection = {
+  title: string;
+  items: NavigationItem[];
+};
+
 export default function Sidebar({ isOpen, onClose, isDesktopCollapsed = false, onDesktopToggle }: SidebarProps) {
   const { user, logout } = useAuth();
   const pathname = usePathname();
 
-  const allNavigationItems = [
-    // Main Navigation
-    { href: '/dashboard', label: 'Dashboard', icon: BarChart3 },
-    { href: '/orders', label: 'Orders', icon: Package },
-    { href: '/products', label: 'Products', icon: Smartphone },
-    { href: '/customers', label: 'Users', icon: Users },
-    { href: '/inventory', label: 'Inventory', icon: Package },
-    { href: '/cart', label: 'Shopping Cart', icon: ShoppingCart },
-    
-    // Store Management (Admin & Customer)
-    { href: '/stores', label: user?.role === 'ADMIN' ? 'Stores' : 'My Stores', icon: Store, roles: ['ADMIN', 'CUSTOMER'] },
-    { href: '/shipping', label: 'Shipping', icon: Truck, roles: ['ADMIN', 'CUSTOMER'] },
-    { href: '/fulfillment', label: 'Fulfillment', icon: ClipboardList, roles: ['ADMIN', 'CUSTOMER'] },
-    { href: '/orders/approvals', label: 'Order Approvals', icon: CheckCircle, roles: ['ADMIN', 'CUSTOMER'] },
-    { href: '/inventory/approvals', label: 'Inventory Approvals', icon: FileText, roles: ['ADMIN', 'CUSTOMER'] },
-    { href: '/calendar', label: 'Calendar', icon: Calendar, roles: ['ADMIN', 'CUSTOMER'] },
-    
-    // User Tools
-    { href: '/returns', label: 'Returns', icon: RotateCcw },
-    { href: '/support', label: 'Support', icon: HelpCircle },
-    { href: '/notifications', label: 'Notifications', icon: Bell },
-    { href: '/reports', label: 'Reports', icon: BarChart3 },
-    { href: '/profile', label: 'Profile', icon: User },
-    { href: '/settings', label: 'Settings', icon: Settings },
+  const navigationSections: NavigationSection[] = [
+    {
+      title: 'Overview',
+      items: [{ href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard }],
+    },
+    {
+      title: 'Sales & Customers',
+      items: [
+        { href: '/orders', label: 'Orders', icon: ShoppingBag },
+        { href: '/returns', label: 'Returns', icon: RotateCcw },
+        { href: '/customers', label: 'Customers', icon: Users },
+        { href: '/cart', label: 'Cart', icon: ShoppingCart },
+      ],
+    },
+    {
+      title: 'Operations',
+      items: [
+        { href: '/fulfillment', label: 'Fulfillment', icon: ClipboardList, roles: ['ADMIN', 'CUSTOMER'] },
+        { href: '/shipping', label: 'Shipping', icon: Truck, roles: ['ADMIN', 'CUSTOMER'] },
+        { href: '/inventory', label: 'Inventory', icon: Boxes },
+        { href: '/calendar', label: 'Calendar', icon: Calendar },
+      ],
+    },
+    {
+      title: 'Catalog',
+      items: [
+        { href: '/products', label: 'Products', icon: Package },
+        { href: '/stores', label: user?.role === 'ADMIN' ? 'Stores' : 'My Stores', icon: Store, roles: ['ADMIN', 'CUSTOMER'] },
+      ],
+    },
+    {
+      title: 'Insights & Alerts',
+      items: [
+        { href: '/reports', label: 'Reports', icon: BarChart3 },
+        { href: '/notifications', label: 'Notifications', icon: Bell },
+        { href: '/support', label: 'Support', icon: HelpCircle },
+      ],
+    },
+    {
+      title: 'Account',
+      items: [
+        { href: '/profile', label: 'Profile', icon: User },
+        { href: '/settings', label: 'Settings', icon: Settings },
+      ],
+    },
   ];
 
 
@@ -67,28 +106,53 @@ export default function Sidebar({ isOpen, onClose, isDesktopCollapsed = false, o
   };
 
 
-  const renderNavItems = () => {
-    return allNavigationItems.map((item) => {
-      if (item.roles && !item.roles.includes(user?.role || '')) return null;
-      const IconComponent = item.icon as React.ComponentType<{ className?: string }>;
+  const renderNavSections = () =>
+    navigationSections.map((section) => {
+      const visibleItems = section.items.filter((item) => {
+        if (!item.roles || item.roles.length === 0) {
+          return true;
+        }
+
+        if (!user?.role) {
+          return false;
+        }
+
+        return item.roles.includes(user.role);
+      });
+      if (visibleItems.length === 0) return null;
+
       return (
-        <Link
-          key={item.href}
-          href={item.href}
-          className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors group ${
-            isActive(item.href)
-              ? 'bg-primary text-primary-foreground'
-              : 'hover:bg-accent text-muted-foreground hover:text-foreground'
-          } ${isDesktopCollapsed ? 'lg:justify-center lg:px-2' : ''}`}
-          onClick={() => onClose()}
-          title={isDesktopCollapsed ? item.label : undefined}
-        >
-          <IconComponent className={`group-hover:scale-110 transition-transform ${isDesktopCollapsed ? 'w-6 h-6' : 'w-5 h-5'}`} />
-          {!isDesktopCollapsed && <span className="font-medium">{item.label}</span>}
-        </Link>
+        <div key={section.title} className="space-y-1">
+          {!isDesktopCollapsed && section.title && (
+            <p className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+              {section.title}
+            </p>
+          )}
+          {visibleItems.map((item) => {
+            const IconComponent = item.icon;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors group ${
+                  isActive(item.href)
+                    ? 'bg-primary text-primary-foreground'
+                    : 'hover:bg-accent text-muted-foreground hover:text-foreground'
+                } ${isDesktopCollapsed ? 'lg:justify-center lg:px-2' : ''}`}
+                onClick={() => onClose()}
+                title={isDesktopCollapsed ? item.label : undefined}
+              >
+                <IconComponent
+                  className={`group-hover:scale-110 transition-transform ${isDesktopCollapsed ? 'w-6 h-6' : 'w-5 h-5'}`}
+                />
+                {!isDesktopCollapsed && <span className="font-medium">{item.label}</span>}
+              </Link>
+            );
+          })}
+        </div>
       );
     });
-  };
+
 
   return (
     <>
@@ -145,8 +209,8 @@ export default function Sidebar({ isOpen, onClose, isDesktopCollapsed = false, o
 
           {/* Navigation */}
           <div className="flex-1 overflow-y-auto custom-scrollbar">
-            <div className={`space-y-1 ${isDesktopCollapsed ? 'lg:p-2' : 'p-4'}`}>
-              {renderNavItems()}
+            <div className={`space-y-6 ${isDesktopCollapsed ? 'lg:p-2' : 'p-4'}`}>
+              {renderNavSections()}
             </div>
           </div>
 

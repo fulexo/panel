@@ -401,7 +401,7 @@ export default function CustomersPage() {
                     ...csvData.map(row => Object.values(row || {}).join(','))
                   ].join('\n') : 'No data to export';
                   
-                  const blob = new Blob([csv], { type: 'text/csv' });
+                  const blob = new window.Blob([csv], { type: 'text/csv' });
                   const url = window.URL.createObjectURL(blob);
                   const a = document.createElement('a');
                   a.href = url;

@@ -3,60 +3,60 @@
 @tailwind utilities;
 
 :root {
-  --background: 0 0% 100%;
-  --foreground: 222.2 84% 4.9%;
+  --background: 210 25% 98%;
+  --foreground: 224 71% 5%;
   --card: 0 0% 100%;
-  --card-foreground: 222.2 84% 4.9%;
+  --card-foreground: 224 71% 5%;
   --popover: 0 0% 100%;
-  --popover-foreground: 222.2 84% 4.9%;
-  --primary: 221.2 83.2% 53.3%;
+  --popover-foreground: 224 71% 5%;
+  --primary: 221 82% 53%;
   --primary-foreground: 210 40% 98%;
-  --secondary: 210 40% 96%;
-  --secondary-foreground: 222.2 84% 4.9%;
-  --muted: 210 40% 96%;
-  --muted-foreground: 215.4 16.3% 30%;
-  --accent: 210 40% 96%;
-  --accent-foreground: 222.2 84% 4.9%;
-  --destructive: 0 84.2% 60.2%;
-  --destructive-foreground: 210 40% 98%;
-  --border: 214.3 31.8% 86%;
-  --input: 214.3 31.8% 86%;
-  --ring: 221.2 83.2% 53.3%;
+  --secondary: 215 27% 90%;
+  --secondary-foreground: 226 49% 22%;
+  --muted: 214 24% 88%;
+  --muted-foreground: 225 16% 30%;
+  --accent: 216 28% 92%;
+  --accent-foreground: 226 49% 22%;
+  --destructive: 0 78% 46%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 214 21% 82%;
+  --input: 214 21% 82%;
+  --ring: 221 82% 53%;
   --radius: 0.75rem;
-  --success: 142.1 76.2% 36.3%;
-  --success-foreground: 355.7 100% 97.3%;
-  --warning: 32.5 94.6% 43.7%;
-  --warning-foreground: 210 40% 98%;
-  --info: 199.4 89.1% 48.4%;
+  --success: 141 78% 34%;
+  --success-foreground: 0 0% 100%;
+  --warning: 31 94% 45%;
+  --warning-foreground: 222 47% 14%;
+  --info: 217 92% 55%;
   --info-foreground: 210 40% 98%;
 }
 
 .dark {
-  --background: 222.2 84% 4.9%;
-  --foreground: 210 40% 98%;
-  --card: 222.2 84% 4.9%;
-  --card-foreground: 210 40% 98%;
-  --popover: 222.2 84% 4.9%;
-  --popover-foreground: 210 40% 98%;
-  --primary: 217.2 91.2% 59.8%;
-  --primary-foreground: 222.2 84% 4.9%;
-  --secondary: 217.2 32.6% 17.5%;
-  --secondary-foreground: 210 40% 98%;
-  --muted: 217.2 32.6% 17.5%;
-  --muted-foreground: 215 20.2% 65.1%;
-  --accent: 217.2 32.6% 17.5%;
-  --accent-foreground: 210 40% 98%;
-  --destructive: 0 62.8% 30.6%;
-  --destructive-foreground: 210 40% 98%;
-  --border: 217.2 32.6% 17.5%;
-  --input: 217.2 32.6% 17.5%;
-  --ring: 224.3 76.3% 94.1%;
-  --success: 142.1 70.6% 45.3%;
-  --success-foreground: 144.9 80.4% 10%;
-  --warning: 32.5 94.6% 43.7%;
-  --warning-foreground: 20.5 90.2% 4.3%;
-  --info: 199.4 89.1% 48.4%;
-  --info-foreground: 210 40% 98%;
+  --background: 224 40% 7%;
+  --foreground: 210 40% 96%;
+  --card: 224 40% 9%;
+  --card-foreground: 210 40% 96%;
+  --popover: 224 40% 9%;
+  --popover-foreground: 210 40% 96%;
+  --primary: 217 92% 66%;
+  --primary-foreground: 224 71% 10%;
+  --secondary: 225 24% 18%;
+  --secondary-foreground: 210 40% 96%;
+  --muted: 223 28% 16%;
+  --muted-foreground: 215 20% 72%;
+  --accent: 222 32% 22%;
+  --accent-foreground: 210 40% 96%;
+  --destructive: 0 76% 58%;
+  --destructive-foreground: 210 40% 96%;
+  --border: 218 26% 28%;
+  --input: 218 26% 28%;
+  --ring: 217 92% 70%;
+  --success: 142 70% 46%;
+  --success-foreground: 210 40% 96%;
+  --warning: 35 94% 58%;
+  --warning-foreground: 210 40% 96%;
+  --info: 199 89% 65%;
+  --info-foreground: 210 40% 96%;
 }
 
 @layer base {
@@ -101,48 +101,49 @@
 
   /* Improved text colors for better contrast */
   .text-primary {
-    @apply text-foreground;
+    color: hsl(var(--primary));
   }
-  
+
   .text-secondary {
-    @apply text-foreground/80;
+    color: hsl(var(--secondary-foreground));
   }
-  
+
   .text-muted {
-    @apply text-foreground/60;
+    color: hsl(var(--muted-foreground));
   }
-  
+
   .text-subtle {
-    @apply text-foreground/40;
+    color: hsl(var(--muted-foreground));
+    opacity: 0.82;
   }
 
   /* Status colors with better contrast */
   .status-pending {
-    @apply bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400;
+    @apply bg-amber-100 text-amber-900 dark:bg-amber-500/20 dark:text-amber-100 font-medium;
   }
-  
+
   .status-processing {
-    @apply bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400;
+    @apply bg-sky-100 text-sky-900 dark:bg-sky-500/20 dark:text-sky-100 font-medium;
   }
-  
+
   .status-completed {
-    @apply bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400;
+    @apply bg-emerald-100 text-emerald-900 dark:bg-emerald-500/20 dark:text-emerald-100 font-medium;
   }
-  
+
   .status-shipped {
-    @apply bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400;
+    @apply bg-emerald-100 text-emerald-900 dark:bg-emerald-500/20 dark:text-emerald-100 font-medium;
   }
-  
+
   .status-delivered {
-    @apply bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400;
+    @apply bg-emerald-100 text-emerald-900 dark:bg-emerald-500/20 dark:text-emerald-100 font-medium;
   }
-  
+
   .status-cancelled {
-    @apply bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400;
+    @apply bg-rose-100 text-rose-900 dark:bg-rose-500/20 dark:text-rose-100 font-medium;
   }
-  
+
   .status-failed {
-    @apply bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400;
+    @apply bg-rose-100 text-rose-900 dark:bg-rose-500/20 dark:text-rose-100 font-medium;
   }
 }
 
@@ -341,7 +342,7 @@
 
   /* Mobile-first responsive utilities */
   .mobile-container {
-    @apply px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto;
+    @apply w-full px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto;
   }
   
   .mobile-grid {

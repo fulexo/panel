@@ -1,61 +1,266 @@
+
 "use client";
 
-import { logger } from "@/lib/logger";
+import { ChangeEvent, ComponentProps, useEffect, useMemo, useState } from "react";
+import { AlertTriangle, Inbox, LifeBuoy, MessageCircle, Plus, Search } from "lucide-react";
 
-import { useState } from "react";
-import { useAuth } from "@/components/AuthProvider";
-import { useRBAC } from "@/hooks/useRBAC";
-import { useSupportTickets, useUpdateSupportTicket, useSupportTicketMessages, useSendSupportMessage } from "@/hooks/useApi";
+import { PageHeader } from "@/components/PageHeader";
+import { EmptyState } from "@/components/EmptyState";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import ProtectedComponent from "@/components/ProtectedComponent";
+import { useAuth } from "@/components/AuthProvider";
+import { useRBAC } from "@/hooks/useRBAC";
+import {
+  useSupportTickets,
+  useUpdateSupportTicket,
+  useSupportTicketMessages,
+  useSendSupportMessage,
+} from "@/hooks/useApi";
 import { ApiError } from "@/lib/api-client";
+import { logger } from "@/lib/logger";
+import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { LoadingState } from "@/components/ui/loading";
+
+type KnownTicketStatus = "open" | "in_progress" | "closed";
+type KnownTicketPriority = "low" | "medium" | "high" | "urgent";
+type TicketStatus = KnownTicketStatus | string;
+type TicketPriority = KnownTicketPriority | string;
+type StatusFilter = KnownTicketStatus | "all";
+type PriorityFilter = KnownTicketPriority | "all";
+type BadgeVariant = ComponentProps<typeof Badge>["variant"];
+
+interface SupportTicket {
+  id: string;
+  subject: string;
+  description: string;
+  status: TicketStatus;
+  priority: TicketPriority;
+  createdAt: string;
+  updatedAt: string;
+  assignedTo?: string;
+  store?: { name: string };
+}
+
+interface SupportTicketMessage {
+  id: string;
+  message: string;
+  isInternal: boolean;
+  createdAt: string;
+  author: { name: string; role: string };
+}
+
+const statusMeta: Record<KnownTicketStatus, { label: string; badge: BadgeVariant; description: string }> = {
+  open: {
+    label: "Open",
+    badge: "warning",
+    description: "Awaiting a first response",
+  },
+  in_progress: {
+    label: "In Progress",
+    badge: "info",
+    description: "Currently being handled",
+  },
+  closed: {
+    label: "Closed",
+    badge: "success",
+    description: "Ticket resolved and archived",
+  },
+};
+
+const priorityMeta: Record<KnownTicketPriority, { label: string; badge: BadgeVariant; description: string }> = {
+  low: {
+    label: "Low",
+    badge: "muted",
+    description: "Routine follow-up",
+  },
+  medium: {
+    label: "Medium",
+    badge: "info",
+    description: "Needs scheduled attention",
+  },
+  high: {
+    label: "High",
+    badge: "warning",
+    description: "Requires quick action",
+  },
+  urgent: {
+    label: "Urgent",
+    badge: "destructive",
+    description: "Immediate attention",
+  },
+};
+
+const statusFilterOptions: { value: StatusFilter; label: string }[] = [
+  { value: "all", label: "All statuses" },
+  { value: "open", label: statusMeta.open.label },
+  { value: "in_progress", label: statusMeta.in_progress.label },
+  { value: "closed", label: statusMeta.closed.label },
+];
+
+const priorityFilterOptions: { value: PriorityFilter; label: string }[] = [
+  { value: "all", label: "All priorities" },
+  { value: "low", label: priorityMeta.low.label },
+  { value: "medium", label: priorityMeta.medium.label },
+  { value: "high", label: priorityMeta.high.label },
+  { value: "urgent", label: priorityMeta.urgent.label },
+];
+
+const defaultStatusMeta = {
+  label: "Unknown",
+  badge: "secondary" as BadgeVariant,
+  description: "Status is not recognised",
+};
+
+const defaultPriorityMeta = {
+  label: "Unknown",
+  badge: "muted" as BadgeVariant,
+  description: "Priority is not recognised",
+};
+
+function getStatusMeta(status: TicketStatus) {
+  return statusMeta[status as KnownTicketStatus] ?? defaultStatusMeta;
+}
+
+function getPriorityMeta(priority: TicketPriority) {
+  return priorityMeta[priority as KnownTicketPriority] ?? defaultPriorityMeta;
+}
 
 export default function SupportPage() {
   const { user } = useAuth();
   const { isAdmin } = useRBAC();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
-  const [priorityFilter, setPriorityFilter] = useState("");
-  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>("all");
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState<string | null>(null);
   const [newMessage, setNewMessage] = useState("");
   const [attachments, setAttachments] = useState<File[]>([]);
-  
-  // Get user's store ID for customer view
+
   const userStoreId = user?.stores?.[0]?.id;
-  
-  // Fetch support tickets data
-  const { 
-    data: ticketsData, 
+
+  const {
+    data: ticketsData,
     isLoading,
-    error
+    error,
   } = useSupportTickets({
     page,
     limit: 10,
     ...(search ? { search } : {}),
-    ...(statusFilter ? { status: statusFilter } : {}),
-    ...(priorityFilter ? { priority: priorityFilter } : {}),
+    ...(statusFilter !== "all" ? { status: statusFilter } : {}),
+    ...(priorityFilter !== "all" ? { priority: priorityFilter } : {}),
     ...(isAdmin() ? {} : userStoreId ? { storeId: userStoreId } : {}),
-  }) as { data: { data: Array<{ id: string; subject: string; description: string; status: string; priority: string; createdAt: string; updatedAt: string; assignedTo?: string; store?: { name: string } }>; pagination: { total: number; pages: number } } | undefined; isLoading: boolean; error: ApiError | null };
+  }) as {
+    data:
+      | {
+          data: SupportTicket[];
+          pagination: { total: number; pages: number };
+        }
+      | undefined;
+    isLoading: boolean;
+    error: ApiError | null;
+  };
 
-  // Fetch messages for selected ticket
-  const { 
-    data: messagesData, 
-    isLoading: messagesLoading
-  } = useSupportTicketMessages(selectedTicket || '') as { data: Array<{ id: string; message: string; isInternal: boolean; createdAt: string; author: { name: string; role: string } }> | undefined; isLoading: boolean; error: ApiError | null };
+  const tickets = ticketsData?.data ?? [];
+  const totalTickets = ticketsData?.pagination?.total ?? 0;
+  const totalPages = ticketsData?.pagination?.pages ?? 1;
+
+  useEffect(() => {
+    if (!selectedTicket && tickets.length) {
+      setSelectedTicket(tickets[0].id);
+      return;
+    }
+
+    if (selectedTicket && !tickets.find((ticket) => ticket.id === selectedTicket)) {
+      setSelectedTicket(tickets[0]?.id ?? null);
+    }
+  }, [tickets, selectedTicket]);
+
+  const { data: messagesData, isLoading: messagesLoading } = useSupportTicketMessages(selectedTicket ?? "") as {
+    data: SupportTicketMessage[] | undefined;
+    isLoading: boolean;
+    error: ApiError | null;
+  };
+
+  const messages = messagesData ?? [];
 
   const updateTicket = useUpdateSupportTicket();
   const sendMessage = useSendSupportMessage();
 
+  const statusCounts = useMemo(() => {
+    return tickets.reduce<Record<string, number>>((acc, ticket) => {
+      acc[ticket.status] = (acc[ticket.status] ?? 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+  }, [tickets]);
+
+  const priorityCounts = useMemo(() => {
+    return tickets.reduce<Record<string, number>>((acc, ticket) => {
+      acc[ticket.priority] = (acc[ticket.priority] ?? 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+  }, [tickets]);
+
+  const selectedTicketData = useMemo(
+    () => tickets.find((ticket) => ticket.id === selectedTicket) ?? null,
+    [tickets, selectedTicket]
+  );
+
+  const handleStatusUpdate = async (ticketId: string, newStatus: TicketStatus) => {
+    try {
+      await updateTicket.mutateAsync({
+        id: ticketId,
+        data: { status: newStatus },
+      });
+    } catch (err) {
+      logger.error("Failed to update ticket status", err);
+    }
+  };
+
+  const handleSendMessage = async () => {
+    if (!selectedTicket || !newMessage.trim()) return;
+
+    try {
+      await sendMessage.mutateAsync({
+        ticketId: selectedTicket,
+        message: newMessage,
+        attachments,
+      });
+      setNewMessage("");
+      setAttachments([]);
+    } catch (err) {
+      logger.error("Failed to send support message", err);
+    }
+  };
+
+  const handleFileUpload = (event: ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files) {
+      setAttachments(Array.from(event.target.files));
+    }
+  };
+
   if (isLoading) {
     return (
       <ProtectedRoute>
-        <div className="min-h-screen bg-background flex items-center justify-center">
-          <div className="flex flex-col items-center gap-4">
-            <div className="spinner"></div>
-            <div className="text-lg text-foreground">Loading support tickets...</div>
-          </div>
+        <div className="min-h-screen bg-background">
+          <main className="mobile-container flex items-center justify-center py-24">
+            <LoadingState message="Loading support tickets..." />
+          </main>
         </div>
       </ProtectedRoute>
     );
@@ -64,391 +269,450 @@ export default function SupportPage() {
   if (error) {
     return (
       <ProtectedRoute>
-        <div className="min-h-screen bg-background flex items-center justify-center">
-          <div className="flex flex-col items-center gap-4">
-            <div className="text-red-500 text-lg">Error loading support tickets</div>
-            <div className="text-muted-foreground">
-              {error instanceof ApiError ? error.message : 'Unknown error'}
-            </div>
-          </div>
+        <div className="min-h-screen bg-background">
+          <main className="mobile-container py-24">
+            <EmptyState
+              icon={AlertTriangle}
+              title="Support tickets could not be loaded"
+              description="Please refresh the page or try again in a few minutes."
+              actions={
+                <Button variant="outline" onClick={() => window.location.reload()}>
+                  Retry
+                </Button>
+              }
+            />
+          </main>
         </div>
       </ProtectedRoute>
     );
   }
 
-  const tickets = ticketsData?.data || [];
-  const totalTickets = ticketsData?.pagination?.total || 0;
-  const totalPages = ticketsData?.pagination?.pages || 1;
-  const messages = messagesData || [];
-
-  // Calculate statistics
-  const statusCounts = tickets.reduce((acc: Record<string, number>, ticket: { id: string; subject: string; description: string; status: string; priority: string; createdAt: string; updatedAt: string; assignedTo?: string; store?: { name: string } }) => {
-    acc[ticket.status] = (acc[ticket.status] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
-
-  const priorityCounts = tickets.reduce((acc: Record<string, number>, ticket: { id: string; subject: string; description: string; status: string; priority: string; createdAt: string; updatedAt: string; assignedTo?: string; store?: { name: string } }) => {
-    acc[ticket.priority] = (acc[ticket.priority] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
-
-
-  const handleStatusUpdate = async (ticketId: string, newStatus: string) => {
-    try {
-      await updateTicket.mutateAsync({
-        id: ticketId,
-        data: { status: newStatus }
-      });
-    } catch (error) {
-      logger.error('Failed to update ticket status:', error);
-    }
-  };
-
-  const handleSendMessage = async () => {
-    if (!selectedTicket || !newMessage.trim()) return;
-    
-    try {
-      await sendMessage.mutateAsync({
-        ticketId: selectedTicket,
-        message: newMessage,
-        attachments
-      });
-      setNewMessage("");
-      setAttachments([]);
-    } catch (error) {
-      logger.error('Failed to send message:', error);
-    }
-  };
-
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      setAttachments(Array.from(e.target.files));
-    }
-  };
-
   return (
     <ProtectedRoute>
       <div className="min-h-screen bg-background">
-        <main className="mobile-container py-6 space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <h1 className="mobile-heading text-foreground">Support Center</h1>
-              <p className="text-muted-foreground mobile-text">
-                {isAdmin() ? 'Manage all support tickets across all stores' : 'View and manage your support tickets'}
-              </p>
-            </div>
-            <button 
-              onClick={() => setShowCreateModal(true)}
-              className="btn btn-primary"
-            >
-              Create Ticket
-            </button>
-          </div>
+        <main className="mobile-container space-y-8 py-8">
+          <PageHeader
+            title="Support Center"
+            description={
+              isAdmin()
+                ? "Track, prioritise, and respond to every store support request."
+                : "View your submitted tickets and follow the responses from our support team."
+            }
+            icon={LifeBuoy}
+            actions={[
+              {
+                label: "New Ticket",
+                onClick: () => setIsCreateOpen(true),
+                icon: Plus,
+              },
+            ]}
+          >
+            Keep customers informed by responding quickly and keeping every conversation in one place.
+          </PageHeader>
 
-          {/* Filters */}
-          <div className="flex flex-col sm:flex-row gap-4">
-            <input
-              type="text"
-              placeholder="Search tickets..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="flex-1 px-3 py-2 border border-border rounded-lg bg-background text-foreground"
-            />
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-2 border border-border rounded-lg bg-background text-foreground"
-            >
-              <option value="">All Statuses</option>
-              <option value="open">Open</option>
-              <option value="in_progress">In Progress</option>
-              <option value="closed">Closed</option>
-            </select>
-            <select
-              value={priorityFilter}
-              onChange={(e) => setPriorityFilter(e.target.value)}
-              className="px-3 py-2 border border-border rounded-lg bg-background text-foreground"
-            >
-              <option value="">All Priorities</option>
-              <option value="low">Low</option>
-              <option value="medium">Medium</option>
-              <option value="high">High</option>
-              <option value="urgent">Urgent</option>
-            </select>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="bg-card p-6 rounded-lg border border-border">
-              <h3 className="text-lg font-semibold text-foreground mb-2">Total Tickets</h3>
-              <div className="text-3xl font-bold text-primary">
-                {totalTickets}
+          <Card>
+            <CardContent className="flex flex-col gap-4 pt-6 md:flex-row md:items-center md:justify-between">
+              <div className="flex w-full flex-col gap-3 md:flex-row md:items-center">
+                <div className="relative md:w-72">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    value={search}
+                    onChange={(event) => {
+                      setSearch(event.target.value);
+                      setPage(1);
+                    }}
+                    placeholder="Search tickets..."
+                    className="pl-9"
+                  />
+                </div>
+                <div className="flex flex-1 flex-col gap-3 sm:flex-row">
+                  <Select
+                    value={statusFilter}
+                    onValueChange={(value) => {
+                      setStatusFilter(value as StatusFilter);
+                      setPage(1);
+                    }}
+                  >
+                    <SelectTrigger className="sm:w-44">
+                      <SelectValue placeholder="All statuses" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {statusFilterOptions.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Select
+                    value={priorityFilter}
+                    onValueChange={(value) => {
+                      setPriorityFilter(value as PriorityFilter);
+                      setPage(1);
+                    }}
+                  >
+                    <SelectTrigger className="sm:w-44">
+                      <SelectValue placeholder="All priorities" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {priorityFilterOptions.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-              <p className="text-sm text-muted-foreground">
-                {isAdmin() ? 'Across all stores' : 'Your tickets'}
-              </p>
-            </div>
+              {(statusFilter !== "all" || priorityFilter !== "all" || search) && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setSearch("");
+                    setStatusFilter("all");
+                    setPriorityFilter("all");
+                    setPage(1);
+                  }}
+                >
+                  Clear filters
+                </Button>
+              )}
+            </CardContent>
+          </Card>
 
-            <div className="bg-card p-6 rounded-lg border border-border">
-              <h3 className="text-lg font-semibold text-foreground mb-2">Open</h3>
-              <div className="text-3xl font-bold text-yellow-600">
-                {statusCounts['open'] || 0}
-              </div>
-              <p className="text-sm text-muted-foreground">Awaiting response</p>
-            </div>
+          <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium text-muted-foreground">Total Tickets</CardTitle>
+                <CardDescription>
+                  {isAdmin() ? "Across all stores" : "Your tickets"}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-semibold text-foreground">{totalTickets}</div>
+              </CardContent>
+            </Card>
+            {(["open", "in_progress", "closed"] as KnownTicketStatus[]).map((status) => {
+              const meta = statusMeta[status];
+              return (
+                <Card key={status}>
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-sm font-medium text-muted-foreground">
+                        {meta.label}
+                      </CardTitle>
+                      <Badge variant={meta.badge}>{meta.label}</Badge>
+                    </div>
+                    <CardDescription>{meta.description}</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-3xl font-semibold text-foreground">{statusCounts[status] ?? 0}</div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </section>
 
-            <div className="bg-card p-6 rounded-lg border border-border">
-              <h3 className="text-lg font-semibold text-foreground mb-2">In Progress</h3>
-              <div className="text-3xl font-bold text-blue-600">
-                {statusCounts['in_progress'] || 0}
-              </div>
-              <p className="text-sm text-muted-foreground">Being worked on</p>
-            </div>
-
-            <div className="bg-card p-6 rounded-lg border border-border">
-              <h3 className="text-lg font-semibold text-foreground mb-2">Closed</h3>
-              <div className="text-3xl font-bold text-green-600">
-                {statusCounts['closed'] || 0}
-              </div>
-              <p className="text-sm text-muted-foreground">Resolved</p>
-            </div>
-          </div>
-
-          {/* Priority Breakdown */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="bg-card p-4 rounded-lg border border-border">
-              <h4 className="font-semibold text-foreground mb-2">Low Priority</h4>
-              <div className="text-2xl font-bold text-gray-600">{priorityCounts['low'] || 0}</div>
-            </div>
-            <div className="bg-card p-4 rounded-lg border border-border">
-              <h4 className="font-semibold text-foreground mb-2">Medium Priority</h4>
-              <div className="text-2xl font-bold text-blue-600">{priorityCounts['medium'] || 0}</div>
-            </div>
-            <div className="bg-card p-4 rounded-lg border border-border">
-              <h4 className="font-semibold text-foreground mb-2">High Priority</h4>
-              <div className="text-2xl font-bold text-orange-600">{priorityCounts['high'] || 0}</div>
-            </div>
-            <div className="bg-card p-4 rounded-lg border border-border">
-              <h4 className="font-semibold text-foreground mb-2">Urgent</h4>
-              <div className="text-2xl font-bold text-red-600">{priorityCounts['urgent'] || 0}</div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Tickets List */}
-            <div className="lg:col-span-2">
-              <div className="bg-card p-6 rounded-lg border border-border">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-foreground">Support Tickets</h3>
-                  <div className="flex gap-2">
-                    <button className="btn btn-outline btn-sm">Export</button>
-                    <button className="btn btn-outline btn-sm">Filter</button>
+          <section className="grid gap-6 lg:grid-cols-3">
+            <Card className="lg:col-span-2">
+              <CardHeader className="space-y-4">
+                <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                  <div>
+                    <CardTitle className="text-lg font-semibold text-foreground">Support Tickets</CardTitle>
+                    <CardDescription>
+                      Review, triage, and respond to customer and store requests.
+                    </CardDescription>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" size="sm">
+                      Export
+                    </Button>
+                    <Button variant="outline" size="sm">
+                      Advanced filters
+                    </Button>
                   </div>
                 </div>
-                
-                <div className="space-y-3">
-                  {tickets.map((ticket: { id: string; subject: string; description: string; status: string; priority: string; createdAt: string; updatedAt: string; assignedTo?: string; store?: { name: string } }) => (
-                    <div 
-                      key={ticket.id} 
-                      className={`p-4 rounded-lg border cursor-pointer transition-colors ${
-                        selectedTicket === ticket.id ? 'border-primary bg-primary/5' : 'border-border hover:bg-accent'
-                      }`}
-                      onClick={() => setSelectedTicket(ticket.id)}
-                    >
-                      <div className="flex justify-between items-start mb-2">
-                        <h4 className="font-medium text-foreground">{ticket.subject}</h4>
-                        <div className="flex gap-2">
-                          <span className={`px-2 py-1 rounded-full text-xs ${
-                            ticket.priority === 'urgent' ? 'bg-red-100 text-red-800' :
-                            ticket.priority === 'high' ? 'bg-orange-100 text-orange-800' :
-                            ticket.priority === 'medium' ? 'bg-blue-100 text-blue-800' :
-                            'bg-gray-100 text-gray-800'
-                          }`}>
-                            {ticket.priority}
-                          </span>
-                          <span className={`px-2 py-1 rounded-full text-xs ${
-                            ticket.status === 'open' ? 'bg-yellow-100 text-yellow-800' :
-                            ticket.status === 'in_progress' ? 'bg-blue-100 text-blue-800' :
-                            ticket.status === 'closed' ? 'bg-green-100 text-green-800' :
-                            'bg-gray-100 text-gray-800'
-                          }`}>
-                            {ticket.status}
-                          </span>
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                  {(["low", "medium", "high", "urgent"] as KnownTicketPriority[]).map((priority) => {
+                    const meta = priorityMeta[priority];
+                    return (
+                      <div
+                        key={priority}
+                        className="flex items-center justify-between rounded-lg border border-border/60 bg-muted/40 px-3 py-2 text-sm"
+                      >
+                        <div className="flex items-center gap-2">
+                          <Badge variant={meta.badge}>{meta.label}</Badge>
+                          <span className="text-muted-foreground">{meta.description}</span>
                         </div>
+                        <span className="font-semibold text-foreground">{priorityCounts[priority] ?? 0}</span>
                       </div>
-                      <p className="text-sm text-muted-foreground mb-2 line-clamp-2">
-                        {ticket.description}
-                      </p>
-                      <div className="flex justify-between items-center text-xs text-muted-foreground">
-                        <span>Created: {new Date(ticket.createdAt).toLocaleDateString()}</span>
-                        {isAdmin() && ticket.assignedTo && (
-                          <span>Assigned to: {ticket.assignedTo}</span>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                  {tickets.length === 0 && (
-                    <div className="text-center py-8 text-muted-foreground">
-                      No support tickets found
-                    </div>
-                  )}
+                    );
+                  })}
                 </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {tickets.length === 0 ? (
+                  <EmptyState
+                    icon={Inbox}
+                    title="No support tickets found"
+                    description="Create a support ticket or adjust your filters to see results."
+                    actions={
+                      <Button onClick={() => setIsCreateOpen(true)} size="sm" variant="secondary">
+                        New Ticket
+                      </Button>
+                    }
+                  />
+                ) : (
+                  <>
+                    <div className="space-y-3">
+                      {tickets.map((ticket) => {
+                        const status = getStatusMeta(ticket.status);
+                        const priority = getPriorityMeta(ticket.priority);
+                        return (
+                          <button
+                            key={ticket.id}
+                            onClick={() => setSelectedTicket(ticket.id)}
+                            className={cn(
+                              "w-full rounded-xl border border-border/70 bg-card/60 p-4 text-left transition-all hover:border-primary/60 hover:shadow-md",
+                              selectedTicket === ticket.id && "border-primary bg-primary/5 shadow-sm"
+                            )}
+                          >
+                            <div className="flex flex-wrap items-start justify-between gap-3">
+                              <div className="space-y-2">
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <h4 className="text-sm font-semibold text-foreground">{ticket.subject}</h4>
+                                  {ticket.store?.name && (
+                                    <span className="text-xs text-muted-foreground">• {ticket.store.name}</span>
+                                  )}
+                                </div>
+                                <p className="text-sm text-muted-foreground line-clamp-2">{ticket.description}</p>
+                                <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                                  <span>Created {new Date(ticket.createdAt).toLocaleDateString()}</span>
+                                  <span>Updated {new Date(ticket.updatedAt).toLocaleDateString()}</span>
+                                  {isAdmin() && ticket.assignedTo && (
+                                    <span>Assigned to {ticket.assignedTo}</span>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="flex flex-col items-end gap-2">
+                                <Badge variant={priority.badge}>{priority.label}</Badge>
+                                <Badge variant={status.badge}>{status.label}</Badge>
+                              </div>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
 
-                {/* Pagination */}
-                {totalPages > 1 && (
-                  <div className="flex justify-center mt-6 gap-2">
-                    <button
-                      onClick={() => setPage(p => Math.max(1, p - 1))}
-                      disabled={page === 1}
-                      className="btn btn-outline btn-sm"
-                    >
-                      Previous
-                    </button>
-                    <span className="px-4 py-2 text-sm text-muted-foreground">
-                      Page {page} of {totalPages}
-                    </span>
-                    <button
-                      onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                      disabled={page === totalPages}
-                      className="btn btn-outline btn-sm"
-                    >
-                      Next
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Ticket Details */}
-            <div className="lg:col-span-1">
-              {selectedTicket ? (
-                <div className="bg-card p-6 rounded-lg border border-border">
-                  <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-semibold text-foreground">Ticket Details</h3>
-                    <ProtectedComponent permission="support.manage">
-                      <div className="flex gap-2">
-                        <select
-                          onChange={(e) => handleStatusUpdate(selectedTicket, e.target.value)}
-                          className="btn btn-sm btn-outline"
+                    {totalPages > 1 && (
+                      <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setPage((prev) => Math.max(1, prev - 1))}
+                          disabled={page === 1}
                         >
-                          <option value="open">Open</option>
-                          <option value="in_progress">In Progress</option>
-                          <option value="closed">Closed</option>
-                        </select>
+                          Previous
+                        </Button>
+                        <span className="text-sm text-muted-foreground">
+                          Page {page} of {totalPages}
+                        </span>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
+                          disabled={page === totalPages}
+                        >
+                          Next
+                        </Button>
                       </div>
-                    </ProtectedComponent>
-                  </div>
-
-                  {/* Messages */}
-                  <div className="space-y-3 mb-4 max-h-96 overflow-y-auto">
-                    {messagesLoading ? (
-                      <div className="text-center py-4">
-                        <div className="spinner-sm"></div>
-                      </div>
-                    ) : (
-                      messages.map((message: { id: string; message: string; isInternal: boolean; createdAt: string; author: { name: string; role: string } }) => (
-                        <div key={message.id} className={`p-3 rounded-lg ${
-                          message.isInternal ? 'bg-blue-50 border border-blue-200' : 'bg-gray-50 border border-gray-200'
-                        }`}>
-                          <div className="flex justify-between items-start mb-1">
-                            <span className="text-sm font-medium">{message.author.name}</span>
-                            <span className="text-xs text-muted-foreground">
-                              {new Date(message.createdAt).toLocaleString()}
-                            </span>
-                          </div>
-                          <p className="text-sm text-foreground">{message.message}</p>
-                        </div>
-                      ))
                     )}
-                  </div>
+                  </>
+                )}
+              </CardContent>
+            </Card>
 
-                  {/* Reply Form */}
-                  <div className="space-y-3">
-                    <textarea
-                      value={newMessage}
-                      onChange={(e) => setNewMessage(e.target.value)}
-                      placeholder="Type your message..."
-                      className="form-textarea"
-                      rows={3}
-                    />
-                    <input
-                      type="file"
-                      multiple
-                      onChange={handleFileUpload}
-                      className="form-input"
-                    />
-                    <button
-                      onClick={handleSendMessage}
-                      disabled={!newMessage.trim()}
-                      className="btn btn-primary btn-sm w-full"
-                    >
-                      Send Message
-                    </button>
-                  </div>
-                </div>
+            <div className="space-y-4">
+              {selectedTicketData ? (
+                <Card className="lg:sticky lg:top-28">
+                  <CardHeader className="space-y-3">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                      <div>
+                        <CardTitle className="text-lg font-semibold text-foreground">Ticket Details</CardTitle>
+                        <CardDescription>
+                          View the conversation and send updates to the requester.
+                        </CardDescription>
+                      </div>
+                      <ProtectedComponent permission="support.manage">
+                        <Select
+                          value={selectedTicketData.status}
+                          onValueChange={(value) => handleStatusUpdate(selectedTicketData.id, value)}
+                        >
+                          <SelectTrigger className="sm:w-44">
+                            <SelectValue placeholder="Update status" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {(["open", "in_progress", "closed"] as KnownTicketStatus[]).map((status) => (
+                              <SelectItem key={status} value={status}>
+                                {statusMeta[status].label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </ProtectedComponent>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge variant={getPriorityMeta(selectedTicketData.priority).badge}>
+                        {getPriorityMeta(selectedTicketData.priority).label}
+                      </Badge>
+                      <Badge variant={getStatusMeta(selectedTicketData.status).badge}>
+                        {getStatusMeta(selectedTicketData.status).label}
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="max-h-80 space-y-3 overflow-y-auto pr-1">
+                      {messagesLoading ? (
+                        <LoadingState message="Loading conversation..." />
+                      ) : messages.length === 0 ? (
+                        <EmptyState
+                          icon={MessageCircle}
+                          title="No messages yet"
+                          description="Start the conversation by sending the first update."
+                        />
+                      ) : (
+                        messages.map((message) => (
+                          <div
+                            key={message.id}
+                            className={cn(
+                              "rounded-lg border p-3 text-sm shadow-sm",
+                              message.isInternal
+                                ? "border-[hsl(var(--info))]/40 bg-[hsl(var(--info))]/10 dark:bg-[hsl(var(--info))]/15"
+                                : "border-border/60 bg-muted/40"
+                            )}
+                          >
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="space-y-1">
+                                <p className="font-medium text-foreground">{message.author.name}</p>
+                                <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                                  {message.author.role}
+                                </p>
+                              </div>
+                              <span className="text-xs text-muted-foreground">
+                                {new Date(message.createdAt).toLocaleString()}
+                              </span>
+                            </div>
+                            <p className="mt-2 text-sm text-foreground">{message.message}</p>
+                            {message.isInternal && (
+                              <span className="mt-2 inline-flex items-center rounded-full bg-[hsl(var(--info))]/15 px-2 py-0.5 text-xs font-medium text-[hsl(var(--info))] dark:bg-[hsl(var(--info))]/20">
+                                Internal note
+                              </span>
+                            )}
+                          </div>
+                        ))
+                      )}
+                    </div>
+
+                    <div className="space-y-3">
+                      <Textarea
+                        value={newMessage}
+                        onChange={(event) => setNewMessage(event.target.value)}
+                        placeholder="Type your message..."
+                        rows={4}
+                      />
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="w-full sm:w-auto">
+                          <Label
+                            htmlFor="support-attachments"
+                            className="text-xs uppercase tracking-wide text-muted-foreground"
+                          >
+                            Attachments
+                          </Label>
+                          <Input
+                            id="support-attachments"
+                            type="file"
+                            multiple
+                            onChange={handleFileUpload}
+                            className="mt-1"
+                          />
+                          {attachments.length > 0 && (
+                            <p className="mt-1 text-xs text-muted-foreground">
+                              {attachments.length} file(s) selected
+                            </p>
+                          )}
+                        </div>
+                        <Button
+                          onClick={handleSendMessage}
+                          disabled={!newMessage.trim()}
+                          className="w-full sm:w-auto"
+                        >
+                          Send Message
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
               ) : (
-                <div className="bg-card p-6 rounded-lg border border-border text-center">
-                  <div className="text-4xl mb-4">💬</div>
-                  <h3 className="text-lg font-semibold text-foreground mb-2">Select a Ticket</h3>
-                  <p className="text-muted-foreground">
-                    Choose a ticket from the list to view details and messages
-                  </p>
-                </div>
+                <EmptyState
+                  icon={MessageCircle}
+                  title="Select a ticket"
+                  description="Choose a ticket from the list to read its details and reply."
+                  className="min-h-[320px]"
+                />
               )}
             </div>
-          </div>
+          </section>
 
-          {/* Create Ticket Modal */}
-          {showCreateModal && (
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-              <div className="bg-card p-6 rounded-lg border border-border w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-                <h3 className="text-lg font-semibold text-foreground mb-4">Create Support Ticket</h3>
-                <div className="space-y-4">
-                  <div>
-                    <label className="form-label">Subject</label>
-                    <input
-                      type="text"
-                      className="form-input"
-                      placeholder="Enter ticket subject"
-                    />
-                  </div>
-                  <div>
-                    <label className="form-label">Priority</label>
-                    <select className="form-select">
-                      <option value="low">Low</option>
-                      <option value="medium">Medium</option>
-                      <option value="high">High</option>
-                      <option value="urgent">Urgent</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="form-label">Description</label>
-                    <textarea
-                      className="form-textarea"
-                      rows={6}
-                      placeholder="Describe your issue in detail"
-                    />
-                  </div>
-                  <div>
-                    <label className="form-label">Attachments</label>
-                    <input
-                      type="file"
-                      multiple
-                      className="form-input"
-                    />
-                  </div>
+          <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Create Support Ticket</DialogTitle>
+                <DialogDescription>
+                  Provide the key details so the support team can assist you quickly.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="new-ticket-subject">Subject</Label>
+                  <Input id="new-ticket-subject" placeholder="Enter ticket subject" />
                 </div>
-                <div className="flex gap-2 mt-6">
-                  <button className="btn btn-primary">Create Ticket</button>
-                  <button 
-                    onClick={() => setShowCreateModal(false)}
-                    className="btn btn-outline"
-                  >
-                    Cancel
-                  </button>
+                <div className="space-y-2">
+                  <Label>Priority</Label>
+                  <Select defaultValue="low">
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select priority" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(["low", "medium", "high", "urgent"] as KnownTicketPriority[]).map((priority) => (
+                        <SelectItem key={priority} value={priority}>
+                          {priorityMeta[priority].label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="new-ticket-description">Description</Label>
+                  <Textarea
+                    id="new-ticket-description"
+                    rows={6}
+                    placeholder="Describe your issue in detail"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="new-ticket-attachments">Attachments</Label>
+                  <Input id="new-ticket-attachments" type="file" multiple />
                 </div>
               </div>
-            </div>
-          )}
+              <DialogFooter>
+                <Button onClick={() => setIsCreateOpen(false)}>Create Ticket</Button>
+                <Button variant="outline" onClick={() => setIsCreateOpen(false)}>
+                  Cancel
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </main>
       </div>
     </ProtectedRoute>
