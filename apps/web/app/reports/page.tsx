@@ -31,8 +31,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { LoadingState } from "@/components/ui/loading";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { formatCurrency as formatCurrencyIntl, formatNumber as formatNumberIntl } from "@/lib/formatters";
+import { SectionShell } from "@/components/patterns/SectionShell";
+import { MetricCard } from "@/components/patterns/MetricCard";
+import { FormSelect } from "@/components/forms/FormSelect";
 
 interface OverviewData {
   totalRevenue: number;
@@ -255,18 +258,18 @@ export default function ReportsPage() {
 
   const { data: dashboardStats, isLoading: isLoadingDashboard } = useDashboardStats(userStoreId);
   const { data: salesData, isLoading: isLoadingSales } = useSalesReport({
-    startDate,
-    endDate,
+    ...(startDate ? { startDate } : {}),
+    ...(endDate ? { endDate } : {}),
     ...(userStoreId ? { storeId: userStoreId } : {}),
   });
   const { data: productData, isLoading: isLoadingProducts } = useProductReport({
-    startDate,
-    endDate,
+    ...(startDate ? { startDate } : {}),
+    ...(endDate ? { endDate } : {}),
     ...(userStoreId ? { storeId: userStoreId } : {}),
   });
   const { data: customerData, isLoading: isLoadingCustomers } = useCustomerReport({
-    startDate,
-    endDate,
+    ...(startDate ? { startDate } : {}),
+    ...(endDate ? { endDate } : {}),
     ...(userStoreId ? { storeId: userStoreId } : {}),
   });
   const { data: inventoryData, isLoading: isLoadingInventory } = useInventoryReport({
@@ -274,8 +277,8 @@ export default function ReportsPage() {
     lowStock: true,
   });
   const { data: financialData, isLoading: isLoadingFinancial } = useFinancialReport({
-    startDate,
-    endDate,
+    ...(startDate ? { startDate } : {}),
+    ...(endDate ? { endDate } : {}),
     ...(userStoreId ? { storeId: userStoreId } : {}),
   });
 
@@ -295,13 +298,16 @@ export default function ReportsPage() {
     isLoadingFinancial;
 
   const formatCurrency = (amount: number) =>
-    new Intl.NumberFormat("tr-TR", {
-      style: "currency",
-      currency: "TRY",
+    formatCurrencyIntl(amount, {
+      locale: "tr-TR",
+      currency: "EUR",
       maximumFractionDigits: 0,
-    }).format(amount ?? 0);
+    });
 
-  const formatNumber = (value: number) => new Intl.NumberFormat("tr-TR").format(value ?? 0);
+  const formatNumber = (value: number) =>
+    formatNumberIntl(value, {
+      locale: "tr-TR",
+    });
 
   const overviewCards = [
     {
@@ -343,7 +349,7 @@ export default function ReportsPage() {
       <div className="min-h-screen bg-background">
         <main className="mobile-container space-y-8 py-8">
           <PageHeader
-            title="Reports & Analytics"
+                        title="Reports & Analytics"
             description={
               isAdmin()
                 ? "Monitor performance across every store from a single, theme-aware dashboard."
@@ -352,18 +358,13 @@ export default function ReportsPage() {
             icon={BarChart3}
             actions={
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                <Select value={dateRange} onValueChange={(value) => setDateRange(value as typeof dateRangeOptions[number]["value"]) }>
-                  <SelectTrigger className="w-40">
-                    <SelectValue placeholder="Select range" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {dateRangeOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <FormSelect
+                  value={dateRange}
+                  onChange={(e) => setDateRange(e.target.value as typeof dateRangeOptions[number]["value"])}
+                  placeholder="Select range"
+                  className="w-40"
+                  options={dateRangeOptions as any}
+                />
                 <Button variant="outline" size="sm">
                   <Download className="mr-2 h-4 w-4" />
                   Export data
@@ -403,56 +404,53 @@ export default function ReportsPage() {
               <TabsContent value="overview" className="space-y-6">
                 <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                   {overviewCards.map((card) => (
-                    <Card key={card.label}>
-                      <CardHeader className="space-y-2">
-                        <CardDescription>{card.label}</CardDescription>
-                        <CardTitle className="text-3xl font-semibold text-foreground">{card.value}</CardTitle>
-                      </CardHeader>
-                      <CardContent>{growthBadge(card.growth)}</CardContent>
-                    </Card>
+                    <MetricCard
+                      key={card.label}
+                      label={card.label}
+                      value={card.value}
+                      context={growthBadge(card.growth)}
+                    />
                   ))}
                 </div>
 
                 <div className="grid gap-6 lg:grid-cols-2">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Daily sales</CardTitle>
-                      <CardDescription>Revenue generated each day within the selected period.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      {sales.dailySales.length === 0 ? (
-                        <EmptyState
-                          icon={LineChart}
-                          title="No sales captured"
-                          description="Sales data will appear here once orders are processed within the selected range."
-                        />
-                      ) : (
-                        sales.dailySales.map((day) => (
+                  <SectionShell
+                        title="Daily sales"
+                    description="Revenue generated each day within the selected period."
+                  >
+                    {sales.dailySales.length === 0 ? (
+                      <EmptyState
+                        icon={LineChart}
+                        title="No sales captured"
+                        description="Sales data will appear here once orders are processed within the selected range."
+                      />
+                    ) : (
+                      <div className="space-y-3">
+                        {sales.dailySales.map((day) => (
                           <div key={day.date} className="flex items-center justify-between rounded-lg border border-border/60 bg-muted/40 px-3 py-2">
                             <span className="text-sm text-muted-foreground">
                               {new Date(day.date).toLocaleDateString("tr-TR")}
                             </span>
                             <span className="text-sm font-medium text-foreground">{formatCurrency(day.sales)}</span>
                           </div>
-                        ))
-                      )}
-                    </CardContent>
-                  </Card>
+                        ))}
+                      </div>
+                    )}
+                  </SectionShell>
 
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Sales by category</CardTitle>
-                      <CardDescription>Share of revenue per product category.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      {sales.salesByCategory.length === 0 ? (
-                        <EmptyState
-                          icon={TrendingUp}
-                          title="No category data"
-                          description="Add product categories to track their contribution to total revenue."
-                        />
-                      ) : (
-                        sales.salesByCategory.map((category) => (
+                  <SectionShell
+                        title="Sales by category"
+                    description="Share of revenue per product category."
+                  >
+                    {sales.salesByCategory.length === 0 ? (
+                      <EmptyState
+                        icon={TrendingUp}
+                        title="No category data"
+                        description="Add product categories to track their contribution to total revenue."
+                      />
+                    ) : (
+                      <div className="space-y-4">
+                        {sales.salesByCategory.map((category) => (
                           <div key={category.category} className="space-y-2">
                             <div className="flex items-center justify-between text-sm">
                               <span className="font-medium text-foreground">{category.category}</span>
@@ -465,10 +463,10 @@ export default function ReportsPage() {
                               />
                             </div>
                           </div>
-                        ))
-                      )}
-                    </CardContent>
-                  </Card>
+                        ))}
+                      </div>
+                    )}
+                  </SectionShell>
                 </div>
               </TabsContent>
 

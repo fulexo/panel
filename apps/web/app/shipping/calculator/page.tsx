@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import { useRBAC } from "@/hooks/useRBAC";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { useApp } from "@/contexts/AppContext";
 import { useShippingOptions, useCalculateShipping } from "@/hooks/useShipping";
+import { formatCurrency } from "@/lib/formatters";
 
 export default function ShippingCalculatorPage() {
   const { user } = useAuth();
@@ -18,6 +19,16 @@ export default function ShippingCalculatorPage() {
 
   const { data: shippingOptions, isLoading } = useShippingOptions(user?.id);
   const calculateShippingMutation = useCalculateShipping();
+
+  const currencyOptions = useMemo(
+    () => ({
+      locale: "tr-TR",
+      currency: "EUR",
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }),
+    []
+  );
 
   const handleCalculate = async () => {
     if (!selectedZone || orderTotal <= 0) {
@@ -83,7 +94,7 @@ export default function ShippingCalculatorPage() {
             <h1 className="mobile-heading text-foreground mb-6">Kargo Fiyatları Hesaplayıcısı</h1>
 
             {/* Calculator Form */}
-            <div className="bg-card p-6 rounded-lg border border-border mb-8">
+            <div className="p-6 bg-muted/40 rounded-lg border border-border mb-8">
               <h2 className="text-xl font-semibold text-foreground mb-4">Kargo Hesapla</h2>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
@@ -106,7 +117,7 @@ export default function ShippingCalculatorPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-foreground mb-2">
-                    Sipariş Tutarı (₺) *
+                    Sipariş Tutarı (€) *
                   </label>
                   <input
                     type="number"
@@ -131,7 +142,7 @@ export default function ShippingCalculatorPage() {
 
             {/* Calculated Results */}
             {calculatedPrices && (
-              <div className="bg-card p-6 rounded-lg border border-border mb-8">
+              <div className="p-6 bg-muted/40 rounded-lg border border-border mb-8">
                 <h2 className="text-xl font-semibold text-foreground mb-4">Kargo Seçenekleri</h2>
                 <div className="space-y-4">
                   {(calculatedPrices as any)?.options?.map((option: any) => (
@@ -145,7 +156,9 @@ export default function ShippingCalculatorPage() {
                         </div>
                         <div className="text-right">
                           <div className="text-lg font-semibold text-foreground">
-                            {option.isFree ? "Ücretsiz" : `₺${option.finalPrice.toFixed(2)}`}
+                            {option.isFree
+                              ? "Ücretsiz"
+                              : formatCurrency(option.finalPrice, currencyOptions)}
                           </div>
                           {option.estimatedDays && (
                             <div className="text-sm text-muted-foreground">
@@ -157,13 +170,13 @@ export default function ShippingCalculatorPage() {
                       
                       {option.freeShippingThreshold && (
                         <div className="text-sm text-muted-foreground">
-                          Ücretsiz kargo: ₺{option.freeShippingThreshold.toFixed(2)} ve üzeri
+                          Ücretsiz kargo: {formatCurrency(option.freeShippingThreshold, currencyOptions)} ve üzeri
                         </div>
                       )}
                       
                       {option.basePrice !== option.finalPrice && !option.isFree && (
                         <div className="text-sm text-muted-foreground">
-                          Temel fiyat: ₺{option.basePrice.toFixed(2)}
+                          Temel fiyat: {formatCurrency(option.basePrice, currencyOptions)}
                         </div>
                       )}
                     </div>
@@ -173,7 +186,7 @@ export default function ShippingCalculatorPage() {
             )}
 
             {/* Available Zones and Prices */}
-            <div className="bg-card p-6 rounded-lg border border-border">
+            <div className="p-6 bg-muted/40 rounded-lg border border-border">
               <h2 className="text-xl font-semibold text-foreground mb-4">Mevcut Kargo Seçenekleri</h2>
               
               {(shippingOptions as any)?.length === 0 ? (
@@ -195,7 +208,7 @@ export default function ShippingCalculatorPage() {
                             <div className="flex justify-between items-start mb-2">
                               <h4 className="font-medium text-foreground">{price.name}</h4>
                               <span className="text-sm font-medium text-foreground">
-                                ₺{price.basePrice.toFixed(2)}
+                                {formatCurrency(price.basePrice, currencyOptions)}
                               </span>
                             </div>
                             
@@ -208,7 +221,7 @@ export default function ShippingCalculatorPage() {
                                 <div>Tahmini süre: {price.estimatedDays}</div>
                               )}
                               {price.freeShippingThreshold && (
-                                <div>Ücretsiz: ₺{price.freeShippingThreshold.toFixed(2)}+</div>
+                                <div>Ücretsiz: {formatCurrency(price.freeShippingThreshold, currencyOptions)}+</div>
                               )}
                             </div>
                           </div>

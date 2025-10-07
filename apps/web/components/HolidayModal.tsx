@@ -2,11 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { X, Calendar } from 'lucide-react';
+import { FormField } from '@/components/forms/FormField';
+import { FormTextarea } from '@/components/forms/FormTextarea';
 
 interface Holiday {
   id: string;
@@ -66,70 +66,70 @@ export default function HolidayModal({ isOpen, onClose, onSave, holiday }: Holid
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-background rounded-lg shadow-lg w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-6 border-b">
-          <h2 className="text-lg font-semibold flex items-center gap-2">
-            <Calendar className="w-5 h-5" />
-            {holiday ? 'Tatili Düzenle' : 'Yeni Tatil'}
-          </h2>
+      <div className="bg-background rounded-lg border border-border shadow-lg w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between p-6 border-b border-border">
+          <div>
+            <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+              <Calendar className="w-5 h-5" />
+              {holiday ? 'Tatili Düzenle' : 'Yeni Tatil'}
+            </h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              Tatil bilgilerini girin
+            </p>
+          </div>
           <Button variant="ghost" size="sm" onClick={onClose}>
             <X className="w-4 h-4" />
           </Button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          <div>
-            <Label htmlFor="name">Tatil Adı *</Label>
-            <Input
-              id="name"
+        <div className="p-6">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <FormField
+              label="Tatil Adı"
+              required
               value={formData.name}
               onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
               placeholder="Örn: Yılbaşı, Kurban Bayramı"
-              required
             />
-          </div>
 
-          <div>
-            <Label htmlFor="date">Tarih *</Label>
-            <Input
-              id="date"
+            <FormField
+              label="Tarih"
               type="date"
+              required
               value={formData.date}
               onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
-              required
             />
-          </div>
 
-          <div>
-            <Label htmlFor="description">Açıklama</Label>
-            <Textarea
-              id="description"
+            <FormTextarea
+              label="Açıklama"
               value={formData.description}
               onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
               placeholder="Tatil hakkında açıklama"
               rows={3}
             />
-          </div>
 
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="recurring"
-              checked={formData.recurring}
-              onCheckedChange={(checked) => setFormData(prev => ({ ...prev, recurring: checked }))}
-            />
-            <Label htmlFor="recurring">Her yıl tekrarla</Label>
-          </div>
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="recurring"
+                checked={formData.recurring}
+                onCheckedChange={(checked) => setFormData(prev => ({ ...prev, recurring: checked }))}
+              />
+              <Label htmlFor="recurring">Her yıl tekrarla</Label>
+            </div>
 
-          <div className="flex justify-end gap-2 pt-4">
-            <Button type="button" variant="outline" onClick={onClose}>
-              İptal
-            </Button>
-            <Button type="submit">
-              {holiday ? 'Güncelle' : 'Ekle'}
-            </Button>
-          </div>
-        </form>
+            <div className="flex justify-end gap-2 pt-4">
+              <Button type="button" variant="outline" onClick={onClose}>
+                İptal
+              </Button>
+              <Button type="submit" variant="default">
+                {holiday ? 'Güncelle' : 'Ekle'}
+              </Button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );
 }
+
+export { HolidayModal };

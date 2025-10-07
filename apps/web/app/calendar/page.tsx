@@ -12,7 +12,7 @@ import { Plus, Edit, Trash2, Clock, MapPin, CalendarDays } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths } from 'date-fns';
 import { tr } from 'date-fns/locale';
 import EventModal from '@/components/EventModal';
-import BusinessHoursModal from '@/components/BusinessHoursModal';
+import { BusinessHoursModal } from '@/components/BusinessHoursModal';
 import HolidayModal from '@/components/HolidayModal';
 import { PageHeader } from '@/components/PageHeader';
 import { cn } from '@/lib/utils';

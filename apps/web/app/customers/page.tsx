@@ -23,11 +23,12 @@ import {
   ShoppingBag,
   AlertTriangle,
   UserPlus,
-  Settings,
   Building,
   Crown,
   User
 } from "lucide-react";
+import { SectionShell } from "@/components/patterns/SectionShell";
+import { Button } from "@/components/ui/button";
 
 export default function CustomersPage() {
   const { user } = useAuth();
@@ -250,23 +251,18 @@ export default function CustomersPage() {
     return (
       <ProtectedRoute>
         <div className="min-h-screen bg-background flex items-center justify-center">
-          <div className="flex flex-col items-center gap-4 max-w-md mx-auto p-6">
-            <div className="p-3 bg-yellow-100 dark:bg-yellow-900/30 rounded-full">
-              <AlertTriangle className="h-8 w-8 text-yellow-600" />
-            </div>
-            <div className="text-center">
-              <div className="text-yellow-600 text-lg font-semibold mb-2">Authentication Required</div>
-              <div className="text-muted-foreground text-sm mb-4">
-                Please login to access customer management
-              </div>
-            </div>
-            <button 
+          <SectionShell
+            title="Authentication Required"
+            description="Please login to access customer management"
+            className="max-w-md mx-auto"
+          >
+            <Button 
               onClick={() => window.location.href = '/login'} 
-              className="btn btn-primary"
+              variant="default"
             >
               Go to Login
-            </button>
-          </div>
+            </Button>
+          </SectionShell>
         </div>
       </ProtectedRoute>
     );
@@ -276,10 +272,12 @@ export default function CustomersPage() {
     return (
       <ProtectedRoute>
         <div className="min-h-screen bg-background flex items-center justify-center">
-          <div className="flex flex-col items-center gap-4">
+          <SectionShell
+            title="Loading customers..."
+            description="Please wait while we fetch customer data"
+          >
             <div className="spinner"></div>
-            <div className="text-lg text-foreground">Loading customers...</div>
-          </div>
+          </SectionShell>
         </div>
       </ProtectedRoute>
     );
@@ -289,17 +287,12 @@ export default function CustomersPage() {
     return (
       <ProtectedRoute>
         <div className="min-h-screen bg-background flex items-center justify-center">
-          <div className="flex flex-col items-center gap-4 max-w-md mx-auto p-6">
-            <div className="p-3 bg-red-100 dark:bg-red-900/30 rounded-full">
-              <svg className="h-8 w-8 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-              </svg>
-            </div>
+          <SectionShell
+            title="Customers API Error"
+            description={error instanceof ApiError ? error.message : 'Failed to load customers data'}
+            className="max-w-md mx-auto"
+          >
             <div className="text-center">
-              <div className="text-red-500 text-lg font-semibold mb-2">Customers API Error</div>
-              <div className="text-muted-foreground text-sm mb-4">
-                {error instanceof ApiError ? error.message : 'Failed to load customers data'}
-              </div>
               <div className="text-xs text-muted-foreground mb-6">
                 {error instanceof ApiError && error.message.includes('token') ? 
                   'Authentication token missing. Please login again.' :
@@ -312,26 +305,27 @@ export default function CustomersPage() {
                 Store: {userStoreId || 'No store assigned'}<br/>
                 Error: {error instanceof ApiError ? `${error.status} - ${error.message}` : 'Unknown error'}
               </div>
+              <div className="flex flex-col sm:flex-row gap-3 w-full">
+                <Button 
+                  onClick={() => window.location.reload()} 
+                  variant="default"
+                  className="flex-1"
+                >
+                  Retry
+                </Button>
+                <button 
+                  onClick={() => {
+                    sessionStorage.clear();
+                    localStorage.clear();
+                    window.location.href = '/login';
+                  }} 
+                  className="btn btn-outline flex-1"
+                >
+                  Re-login
+                </button>
+              </div>
             </div>
-            <div className="flex flex-col sm:flex-row gap-3 w-full">
-              <button 
-                onClick={() => window.location.reload()} 
-                className="btn btn-primary flex-1"
-              >
-                Retry
-              </button>
-              <button 
-                onClick={() => {
-                  sessionStorage.clear();
-                  localStorage.clear();
-                  window.location.href = '/login';
-                }} 
-                className="btn btn-outline flex-1"
-              >
-                Re-login
-              </button>
-            </div>
-          </div>
+          </SectionShell>
         </div>
       </ProtectedRoute>
     );
@@ -464,7 +458,7 @@ export default function CustomersPage() {
           )}
 
           {/* Enhanced Filters */}
-          <div className="bg-card p-4 sm:p-6 rounded-xl border border-border shadow-sm">
+          <div className="p-4 sm:p-6 bg-muted/40 rounded-xl border border-border shadow-sm">
             <div className="space-y-4">
           <div className="flex flex-col sm:flex-row gap-4">
                 <div className="flex-1 relative">
@@ -512,61 +506,49 @@ export default function CustomersPage() {
 
           {/* Statistics Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="bg-card p-6 rounded-xl border border-border shadow-sm hover:shadow-md transition-shadow duration-200">
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-2 bg-primary/10 rounded-lg">
-                  <Users className="h-6 w-6 text-primary" />
-              </div>
-                <div className="text-right">
-                  <div className="text-2xl font-bold text-foreground">{totalCustomers}</div>
+            <div className="p-4 bg-muted/40 rounded-lg border border-border">
+              <div className="flex items-center justify-between">
+                <div>
                   <p className="text-sm text-muted-foreground">Total Users</p>
-            </div>
+                  <p className="text-2xl font-bold">{totalCustomers}</p>
+                  <p className="text-xs text-muted-foreground">Panel user accounts</p>
+                </div>
               </div>
-              <p className="text-xs text-muted-foreground">Panel user accounts</p>
             </div>
 
-            <div className="bg-card p-6 rounded-xl border border-border shadow-sm hover:shadow-md transition-shadow duration-200">
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <Crown className="h-6 w-6 text-blue-600" />
-              </div>
-                <div className="text-right">
-                  <div className="text-2xl font-bold text-blue-600">{adminCount}</div>
+            <div className="p-4 bg-muted/40 rounded-lg border border-border">
+              <div className="flex items-center justify-between">
+                <div>
                   <p className="text-sm text-muted-foreground">Admins</p>
+                  <p className="text-2xl font-bold">{adminCount}</p>
+                  <p className="text-xs text-muted-foreground">Full access users</p>
                 </div>
               </div>
-              <p className="text-xs text-blue-600">Full access users</p>
             </div>
 
-            <div className="bg-card p-6 rounded-xl border border-border shadow-sm hover:shadow-md transition-shadow duration-200">
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-2 bg-green-100 rounded-lg">
-                  <User className="h-6 w-6 text-green-600" />
-              </div>
-                <div className="text-right">
-                  <div className="text-2xl font-bold text-green-600">{customerCount}</div>
+            <div className="p-4 bg-muted/40 rounded-lg border border-border">
+              <div className="flex items-center justify-between">
+                <div>
                   <p className="text-sm text-muted-foreground">Customers</p>
-            </div>
+                  <p className="text-2xl font-bold">{customerCount}</p>
+                  <p className="text-xs text-muted-foreground">Store owners</p>
+                </div>
               </div>
-              <p className="text-xs text-green-600">Store owners</p>
-          </div>
+            </div>
 
-            <div className="bg-card p-6 rounded-xl border border-border shadow-sm hover:shadow-md transition-shadow duration-200">
-            <div className="flex items-center justify-between mb-4">
-                <div className="p-2 bg-yellow-100 rounded-lg">
-                  <Settings className="h-6 w-6 text-yellow-600" />
-                </div>
-                <div className="text-right">
-                  <div className="text-2xl font-bold text-green-600">{activeCount}</div>
+            <div className="p-4 bg-muted/40 rounded-lg border border-border">
+              <div className="flex items-center justify-between">
+                <div>
                   <p className="text-sm text-muted-foreground">Active</p>
+                  <p className="text-2xl font-bold">{activeCount}</p>
+                  <p className="text-xs text-muted-foreground">{inactiveCount} inactive</p>
                 </div>
               </div>
-              <p className="text-xs text-muted-foreground">{inactiveCount} inactive</p>
             </div>
-            </div>
+          </div>
             
           {/* Customers Table */}
-          <div className="bg-card p-4 sm:p-6 rounded-xl border border-border shadow-sm">
+          <div className="p-4 sm:p-6 bg-muted/40 rounded-xl border border-border shadow-sm">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
               <div>
                 <h3 className="text-lg font-semibold text-foreground mb-1">Panel Customers</h3>
@@ -773,7 +755,7 @@ export default function CustomersPage() {
           {/* Create Customer Modal */}
           {showCreateModal && (
             <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-              <div className="bg-card p-6 sm:p-8 rounded-xl border border-border shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+              <div className="bg-background p-6 sm:p-8 rounded-xl border border-border shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-primary/10 rounded-lg">
@@ -1035,7 +1017,7 @@ export default function CustomersPage() {
           {/* Edit Customer Modal */}
           {editingCustomer && (
             <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-              <div className="bg-card p-6 sm:p-8 rounded-xl border border-border shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+              <div className="bg-background p-6 sm:p-8 rounded-xl border border-border shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-primary/10 rounded-lg">
@@ -1299,7 +1281,7 @@ export default function CustomersPage() {
           {/* View Customer Modal */}
           {viewingCustomer && (
             <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-              <div className="bg-card p-6 sm:p-8 rounded-xl border border-border shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+              <div className="bg-background p-6 sm:p-8 rounded-xl border border-border shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-primary/10 rounded-lg">

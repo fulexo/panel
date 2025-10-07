@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
 import { useRBAC } from "@/hooks/useRBAC";
@@ -15,6 +15,12 @@ import {
   useUpdateFulfillmentBillingItem,
   useDeleteFulfillmentBillingItem
 } from "@/hooks/useFulfillmentBilling";
+import { formatCurrency } from "@/lib/formatters";
+import { SectionShell } from "@/components/patterns/SectionShell";
+import { FormLayout } from "@/components/patterns/FormLayout";
+import { FormSelect } from "@/components/forms/FormSelect";
+import { FormField } from "@/components/forms/FormField";
+import { Button } from "@/components/ui/button";
 
 export default function OrderDetailPage() {
   const params = useParams();
@@ -45,6 +51,16 @@ export default function OrderDetailPage() {
   const createBillingItemMutation = useCreateFulfillmentBillingItem();
   const updateBillingItemMutation = useUpdateFulfillmentBillingItem();
   const deleteBillingItemMutation = useDeleteFulfillmentBillingItem();
+
+  const currencyOptions = useMemo(
+    () => ({
+      locale: "tr-TR",
+      currency: "EUR",
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }),
+    []
+  );
 
   const handleAddFulfillment = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -213,18 +229,18 @@ export default function OrderDetailPage() {
               </p>
             </div>
             <div className="flex gap-2">
-              <button
+              <Button
                 onClick={() => setShipmentModalOpen(true)}
-                className="btn btn-primary"
+                variant="default"
               >
                 Gönderi Oluştur
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={() => window.history.back()}
-                className="btn btn-outline"
+                variant="outline"
               >
                 Geri Dön
-              </button>
+              </Button>
             </div>
           </div>
 
@@ -256,8 +272,10 @@ export default function OrderDetailPage() {
           {activeTab === 'details' && (
             <div className="space-y-6">
               {/* Order Info */}
-              <div className="bg-card p-6 rounded-lg border border-border">
-                <h2 className="text-xl font-semibold text-foreground mb-4">Sipariş Bilgileri</h2>
+              <SectionShell
+                title="Sipariş Bilgileri"
+                description="Sipariş detayları ve durum bilgileri"
+              >
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <p className="text-sm text-muted-foreground">Sipariş Numarası</p>
@@ -269,7 +287,9 @@ export default function OrderDetailPage() {
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Toplam Tutar</p>
-                    <p className="font-medium text-foreground">₺{(order as any).total.toFixed(2)}</p>
+                    <p className="font-medium text-foreground">
+                      {formatCurrency(Number((order as any)?.total ?? 0), currencyOptions)}
+                    </p>
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Oluşturulma Tarihi</p>
@@ -278,12 +298,14 @@ export default function OrderDetailPage() {
                     </p>
                   </div>
                 </div>
-              </div>
+              </SectionShell>
 
               {/* Customer Info */}
               {(order as any).customer && (
-                <div className="bg-card p-6 rounded-lg border border-border">
-                  <h2 className="text-xl font-semibold text-foreground mb-4">Müşteri Bilgileri</h2>
+                <SectionShell
+                  title="Müşteri Bilgileri"
+                  description="Siparişi veren müşteri bilgileri"
+                >
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <p className="text-sm text-muted-foreground">Müşteri Adı</p>
@@ -294,12 +316,14 @@ export default function OrderDetailPage() {
                       <p className="font-medium text-foreground">{(order as any).customer.email}</p>
                     </div>
                   </div>
-                </div>
+                </SectionShell>
               )}
 
               {/* Order Items */}
-              <div className="bg-card p-6 rounded-lg border border-border">
-                <h2 className="text-xl font-semibold text-foreground mb-4">Sipariş Ürünleri</h2>
+              <SectionShell
+                title="Sipariş Ürünleri"
+                description="Siparişe dahil edilen ürünler ve miktarları"
+              >
                 <div className="space-y-4">
                   {(order as any).items?.map((item: any) => (
                     <div key={item.id} className="flex justify-between items-center p-4 bg-accent rounded-lg">
@@ -311,31 +335,34 @@ export default function OrderDetailPage() {
                       </div>
                       <div className="text-right">
                         <p className="font-medium text-foreground">
-                          ₺{(item.price * item.quantity).toFixed(2)}
+                          {formatCurrency(item.price * item.quantity, currencyOptions)}
                         </p>
                         <p className="text-sm text-muted-foreground">
-                          ₺{item.price.toFixed(2)} × {item.quantity}
+                          {formatCurrency(item.price, currencyOptions)} × {item.quantity}
                         </p>
                       </div>
                     </div>
                   ))}
                 </div>
-              </div>
+              </SectionShell>
             </div>
           )}
 
           {/* Fulfillment Tab */}
           {activeTab === 'fulfillment' && (
             <div className="space-y-6">
-              <div className="flex justify-between items-center">
-                <h2 className="text-xl font-semibold text-foreground">Fulfillment Hizmetleri</h2>
-                <button
-                  onClick={() => setShowAddFulfillment(true)}
-                  className="btn btn-primary"
-                >
-                  Hizmet Ekle
-                </button>
-              </div>
+              <SectionShell
+                title="Fulfillment Hizmetleri"
+                description="Sipariş için kullanılan fulfillment hizmetleri"
+                actions={
+                  <Button
+                    onClick={() => setShowAddFulfillment(true)}
+                    variant="default"
+                  >
+                    Hizmet Ekle
+                  </Button>
+                }
+              >
 
               {/* Fulfillment Items */}
               {billingItemsLoading ? (
@@ -346,12 +373,12 @@ export default function OrderDetailPage() {
               ) : (
                 <div className="space-y-4">
                   {items.map((item: any) => (
-                    <div key={item.id} className="bg-card p-4 rounded-lg border border-border">
+                    <div key={item.id} className="p-4 bg-muted/40 rounded-lg border border-border">
                       <div className="flex justify-between items-start mb-2">
                         <div>
                           <h3 className="font-medium text-foreground">{item.service.name}</h3>
                           <p className="text-sm text-muted-foreground">
-                            {item.quantity} {item.service.unit} × ₺{item.unitPrice.toFixed(2)}
+                            {item.quantity} {item.service.unit} × {formatCurrency(item.unitPrice, currencyOptions)}
                           </p>
                           {item.description && (
                             <p className="text-sm text-muted-foreground mt-1">{item.description}</p>
@@ -360,7 +387,7 @@ export default function OrderDetailPage() {
                         <div className="flex items-center gap-2">
                           <div className="text-right">
                             <p className="font-semibold text-foreground">
-                              ₺{item.totalPrice.toFixed(2)}
+                              {formatCurrency(item.totalPrice, currencyOptions)}
                             </p>
                             <p className="text-xs text-muted-foreground">
                               {new Date(item.serviceDate).toLocaleDateString('tr-TR')}
@@ -368,18 +395,20 @@ export default function OrderDetailPage() {
                           </div>
                           {!item.isBilled && (
                             <div className="flex gap-1">
-                              <button
+                              <Button
                                 onClick={() => openEditModal(item)}
-                                className="btn btn-sm btn-outline"
+                                variant="outline"
+                                size="sm"
                               >
                                 Düzenle
-                              </button>
-                              <button
+                              </Button>
+                              <Button
                                 onClick={() => handleDeleteFulfillment(item.id)}
-                                className="btn btn-sm btn-danger"
+                                variant="destructive"
+                                size="sm"
                               >
                                 Sil
-                              </button>
+                              </Button>
                             </div>
                           )}
                         </div>
@@ -409,76 +438,64 @@ export default function OrderDetailPage() {
 
               {/* Total */}
               {items.length > 0 && (
-                <div className="bg-card p-4 rounded-lg border border-border">
+                <div className="p-4 bg-muted/40 rounded-lg border border-border">
                   <div className="flex justify-between items-center">
                     <span className="text-lg font-semibold text-foreground">Toplam Fulfillment Maliyeti:</span>
-                    <span className="text-lg font-bold text-foreground">₺{totalFulfillmentCost.toFixed(2)}</span>
+                    <span className="text-lg font-bold text-foreground">
+                      {formatCurrency(totalFulfillmentCost, currencyOptions)}
+                    </span>
                   </div>
                 </div>
               )}
+              </SectionShell>
             </div>
           )}
 
           {/* Add Fulfillment Modal */}
           {showAddFulfillment && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-              <div className="bg-card p-6 rounded-lg border border-border max-w-md w-full mx-4">
+              <div className="bg-background p-6 rounded-lg border border-border max-w-md w-full mx-4 shadow-lg">
                 <h3 className="text-lg font-semibold text-foreground mb-4">Fulfillment Hizmeti Ekle</h3>
-                <form onSubmit={handleAddFulfillment} className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">
-                      Hizmet *
-                    </label>
-                    <select
-                      value={fulfillmentForm.serviceId}
-                      onChange={(e) => {
-                        const service = (services as any)?.find((s: any) => s.id === e.target.value);
-                        setFulfillmentForm(prev => ({
-                          ...prev,
-                          serviceId: e.target.value,
-                          unitPrice: service?.basePrice || 0,
-                        }));
-                      }}
-                      required
-                      className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground"
-                    >
-                      <option value="">Hizmet Seçin</option>
-                      {(services as any)?.map((service: any) => (
-                        <option key={service.id} value={service.id}>
-                          {service.name} - ₺{service.basePrice.toFixed(2)}/{service.unit}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                <FormLayout>
+                  <form onSubmit={handleAddFulfillment} className="space-y-4">
+                  <FormSelect
+                    label="Hizmet *"
+                    value={fulfillmentForm.serviceId}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      const service = (services as any)?.find((s: any) => s.id === value);
+                      setFulfillmentForm(prev => ({
+                        ...prev,
+                        serviceId: value,
+                        unitPrice: service?.basePrice || 0,
+                      }));
+                    }}
+                    required
+                    placeholder="Hizmet Seçin"
+                    options={(services as any)?.map((service: any) => ({
+                      value: service.id,
+                      label: `${service.name} - ${formatCurrency(service.basePrice, currencyOptions)}/${service.unit}`
+                    })) || []}
+                  />
 
                   <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-foreground mb-2">
-                        Miktar *
-                      </label>
-                      <input
-                        type="number"
-                        min="0.01"
-                        step="0.01"
-                        value={fulfillmentForm.quantity}
-                        onChange={(e) => setFulfillmentForm(prev => ({ ...prev, quantity: parseFloat(e.target.value) || 0 }))}
-                        required
-                        className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-foreground mb-2">
-                        Birim Fiyat (₺)
-                      </label>
-                      <input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={fulfillmentForm.unitPrice}
-                        onChange={(e) => setFulfillmentForm(prev => ({ ...prev, unitPrice: parseFloat(e.target.value) || 0 }))}
-                        className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground"
-                      />
-                    </div>
+                    <FormField
+                      label="Miktar *"
+                      type="number"
+                      min="0.01"
+                      step="0.01"
+                      value={fulfillmentForm.quantity}
+                      onChange={(e) => setFulfillmentForm(prev => ({ ...prev, quantity: parseFloat(e.target.value) || 0 }))}
+                      required
+                    />
+                    <FormField
+                      label="Birim Fiyat (€)"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={fulfillmentForm.unitPrice}
+                      onChange={(e) => setFulfillmentForm(prev => ({ ...prev, unitPrice: parseFloat(e.target.value) || 0 }))}
+                    />
                   </div>
 
                   <div>
@@ -507,22 +524,23 @@ export default function OrderDetailPage() {
                   </div>
 
                   <div className="flex justify-end gap-2">
-                    <button
+                    <Button
                       type="button"
                       onClick={() => setShowAddFulfillment(false)}
-                      className="btn btn-outline"
+                      variant="outline"
                     >
                       İptal
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       type="submit"
                       disabled={createBillingItemMutation.isPending}
-                      className="btn btn-primary"
+                      variant="default"
                     >
                       {createBillingItemMutation.isPending ? 'Ekleniyor...' : 'Ekle'}
-                    </button>
+                    </Button>
                   </div>
                 </form>
+                </FormLayout>
               </div>
             </div>
           )}
@@ -530,7 +548,7 @@ export default function OrderDetailPage() {
           {/* Edit Fulfillment Modal */}
           {editingItem && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-              <div className="bg-card p-6 rounded-lg border border-border max-w-md w-full mx-4">
+              <div className="bg-background p-6 rounded-lg border border-border max-w-md w-full mx-4 shadow-lg">
                 <h3 className="text-lg font-semibold text-foreground mb-4">Fulfillment Hizmeti Düzenle</h3>
                 <form onSubmit={handleUpdateFulfillment} className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
@@ -550,7 +568,7 @@ export default function OrderDetailPage() {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-foreground mb-2">
-                        Birim Fiyat (₺)
+                        Birim Fiyat (€)
                       </label>
                       <input
                         type="number"
@@ -589,7 +607,7 @@ export default function OrderDetailPage() {
                   </div>
 
                   <div className="flex justify-end gap-2">
-                    <button
+                    <Button
                       type="button"
                       onClick={() => {
                         setEditingItem(null);
@@ -601,17 +619,17 @@ export default function OrderDetailPage() {
                           serviceDate: new Date().toISOString().split('T')[0],
                         });
                       }}
-                      className="btn btn-outline"
+                      variant="outline"
                     >
                       İptal
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       type="submit"
                       disabled={updateBillingItemMutation.isPending}
-                      className="btn btn-primary"
+                      variant="default"
                     >
                       {updateBillingItemMutation.isPending ? 'Güncelleniyor...' : 'Güncelle'}
-                    </button>
+                    </Button>
                   </div>
                 </form>
               </div>

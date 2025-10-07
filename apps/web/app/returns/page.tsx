@@ -13,9 +13,12 @@ import { useReturns, useUpdateReturnStatus } from "@/hooks/useApi";
 import { ApiError } from "@/lib/api-client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import FormLayout from "@/components/patterns/FormLayout";
+import { FormField } from "@/components/forms/FormField";
+import { FormSelect } from "@/components/forms/FormSelect";
+import { FormTextarea } from "@/components/forms/FormTextarea";
 import {
   Dialog,
   DialogContent,
@@ -25,8 +28,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { logger } from "@/lib/logger";
 
 type ReturnStatus = "pending" | "approved" | "rejected" | "processed" | string;
@@ -189,30 +190,29 @@ export default function ReturnsPage() {
                         Müşteriniz için yeni bir iade süreci başlatmak için gerekli bilgileri doldurun.
                       </DialogDescription>
                     </DialogHeader>
-                    <div className="grid gap-4 py-2">
-                      <div className="grid gap-2">
-                        <label className="text-sm font-medium text-foreground">Sipariş Numarası</label>
-                        <Input
+                    <FormLayout
+                      title="Yeni İade Talebi"
+                      description="Müşteriniz için yeni bir iade süreci başlatmak için gerekli bilgileri doldurun."
+                    >
+                      <div className="grid gap-4 py-2">
+                        <FormField
+                          label="Sipariş Numarası"
                           value={createForm.orderNumber}
                           onChange={(event) =>
                             setCreateForm((prev) => ({ ...prev, orderNumber: event.target.value }))
                           }
                           placeholder="Örn. 12345"
                         />
-                      </div>
-                      <div className="grid gap-2">
-                        <label className="text-sm font-medium text-foreground">Ürün</label>
-                        <Input
+                        <FormField
+                          label="Ürün"
                           value={createForm.product}
                           onChange={(event) =>
                             setCreateForm((prev) => ({ ...prev, product: event.target.value }))
                           }
                           placeholder="Ürün adı veya SKU"
                         />
-                      </div>
-                      <div className="grid gap-2">
-                        <label className="text-sm font-medium text-foreground">Adet</label>
-                        <Input
+                        <FormField
+                          label="Adet"
                           type="number"
                           min={1}
                           value={createForm.quantity}
@@ -220,30 +220,23 @@ export default function ReturnsPage() {
                             setCreateForm((prev) => ({ ...prev, quantity: Number(event.target.value) }))
                           }
                         />
-                      </div>
-                      <div className="grid gap-2">
-                        <label className="text-sm font-medium text-foreground">İade Sebebi</label>
-                        <Select
+                        <FormSelect
+                          label="İade Sebebi"
                           value={createForm.reason}
-                          onValueChange={(value) =>
-                            setCreateForm((prev) => ({ ...prev, reason: value }))
+                          onChange={(e) =>
+                            setCreateForm((prev) => ({ ...prev, reason: e.target.value }))
                           }
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Sebep seçin" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="defective">Arızalı / Hasarlı</SelectItem>
-                            <SelectItem value="wrong_item">Yanlış ürün gönderimi</SelectItem>
-                            <SelectItem value="not_as_described">Ürün açıklamasıyla uyumsuz</SelectItem>
-                            <SelectItem value="changed_mind">Müşteri fikrini değiştirdi</SelectItem>
-                            <SelectItem value="other">Diğer</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="grid gap-2">
-                        <label className="text-sm font-medium text-foreground">Açıklama</label>
-                        <Textarea
+                          placeholder="Sebep seçin"
+                          options={[
+                            { value: "defective", label: "Arızalı / Hasarlı" },
+                            { value: "wrong_item", label: "Yanlış ürün gönderimi" },
+                            { value: "not_as_described", label: "Ürün açıklamasıyla uyumsuz" },
+                            { value: "changed_mind", label: "Müşteri fikrini değiştirdi" },
+                            { value: "other", label: "Diğer" },
+                          ]}
+                        />
+                        <FormTextarea
+                          label="Açıklama"
                           value={createForm.description}
                           onChange={(event) =>
                             setCreateForm((prev) => ({ ...prev, description: event.target.value }))
@@ -251,7 +244,7 @@ export default function ReturnsPage() {
                           placeholder="İade talebiyle ilgili ek bilgiler"
                         />
                       </div>
-                    </div>
+                    </FormLayout>
                     <DialogFooter>
                       <Button
                         type="button"
@@ -290,7 +283,7 @@ export default function ReturnsPage() {
                         <span className="text-sm font-medium text-foreground">{meta.label}</span>
                         <span className="text-xs text-muted-foreground">{meta.description}</span>
                       </div>
-                      <Badge variant={meta.badge}>{count}</Badge>
+                      <Badge variant={meta.badge || "default"}>{count}</Badge>
                     </div>
                   );
                 })}
@@ -318,26 +311,25 @@ export default function ReturnsPage() {
                 <div className="grid gap-3 md:grid-cols-[2fr_1fr_1fr]">
                   <div className="flex items-center gap-2 rounded-lg border border-input bg-background px-3 py-2 focus-within:ring-2 focus-within:ring-ring">
                     <PackageSearch className="h-4 w-4 text-muted-foreground" />
-                    <Input
+                    <FormField
                       value={search}
                       onChange={(event) => setSearch(event.target.value)}
                       placeholder="Sipariş, müşteri veya ürün ara"
                       className="border-0 px-0 shadow-none focus-visible:ring-0"
                     />
                   </div>
-                  <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as ReturnStatus | "") }>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Tüm durumlar" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="">Tüm durumlar</SelectItem>
-                      {statusOrder.map((status) => (
-                        <SelectItem key={status} value={status}>
-                          {statusMeta[status]?.label ?? status}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <FormSelect
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value as ReturnStatus | "")}
+                    placeholder="Tüm durumlar"
+                    options={[
+                      { value: "", label: "Tüm durumlar" },
+                      ...statusOrder.map((status) => ({
+                        value: status,
+                        label: statusMeta[status]?.label ?? status,
+                      })),
+                    ]}
+                  />
                   <Button variant="outline" size="sm" className="justify-start gap-2">
                     <CalendarDays className="h-4 w-4" />
                     Tarih Aralığı
@@ -406,7 +398,7 @@ export default function ReturnsPage() {
                                     <td className="px-4 py-3 text-sm text-muted-foreground">{returnItem.quantity}</td>
                                     <td className="px-4 py-3 text-sm text-muted-foreground">{returnItem.reason}</td>
                                     <td className="px-4 py-3">
-                                      <Badge variant={meta.badge}>{meta.label}</Badge>
+                                      <Badge variant={meta.badge || "default"}>{meta.label}</Badge>
                                     </td>
                                     <td className="px-4 py-3 text-sm text-muted-foreground">
                                       {new Date(returnItem.requestedAt).toLocaleDateString("tr-TR")}

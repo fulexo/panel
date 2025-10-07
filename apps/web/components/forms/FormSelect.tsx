@@ -12,6 +12,8 @@ interface FormSelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> 
 
 export const FormSelect = forwardRef<HTMLSelectElement, FormSelectProps>(
   ({ label, error, helperText, required, options, placeholder, className, ...props }, ref) => {
+    const fieldError = error;
+    
     return (
       <div className="space-y-2">
         {label && (
@@ -24,7 +26,7 @@ export const FormSelect = forwardRef<HTMLSelectElement, FormSelectProps>(
           ref={ref}
           className={cn(
             'w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground',
-            error && 'border-destructive focus:border-destructive',
+            fieldError && 'border-destructive focus:border-destructive',
             className
           )}
           {...props}
@@ -40,10 +42,10 @@ export const FormSelect = forwardRef<HTMLSelectElement, FormSelectProps>(
             </option>
           ))}
         </select>
-        {error && (
-          <p className="text-sm text-destructive">{error}</p>
+        {fieldError && (
+          <p className="text-sm text-destructive">{fieldError}</p>
         )}
-        {helperText && !error && (
+        {helperText && !fieldError && (
           <p className="text-sm text-muted-foreground">{helperText}</p>
         )}
       </div>

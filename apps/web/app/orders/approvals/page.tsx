@@ -1,12 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 // import { useAuth } from "@/components/AuthProvider";
 import { useRBAC } from "@/hooks/useRBAC";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { useApp } from "@/contexts/AppContext";
 // import ProtectedComponent from "@/components/ProtectedComponent";
 import { usePendingApprovals, useApproveOrder, useRejectOrder } from "@/hooks/useOrders";
+import { formatCurrency } from "@/lib/formatters";
+import { SectionShell } from "@/components/patterns/SectionShell";
+import { FormLayout } from "@/components/patterns/FormLayout";
+import { FormTextarea } from "@/components/forms/FormTextarea";
+import { FormField } from "@/components/forms/FormField";
+import { Button } from "@/components/ui/button";
 
 export default function OrderApprovalsPage() {
   // const { user } = useAuth();
@@ -27,6 +33,16 @@ export default function OrderApprovalsPage() {
 
   const approveOrderMutation = useApproveOrder();
   const rejectOrderMutation = useRejectOrder();
+
+  const currencyOptions = useMemo(
+    () => ({
+      locale: "tr-TR",
+      currency: "EUR",
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }),
+    []
+  );
 
   const handleApprove = async (orderId: string) => {
     try {
@@ -140,10 +156,10 @@ export default function OrderApprovalsPage() {
           </div>
 
           {/* Orders List */}
-          <div className="bg-card p-6 rounded-lg border border-border">
-            <h3 className="text-lg font-semibold text-foreground mb-4">
-              Onay Bekleyen Siparişler ({orders.length})
-            </h3>
+          <SectionShell
+            title={`Onay Bekleyen Siparişler (${orders.length})`}
+            description="Onay bekleyen siparişlerin listesi"
+          >
             
             {orders.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
@@ -168,7 +184,7 @@ export default function OrderApprovalsPage() {
                           Telefon: {order.customerPhone || "Belirtilmemiş"}
                         </p>
                         <p className="text-sm text-muted-foreground">
-                          Toplam: ₺{Number(order.total).toFixed(2)}
+                          Toplam: {formatCurrency(Number(order.total ?? 0), currencyOptions)}
                         </p>
                         <p className="text-sm text-muted-foreground">
                           Tarih: {new Date(order.createdAt).toLocaleDateString("tr-TR")}
@@ -191,7 +207,9 @@ export default function OrderApprovalsPage() {
                               {item.name} (SKU: {item.sku})
                             </span>
                             <span className="text-muted-foreground">
-                              {item.quantity} × ₺{Number(item.price).toFixed(2)} = ₺{(item.quantity * Number(item.price)).toFixed(2)}
+                              {item.quantity} × {formatCurrency(Number(item.price ?? 0), currencyOptions)} =
+                              {" "}
+                              {formatCurrency(item.quantity * Number(item.price ?? 0), currencyOptions)}
                             </span>
                           </div>
                         ))}
@@ -225,25 +243,29 @@ export default function OrderApprovalsPage() {
 
                     {/* Action Buttons */}
                     <div className="flex gap-2">
-                      <button
+                      <Button
                         onClick={() => setSelectedOrder(order.id)}
-                        className="btn btn-sm btn-outline"
+                        variant="outline"
+                        size="sm"
                       >
                         Detaylı Görüntüle
-                      </button>
-                      <button
+                      </Button>
+                      <Button
                         onClick={() => handleApprove(order.id)}
                         disabled={approveOrderMutation.isPending}
-                        className="btn btn-sm btn-success"
+                        variant="default"
+                        size="sm"
+                        className="bg-green-600 hover:bg-green-700"
                       >
                         {approveOrderMutation.isPending ? "Onaylanıyor..." : "Onayla"}
-                      </button>
-                      <button
+                      </Button>
+                      <Button
                         onClick={() => setSelectedOrder(order.id)}
-                        className="btn btn-sm btn-danger"
+                        variant="destructive"
+                        size="sm"
                       >
                         Reddet
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 ))}
@@ -253,100 +275,88 @@ export default function OrderApprovalsPage() {
             {/* Pagination */}
             {totalPages > 1 && (
               <div className="flex justify-center mt-6 gap-2">
-                <button
+                <Button
                   onClick={() => setPage(p => Math.max(1, p - 1))}
                   disabled={page === 1}
-                  className="btn btn-outline btn-sm"
+                  variant="outline"
+                  size="sm"
                 >
                   Önceki
-                </button>
+                </Button>
                 <span className="px-4 py-2 text-sm text-muted-foreground">
                   Sayfa {page} / {totalPages}
                 </span>
-                <button
+                <Button
                   onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                   disabled={page === totalPages}
-                  className="btn btn-outline btn-sm"
+                  variant="outline"
+                  size="sm"
                 >
                   Sonraki
-                </button>
+                </Button>
               </div>
             )}
-          </div>
+          </SectionShell>
 
           {/* Approval Modal */}
           {selectedOrder && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-              <div className="bg-card p-6 rounded-lg border border-border max-w-md w-full mx-4">
+              <div className="bg-background p-6 rounded-lg border border-border max-w-md w-full mx-4 shadow-lg">
                 <h3 className="text-lg font-semibold text-foreground mb-4">Sipariş Onayı</h3>
                 
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">
-                      Onay Notları (İsteğe bağlı)
-                    </label>
-                    <textarea
-                      value={approvalNotes}
-                      onChange={(e) => setApprovalNotes(e.target.value)}
-                      rows={3}
-                      className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground"
-                      placeholder="Onay hakkında notlar..."
-                    />
-                  </div>
+                <FormLayout>
+                  <FormTextarea
+                    label="Onay Notları (İsteğe bağlı)"
+                    value={approvalNotes}
+                    onChange={(e) => setApprovalNotes(e.target.value)}
+                    rows={3}
+                    placeholder="Onay hakkında notlar..."
+                  />
 
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">
-                      Red Nedeni (Reddetmek için)
-                    </label>
-                    <input
-                      type="text"
-                      value={rejectionReason}
-                      onChange={(e) => setRejectionReason(e.target.value)}
-                      className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground"
-                      placeholder="Red nedeni..."
-                    />
-                  </div>
+                  <FormField
+                    label="Red Nedeni (Reddetmek için)"
+                    type="text"
+                    value={rejectionReason}
+                    onChange={(e) => setRejectionReason(e.target.value)}
+                    placeholder="Red nedeni..."
+                  />
 
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">
-                      Red Notları (İsteğe bağlı)
-                    </label>
-                    <textarea
-                      value={rejectionNotes}
-                      onChange={(e) => setRejectionNotes(e.target.value)}
-                      rows={3}
-                      className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground"
-                      placeholder="Red hakkında notlar..."
-                    />
-                  </div>
-                </div>
+                  <FormTextarea
+                    label="Red Notları (İsteğe bağlı)"
+                    value={rejectionNotes}
+                    onChange={(e) => setRejectionNotes(e.target.value)}
+                    rows={3}
+                    placeholder="Red hakkında notlar..."
+                  />
+                </FormLayout>
 
                 <div className="flex justify-end gap-2 mt-6">
-                  <button
+                  <Button
                     onClick={() => {
                       setSelectedOrder(null);
                       setApprovalNotes("");
                       setRejectionReason("");
                       setRejectionNotes("");
                     }}
-                    className="btn btn-outline"
+                    variant="outline"
                   >
                     İptal
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     onClick={() => handleApprove(selectedOrder)}
                     disabled={approveOrderMutation.isPending}
-                    className="btn btn-success"
+                    variant="default"
+                    className="bg-green-600 hover:bg-green-700"
                   >
                     {approveOrderMutation.isPending ? "Onaylanıyor..." : "Onayla"}
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     onClick={() => handleReject(selectedOrder)}
                     disabled={rejectOrderMutation.isPending}
-                    className="btn btn-danger"
+                    variant="destructive"
                   >
                     {rejectOrderMutation.isPending ? "Reddediliyor..." : "Reddet"}
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>

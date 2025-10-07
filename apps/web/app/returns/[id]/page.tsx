@@ -2,15 +2,20 @@
 
 import { logger } from "@/lib/logger";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
 import { useRBAC } from "@/hooks/useRBAC";
-import { Package } from 'lucide-react';
 import { useReturn, useUpdateReturnStatus } from "@/hooks/useApi";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import ProtectedComponent from "@/components/ProtectedComponent";
 import { ApiError } from "@/lib/api-client";
+import { formatCurrency } from "@/lib/formatters";
+import { ImagePlaceholder } from "@/components/patterns/ImagePlaceholder";
+import { SectionShell } from "@/components/patterns/SectionShell";
+import { StatusPill } from "@/components/patterns/StatusPill";
+import { FormLayout } from "@/components/patterns/FormLayout";
+import { FormSelect } from "@/components/forms/FormSelect";
 
 export default function ReturnDetailPage() {
   const params = useParams();
@@ -20,6 +25,16 @@ export default function ReturnDetailPage() {
   
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [newStatus, setNewStatus] = useState("");
+
+  const currencyOptions = useMemo(
+    () => ({
+      locale: "tr-TR",
+      currency: "EUR",
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }),
+    []
+  );
 
   const { 
     data: returnData, 
@@ -58,11 +73,15 @@ export default function ReturnDetailPage() {
   if (isLoading) {
     return (
       <ProtectedRoute>
-        <div className="min-h-screen bg-background flex items-center justify-center">
-          <div className="flex flex-col items-center gap-4">
-            <div className="spinner"></div>
-            <div className="text-lg text-foreground">Loading return details...</div>
-          </div>
+        <div className="min-h-screen bg-background">
+          <main className="mobile-container py-6">
+            <SectionShell
+              title="Loading return details..."
+              description="Please wait while we fetch return information"
+            >
+              <div className="spinner"></div>
+            </SectionShell>
+          </main>
         </div>
       </ProtectedRoute>
     );
@@ -71,13 +90,21 @@ export default function ReturnDetailPage() {
   if (error || !returnData) {
     return (
       <ProtectedRoute>
-        <div className="min-h-screen bg-background flex items-center justify-center">
-          <div className="flex flex-col items-center gap-4">
-            <div className="text-red-500 text-lg">Error loading return</div>
-            <div className="text-muted-foreground">
-              {error instanceof ApiError ? error.message : 'Return not found'}
-            </div>
-          </div>
+        <div className="min-h-screen bg-background">
+          <main className="mobile-container py-6">
+            <SectionShell
+              title="Error loading return"
+              description={error instanceof ApiError ? error.message : 'Return not found'}
+              className="max-w-md mx-auto"
+            >
+              <button
+                onClick={() => window.location.reload()}
+                className="btn btn-primary"
+              >
+                Retry
+              </button>
+            </SectionShell>
+          </main>
         </div>
       </ProtectedRoute>
     );
@@ -96,16 +123,6 @@ export default function ReturnDetailPage() {
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      case 'approved': return 'bg-green-100 text-green-800';
-      case 'rejected': return 'bg-red-100 text-red-800';
-      case 'processing': return 'bg-blue-100 text-blue-800';
-      case 'completed': return 'bg-purple-100 text-purple-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
 
   return (
     <ProtectedRoute>
@@ -136,13 +153,23 @@ export default function ReturnDetailPage() {
             {/* Return Information */}
             <div className="lg:col-span-2 space-y-6">
               {/* Return Status */}
-              <div className="bg-card p-6 rounded-lg border border-border">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-foreground">Return Status</h3>
-                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(returnData.status)}`}>
-                    {returnData.status.toUpperCase()}
-                  </span>
-                </div>
+              <SectionShell
+                title="Return Status"
+                description="Current status and return information"
+                actions={
+                  <StatusPill
+                    label={returnData.status.toUpperCase()}
+                    tone={
+                      returnData.status === 'pending' ? 'warning' :
+                      returnData.status === 'approved' ? 'success' :
+                      returnData.status === 'rejected' ? 'destructive' :
+                      returnData.status === 'processing' ? 'info' :
+                      returnData.status === 'completed' ? 'success' :
+                      'muted'
+                    }
+                  />
+                }
+              >
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div>
                     <p className="text-sm text-muted-foreground">Return Date</p>
@@ -154,23 +181,33 @@ export default function ReturnDetailPage() {
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Refund Amount</p>
-                    <p className="font-medium">₺{returnData.refundAmount.toFixed(2)}</p>
+                    <p className="font-medium">{formatCurrency(returnData.refundAmount, currencyOptions)}</p>
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Items</p>
                     <p className="font-medium">{returnData.items.length}</p>
                   </div>
                 </div>
-              </div>
+              </SectionShell>
 
               {/* Return Items */}
-              <div className="bg-card p-6 rounded-lg border border-border">
-                <h3 className="text-lg font-semibold text-foreground mb-4">Return Items</h3>
+              <SectionShell
+                title="Return Items"
+                description="Items being returned with details"
+              >
                 <div className="space-y-4">
                   {returnData.items.map((item) => (
                     <div key={item.id} className="flex items-center gap-4 p-4 border border-border rounded-lg">
-                      <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center">
-                        <Package className="w-8 h-8 text-gray-600" />
+                      <div className="w-16 h-16 flex-shrink-0 overflow-hidden rounded-lg border border-border bg-muted">
+                        {(item as any).imageUrl ? (
+                          <img
+                            src={(item as any).imageUrl}
+                            alt={item.productName}
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <ImagePlaceholder className="h-full w-full" />
+                        )}
                       </div>
                       <div className="flex-1">
                         <h4 className="font-medium">{item.productName}</h4>
@@ -179,21 +216,23 @@ export default function ReturnDetailPage() {
                         <p className="text-sm text-muted-foreground">Reason: {item.reason}</p>
                       </div>
                       <div className="text-right">
-                        <p className="font-medium">₺{item.price.toFixed(2)}</p>
+                        <p className="font-medium">{formatCurrency(item.price, currencyOptions)}</p>
                         <p className="text-sm text-muted-foreground">each</p>
                       </div>
                       <div className="text-right">
-                        <p className="font-medium">₺{(item.price * item.quantity).toFixed(2)}</p>
+                        <p className="font-medium">{formatCurrency(item.price * item.quantity, currencyOptions)}</p>
                         <p className="text-sm text-muted-foreground">total</p>
                       </div>
                     </div>
                   ))}
                 </div>
-              </div>
+              </SectionShell>
 
               {/* Return Details */}
-              <div className="bg-card p-6 rounded-lg border border-border">
-                <h3 className="text-lg font-semibold text-foreground mb-4">Return Details</h3>
+              <SectionShell
+                title="Return Details"
+                description="Additional return information and timeline"
+              >
                 <div className="space-y-4">
                   <div>
                     <label className="text-sm text-muted-foreground">Return Reason</label>
@@ -203,7 +242,7 @@ export default function ReturnDetailPage() {
                     <label className="text-sm text-muted-foreground">Description</label>
                     <p className="text-foreground">{returnData.description || 'No additional description provided'}</p>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="text-sm text-muted-foreground">Requested At</label>
                       <p className="font-medium">{new Date(returnData.requestedAt).toLocaleString()}</p>
@@ -216,14 +255,16 @@ export default function ReturnDetailPage() {
                     )}
                   </div>
                 </div>
-              </div>
+              </SectionShell>
             </div>
 
             {/* Sidebar */}
             <div className="space-y-6">
               {/* Customer Information */}
-              <div className="bg-card p-6 rounded-lg border border-border">
-                <h3 className="text-lg font-semibold text-foreground mb-4">Customer Information</h3>
+              <SectionShell
+                title="Customer Information"
+                description="Customer details and contact information"
+              >
                 <div className="space-y-3">
                   <div>
                     <p className="text-sm text-muted-foreground">Name</p>
@@ -242,11 +283,13 @@ export default function ReturnDetailPage() {
                     <p className="font-medium">{returnData.store?.name || 'N/A'}</p>
                   </div>
                 </div>
-              </div>
+              </SectionShell>
 
               {/* Return Summary */}
-              <div className="bg-card p-6 rounded-lg border border-border">
-                <h3 className="text-lg font-semibold text-foreground mb-4">Return Summary</h3>
+              <SectionShell
+                title="Return Summary"
+                description="Summary of return items and amounts"
+              >
                 <div className="space-y-3">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Items</span>
@@ -258,27 +301,31 @@ export default function ReturnDetailPage() {
                   </div>
                   <div className="flex justify-between font-medium text-lg">
                     <span>Refund Amount</span>
-                    <span>₺{returnData.refundAmount.toFixed(2)}</span>
+                  <span>{formatCurrency(returnData.refundAmount, currencyOptions)}</span>
                   </div>
                 </div>
-              </div>
+              </SectionShell>
 
               {/* Quick Actions */}
               <ProtectedComponent permission="returns.manage">
-                <div className="bg-card p-6 rounded-lg border border-border">
-                  <h3 className="text-lg font-semibold text-foreground mb-4">Quick Actions</h3>
+                <SectionShell
+                  title="Quick Actions"
+                  description="Common actions for return management"
+                >
                   <div className="space-y-2">
                     <button className="btn btn-outline w-full">Send Email</button>
                     <button className="btn btn-outline w-full">Print Label</button>
                     <button className="btn btn-outline w-full">Process Refund</button>
                     <button className="btn btn-outline w-full">View Order</button>
                   </div>
-                </div>
+                </SectionShell>
               </ProtectedComponent>
 
               {/* Return Timeline */}
-              <div className="bg-card p-6 rounded-lg border border-border">
-                <h3 className="text-lg font-semibold text-foreground mb-4">Return Timeline</h3>
+              <SectionShell
+                title="Return Timeline"
+                description="Status changes and important events"
+              >
                 <div className="space-y-3">
                   <div className="flex items-center gap-3">
                     <div className="w-2 h-2 bg-green-500 rounded-full"></div>
@@ -312,46 +359,43 @@ export default function ReturnDetailPage() {
                     </div>
                   )}
                 </div>
-              </div>
+              </SectionShell>
             </div>
           </div>
 
           {/* Status Update Modal */}
           {showStatusModal && (
             <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-              <div className="bg-card p-6 rounded-lg border border-border w-full max-w-md">
+              <div className="bg-background p-6 rounded-lg border border-border w-full max-w-md shadow-lg">
                 <h3 className="text-lg font-semibold text-foreground mb-4">Update Return Status</h3>
-                <div className="space-y-4">
-                  <div>
-                    <label className="form-label">New Status</label>
-                    <select
-                      value={newStatus}
-                      onChange={(e) => setNewStatus(e.target.value)}
-                      className="form-select"
+                <FormLayout>
+                  <FormSelect
+                    value={newStatus}
+                    onChange={(e) => setNewStatus(e.target.value)}
+                    placeholder="Select status"
+                    options={[
+                      { value: "pending", label: "Pending" },
+                      { value: "approved", label: "Approved" },
+                      { value: "rejected", label: "Rejected" },
+                      { value: "processing", label: "Processing" },
+                      { value: "completed", label: "Completed" }
+                    ]}
+                  />
+                  <div className="flex gap-2 mt-6">
+                    <button
+                      onClick={handleStatusUpdate}
+                      className="btn btn-primary"
                     >
-                      <option value="">Select status</option>
-                      <option value="pending">Pending</option>
-                      <option value="approved">Approved</option>
-                      <option value="rejected">Rejected</option>
-                      <option value="processing">Processing</option>
-                      <option value="completed">Completed</option>
-                    </select>
+                      Update Status
+                    </button>
+                    <button
+                      onClick={() => setShowStatusModal(false)}
+                      className="btn btn-outline"
+                    >
+                      Cancel
+                    </button>
                   </div>
-                </div>
-                <div className="flex gap-2 mt-6">
-                  <button
-                    onClick={handleStatusUpdate}
-                    className="btn btn-primary"
-                  >
-                    Update Status
-                  </button>
-                  <button
-                    onClick={() => setShowStatusModal(false)}
-                    className="btn btn-outline"
-                  >
-                    Cancel
-                  </button>
-                </div>
+                </FormLayout>
               </div>
             </div>
           )}

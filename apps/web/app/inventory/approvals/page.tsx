@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 // import { useAuth } from "@/components/AuthProvider";
 import { useRBAC } from "@/hooks/useRBAC";
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -10,6 +10,18 @@ import {
   useInventoryRequestStats,
   useReviewInventoryRequest
 } from "@/hooks/useInventoryRequests";
+import { formatCurrency } from "@/lib/formatters";
+import { SectionShell } from "@/components/patterns/SectionShell";
+import FormLayout from "@/components/patterns/FormLayout";
+import { FormSelect } from "@/components/forms/FormSelect";
+import { FormTextarea } from "@/components/forms/FormTextarea";
+import { Button } from "@/components/ui/button";
+
+const requestTypeLabels: Record<string, string> = {
+  stock_adjustment: "Stok Düzenleme",
+  new_product: "Yeni Ürün",
+  product_update: "Ürün Güncelleme",
+};
 
 export default function InventoryApprovalsPage() {
   // const { user } = useAuth();
@@ -30,6 +42,16 @@ export default function InventoryApprovalsPage() {
   const { data: statsData } = useInventoryRequestStats();
 
   const reviewRequestMutation = useReviewInventoryRequest();
+
+  const currencyOptions = useMemo(
+    () => ({
+      locale: "tr-TR",
+      currency: "EUR",
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }),
+    []
+  );
 
   const handleReviewRequest = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -87,6 +109,34 @@ export default function InventoryApprovalsPage() {
 
   const requests = (requestsData as any)?.data || [];
   const stats = statsData || { total: 0, pending: 0, approved: 0, rejected: 0 };
+  const totalRequests = (stats as any).total || 0;
+
+  const statCards = [
+    {
+      label: "Toplam Talep",
+      value: totalRequests,
+      tone: "text-foreground",
+      accent: "bg-accent/20 border-border",
+    },
+    {
+      label: "Bekleyen",
+      value: (stats as any).pending || 0,
+      tone: "text-yellow-600",
+      accent: "bg-yellow-500/10 border-yellow-500/40",
+    },
+    {
+      label: "Onaylanan",
+      value: (stats as any).approved || 0,
+      tone: "text-green-600",
+      accent: "bg-green-500/10 border-green-500/40",
+    },
+    {
+      label: "Reddedilen",
+      value: (stats as any).rejected || 0,
+      tone: "text-red-600",
+      accent: "bg-red-500/10 border-red-500/40",
+    },
+  ];
 
   return (
     <ProtectedRoute>
@@ -101,205 +151,208 @@ export default function InventoryApprovalsPage() {
             </div>
           </div>
 
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="bg-card p-4 rounded-lg border border-border">
-              <div className="text-2xl font-bold text-foreground">{(stats as any)?.total}</div>
-              <div className="text-sm text-muted-foreground">Toplam Talep</div>
+          <SectionShell
+            title="Talep Özeti"
+            description="Bekleyen ve işlem görmüş envanter taleplerinin güncel durumu"
+          >
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+              {statCards.map((card) => (
+                <div
+                  key={card.label}
+                  className={`rounded-lg border p-4 transition-colors duration-200 ${card.accent}`}
+                >
+                  <div className={`text-2xl font-bold ${card.tone}`}>{card.value}</div>
+                  <div className="text-sm text-muted-foreground">{card.label}</div>
+                </div>
+              ))}
             </div>
-            <div className="bg-card p-4 rounded-lg border border-border">
-              <div className="text-2xl font-bold text-yellow-600">{(stats as any)?.pending}</div>
-              <div className="text-sm text-muted-foreground">Bekleyen</div>
-            </div>
-            <div className="bg-card p-4 rounded-lg border border-border">
-              <div className="text-2xl font-bold text-green-600">{(stats as any)?.approved}</div>
-              <div className="text-sm text-muted-foreground">Onaylanan</div>
-            </div>
-            <div className="bg-card p-4 rounded-lg border border-border">
-              <div className="text-2xl font-bold text-red-600">{(stats as any)?.rejected}</div>
-              <div className="text-sm text-muted-foreground">Reddedilen</div>
-            </div>
-          </div>
+          </SectionShell>
 
           {/* Requests List */}
-          <div className="space-y-4">
-            <h2 className="text-xl font-semibold text-foreground">Bekleyen Talepler</h2>
-            
+          <SectionShell
+            title="Bekleyen Talepler"
+            description="Müşteri mağazalarından gelen en son envanter talepleri"
+          >
             {requestsLoading ? (
               <div className="text-center py-8">
-                <div className="spinner mx-auto mb-4"></div>
+                <div className="spinner mx-auto mb-4" aria-hidden />
                 <p className="text-muted-foreground">Yükleniyor...</p>
+              </div>
+            ) : requests.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                Bekleyen talep bulunmuyor
               </div>
             ) : (
               <div className="space-y-4">
-                {requests.map((request: any) => (
-                  <div key={request.id} className="bg-card p-6 rounded-lg border border-border">
-                    <div className="flex justify-between items-start mb-4">
-                      <div>
-                        <h3 className="text-lg font-semibold text-foreground">{request.title}</h3>
-                        <p className="text-sm text-muted-foreground">
-                          {request.type === 'stock_adjustment' && 'Stok Düzenleme'}
-                          {request.type === 'new_product' && 'Yeni Ürün'}
-                          {request.type === 'product_update' && 'Ürün Güncelleme'}
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          Müşteri: {request.customer?.name} ({request.customer?.email})
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          Mağaza: {request.store?.name}
-                        </p>
-                      </div>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => openReviewModal(request.id)}
-                          className="btn btn-primary"
-                        >
+                {requests.map((request: any) => {
+                  const typeLabel = requestTypeLabels[request.type] ?? request.type;
+                  return (
+                    <SectionShell
+                      key={request.id}
+                      title={request.title}
+                      description={`${typeLabel} • ${request.store?.name ?? 'Mağaza belirtilmemiş'}`}
+                      actions={
+                        <Button size="sm" onClick={() => openReviewModal(request.id)}>
                           İncele
-                        </button>
-                      </div>
-                    </div>
-
-                    {request.description && (
-                      <div className="mb-4">
-                        <h4 className="font-medium text-foreground mb-2">Açıklama:</h4>
-                        <p className="text-sm text-muted-foreground">{request.description}</p>
-                      </div>
-                    )}
-
-                    {/* Stock Adjustment Details */}
-                    {request.type === 'stock_adjustment' && request.product && (
-                      <div className="mb-4 p-4 bg-accent rounded-lg">
-                        <h4 className="font-medium text-foreground mb-2">Stok Düzenleme Detayları:</h4>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                          <div>
-                            <p><strong>Ürün:</strong> {request.product.name}</p>
-                            <p><strong>SKU:</strong> {request.product.sku}</p>
-                            <p><strong>Mevcut Stok:</strong> {request.currentStock}</p>
-                          </div>
-                          <div>
-                            <p><strong>İstenen Stok:</strong> {request.requestedStock}</p>
-                            <p><strong>Fark:</strong> {request.requestedStock! - request.currentStock!}</p>
-                            {request.adjustmentReason && (
-                              <p><strong>Neden:</strong> {request.adjustmentReason}</p>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* New Product Details */}
-                    {request.type === 'new_product' && request.productData && (
-                      <div className="mb-4 p-4 bg-accent rounded-lg">
-                        <h4 className="font-medium text-foreground mb-2">Yeni Ürün Detayları:</h4>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                          <div>
-                            <p><strong>Ürün Adı:</strong> {request.productData.name}</p>
-                            <p><strong>SKU:</strong> {request.productData.sku || 'Belirtilmemiş'}</p>
-                            <p><strong>Fiyat:</strong> ₺{request.productData.price}</p>
-                            {request.productData.regularPrice && (
-                              <p><strong>Normal Fiyat:</strong> ₺{request.productData.regularPrice}</p>
-                            )}
-                          </div>
-                          <div>
-                            <p><strong>Stok Miktarı:</strong> {request.productData.stockQuantity || 0}</p>
-                            <p><strong>Ağırlık:</strong> {request.productData.weight || 0} kg</p>
-                            {request.productData.categories && request.productData.categories.length > 0 && (
-                              <p><strong>Kategoriler:</strong> {request.productData.categories.join(', ')}</p>
-                            )}
-                          </div>
-                        </div>
-                        {request.productData.description && (
-                          <div className="mt-2">
-                            <p><strong>Açıklama:</strong></p>
-                            <p className="text-muted-foreground">{request.productData.description}</p>
-                          </div>
+                        </Button>
+                      }
+                      className="bg-card/90"
+                      contentClassName="space-y-5"
+                    >
+                      <div className="grid gap-3 text-sm text-muted-foreground md:grid-cols-2">
+                        <p>
+                          <strong className="mr-1 text-foreground">Müşteri:</strong>
+                          {request.customer?.name} ({request.customer?.email})
+                        </p>
+                        <p>
+                          <strong className="mr-1 text-foreground">Oluşturulma:</strong>
+                          {new Date(request.createdAt).toLocaleString('tr-TR')}
+                        </p>
+                        {request.description && (
+                          <p className="md:col-span-2 text-foreground">
+                            <strong className="mr-1">Açıklama:</strong>
+                            <span className="text-muted-foreground">{request.description}</span>
+                          </p>
                         )}
                       </div>
-                    )}
 
-                    {/* Product Update Details */}
-                    {request.type === 'product_update' && request.updateData && (
-                      <div className="mb-4 p-4 bg-accent rounded-lg">
-                        <h4 className="font-medium text-foreground mb-2">Ürün Güncelleme Detayları:</h4>
-                        <div className="text-sm">
-                          <pre className="whitespace-pre-wrap text-muted-foreground">
+                      {request.type === 'stock_adjustment' && request.product && (
+                        <div className="rounded-lg border border-dashed border-border/60 bg-accent/20 p-4 text-sm">
+                          <h4 className="font-medium text-foreground mb-2">Stok Düzenleme Detayları</h4>
+                          <div className="grid gap-4 md:grid-cols-2">
+                            <div className="space-y-1">
+                              <p><strong>Ürün:</strong> {request.product.name}</p>
+                              <p><strong>SKU:</strong> {request.product.sku}</p>
+                              <p><strong>Mevcut Stok:</strong> {request.currentStock}</p>
+                            </div>
+                            <div className="space-y-1">
+                              <p><strong>İstenen Stok:</strong> {request.requestedStock}</p>
+                              <p><strong>Fark:</strong> {request.requestedStock! - request.currentStock!}</p>
+                              {request.adjustmentReason && (
+                                <p><strong>Neden:</strong> {request.adjustmentReason}</p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {request.type === 'new_product' && request.productData && (
+                        <div className="rounded-lg border border-dashed border-border/60 bg-accent/20 p-4 text-sm">
+                          <h4 className="font-medium text-foreground mb-2">Yeni Ürün Detayları</h4>
+                          <div className="grid gap-4 md:grid-cols-2">
+                            <div className="space-y-1">
+                              <p><strong>Ürün Adı:</strong> {request.productData.name}</p>
+                              <p><strong>SKU:</strong> {request.productData.sku || 'Belirtilmemiş'}</p>
+                              <p>
+                                <strong>Fiyat:</strong>{' '}
+                                {formatCurrency(Number(request.productData.price ?? 0), currencyOptions)}
+                              </p>
+                              {request.productData.regularPrice && (
+                                <p>
+                                  <strong>Normal Fiyat:</strong>{' '}
+                                  {formatCurrency(Number(request.productData.regularPrice ?? 0), currencyOptions)}
+                                </p>
+                              )}
+                            </div>
+                            <div className="space-y-1">
+                              <p><strong>Stok Miktarı:</strong> {request.productData.stockQuantity || 0}</p>
+                              <p><strong>Ağırlık:</strong> {request.productData.weight || 0} kg</p>
+                              {request.productData.categories && request.productData.categories.length > 0 && (
+                                <p><strong>Kategoriler:</strong> {request.productData.categories.join(', ')}</p>
+                              )}
+                            </div>
+                          </div>
+                          {request.productData.description && (
+                            <div className="mt-2 text-muted-foreground">
+                              <strong className="text-foreground">Açıklama:</strong>{' '}
+                              {request.productData.description}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {request.type === 'product_update' && request.updateData && (
+                        <div className="rounded-lg border border-dashed border-border/60 bg-accent/20 p-4 text-sm text-muted-foreground">
+                          <h4 className="font-medium text-foreground mb-2">Ürün Güncelleme Detayları</h4>
+                          <pre className="whitespace-pre-wrap text-xs">
                             {JSON.stringify(request.updateData, null, 2)}
                           </pre>
                         </div>
-                      </div>
-                    )}
-
-                    <div className="text-xs text-muted-foreground">
-                      Oluşturulma: {new Date(request.createdAt).toLocaleString('tr-TR')}
-                    </div>
-                  </div>
-                ))}
-
-                {requests.length === 0 && (
-                  <div className="text-center py-8 text-muted-foreground">
-                    Bekleyen talep bulunmuyor
-                  </div>
-                )}
+                      )}
+                    </SectionShell>
+                  );
+                })}
               </div>
             )}
-          </div>
+          </SectionShell>
 
           {/* Review Modal */}
           {showReviewModal && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-              <div className="bg-card p-6 rounded-lg border border-border max-w-md w-full mx-4">
-                <h3 className="text-lg font-semibold text-foreground mb-4">Talep İnceleme</h3>
-                <form onSubmit={handleReviewRequest} className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">
-                      Karar *
-                    </label>
-                    <select
-                      value={reviewForm.status}
-                      onChange={(e) => setReviewForm(prev => ({ 
-                        ...prev, 
-                        status: e.target.value as 'approved' | 'rejected' 
-                      }))}
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+              <div className="w-full max-w-lg rounded-xl border border-border bg-card p-6 shadow-2xl">
+                <form onSubmit={handleReviewRequest} className="space-y-6">
+                  <FormLayout
+                  title="Talep İnceleme"
+                  description="Talep durumunu güncelleyin ve gerekirse açıklama ekleyin."
+                  className="space-y-6"
+                >
+                  <FormLayout.Section>
+                    <FormSelect
+                      label="Karar"
                       required
-                      className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground"
-                    >
-                      <option value="approved">Onayla</option>
-                      <option value="rejected">Reddet</option>
-                    </select>
-                  </div>
+                      value={reviewForm.status}
+                      onChange={(event) =>
+                        setReviewForm((prev) => ({
+                          ...prev,
+                          status: event.target.value as 'approved' | 'rejected',
+                          rejectionReason:
+                            event.target.value === 'approved' ? '' : prev.rejectionReason,
+                        }))
+                      }
+                      options={[
+                        { value: 'approved', label: 'Onayla' },
+                        { value: 'rejected', label: 'Reddet' },
+                      ]}
+                    />
+                  </FormLayout.Section>
 
                   {reviewForm.status === 'rejected' && (
-                    <div>
-                      <label className="block text-sm font-medium text-foreground mb-2">
-                        Red Nedeni *
-                      </label>
-                      <textarea
-                        value={reviewForm.rejectionReason}
-                        onChange={(e) => setReviewForm(prev => ({ ...prev, rejectionReason: e.target.value }))}
-                        required={reviewForm.status === 'rejected'}
+                    <FormLayout.Section>
+                      <FormTextarea
+                        label="Red Nedeni"
+                        required
                         rows={3}
-                        className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground"
                         placeholder="Red nedenini açıklayın..."
+                        value={reviewForm.rejectionReason}
+                        onChange={(event) =>
+                          setReviewForm((prev) => ({
+                            ...prev,
+                            rejectionReason: event.target.value,
+                          }))
+                        }
                       />
-                    </div>
+                    </FormLayout.Section>
                   )}
 
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">
-                      Admin Notları
-                    </label>
-                    <textarea
-                      value={reviewForm.adminNotes}
-                      onChange={(e) => setReviewForm(prev => ({ ...prev, adminNotes: e.target.value }))}
+                  <FormLayout.Section>
+                    <FormTextarea
+                      label="Admin Notları"
                       rows={3}
-                      className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground"
                       placeholder="Ek notlar..."
+                      value={reviewForm.adminNotes}
+                      onChange={(event) =>
+                        setReviewForm((prev) => ({
+                          ...prev,
+                          adminNotes: event.target.value,
+                        }))
+                      }
                     />
-                  </div>
+                  </FormLayout.Section>
 
-                  <div className="flex justify-end gap-2">
-                    <button
+                  <div className="flex justify-end gap-2 border-t border-border/70 pt-4">
+                    <Button
                       type="button"
+                      variant="outline"
                       onClick={() => {
                         setShowReviewModal(false);
                         setSelectedRequest(null);
@@ -309,18 +362,14 @@ export default function InventoryApprovalsPage() {
                           adminNotes: '',
                         });
                       }}
-                      className="btn btn-outline"
                     >
                       İptal
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={reviewRequestMutation.isPending}
-                      className="btn btn-primary"
-                    >
+                    </Button>
+                    <Button type="submit" disabled={reviewRequestMutation.isPending}>
                       {reviewRequestMutation.isPending ? 'İşleniyor...' : 'Karar Ver'}
-                    </button>
+                    </Button>
                   </div>
+                  </FormLayout>
                 </form>
               </div>
             </div>

@@ -10,6 +10,12 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import ProtectedComponent from "@/components/ProtectedComponent";
 import { useAuth } from "@/components/AuthProvider";
 import { useRBAC } from "@/hooks/useRBAC";
+import { SectionShell } from "@/components/patterns/SectionShell";
+import { StatusPill } from "@/components/patterns/StatusPill";
+import { MetricCard } from "@/components/patterns/MetricCard";
+import { FormField } from "@/components/forms/FormField";
+import { FormSelect } from "@/components/forms/FormSelect";
+import { FormTextarea } from "@/components/forms/FormTextarea";
 import {
   useSupportTickets,
   useUpdateSupportTicket,
@@ -21,10 +27,7 @@ import { logger } from "@/lib/logger";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -33,7 +36,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
 import { LoadingState } from "@/components/ui/loading";
 
 type KnownTicketStatus = "open" | "in_progress" | "closed";
@@ -180,17 +182,6 @@ export default function SupportPage() {
   const totalTickets = ticketsData?.pagination?.total ?? 0;
   const totalPages = ticketsData?.pagination?.pages ?? 1;
 
-  useEffect(() => {
-    if (!selectedTicket && tickets.length) {
-      setSelectedTicket(tickets[0].id);
-      return;
-    }
-
-    if (selectedTicket && !tickets.find((ticket) => ticket.id === selectedTicket)) {
-      setSelectedTicket(tickets[0]?.id ?? null);
-    }
-  }, [tickets, selectedTicket]);
-
   const { data: messagesData, isLoading: messagesLoading } = useSupportTicketMessages(selectedTicket ?? "") as {
     data: SupportTicketMessage[] | undefined;
     isLoading: boolean;
@@ -220,6 +211,17 @@ export default function SupportPage() {
     () => tickets.find((ticket) => ticket.id === selectedTicket) ?? null,
     [tickets, selectedTicket]
   );
+
+  useEffect(() => {
+    if (!selectedTicket && tickets.length) {
+      setSelectedTicket(tickets[0]?.id || "");
+      return;
+    }
+
+    if (selectedTicket && !tickets.find((ticket) => ticket.id === selectedTicket)) {
+      setSelectedTicket(tickets[0]?.id ?? null);
+    }
+  }, [tickets, selectedTicket]);
 
   const handleStatusUpdate = async (ticketId: string, newStatus: TicketStatus) => {
     try {
@@ -315,7 +317,7 @@ export default function SupportPage() {
               <div className="flex w-full flex-col gap-3 md:flex-row md:items-center">
                 <div className="relative md:w-72">
                   <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
+                  <FormField
                     value={search}
                     onChange={(event) => {
                       setSearch(event.target.value);
@@ -326,42 +328,26 @@ export default function SupportPage() {
                   />
                 </div>
                 <div className="flex flex-1 flex-col gap-3 sm:flex-row">
-                  <Select
+                  <FormSelect
                     value={statusFilter}
-                    onValueChange={(value) => {
-                      setStatusFilter(value as StatusFilter);
+                    onChange={(e) => {
+                      setStatusFilter(e.target.value as StatusFilter);
                       setPage(1);
                     }}
-                  >
-                    <SelectTrigger className="sm:w-44">
-                      <SelectValue placeholder="All statuses" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {statusFilterOptions.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Select
+                    placeholder="All statuses"
+                    className="sm:w-44"
+                    options={statusFilterOptions}
+                  />
+                  <FormSelect
                     value={priorityFilter}
-                    onValueChange={(value) => {
-                      setPriorityFilter(value as PriorityFilter);
+                    onChange={(e) => {
+                      setPriorityFilter(e.target.value as PriorityFilter);
                       setPage(1);
                     }}
-                  >
-                    <SelectTrigger className="sm:w-44">
-                      <SelectValue placeholder="All priorities" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {priorityFilterOptions.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    placeholder="All priorities"
+                    className="sm:w-44"
+                    options={priorityFilterOptions}
+                  />
                 </div>
               </div>
               {(statusFilter !== "all" || priorityFilter !== "all" || search) && (
@@ -381,77 +367,60 @@ export default function SupportPage() {
             </CardContent>
           </Card>
 
-          <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium text-muted-foreground">Total Tickets</CardTitle>
-                <CardDescription>
-                  {isAdmin() ? "Across all stores" : "Your tickets"}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-semibold text-foreground">{totalTickets}</div>
-              </CardContent>
-            </Card>
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <MetricCard
+              label="Total Tickets"
+              value={totalTickets}
+              context={isAdmin() ? "Across all stores" : "Your tickets"}
+              tone="default"
+            />
             {(["open", "in_progress", "closed"] as KnownTicketStatus[]).map((status) => {
               const meta = statusMeta[status];
               return (
-                <Card key={status}>
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-sm font-medium text-muted-foreground">
-                        {meta.label}
-                      </CardTitle>
-                      <Badge variant={meta.badge}>{meta.label}</Badge>
-                    </div>
-                    <CardDescription>{meta.description}</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-3xl font-semibold text-foreground">{statusCounts[status] ?? 0}</div>
-                  </CardContent>
-                </Card>
+                <MetricCard
+                  key={status}
+                  label={meta.label}
+                  value={statusCounts[status] ?? 0}
+                  context={meta.description}
+                  tone={meta.badge === 'warning' ? 'warning' : 'default'}
+                />
               );
             })}
-          </section>
+          </div>
 
-          <section className="grid gap-6 lg:grid-cols-3">
-            <Card className="lg:col-span-2">
-              <CardHeader className="space-y-4">
-                <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                  <div>
-                    <CardTitle className="text-lg font-semibold text-foreground">Support Tickets</CardTitle>
-                    <CardDescription>
-                      Review, triage, and respond to customer and store requests.
-                    </CardDescription>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm">
-                      Export
-                    </Button>
-                    <Button variant="outline" size="sm">
-                      Advanced filters
-                    </Button>
-                  </div>
+          <div className="grid gap-6 lg:grid-cols-3">
+            <SectionShell
+              title="Support Tickets"
+              description="Review, triage, and respond to customer and store requests"
+              actions={
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm">
+                    Export
+                  </Button>
+                  <Button variant="outline" size="sm">
+                    Advanced filters
+                  </Button>
                 </div>
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                  {(["low", "medium", "high", "urgent"] as KnownTicketPriority[]).map((priority) => {
-                    const meta = priorityMeta[priority];
-                    return (
-                      <div
-                        key={priority}
-                        className="flex items-center justify-between rounded-lg border border-border/60 bg-muted/40 px-3 py-2 text-sm"
-                      >
-                        <div className="flex items-center gap-2">
-                          <Badge variant={meta.badge}>{meta.label}</Badge>
-                          <span className="text-muted-foreground">{meta.description}</span>
-                        </div>
-                        <span className="font-semibold text-foreground">{priorityCounts[priority] ?? 0}</span>
+              }
+              className="lg:col-span-2"
+            >
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 mb-6">
+                {(["low", "medium", "high", "urgent"] as KnownTicketPriority[]).map((priority) => {
+                  const meta = priorityMeta[priority];
+                  return (
+                    <div
+                      key={priority}
+                      className="flex items-center justify-between rounded-lg border border-border/60 bg-muted/40 px-3 py-2 text-sm"
+                    >
+                      <div className="flex items-center gap-2">
+                        <StatusPill label={meta.label} tone={meta.badge === 'muted' ? 'muted' : meta.badge === 'info' ? 'info' : meta.badge === 'warning' ? 'warning' : 'destructive'} />
+                        <span className="text-muted-foreground">{meta.description}</span>
                       </div>
-                    );
-                  })}
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
+                      <span className="font-semibold text-foreground">{priorityCounts[priority] ?? 0}</span>
+                    </div>
+                  );
+                })}
+              </div>
                 {tickets.length === 0 ? (
                   <EmptyState
                     icon={Inbox}
@@ -496,8 +465,8 @@ export default function SupportPage() {
                                 </div>
                               </div>
                               <div className="flex flex-col items-end gap-2">
-                                <Badge variant={priority.badge}>{priority.label}</Badge>
-                                <Badge variant={status.badge}>{status.label}</Badge>
+                                <StatusPill label={priority.label} tone={priority.badge === 'muted' ? 'muted' : priority.badge === 'info' ? 'info' : priority.badge === 'warning' ? 'warning' : 'destructive'} />
+                                <StatusPill label={status.label} tone={status.badge === 'warning' ? 'warning' : status.badge === 'info' ? 'info' : status.badge === 'success' ? 'success' : 'default'} />
                               </div>
                             </div>
                           </button>
@@ -530,48 +499,39 @@ export default function SupportPage() {
                     )}
                   </>
                 )}
-              </CardContent>
-            </Card>
+            </SectionShell>
 
             <div className="space-y-4">
               {selectedTicketData ? (
-                <Card className="lg:sticky lg:top-28">
-                  <CardHeader className="space-y-3">
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                      <div>
-                        <CardTitle className="text-lg font-semibold text-foreground">Ticket Details</CardTitle>
-                        <CardDescription>
-                          View the conversation and send updates to the requester.
-                        </CardDescription>
-                      </div>
-                      <ProtectedComponent permission="support.manage">
-                        <Select
-                          value={selectedTicketData.status}
-                          onValueChange={(value) => handleStatusUpdate(selectedTicketData.id, value)}
-                        >
-                          <SelectTrigger className="sm:w-44">
-                            <SelectValue placeholder="Update status" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {(["open", "in_progress", "closed"] as KnownTicketStatus[]).map((status) => (
-                              <SelectItem key={status} value={status}>
-                                {statusMeta[status].label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </ProtectedComponent>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Badge variant={getPriorityMeta(selectedTicketData.priority).badge}>
-                        {getPriorityMeta(selectedTicketData.priority).label}
-                      </Badge>
-                      <Badge variant={getStatusMeta(selectedTicketData.status).badge}>
-                        {getStatusMeta(selectedTicketData.status).label}
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
+                <SectionShell
+                  title="Ticket Details"
+                  description="View the conversation and send updates to the requester"
+                  actions={
+                    <ProtectedComponent permission="support.manage">
+                      <FormSelect
+                        value={selectedTicketData.status}
+                        onChange={(e) => handleStatusUpdate(selectedTicketData.id, e.target.value)}
+                        placeholder="Update status"
+                        className="sm:w-44"
+                        options={(["open", "in_progress", "closed"] as KnownTicketStatus[]).map((status) => ({
+                          value: status,
+                          label: statusMeta[status].label,
+                        }))}
+                      />
+                    </ProtectedComponent>
+                  }
+                  className="lg:sticky lg:top-28"
+                >
+                  <div className="flex flex-wrap items-center gap-2 mb-6">
+                    <StatusPill 
+                      label={getPriorityMeta(selectedTicketData.priority).label}
+                      tone={getPriorityMeta(selectedTicketData.priority).badge === 'muted' ? 'muted' : getPriorityMeta(selectedTicketData.priority).badge === 'info' ? 'info' : getPriorityMeta(selectedTicketData.priority).badge === 'warning' ? 'warning' : 'destructive'}
+                    />
+                    <StatusPill 
+                      label={getStatusMeta(selectedTicketData.status).label}
+                      tone={getStatusMeta(selectedTicketData.status).badge === 'warning' ? 'warning' : getStatusMeta(selectedTicketData.status).badge === 'info' ? 'info' : getStatusMeta(selectedTicketData.status).badge === 'success' ? 'success' : 'default'}
+                    />
+                  </div>
                     <div className="max-h-80 space-y-3 overflow-y-auto pr-1">
                       {messagesLoading ? (
                         <LoadingState message="Loading conversation..." />
@@ -615,7 +575,7 @@ export default function SupportPage() {
                     </div>
 
                     <div className="space-y-3">
-                      <Textarea
+                      <FormTextarea
                         value={newMessage}
                         onChange={(event) => setNewMessage(event.target.value)}
                         placeholder="Type your message..."
@@ -623,13 +583,8 @@ export default function SupportPage() {
                       />
                       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <div className="w-full sm:w-auto">
-                          <Label
-                            htmlFor="support-attachments"
-                            className="text-xs uppercase tracking-wide text-muted-foreground"
-                          >
-                            Attachments
-                          </Label>
-                          <Input
+                          <FormField
+                            label="Attachments"
                             id="support-attachments"
                             type="file"
                             multiple
@@ -651,8 +606,7 @@ export default function SupportPage() {
                         </Button>
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
+                </SectionShell>
               ) : (
                 <EmptyState
                   icon={MessageCircle}
@@ -662,7 +616,7 @@ export default function SupportPage() {
                 />
               )}
             </div>
-          </section>
+          </div>
 
           <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
             <DialogContent>
@@ -674,35 +628,38 @@ export default function SupportPage() {
               </DialogHeader>
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="new-ticket-subject">Subject</Label>
-                  <Input id="new-ticket-subject" placeholder="Enter ticket subject" />
+                  <FormField
+                    label="Subject"
+                    id="new-ticket-subject"
+                    placeholder="Enter ticket subject"
+                  />
                 </div>
                 <div className="space-y-2">
-                  <Label>Priority</Label>
-                  <Select defaultValue="low">
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select priority" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {(["low", "medium", "high", "urgent"] as KnownTicketPriority[]).map((priority) => (
-                        <SelectItem key={priority} value={priority}>
-                          {priorityMeta[priority].label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <FormSelect
+                    label="Priority"
+                    defaultValue="low"
+                    placeholder="Select priority"
+                    options={(["low", "medium", "high", "urgent"] as KnownTicketPriority[]).map((priority) => ({
+                      value: priority,
+                      label: priorityMeta[priority].label,
+                    }))}
+                  />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="new-ticket-description">Description</Label>
-                  <Textarea
+                  <FormTextarea
+                    label="Description"
                     id="new-ticket-description"
                     rows={6}
                     placeholder="Describe your issue in detail"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="new-ticket-attachments">Attachments</Label>
-                  <Input id="new-ticket-attachments" type="file" multiple />
+                  <FormField
+                    label="Attachments"
+                    id="new-ticket-attachments"
+                    type="file"
+                    multiple
+                  />
                 </div>
               </div>
               <DialogFooter>

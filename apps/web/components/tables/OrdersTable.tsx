@@ -4,6 +4,7 @@ import { ColumnDef } from '@tanstack/react-table';
 import { DataTable } from './DataTable';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { formatCurrency } from '@/lib/formatters';
 import { Order } from '@/types/api';
 
 const getStatusColor = (status: string) => {
@@ -102,10 +103,10 @@ export function OrdersTable({
       header: 'Total',
       cell: ({ row }) => {
         const total = row.getValue('total') as number;
-        const currency = row.original.currency || 'USD';
+        const currency = row.original.currency || 'EUR';
         return (
           <div className="font-medium text-foreground">
-            {currency} {total.toFixed(2)}
+            {formatCurrency(total, { currency })}
           </div>
         );
       },

@@ -10,6 +10,8 @@ interface FormCheckboxProps extends React.InputHTMLAttributes<HTMLInputElement> 
 
 export const FormCheckbox = forwardRef<HTMLInputElement, FormCheckboxProps>(
   ({ label, error, helperText, required, className, ...props }, ref) => {
+    const fieldError = error;
+    
     return (
       <div className="space-y-2">
         <label className="flex items-center gap-3">
@@ -18,7 +20,7 @@ export const FormCheckbox = forwardRef<HTMLInputElement, FormCheckboxProps>(
             type="checkbox"
             className={cn(
               'w-4 h-4 text-primary bg-input border-border rounded focus:ring-primary',
-              error && 'border-destructive focus:border-destructive',
+              fieldError && 'border-destructive focus:border-destructive',
               className
             )}
             {...props}
@@ -30,10 +32,10 @@ export const FormCheckbox = forwardRef<HTMLInputElement, FormCheckboxProps>(
             </span>
           )}
         </label>
-        {error && (
-          <p className="text-sm text-destructive">{error}</p>
+        {fieldError && (
+          <p className="text-sm text-destructive">{fieldError}</p>
         )}
-        {helperText && !error && (
+        {helperText && !fieldError && (
           <p className="text-sm text-muted-foreground">{helperText}</p>
         )}
       </div>

@@ -10,6 +10,11 @@ import { useSupportTicket, useUpdateSupportTicket, useSupportTicketMessages, use
 import ProtectedRoute from "@/components/ProtectedRoute";
 import ProtectedComponent from "@/components/ProtectedComponent";
 import { ApiError } from "@/lib/api-client";
+import { SectionShell } from "@/components/patterns/SectionShell";
+import { StatusPill } from "@/components/patterns/StatusPill";
+import { FormLayout } from "@/components/patterns/FormLayout";
+import { FormSelect } from "@/components/forms/FormSelect";
+import { FormTextarea } from "@/components/forms/FormTextarea";
 
 export default function SupportTicketDetailPage() {
   const params = useParams();
@@ -69,11 +74,15 @@ export default function SupportTicketDetailPage() {
   if (isLoading) {
     return (
       <ProtectedRoute>
-        <div className="min-h-screen bg-background flex items-center justify-center">
-          <div className="flex flex-col items-center gap-4">
-            <div className="spinner"></div>
-            <div className="text-lg text-foreground">Loading ticket details...</div>
-          </div>
+        <div className="min-h-screen bg-background">
+          <main className="mobile-container py-6">
+            <SectionShell
+              title="Loading ticket details..."
+              description="Please wait while we fetch ticket information"
+            >
+              <div className="spinner"></div>
+            </SectionShell>
+          </main>
         </div>
       </ProtectedRoute>
     );
@@ -82,13 +91,21 @@ export default function SupportTicketDetailPage() {
   if (error || !ticket) {
     return (
       <ProtectedRoute>
-        <div className="min-h-screen bg-background flex items-center justify-center">
-          <div className="flex flex-col items-center gap-4">
-            <div className="text-red-500 text-lg">Error loading ticket</div>
-            <div className="text-muted-foreground">
-              {error instanceof ApiError ? error.message : 'Ticket not found'}
-            </div>
-          </div>
+        <div className="min-h-screen bg-background">
+          <main className="mobile-container py-6">
+            <SectionShell
+              title="Error loading ticket"
+              description={error instanceof ApiError ? error.message : 'Ticket not found'}
+              className="max-w-md mx-auto"
+            >
+              <button
+                onClick={() => window.location.reload()}
+                className="btn btn-primary"
+              >
+                Retry
+              </button>
+            </SectionShell>
+          </main>
         </div>
       </ProtectedRoute>
     );
@@ -121,26 +138,7 @@ export default function SupportTicketDetailPage() {
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'open': return 'bg-green-100 text-green-800';
-      case 'in_progress': return 'bg-blue-100 text-blue-800';
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      case 'resolved': return 'bg-purple-100 text-purple-800';
-      case 'closed': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'low': return 'bg-green-100 text-green-800';
-      case 'medium': return 'bg-yellow-100 text-yellow-800';
-      case 'high': return 'bg-orange-100 text-orange-800';
-      case 'urgent': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
 
   return (
     <ProtectedRoute>
@@ -171,18 +169,34 @@ export default function SupportTicketDetailPage() {
             {/* Ticket Information */}
             <div className="lg:col-span-2 space-y-6">
               {/* Ticket Status */}
-              <div className="bg-card p-6 rounded-lg border border-border">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-foreground">Ticket Status</h3>
+              <SectionShell
+                title="Ticket Status"
+                description="Current status and priority information"
+                actions={
                   <div className="flex gap-2">
-                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(ticket.status)}`}>
-                      {ticket.status.toUpperCase()}
-                    </span>
-                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${getPriorityColor(ticket.priority)}`}>
-                      {ticket.priority.toUpperCase()}
-                    </span>
+                    <StatusPill
+                      label={ticket.status.toUpperCase()}
+                      tone={
+                        ticket.status === 'open' ? 'success' :
+                        ticket.status === 'in_progress' ? 'info' :
+                        ticket.status === 'pending' ? 'warning' :
+                        ticket.status === 'resolved' ? 'success' :
+                        'muted'
+                      }
+                    />
+                    <StatusPill
+                      label={ticket.priority.toUpperCase()}
+                      tone={
+                        ticket.priority === 'low' ? 'success' :
+                        ticket.priority === 'medium' ? 'warning' :
+                        ticket.priority === 'high' ? 'destructive' :
+                        ticket.priority === 'urgent' ? 'destructive' :
+                        'muted'
+                      }
+                    />
                   </div>
-                </div>
+                }
+              >
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div>
                     <p className="text-sm text-muted-foreground">Created</p>
@@ -201,19 +215,23 @@ export default function SupportTicketDetailPage() {
                     <p className="font-medium">{ticket.store?.name || 'N/A'}</p>
                   </div>
                 </div>
-              </div>
+              </SectionShell>
 
               {/* Ticket Description */}
-              <div className="bg-card p-6 rounded-lg border border-border">
-                <h3 className="text-lg font-semibold text-foreground mb-4">Ticket Description</h3>
+              <SectionShell
+                title="Ticket Description"
+                description="Detailed description of the support request"
+              >
                 <div className="prose max-w-none">
                   <p className="text-foreground whitespace-pre-wrap">{ticket.description}</p>
                 </div>
-              </div>
+              </SectionShell>
 
               {/* Messages */}
-              <div className="bg-card p-6 rounded-lg border border-border">
-                <h3 className="text-lg font-semibold text-foreground mb-4">Messages</h3>
+              <SectionShell
+                title="Messages"
+                description="Conversation history and updates"
+              >
                 {messagesLoading ? (
                   <div className="flex items-center justify-center py-8">
                     <div className="spinner"></div>
@@ -263,22 +281,20 @@ export default function SupportTicketDetailPage() {
                     )}
                   </div>
                 )}
-              </div>
+              </SectionShell>
 
               {/* Reply Form */}
-              <div className="bg-card p-6 rounded-lg border border-border">
-                <h3 className="text-lg font-semibold text-foreground mb-4">Reply to Ticket</h3>
-                <div className="space-y-4">
-                  <div>
-                    <label className="form-label">Message</label>
-                    <textarea
-                      value={newMessage}
-                      onChange={(e) => setNewMessage(e.target.value)}
-                      className="form-textarea"
-                      rows={4}
-                      placeholder="Type your message here..."
-                    />
-                  </div>
+              <SectionShell
+                title="Reply to Ticket"
+                description="Send a message to the customer"
+              >
+                <FormLayout>
+                  <FormTextarea
+                    value={newMessage}
+                    onChange={(e) => setNewMessage(e.target.value)}
+                    placeholder="Type your message here..."
+                    rows={4}
+                  />
                   <div className="flex gap-2">
                     <button
                       onClick={handleSendMessage}
@@ -291,15 +307,17 @@ export default function SupportTicketDetailPage() {
                       Add Attachment
                     </button>
                   </div>
-                </div>
-              </div>
+                </FormLayout>
+              </SectionShell>
             </div>
 
             {/* Sidebar */}
             <div className="space-y-6">
               {/* Customer Information */}
-              <div className="bg-card p-6 rounded-lg border border-border">
-                <h3 className="text-lg font-semibold text-foreground mb-4">Customer Information</h3>
+              <SectionShell
+                title="Customer Information"
+                description="Customer details and contact information"
+              >
                 <div className="space-y-3">
                   <div>
                     <p className="text-sm text-muted-foreground">Name</p>
@@ -314,17 +332,26 @@ export default function SupportTicketDetailPage() {
                     <p className="font-medium">{ticket.store?.name || 'N/A'}</p>
                   </div>
                 </div>
-              </div>
+              </SectionShell>
 
               {/* Ticket Details */}
-              <div className="bg-card p-6 rounded-lg border border-border">
-                <h3 className="text-lg font-semibold text-foreground mb-4">Ticket Details</h3>
+              <SectionShell
+                title="Ticket Details"
+                description="Additional ticket information and metadata"
+              >
                 <div className="space-y-3">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Priority</span>
-                    <span className={`px-2 py-1 rounded-full text-xs ${getPriorityColor(ticket.priority)}`}>
-                      {ticket.priority.toUpperCase()}
-                    </span>
+                    <StatusPill
+                      label={ticket.priority.toUpperCase()}
+                      tone={
+                        ticket.priority === 'low' ? 'success' :
+                        ticket.priority === 'medium' ? 'warning' :
+                        ticket.priority === 'high' ? 'destructive' :
+                        ticket.priority === 'urgent' ? 'destructive' :
+                        'muted'
+                      }
+                    />
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Category</span>
@@ -347,24 +374,28 @@ export default function SupportTicketDetailPage() {
                     </div>
                   )}
                 </div>
-              </div>
+              </SectionShell>
 
               {/* Quick Actions */}
               <ProtectedComponent permission="support.manage">
-                <div className="bg-card p-6 rounded-lg border border-border">
-                  <h3 className="text-lg font-semibold text-foreground mb-4">Quick Actions</h3>
+                <SectionShell
+                  title="Quick Actions"
+                  description="Common actions for ticket management"
+                >
                   <div className="space-y-2">
                     <button className="btn btn-outline w-full">Assign to Me</button>
                     <button className="btn btn-outline w-full">Escalate</button>
                     <button className="btn btn-outline w-full">Send Email</button>
                     <button className="btn btn-outline w-full">View Customer</button>
                   </div>
-                </div>
+                </SectionShell>
               </ProtectedComponent>
 
               {/* Ticket Timeline */}
-              <div className="bg-card p-6 rounded-lg border border-border">
-                <h3 className="text-lg font-semibold text-foreground mb-4">Ticket Timeline</h3>
+              <SectionShell
+                title="Ticket Timeline"
+                description="Status changes and important events"
+              >
                 <div className="space-y-3">
                   <div className="flex items-center gap-3">
                     <div className="w-2 h-2 bg-green-500 rounded-full"></div>
@@ -398,46 +429,43 @@ export default function SupportTicketDetailPage() {
                     </div>
                   )}
                 </div>
-              </div>
+              </SectionShell>
             </div>
           </div>
 
           {/* Status Update Modal */}
           {showStatusModal && (
             <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-              <div className="bg-card p-6 rounded-lg border border-border w-full max-w-md">
+              <div className="bg-background p-6 rounded-lg border border-border w-full max-w-md shadow-lg">
                 <h3 className="text-lg font-semibold text-foreground mb-4">Update Ticket Status</h3>
-                <div className="space-y-4">
-                  <div>
-                    <label className="form-label">New Status</label>
-                    <select
-                      value={newStatus}
-                      onChange={(e) => setNewStatus(e.target.value)}
-                      className="form-select"
+                <FormLayout>
+                  <FormSelect
+                    value={newStatus}
+                    onChange={(e) => setNewStatus(e.target.value)}
+                    placeholder="Select status"
+                    options={[
+                      { value: "open", label: "Open" },
+                      { value: "in_progress", label: "In Progress" },
+                      { value: "pending", label: "Pending" },
+                      { value: "resolved", label: "Resolved" },
+                      { value: "closed", label: "Closed" }
+                    ]}
+                  />
+                  <div className="flex gap-2 mt-6">
+                    <button
+                      onClick={handleStatusUpdate}
+                      className="btn btn-primary"
                     >
-                      <option value="">Select status</option>
-                      <option value="open">Open</option>
-                      <option value="in_progress">In Progress</option>
-                      <option value="pending">Pending</option>
-                      <option value="resolved">Resolved</option>
-                      <option value="closed">Closed</option>
-                    </select>
+                      Update Status
+                    </button>
+                    <button
+                      onClick={() => setShowStatusModal(false)}
+                      className="btn btn-outline"
+                    >
+                      Cancel
+                    </button>
                   </div>
-                </div>
-                <div className="flex gap-2 mt-6">
-                  <button
-                    onClick={handleStatusUpdate}
-                    className="btn btn-primary"
-                  >
-                    Update Status
-                  </button>
-                  <button
-                    onClick={() => setShowStatusModal(false)}
-                    className="btn btn-outline"
-                  >
-                    Cancel
-                  </button>
-                </div>
+                </FormLayout>
               </div>
             </div>
           )}

@@ -6,8 +6,13 @@ import { useDashboardStats, useOrders, useStores } from "@/hooks/useApi";
 import { DashboardStats } from "@/types/api";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { ApiError } from "@/lib/api-client";
+import { formatCurrency } from "@/lib/formatters";
+import { cn } from "@/lib/utils";
 import CalendarWidget from "@/components/CalendarWidget";
+import { MetricCard } from "@/components/patterns/MetricCard";
+import { SectionShell } from "@/components/patterns/SectionShell";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
 import { 
   ShoppingCart, 
   Package, 
@@ -26,23 +31,24 @@ import {
 export default function DashboardPage() {
   const { user } = useAuth();
   const { isAdmin } = useRBAC();
+  const adminView = isAdmin();
   
   // Get user's store ID for customer view
   const userStoreId = user?.stores?.[0]?.id;
   
   // Fetch dashboard data
   const { data: stats, isLoading: statsLoading, error: statsError } = useDashboardStats(
-    isAdmin() ? undefined : userStoreId
+    adminView ? undefined : userStoreId
   ) as { data: DashboardStats | undefined; isLoading: boolean; error: ApiError | null };
   
   const { data: recentOrders, isLoading: ordersLoading } = useOrders({
     limit: 5,
-    ...(isAdmin() ? {} : userStoreId ? { storeId: userStoreId } : {}),
+    ...(adminView ? {} : userStoreId ? { storeId: userStoreId } : {}),
   }) as { data: { data: Array<{ id: string; orderNumber: string; createdAt: string; status: string; total: number }>; pagination: { total: number; pages: number } } | undefined; isLoading: boolean; error: unknown };
   
   const { data: stores, isLoading: storesLoading } = useStores() as { data: { data: Array<{ id: string; name: string; status: string; url: string }> } | undefined; isLoading: boolean; error: unknown };
 
-  if (statsLoading || ordersLoading || (isAdmin() && storesLoading)) {
+  if (statsLoading || ordersLoading || (adminView && storesLoading)) {
     return (
       <ProtectedRoute>
         <div className="min-h-screen bg-background flex items-center justify-center">
@@ -81,28 +87,200 @@ export default function DashboardPage() {
               </div>
             </div>
             <div className="flex flex-col sm:flex-row gap-3 w-full">
-              <button 
+              <Button 
                 onClick={() => window.location.reload()} 
-                className="btn btn-primary flex-1"
+                variant="default"
+                className="flex-1"
               >
                 Retry Dashboard
-              </button>
-              <button 
+              </Button>
+              <Button 
                 onClick={() => {
                   sessionStorage.clear();
                   localStorage.clear();
                   window.location.href = '/login';
                 }} 
-                className="btn btn-outline flex-1"
+                variant="outline"
+                className="flex-1"
               >
                 Re-login
-              </button>
+              </Button>
             </div>
           </div>
         </div>
       </ProtectedRoute>
     );
   }
+
+  const metricCards = [
+    {
+      key: "orders",
+      label: "Total Orders",
+      value: stats?.totalOrders?.toLocaleString() ?? "0",
+      context: adminView ? "Across all stores" : "This month",
+      icon: ShoppingCart,
+      tone: "blue" as const,
+    },
+    {
+      key: "products",
+      label: "Products",
+      value: stats?.totalProducts?.toLocaleString() ?? "0",
+      context: adminView ? "Total products" : "In your store",
+      icon: Package,
+      tone: "green" as const,
+    },
+    {
+      key: "customers",
+      label: "Users",
+      value: stats?.totalCustomers?.toLocaleString() ?? "0",
+      context: adminView ? "Panel users" : "Store customers",
+      icon: Users,
+      tone: "purple" as const,
+    },
+    {
+      key: "revenue",
+      label: "Revenue",
+      value: formatCurrency(stats?.totalRevenue ?? 0),
+      context: adminView ? "Total revenue" : "This month",
+      icon: TrendingUp,
+      tone: "emerald" as const,
+    },
+  ];
+
+  type QuickActionTone =
+    | "blue"
+    | "green"
+    | "purple"
+    | "orange"
+    | "indigo"
+    | "teal"
+    | "amber"
+    | "rose"
+    | "slate"
+    | "cyan";
+
+  const quickActionToneClasses: Record<QuickActionTone, string> = {
+    blue: "border-blue-200/70 bg-blue-50 dark:border-blue-800/60 dark:bg-blue-900/25",
+    green: "border-green-200/70 bg-green-50 dark:border-green-800/60 dark:bg-green-900/25",
+    purple: "border-purple-200/70 bg-purple-50 dark:border-purple-800/60 dark:bg-purple-900/25",
+    orange: "border-orange-200/70 bg-orange-50 dark:border-orange-800/60 dark:bg-orange-900/25",
+    indigo: "border-indigo-200/70 bg-indigo-50 dark:border-indigo-800/60 dark:bg-indigo-900/25",
+    teal: "border-teal-200/70 bg-teal-50 dark:border-teal-800/60 dark:bg-teal-900/25",
+    amber: "border-amber-200/70 bg-amber-50 dark:border-amber-800/60 dark:bg-amber-900/25",
+    rose: "border-rose-200/70 bg-rose-50 dark:border-rose-800/60 dark:bg-rose-900/25",
+    slate: "border-slate-200/70 bg-slate-50 dark:border-slate-700/60 dark:bg-slate-900/30",
+    cyan: "border-cyan-200/70 bg-cyan-50 dark:border-cyan-800/60 dark:bg-cyan-900/25",
+  };
+
+  const quickActionIconClasses: Record<QuickActionTone, string> = {
+    blue: "bg-blue-600",
+    green: "bg-green-600",
+    purple: "bg-purple-600",
+    orange: "bg-orange-500",
+    indigo: "bg-indigo-600",
+    teal: "bg-teal-600",
+    amber: "bg-amber-500",
+    rose: "bg-rose-600",
+    slate: "bg-slate-600",
+    cyan: "bg-cyan-600",
+  };
+
+  const quickActions = [
+    {
+      key: "orders",
+      label: "Orders",
+      description: "Manage orders & shipping",
+      href: "/orders",
+      icon: ShoppingCart,
+      tone: "blue" as QuickActionTone,
+      adminOnly: false,
+    },
+    {
+      key: "products",
+      label: "Products",
+      description: "Manage product catalog",
+      href: "/products",
+      icon: Package,
+      tone: "green" as QuickActionTone,
+      adminOnly: false,
+    },
+    {
+      key: "customers",
+      label: "Users",
+      description: "Manage panel users",
+      href: "/customers",
+      icon: Users,
+      tone: "purple" as QuickActionTone,
+      adminOnly: false,
+    },
+    {
+      key: "inventory",
+      label: "Inventory",
+      description: "Stock management",
+      href: "/inventory",
+      icon: BarChart3,
+      tone: "orange" as QuickActionTone,
+      adminOnly: false,
+    },
+    {
+      key: "stores",
+      label: "Stores",
+      description: "Manage customer stores",
+      href: "/stores",
+      icon: Building,
+      tone: "indigo" as QuickActionTone,
+      adminOnly: true,
+    },
+    {
+      key: "shipping",
+      label: "Shipping",
+      description: "Logistics & delivery",
+      href: "/shipping",
+      icon: Truck,
+      tone: "teal" as QuickActionTone,
+      adminOnly: true,
+    },
+    {
+      key: "order-approvals",
+      label: "Order Approvals",
+      description: "Review pending orders",
+      href: "/orders/approvals",
+      icon: Clock,
+      tone: "amber" as QuickActionTone,
+      adminOnly: true,
+    },
+    {
+      key: "inventory-approvals",
+      label: "Inventory Approvals",
+      description: "Review stock requests",
+      href: "/inventory/approvals",
+      icon: CheckCircle,
+      tone: "rose" as QuickActionTone,
+      adminOnly: true,
+    },
+    {
+      key: "support",
+      label: "Support",
+      description: "Help & tickets",
+      href: "/support",
+      icon: ClipboardList,
+      tone: "slate" as QuickActionTone,
+      adminOnly: false,
+    },
+    {
+      key: "reports",
+      label: "Reports",
+      description: "Analytics & insights",
+      href: "/reports",
+      icon: BarChart3,
+      tone: "cyan" as QuickActionTone,
+      adminOnly: false,
+    },
+  ];
+
+  const visibleQuickActions = quickActions.filter((action) =>
+    action.adminOnly ? adminView : true
+  );
 
   return (
     <ProtectedRoute>
@@ -115,107 +293,68 @@ export default function DashboardPage() {
                 Dashboard
               </h1>
               <p className="text-gray-700 dark:text-gray-400 mobile-text font-medium">
-                {isAdmin() ? 'Overview of all stores and operations' : 'Your store overview and statistics'}
+                {adminView ? 'Overview of all stores and operations' : 'Your store overview and statistics'}
               </p>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              <Link href="/orders/create" className="btn btn-primary btn-md flex flex-col items-center justify-center gap-1 shadow-lg hover:shadow-xl transition-all duration-200 w-full h-16">
-                <Plus className="h-5 w-5 text-white" />
-                <span className="text-xs font-medium leading-tight">Create Order</span>
-              </Link>
-              <Link href="/products" className="btn btn-outline btn-md flex flex-col items-center justify-center gap-1 hover:bg-accent/50 transition-all duration-200 w-full h-16">
-                <Package className="h-5 w-5 text-gray-700 dark:text-gray-300" />
-                <span className="text-xs font-medium leading-tight">Products</span>
-              </Link>
-              <Link href="/inventory" className="btn btn-outline btn-md flex flex-col items-center justify-center gap-1 hover:bg-accent/50 transition-all duration-200 w-full h-16">
-                <BarChart3 className="h-5 w-5 text-gray-700 dark:text-gray-300" />
-                <span className="text-xs font-medium leading-tight">Inventory</span>
-              </Link>
+              <Button asChild variant="default" className="flex flex-col items-center justify-center gap-1 shadow-lg hover:shadow-xl transition-all duration-200 w-full h-16">
+                <Link href="/orders/create">
+                  <Plus className="h-5 w-5" />
+                  <span className="text-xs font-medium leading-tight">Create Order</span>
+                </Link>
+              </Button>
+              <Button asChild variant="outline" className="flex flex-col items-center justify-center gap-1 hover:bg-accent/50 transition-all duration-200 w-full h-16">
+                <Link href="/products">
+                  <Package className="h-5 w-5" />
+                  <span className="text-xs font-medium leading-tight">Products</span>
+                </Link>
+              </Button>
+              <Button asChild variant="outline" className="flex flex-col items-center justify-center gap-1 hover:bg-accent/50 transition-all duration-200 w-full h-16">
+                <Link href="/inventory">
+                  <BarChart3 className="h-5 w-5" />
+                  <span className="text-xs font-medium leading-tight">Inventory</span>
+                </Link>
+              </Button>
             </div>
           </div>
 
           {/* Statistics Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="bg-card p-6 rounded-xl border border-border shadow-sm hover:shadow-md transition-shadow duration-200">
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-2 bg-blue-50/50 dark:bg-blue-900/30 rounded-lg">
-                  <ShoppingCart className="h-6 w-6 text-blue-700 dark:text-blue-400" />
-                </div>
-                <div className="text-right">
-                  <div className="text-2xl font-bold text-foreground">{stats?.totalOrders || 0}</div>
-                  <p className="text-sm text-foreground font-medium">Total Orders</p>
-                </div>
-              </div>
-              <p className="text-xs text-blue-700 dark:text-blue-400 font-semibold">
-                {isAdmin() ? 'Across all stores' : 'This month'}
-              </p>
-            </div>
-
-            <div className="bg-card p-6 rounded-xl border border-border shadow-sm hover:shadow-md transition-shadow duration-200">
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-2 bg-green-50/50 dark:bg-green-900/30 rounded-lg">
-                  <Package className="h-6 w-6 text-green-700 dark:text-green-400" />
-                </div>
-                <div className="text-right">
-                  <div className="text-2xl font-bold text-foreground">{stats?.totalProducts || 0}</div>
-                  <p className="text-sm text-foreground font-medium">Products</p>
-                </div>
-              </div>
-              <p className="text-xs text-green-700 dark:text-green-400 font-semibold">
-                {isAdmin() ? 'Total products' : 'In your store'}
-              </p>
-            </div>
-
-            <div className="bg-card p-6 rounded-xl border border-border shadow-sm hover:shadow-md transition-shadow duration-200">
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-2 bg-purple-50/50 dark:bg-purple-900/30 rounded-lg">
-                  <Users className="h-6 w-6 text-purple-700 dark:text-purple-400" />
-                </div>
-                <div className="text-right">
-                  <div className="text-2xl font-bold text-foreground">{stats?.totalCustomers || 0}</div>
-                  <p className="text-sm text-foreground font-medium">Users</p>
-                </div>
-              </div>
-              <p className="text-xs text-purple-700 dark:text-purple-400 font-semibold">
-                {isAdmin() ? 'Panel users' : 'Store customers'}
-              </p>
-            </div>
-
-            <div className="bg-card p-6 rounded-xl border border-border shadow-sm hover:shadow-md transition-shadow duration-200">
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-2 bg-emerald-50/50 dark:bg-emerald-900/30 rounded-lg">
-                  <TrendingUp className="h-6 w-6 text-emerald-700 dark:text-emerald-400" />
-                </div>
-                <div className="text-right">
-                  <div className="text-2xl font-bold text-foreground">${stats?.totalRevenue || 0}</div>
-                  <p className="text-sm text-foreground font-medium">Revenue</p>
-                </div>
-              </div>
-              <p className="text-xs text-emerald-700 dark:text-emerald-400 font-semibold">
-                {isAdmin() ? 'Total revenue' : 'This month'}
-              </p>
-            </div>
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+            {metricCards.map((metric) => (
+              <MetricCard
+                key={metric.key}
+                label={metric.label}
+                value={metric.value}
+                context={metric.context}
+                tone={metric.tone}
+              />
+            ))}
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="bg-card p-6 rounded-xl border border-border shadow-sm">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="p-2 bg-blue-50/50 dark:bg-blue-900/30 rounded-lg">
-                  <ShoppingCart className="h-6 w-6 text-blue-700 dark:text-blue-400" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-foreground">Recent Orders</h3>
-                  <p className="text-sm text-gray-700 dark:text-gray-400 font-medium">Latest order activity</p>
-                </div>
-              </div>
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            <SectionShell
+              title="Recent Orders"
+              description="Latest order activity"
+              actions={
+                <Link
+                  href="/orders"
+                  className="text-sm font-semibold text-primary transition-colors hover:text-primary/80"
+                >
+                  View all
+                </Link>
+              }
+            >
               <div className="space-y-3">
                 {recentOrders?.data && recentOrders.data.length > 0 ? (
                   recentOrders.data.map((order: { id: string; orderNumber: string; createdAt: string; status: string; total: number }) => (
-                    <div key={order.id} className="flex justify-between items-center p-4 bg-gradient-to-r from-accent/30 to-accent/20 rounded-lg border border-border/50 hover:shadow-md transition-all duration-200">
+                    <div
+                      key={order.id}
+                      className="flex items-center justify-between rounded-lg border border-border/60 bg-accent/10 p-4 transition-colors hover:bg-accent/20"
+                    >
                       <div className="flex items-center gap-3">
-                        <div className="p-2 bg-primary/10 rounded-lg">
-                          <ShoppingCart className="h-4 w-4 text-primary" />
-                        </div>
+                        <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                          <ShoppingCart className="h-4 w-4" aria-hidden="true" />
+                        </span>
                         <div>
                           <div className="font-semibold text-foreground">Order #{order.orderNumber}</div>
                           <div className="text-sm text-muted-foreground">
@@ -224,221 +363,148 @@ export default function DashboardPage() {
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className="font-bold text-foreground">${order.total}</div>
-                        <div className={`text-sm font-medium ${
-                          order.status === 'completed' ? 'text-green-700 dark:text-green-400' :
-                          order.status === 'processing' ? 'text-yellow-600 dark:text-yellow-400' :
-                          'text-gray-600 dark:text-gray-400'
-                        }`}>
-                          {order.status}
+                        <div className="font-semibold text-foreground">
+                          {formatCurrency(order.total)}
                         </div>
+                        <span
+                          className={cn(
+                            "text-sm font-medium",
+                            order.status === "completed"
+                              ? "text-emerald-700 dark:text-emerald-300"
+                              : order.status === "processing"
+                              ? "text-amber-600 dark:text-amber-300"
+                              : "text-muted-foreground"
+                          )}
+                        >
+                          {order.status}
+                        </span>
                       </div>
                     </div>
                   ))
                 ) : (
-                  <div className="text-center py-4 text-foreground/80 font-medium">
+                  <div className="text-center py-4 text-sm font-medium text-muted-foreground">
                     No recent orders
                   </div>
                 )}
               </div>
-            </div>
+            </SectionShell>
 
-            <div className="bg-card p-6 rounded-xl border border-border shadow-sm">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="p-2 bg-red-50/50 dark:bg-red-900/30 rounded-lg">
-                  <AlertTriangle className="h-6 w-6 text-red-700 dark:text-red-400" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-foreground">Low Stock Alerts</h3>
-                  <p className="text-sm text-gray-700 dark:text-gray-400 font-medium">Products needing attention</p>
-                </div>
-              </div>
+            <SectionShell
+              title="Low Stock Alerts"
+              description="Products needing attention"
+              actions={
+                <Link
+                  href="/inventory"
+                  className="text-sm font-semibold text-primary transition-colors hover:text-primary/80"
+                >
+                  Manage inventory
+                </Link>
+              }
+            >
               <div className="space-y-3">
                 {stats?.lowStockProducts && stats.lowStockProducts.length > 0 ? (
-                  stats.lowStockProducts.map((product: { id: string; name: string; sku: string; stock: number }) => (
-                    <div key={product.id} className={`flex justify-between items-center p-4 rounded-lg border transition-all duration-200 hover:shadow-md ${
-                      product.stock <= 5 ? 
-                        'bg-gradient-to-r from-red-50/80 to-red-100/80 dark:from-red-900/20 dark:to-red-800/20 border-red-200/60 dark:border-red-800/30' : 
-                        'bg-gradient-to-r from-yellow-50/80 to-yellow-100/80 dark:from-yellow-900/20 dark:to-yellow-800/20 border-yellow-200/60 dark:border-yellow-800/30'
-                    }`}>
-                      <div className="flex items-center gap-3">
-                        <div className={`p-2 rounded-lg ${
-                          product.stock <= 5 ? 'bg-red-500' : 'bg-yellow-500'
-                        }`}>
-                          <Package className="h-4 w-4 text-white" />
+                  stats.lowStockProducts.map((product: { id: string; name: string; sku: string; stock: number }) => {
+                    const critical = product.stock <= 5;
+
+                    return (
+                      <div
+                        key={product.id}
+                        className={cn(
+                          "flex items-center justify-between rounded-lg border p-4 transition-colors",
+                          critical
+                            ? "border-red-300/70 bg-red-500/10 dark:border-red-800/60 dark:bg-red-900/20"
+                            : "border-amber-300/70 bg-amber-500/10 dark:border-amber-800/60 dark:bg-amber-900/20"
+                        )}
+                      >
+                        <div className="flex items-center gap-3">
+                          <span
+                            className={cn(
+                              "inline-flex h-9 w-9 items-center justify-center rounded-lg text-white",
+                              critical ? "bg-red-600" : "bg-amber-500"
+                            )}
+                          >
+                            <Package className="h-4 w-4" aria-hidden="true" />
+                          </span>
+                          <div>
+                            <div className="font-semibold text-foreground">{product.name}</div>
+                            <div className="text-sm text-muted-foreground">SKU: {product.sku}</div>
+                          </div>
                         </div>
-                        <div>
-                          <div className={`font-semibold ${
-                            product.stock <= 5 ? 'text-red-800 dark:text-red-200' : 'text-yellow-800 dark:text-yellow-200'
-                          }`}>
-                            {product.name}
-                          </div>
-                          <div className={`text-sm ${
-                            product.stock <= 5 ? 'text-red-600 dark:text-red-400' : 'text-yellow-600 dark:text-yellow-400'
-                          }`}>
-                            SKU: {product.sku}
-                          </div>
+                        <div className="text-right">
+                          <div className="font-semibold text-foreground">{product.stock} left</div>
+                          <span
+                            className={cn(
+                              "text-sm font-medium",
+                              critical
+                                ? "text-red-700 dark:text-red-300"
+                                : "text-amber-700 dark:text-amber-300"
+                            )}
+                          >
+                            {critical ? "Critical" : "Warning"}
+                          </span>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <div className={`font-bold ${
-                          product.stock <= 5 ? 'text-red-800 dark:text-red-200' : 'text-yellow-800 dark:text-yellow-200'
-                        }`}>
-                          {product.stock} left
-                        </div>
-                        <div className={`text-sm font-medium ${
-                          product.stock <= 5 ? 'text-red-600 dark:text-red-400' : 'text-yellow-600 dark:text-yellow-400'
-                        }`}>
-                          {product.stock <= 5 ? 'Critical' : 'Warning'}
-                        </div>
-                      </div>
-                    </div>
-                  ))
+                    );
+                  })
                 ) : (
-                  <div className="text-center py-4 text-foreground/80 font-medium">
+                  <div className="text-center py-4 text-sm font-medium text-muted-foreground">
                     No low stock alerts
                   </div>
                 )}
               </div>
-            </div>
+            </SectionShell>
           </div>
 
           {/* Quick Actions */}
-          <div className="bg-card p-6 rounded-xl border border-border shadow-sm">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="p-2 bg-primary/10 rounded-lg">
-                <TrendingUp className="h-6 w-6 text-primary" />
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-foreground">Quick Actions</h3>
-                <p className="text-sm text-gray-800 dark:text-gray-300 font-semibold">Frequently used features and shortcuts</p>
-              </div>
+          <SectionShell
+            title={
+              <span className="flex items-center gap-2 text-lg font-semibold text-foreground">
+                <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <TrendingUp className="h-5 w-5" aria-hidden="true" />
+                </span>
+                Quick Actions
+              </span>
+            }
+            description="Frequently used features and shortcuts"
+          >
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+              {visibleQuickActions.map((action) => {
+                const Icon = action.icon;
+                return (
+                  <Link
+                    key={action.key}
+                    href={action.href}
+                    className={cn(
+                      "group flex min-h-[120px] flex-col justify-center rounded-xl border p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
+                      quickActionToneClasses[action.tone]
+                    )}
+                  >
+                    <div className="mb-3 flex items-center gap-3">
+                      <span
+                        className={cn(
+                          "inline-flex h-10 w-10 items-center justify-center rounded-lg text-white shadow-sm",
+                          quickActionIconClasses[action.tone]
+                        )}
+                      >
+                        <Icon className="h-5 w-5" aria-hidden="true" />
+                      </span>
+                      <div className="font-semibold text-card-foreground">{action.label}</div>
+                    </div>
+                    <p className="text-sm font-medium text-card-foreground/80">{action.description}</p>
+                  </Link>
+                );
+              })}
             </div>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-              {/* Core Actions */}
-              <Link href="/orders" className="group p-5 bg-card dark:bg-gradient-to-br dark:from-blue-900/20 dark:to-blue-800/20 rounded-xl border border-blue-200 dark:border-blue-800/30 hover:shadow-lg hover:scale-[1.02] transition-all duration-200 min-h-[120px] flex flex-col justify-center">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="p-2.5 bg-blue-500 rounded-lg shadow-sm">
-                    <ShoppingCart className="h-5 w-5 text-white" />
-                  </div>
-                  <div className="font-semibold text-card-foreground">Orders</div>
-                </div>
-                  <div className="text-sm text-card-foreground/80 leading-relaxed font-semibold">Manage orders & shipping</div>
-              </Link>
-              
-              <Link href="/products" className="group p-5 bg-card dark:bg-gradient-to-br dark:from-green-900/20 dark:to-green-800/20 rounded-xl border border-green-200 dark:border-green-800/30 hover:shadow-lg hover:scale-[1.02] transition-all duration-200 min-h-[120px] flex flex-col justify-center">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="p-2.5 bg-green-500 rounded-lg shadow-sm">
-                    <Package className="h-5 w-5 text-white" />
-                  </div>
-                  <div className="font-semibold text-card-foreground">Products</div>
-                </div>
-                  <div className="text-sm text-card-foreground/80 leading-relaxed font-semibold">Manage product catalog</div>
-              </Link>
-              
-              <Link href="/customers" className="group p-5 bg-card dark:bg-gradient-to-br dark:from-purple-900/20 dark:to-purple-800/20 rounded-xl border border-purple-200 dark:border-purple-800/30 hover:shadow-lg hover:scale-[1.02] transition-all duration-200 min-h-[120px] flex flex-col justify-center">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="p-2.5 bg-purple-500 rounded-lg shadow-sm">
-                    <Users className="h-5 w-5 text-white" />
-                  </div>
-                  <div className="font-semibold text-card-foreground">Users</div>
-                </div>
-                  <div className="text-sm text-card-foreground/80 leading-relaxed font-semibold">Manage panel users</div>
-              </Link>
-              
-              <Link href="/inventory" className="group p-5 bg-card dark:bg-gradient-to-br dark:from-orange-900/20 dark:to-orange-800/20 rounded-xl border border-orange-200 dark:border-orange-800/30 hover:shadow-lg hover:scale-[1.02] transition-all duration-200 min-h-[120px] flex flex-col justify-center">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="p-2.5 bg-orange-500 rounded-lg shadow-sm">
-                    <BarChart3 className="h-5 w-5 text-white" />
-                  </div>
-                  <div className="font-semibold text-card-foreground">Inventory</div>
-                </div>
-                  <div className="text-sm text-card-foreground/80 leading-relaxed font-semibold">Stock management</div>
-              </Link>
-
-              {/* Admin Only Actions */}
-              {isAdmin() && (
-                <>
-                  <Link href="/stores" className="group p-5 bg-card dark:bg-gradient-to-br dark:from-indigo-900/20 dark:to-indigo-800/20 rounded-xl border border-indigo-200 dark:border-indigo-800/30 hover:shadow-lg hover:scale-[1.02] transition-all duration-200 min-h-[120px] flex flex-col justify-center">
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="p-2.5 bg-indigo-500 rounded-lg shadow-sm">
-                        <Building className="h-5 w-5 text-white" />
-                      </div>
-                      <div className="font-semibold text-card-foreground">Stores</div>
-                    </div>
-                    <div className="text-sm text-card-foreground/80 leading-relaxed font-semibold">Manage customer stores</div>
-                  </Link>
-                  
-                  <Link href="/shipping" className="group p-5 bg-card dark:bg-gradient-to-br dark:from-teal-900/20 dark:to-teal-800/20 rounded-xl border border-teal-200 dark:border-teal-800/30 hover:shadow-lg hover:scale-[1.02] transition-all duration-200 min-h-[120px] flex flex-col justify-center">
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="p-2.5 bg-teal-500 rounded-lg shadow-sm">
-                        <Truck className="h-5 w-5 text-white" />
-                      </div>
-                      <div className="font-semibold text-card-foreground">Shipping</div>
-                    </div>
-                    <div className="text-sm text-card-foreground/80 leading-relaxed font-semibold">Logistics & delivery</div>
-                  </Link>
-                  
-                  <Link href="/orders/approvals" className="group p-5 bg-card dark:bg-gradient-to-br dark:from-amber-900/20 dark:to-amber-800/20 rounded-xl border border-amber-200 dark:border-amber-800/30 hover:shadow-lg hover:scale-[1.02] transition-all duration-200 min-h-[120px] flex flex-col justify-center">
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="p-2.5 bg-amber-500 rounded-lg shadow-sm">
-                        <Clock className="h-5 w-5 text-white" />
-                      </div>
-                      <div className="font-semibold text-card-foreground">Order Approvals</div>
-                    </div>
-                    <div className="text-sm text-card-foreground/80 leading-relaxed font-semibold">Review pending orders</div>
-                  </Link>
-                  
-                  <Link href="/inventory/approvals" className="group p-5 bg-card dark:bg-gradient-to-br dark:from-rose-900/20 dark:to-rose-800/20 rounded-xl border border-rose-200 dark:border-rose-800/30 hover:shadow-lg hover:scale-[1.02] transition-all duration-200 min-h-[120px] flex flex-col justify-center">
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="p-2.5 bg-rose-500 rounded-lg shadow-sm">
-                        <CheckCircle className="h-5 w-5 text-white" />
-                      </div>
-                      <div className="font-semibold text-card-foreground">Inventory Approvals</div>
-                    </div>
-                    <div className="text-sm text-card-foreground/80 leading-relaxed font-semibold">Review stock requests</div>
-                  </Link>
-                </>
-              )}
-
-              {/* Universal Actions */}
-              <Link href="/support" className="group p-5 bg-card dark:bg-gradient-to-br dark:from-gray-800/20 dark:to-gray-700/20 rounded-xl border border-gray-200 dark:border-gray-700/30 hover:shadow-lg hover:scale-[1.02] transition-all duration-200 min-h-[120px] flex flex-col justify-center">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="p-2.5 bg-gray-500 rounded-lg shadow-sm">
-                    <ClipboardList className="h-5 w-5 text-white" />
-                  </div>
-                  <div className="font-semibold text-card-foreground">Support</div>
-                </div>
-                <div className="text-sm text-card-foreground/80 leading-relaxed font-semibold">Help & tickets</div>
-              </Link>
-              
-              <Link href="/reports" className="group p-5 bg-card dark:bg-gradient-to-br dark:from-cyan-900/20 dark:to-cyan-800/20 rounded-xl border border-cyan-200 dark:border-cyan-800/30 hover:shadow-lg hover:scale-[1.02] transition-all duration-200 min-h-[120px] flex flex-col justify-center">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="p-2.5 bg-cyan-500 rounded-lg shadow-sm">
-                    <BarChart3 className="h-5 w-5 text-white" />
-                  </div>
-                  <div className="font-semibold text-card-foreground">Reports</div>
-                </div>
-                <div className="text-sm text-card-foreground/80 leading-relaxed font-semibold">Analytics & insights</div>
-              </Link>
-            </div>
-          </div>
+          </SectionShell>
 
           {/* Calendar Widget */}
           <CalendarWidget />
 
-          {isAdmin() && stores?.data && (
-            <div className="bg-card p-6 rounded-xl border border-border shadow-sm">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="p-2 bg-indigo-50 dark:bg-indigo-900/30 rounded-lg">
-                  <Building className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-foreground">Store Overview</h3>
-                  <p className="text-sm text-gray-700 dark:text-gray-400 font-medium">Monitor all connected customer stores</p>
-                </div>
-              </div>
+          {adminView && stores?.data && (
+            <SectionShell
+              title="Store Overview"
+              description="Monitor all connected customer stores"
+            >
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {stores.data.map((store: { id: string; name: string; status: string; url: string; _count?: { orders: number } }) => (
                   <div key={store.id} className="p-4 bg-gradient-to-br from-accent/20 to-accent/10 rounded-xl border border-border hover:shadow-md transition-all duration-200">
@@ -468,7 +534,7 @@ export default function DashboardPage() {
                   </div>
                 ))}
               </div>
-            </div>
+            </SectionShell>
           )}
         </main>
       </div>

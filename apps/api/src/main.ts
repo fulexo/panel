@@ -269,9 +269,10 @@ async function bootstrap() {
   });
 
   // Metrics endpoint
-  app.getHttpAdapter().get('/metrics', (_req, res) => {
+  app.getHttpAdapter().get('/metrics', async (_req, res) => {
     res.set('Content-Type', register.contentType);
-    res.end(register.metrics());
+    const metrics = await register.metrics();
+    res.end(metrics);
   });
 
   // JWKS endpoint

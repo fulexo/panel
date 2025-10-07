@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import { useRBAC } from "@/hooks/useRBAC";
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -9,12 +9,23 @@ import { useCart, useAddToCart, useUpdateCartItem, useRemoveFromCart, useClearCa
 import { useApp } from "@/contexts/AppContext";
 import { Product } from "@/types/api";
 import Link from "next/link";
+import { ImagePlaceholder } from "@/components/patterns/ImagePlaceholder";
+import { formatCurrency } from "@/lib/formatters";
 
 export default function CartPage() {
   const { user } = useAuth();
   const { isCustomer } = useRBAC();
   const { addNotification } = useApp();
   const [storeId, setStoreId] = useState<string>("");
+  const currencyOptions = useMemo(
+    () => ({
+      locale: "tr-TR",
+      currency: "EUR",
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }),
+    []
+  );
 
   // Get user's store ID
   useEffect(() => {
@@ -168,7 +179,7 @@ export default function CartPage() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Cart Items */}
               <div className="lg:col-span-2">
-                <div className="bg-card p-6 rounded-lg border border-border">
+                <div className="p-6 bg-muted/40 rounded-lg border border-border">
                   <h2 className="text-xl font-semibold text-foreground mb-4">
                     Sepet İçeriği ({getTotalItems()} ürün)
                   </h2>
@@ -184,13 +195,17 @@ export default function CartPage() {
                     <div className="space-y-4">
                       {cartItems.map((item: any) => (
                         <div key={item.id} className="flex items-center gap-4 p-4 bg-accent rounded-lg">
-                          {item.product.images[0] && (
-                            <img
-                              src={item.product.images[0]}
-                              alt={item.product.name}
-                              className="w-20 h-20 object-cover rounded"
-                            />
-                          )}
+                          <div className="h-20 w-20 flex-shrink-0 overflow-hidden rounded border border-border bg-muted">
+                            {item.product.images?.[0] ? (
+                              <img
+                                src={item.product.images[0]}
+                                alt={item.product.name}
+                                className="h-full w-full object-cover"
+                              />
+                            ) : (
+                              <ImagePlaceholder className="h-full w-full" labelHidden />
+                            )}
+                          </div>
                           <div className="flex-1">
                             <h3 className="font-medium text-foreground">{item.product.name}</h3>
                             <p className="text-sm text-muted-foreground">SKU: {item.product.sku}</p>
@@ -220,10 +235,10 @@ export default function CartPage() {
                           </div>
                           <div className="text-right">
                             <p className="font-medium text-foreground">
-                              ₺{(item.product.price * item.quantity).toFixed(2)}
+                              {formatCurrency(item.product.price * item.quantity, currencyOptions)}
                             </p>
                             <p className="text-sm text-muted-foreground">
-                              ₺{item.product.price.toFixed(2)} × {item.quantity}
+                              {formatCurrency(item.product.price, currencyOptions)} × {item.quantity}
                             </p>
                           </div>
                           <button
@@ -242,7 +257,7 @@ export default function CartPage() {
 
               {/* Order Summary */}
               <div className="lg:col-span-1">
-                <div className="bg-card p-6 rounded-lg border border-border sticky top-6">
+                <div className="p-6 bg-muted/40 rounded-lg border border-border sticky top-6">
                   <h3 className="text-lg font-semibold text-foreground mb-4">Sipariş Özeti</h3>
                   
                   <div className="space-y-3 mb-6">
@@ -252,7 +267,7 @@ export default function CartPage() {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Ara Toplam:</span>
-                      <span className="text-foreground">₺{calculateTotal().toFixed(2)}</span>
+                      <span className="text-foreground">{formatCurrency(calculateTotal(), currencyOptions)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Kargo:</span>
@@ -261,7 +276,7 @@ export default function CartPage() {
                     <div className="border-t border-border pt-3">
                       <div className="flex justify-between text-lg font-semibold">
                         <span className="text-foreground">Toplam:</span>
-                        <span className="text-foreground">₺{calculateTotal().toFixed(2)}</span>
+                        <span className="text-foreground">{formatCurrency(calculateTotal(), currencyOptions)}</span>
                       </div>
                     </div>
                   </div>
@@ -290,7 +305,7 @@ export default function CartPage() {
                     const isOutOfStock = product.stockQuantity !== null && product.stockQuantity !== undefined && product.stockQuantity <= 0;
 
                     return (
-                      <div key={product.id} className="bg-card p-4 rounded-lg border border-border">
+                      <div key={product.id} className="p-4 bg-muted/40 rounded-lg border border-border">
                         {product.images[0] && (
                           <img
                             src={product.images[0]}
@@ -304,7 +319,7 @@ export default function CartPage() {
                           Stok: {product.stockQuantity !== null ? product.stockQuantity : "Sınırsız"}
                         </p>
                         <div className="flex justify-between items-center">
-                          <span className="font-semibold text-foreground">₺{Number(product.price).toFixed(2)}</span>
+                          <span className="font-semibold text-foreground">{formatCurrency(Number(product.price), currencyOptions)}</span>
                           <button
                             onClick={() => handleAddToCart(product.id, 1)}
                             disabled={addToCartMutation.isPending || isOutOfStock || !product.active}

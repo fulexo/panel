@@ -17,9 +17,13 @@ import express from 'express';
 import cors from 'cors';
 import { PrismaClient } from '@prisma/client';
 import { Decimal } from 'decimal.js';
+import dotenv from 'dotenv';
 // import { validateEnvOnStartup } from './env.validation.js';
 import { logger } from './lib/logger';
 import fetch from 'node-fetch';
+
+// Load environment variables
+dotenv.config();
 
 /**
  * Initialize Prometheus metrics collection
@@ -152,12 +156,13 @@ const jobProcessors = {
     
     const start = Date.now();
     // Syncing WooCommerce orders for store
-    const store = await prisma.wooStore.findUnique({ where: { id: storeId } });
+    const store = await prisma.wooStore.findUnique({ where: { id: storeId as string } });
     if(!store) { 
       throw new Error(`Store not found with ID: ${storeId}`); 
     }
     // Determine last sync
-    const last = (store.lastSync && store.lastSync.ordersUpdatedAfter) ? store.lastSync.ordersUpdatedAfter : null;
+    const lastSync = store.lastSync as any;
+    const last = (lastSync && lastSync.ordersUpdatedAfter) ? lastSync.ordersUpdatedAfter : null;
     const since = last ? new Date(last) : new Date(Date.now() - 7*24*60*60*1000);
     const updatedAfter = since.toISOString();
     let page = 1;
@@ -188,11 +193,12 @@ const jobProcessors = {
         const existing = await prisma.order.findFirst({ where: { tenantId: store.tenantId, externalOrderNo: String(o.number || o.id) } });
         const orderData = {
           tenantId: store.tenantId,
+          storeId: store.id,
           externalOrderNo: String(o.number || o.id),
           orderSource: 'woo',
           status: String(o.status || 'pending'),
           mappedStatus: String(o.status || 'pending'),
-          total: o.total ? new Decimal(o.total) : null,
+          total: o.total ? new Decimal(o.total) : new Decimal(0),
           currency: o.currency || 'TRY',
           customerEmail: o.billing?.email || null,
           customerPhone: o.billing?.phone || null,
@@ -234,7 +240,8 @@ const jobProcessors = {
       }
     }
     // update lastSync
-    await prisma.wooStore.update({ where: { id: storeId }, data: { lastSync: { ...(store.lastSync||{}), ordersUpdatedAfter: new Date().toISOString() } } });
+    const currentLastSync = store.lastSync as any || {};
+    await prisma.wooStore.update({ where: { id: storeId as string }, data: { lastSync: { ...currentLastSync, ordersUpdatedAfter: new Date().toISOString() } } });
     const dur = (Date.now()-start)/1000;
     syncLagGauge.set({ account_id: storeId as string, entity_type: 'orders' }, 0);
     return { success: true, storeId, imported, duration: dur };
@@ -246,7 +253,7 @@ const jobProcessors = {
     }
     
     // Syncing WooCommerce products for store
-    const store = await prisma.wooStore.findUnique({ where: { id: storeId } });
+    const store = await prisma.wooStore.findUnique({ where: { id: storeId as string } });
     if(!store) { 
       throw new Error(`Store not found with ID: ${storeId}`); 
     }
@@ -272,9 +279,11 @@ const jobProcessors = {
         const existing = await prisma.product.findFirst({ where: { tenantId: store.tenantId, sku: p.sku || String(p.id) } });
         const data = {
           tenantId: store.tenantId,
+          storeId: store.id,
           sku: p.sku || String(p.id),
           name: p.name || null,
-          price: p.price ? new Decimal(p.price) : null,
+          price: p.price ? new Decimal(p.price) : new Decimal(0),
+          regularPrice: p.regular_price ? new Decimal(p.regular_price) : new Decimal(0),
           stock: (typeof p.stock_quantity==='number') ? p.stock_quantity : null,
           images: Array.isArray(p.images) ? p.images.map((i: Record<string, unknown>)=>i['src']).filter(Boolean) : [],
           tags: Array.isArray(p.tags) ? p.tags.map((t: Record<string, unknown>)=>t['name']).filter(Boolean) : [],
@@ -316,17 +325,18 @@ const jobProcessors = {
       
       try {
         if(evt.topic.startsWith('order.')){
-          const o = evt.payload;
+          const o = evt.payload as any;
           const store = await prisma.wooStore.findUnique({ where: { id: evt.storeId } });
           if(!store) throw new Error('Store not found for webhook');
           const existing = await prisma.order.findFirst({ where: { tenantId: store.tenantId, externalOrderNo: String(o.number || o.id) } });
           const data = {
             tenantId: store.tenantId,
+            storeId: store.id,
             externalOrderNo: String(o.number || o.id),
             orderSource: 'woo',
             status: String(o.status || 'pending'),
             mappedStatus: String(o.status || 'pending'),
-            total: o.total ? new Decimal(o.total) : null,
+            total: o.total ? new Decimal(o.total) : new Decimal(0),
             currency: o.currency || 'TRY',
             customerEmail: o.billing?.email || null,
             customerPhone: o.billing?.phone || null,
@@ -344,7 +354,7 @@ const jobProcessors = {
           }
           if(orderId && Array.isArray(o.line_items)){
             await prisma.orderItem.deleteMany({ where: { orderId } });
-            for(const li of o.line_items){
+            for(const li of o.line_items as any[]){
               await prisma.orderItem.create({ data: {
                 orderId,
                 sku: li.sku || null,
@@ -355,15 +365,17 @@ const jobProcessors = {
             }
           }
         } else if(evt.topic?.startsWith('product.')){
-          const p = evt.payload;
+          const p = evt.payload as any;
           const store = await prisma.wooStore.findUnique({ where: { id: evt.storeId } });
           if(!store) throw new Error('Store not found for webhook');
           const existing = await prisma.product.findFirst({ where: { tenantId: store.tenantId, sku: p.sku || String(p.id) } });
           const data = {
             tenantId: store.tenantId,
+            storeId: store.id,
             sku: p.sku || String(p.id),
             name: p.name || null,
-            price: p.price ? new Decimal(p.price) : null,
+            price: p.price ? new Decimal(p.price) : new Decimal(0),
+            regularPrice: p.regular_price ? new Decimal(p.regular_price) : new Decimal(0),
             stock: (typeof p.stock_quantity==='number') ? p.stock_quantity : null,
             images: Array.isArray(p.images) ? p.images.map((i: Record<string, unknown>)=>i['src'] as string).filter(Boolean) : [],
             tags: Array.isArray(p.tags) ? p.tags.map((t: Record<string, unknown>)=>t['name'] as string).filter(Boolean) : [],
@@ -403,7 +415,7 @@ const jobProcessors = {
     
     // Get the request from database
     const request = await prisma.request.findUnique({
-      where: { id: requestId },
+      where: { id: requestId as string },
       include: { creator: true, tenant: true }
     });
     
@@ -415,11 +427,11 @@ const jobProcessors = {
     switch (action) {
       case 'approve':
         await prisma.request.update({
-          where: { id: requestId },
+          where: { id: requestId as string },
           data: { 
             status: 'APPROVED',
             reviewedAt: new Date(),
-            reviewerUserId: (job['data'] as Record<string, unknown>)['reviewerUserId']
+            reviewerUserId: String((job['data'] as Record<string, unknown>)['reviewerUserId'] || '')
           }
         });
         
@@ -429,11 +441,11 @@ const jobProcessors = {
         
       case 'reject':
         await prisma.request.update({
-          where: { id: requestId },
+          where: { id: requestId as string },
           data: { 
             status: 'REJECTED',
             reviewedAt: new Date(),
-            reviewerUserId: (job['data'] as Record<string, unknown>)['reviewerUserId']
+            reviewerUserId: String((job['data'] as Record<string, unknown>)['reviewerUserId'] || '')
           }
         });
         
@@ -443,7 +455,7 @@ const jobProcessors = {
         
       case 'apply':
         await prisma.request.update({
-          where: { id: requestId },
+          where: { id: requestId as string },
           data: { 
             status: 'APPLIED',
             appliedAt: new Date()
@@ -563,7 +575,7 @@ const jobProcessors = {
             throw new Error(`API call failed with status ${response.status}: ${errorBody}`);
           }
 
-          const trackingInfo = await response.json();
+          const trackingInfo = await response.json() as any;
           const nextStatus = typeof trackingInfo?.status === 'string' ? trackingInfo.status : '';
 
           if (nextStatus && nextStatus !== shipment.status) {
@@ -573,18 +585,18 @@ const jobProcessors = {
             };
 
             if (['shipped', 'in_transit', 'out_for_delivery', 'delivered'].includes(normalizedNextStatus)) {
-              updateData.shippedAt = shipment.shippedAt ?? new Date();
+              updateData['shippedAt'] = shipment['shippedAt'] ?? new Date();
             }
 
             if (normalizedNextStatus === 'delivered') {
-              updateData.deliveredAt = shipment.deliveredAt ?? new Date();
+              updateData['deliveredAt'] = shipment['deliveredAt'] ?? new Date();
             }
 
             if (
               typeof trackingInfo?.tracking_url === 'string' &&
-              trackingInfo.tracking_url !== shipment.trackingUrl
+              trackingInfo.tracking_url !== shipment['trackingUrl']
             ) {
-              updateData.trackingUrl = trackingInfo.tracking_url;
+              updateData['trackingUrl'] = trackingInfo.tracking_url;
             }
 
             await prisma.shipment.update({
@@ -714,10 +726,19 @@ async function applyRequestChanges(request: Record<string, unknown>) {
       
     case 'NEW_PRODUCT':
       if ((payload as Record<string, unknown>)['productData']) {
+        const productData = (payload as Record<string, unknown>)['productData'] as any;
         await prisma.product.create({
           data: {
-            ...(payload as Record<string, unknown>)['productData'] as Record<string, unknown>,
-            tenantId: (request as Record<string, unknown>)['tenantId'] as string
+            tenantId: (request as Record<string, unknown>)['tenantId'] as string,
+            storeId: productData.storeId || '',
+            name: productData.name || '',
+            price: productData.price ? new Decimal(productData.price) : new Decimal(0),
+            regularPrice: productData.regularPrice ? new Decimal(productData.regularPrice) : new Decimal(0),
+            sku: productData.sku || '',
+            stock: productData.stock || null,
+            images: productData.images || [],
+            tags: productData.tags || [],
+            active: productData.active !== false
           }
         });
       }
@@ -790,12 +811,12 @@ async function storeJobError(job: Record<string, unknown>, error: unknown, retry
       data: {
         action: 'JOB_FAILED',
         entityType: 'JOB',
-        changes: errorData,
+        changes: errorData as any,
         metadata: {
-          jobType: job['name'],
+          jobType: String(job['name'] || 'unknown'),
           retryCount,
           errorType: error instanceof Error ? error.name : 'Unknown',
-        },
+        } as any,
       },
     });
     
@@ -825,7 +846,7 @@ const schedulerQueue = new Queue('fx-jobs', {
 // Schedule recurring jobs with priorities
 async function scheduleRecurringJobs() {
   // High priority jobs
-  await schedulerQueue.add('process-webhook-events', {}, {
+  await schedulerQueue.add('process-webhook-events', null, {
     repeat: { pattern: '*/1 * * * *' },
     removeOnComplete: true,
     priority: 10, // High priority
@@ -841,20 +862,20 @@ async function scheduleRecurringJobs() {
   });
 
   // Low priority jobs
-  await schedulerQueue.add('cleanup-cache', {}, {
+  await schedulerQueue.add('cleanup-cache', null, {
     repeat: { pattern: '0 * * * *' },
     removeOnComplete: true,
     priority: 1, // Low priority
     delay: 10000, // 10 second delay
   });
 
-  await schedulerQueue.add('shipment-tracking-update', {}, {
+  await schedulerQueue.add('shipment-tracking-update', null, {
     repeat: { pattern: '0 * * * *' },
     removeOnComplete: true,
     priority: 2, // Medium-low priority
   });
 
-  await schedulerQueue.add('cleanup-sessions', {}, {
+  await schedulerQueue.add('cleanup-sessions', null, {
     repeat: { pattern: '0 */6 * * *' },
     removeOnComplete: true,
     priority: 1, // Low priority

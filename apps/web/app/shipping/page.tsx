@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRBAC } from "@/hooks/useRBAC";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { useApp } from "@/contexts/AppContext";
@@ -16,6 +16,13 @@ import {
   useCreateCustomerShippingPrice,
   useDeleteCustomerShippingPrice
 } from "@/hooks/useShipping";
+import { formatCurrency } from "@/lib/formatters";
+import { SectionShell } from "@/components/patterns/SectionShell";
+import { StatusPill } from "@/components/patterns/StatusPill";
+import { FormLayout } from "@/components/patterns/FormLayout";
+import { FormField, FormSelect, FormTextarea, FormCheckbox } from "@/components/forms";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 export default function ShippingPage() {
   const { isAdmin } = useRBAC();
@@ -59,6 +66,16 @@ export default function ShippingPage() {
   const deletePriceMutation = useDeleteShippingPrice();
   const createCustomerPriceMutation = useCreateCustomerShippingPrice();
   const deleteCustomerPriceMutation = useDeleteCustomerShippingPrice();
+
+  const currencyOptions = useMemo(
+    () => ({
+      locale: "tr-TR",
+      currency: "EUR",
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }),
+    []
+  );
 
   if (!isAdmin()) {
     return (
@@ -217,51 +234,61 @@ export default function ShippingPage() {
 
           {/* Tabs */}
           <div className="flex space-x-1 bg-accent p-1 rounded-lg">
-            <button
+            <Button
               onClick={() => setActiveTab('zones')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              variant={activeTab === 'zones' ? 'default' : 'ghost'}
+              size="sm"
+              className={cn(
+                "px-4 py-2 text-sm font-medium transition-colors",
                 activeTab === 'zones'
                   ? 'bg-background text-foreground shadow-sm'
                   : 'text-muted-foreground hover:text-foreground'
-              }`}
+              )}
             >
               Bölgeler
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={() => setActiveTab('prices')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              variant={activeTab === 'prices' ? 'default' : 'ghost'}
+              size="sm"
+              className={cn(
+                "px-4 py-2 text-sm font-medium transition-colors",
                 activeTab === 'prices'
                   ? 'bg-background text-foreground shadow-sm'
                   : 'text-muted-foreground hover:text-foreground'
-              }`}
+              )}
             >
               Fiyatlar
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={() => setActiveTab('customer-prices')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              variant={activeTab === 'customer-prices' ? 'default' : 'ghost'}
+              size="sm"
+              className={cn(
+                "px-4 py-2 text-sm font-medium transition-colors",
                 activeTab === 'customer-prices'
                   ? 'bg-background text-foreground shadow-sm'
                   : 'text-muted-foreground hover:text-foreground'
-              }`}
+              )}
             >
               Müşteri Özel Fiyatlar
-            </button>
+            </Button>
           </div>
 
           {/* Zones Tab */}
           {activeTab === 'zones' && (
-            <div className="space-y-6">
-              <div className="flex justify-between items-center">
-                <h2 className="text-xl font-semibold text-foreground">Kargo Bölgeleri</h2>
-                <button
+            <SectionShell
+              title="Kargo Bölgeleri"
+              description="Kargo bölgelerini yönetin ve düzenleyin"
+              actions={
+                <Button
                   onClick={() => setShowCreateZone(true)}
-                  className="btn btn-primary"
+                  variant="default"
                 >
                   Yeni Bölge
-                </button>
-              </div>
-
+                </Button>
+              }
+            >
               {zonesLoading ? (
                 <div className="text-center py-8">
                   <div className="spinner mx-auto mb-4"></div>
@@ -270,11 +297,11 @@ export default function ShippingPage() {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {(zones as any)?.map((zone: any) => (
-                    <div key={zone.id} className="bg-card p-4 rounded-lg border border-border">
+                    <div key={zone.id} className="p-4 bg-muted/40 rounded-lg border border-border">
                       <div className="flex justify-between items-start mb-2">
                         <h3 className="font-medium text-foreground">{zone.name}</h3>
                         <div className="flex gap-1">
-                          <button
+                          <Button
                             onClick={() => {
                               setEditingZone(zone.id);
                               setZoneForm({
@@ -283,27 +310,28 @@ export default function ShippingPage() {
                                 isActive: zone.isActive,
                               });
                             }}
-                            className="btn btn-sm btn-outline"
+                            variant="outline"
+                            size="sm"
                           >
                             Düzenle
-                          </button>
-                          <button
+                          </Button>
+                          <Button
                             onClick={() => handleDeleteZone(zone.id)}
-                            className="btn btn-sm btn-danger"
+                            variant="destructive"
+                            size="sm"
                           >
                             Sil
-                          </button>
+                          </Button>
                         </div>
                       </div>
                       {zone.description && (
                         <p className="text-sm text-muted-foreground mb-2">{zone.description}</p>
                       )}
                       <div className="flex items-center gap-2">
-                        <span className={`px-2 py-1 rounded-full text-xs ${
-                          zone.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                        }`}>
-                          {zone.isActive ? 'Aktif' : 'Pasif'}
-                        </span>
+                        <StatusPill
+                          label={zone.isActive ? 'Aktif' : 'Pasif'}
+                          tone={zone.isActive ? 'success' : 'destructive'}
+                        />
                         <span className="text-sm text-muted-foreground">
                           {zone.prices?.length || 0} fiyat
                         </span>
@@ -312,36 +340,37 @@ export default function ShippingPage() {
                   ))}
                 </div>
               )}
-            </div>
+            </SectionShell>
           )}
 
           {/* Prices Tab */}
           {activeTab === 'prices' && (
-            <div className="space-y-6">
-              <div className="flex justify-between items-center">
-                <h2 className="text-xl font-semibold text-foreground">Kargo Fiyatları</h2>
-                <button
+            <SectionShell
+              title="Kargo Fiyatları"
+              description="Kargo fiyatlarını yönetin ve düzenleyin"
+              actions={
+                <Button
                   onClick={() => setShowCreatePrice(true)}
-                  className="btn btn-primary"
+                  variant="default"
                 >
                   Yeni Fiyat
-                </button>
-              </div>
-
+                </Button>
+              }
+            >
               {/* Zone Filter */}
-              <div className="flex gap-4">
-                <select
+              <div className="flex gap-4 mb-6">
+                <FormSelect
+                  label="Bölge Filtresi"
                   value={selectedZone}
                   onChange={(e) => setSelectedZone(e.target.value)}
-                  className="px-3 py-2 border border-border rounded-lg bg-background text-foreground"
-                >
-                  <option value="">Tüm Bölgeler</option>
-                  {(zones as any)?.map((zone: any) => (
-                    <option key={zone.id} value={zone.id}>
-                      {zone.name}
-                    </option>
-                  ))}
-                </select>
+                  options={[
+                    { value: '', label: 'Tüm Bölgeler' },
+                    ...(zones as any)?.map((zone: any) => ({
+                      value: zone.id,
+                      label: zone.name
+                    })) || []
+                  ]}
+                />
               </div>
 
               {pricesLoading ? (
@@ -352,60 +381,61 @@ export default function ShippingPage() {
               ) : (
                 <div className="space-y-4">
                   {(prices as any)?.map((price: any) => (
-                    <div key={price.id} className="bg-card p-4 rounded-lg border border-border">
+                    <div key={price.id} className="p-4 bg-muted/40 rounded-lg border border-border">
                       <div className="flex justify-between items-start mb-2">
                         <div>
                           <h3 className="font-medium text-foreground">{price.name}</h3>
                           <p className="text-sm text-muted-foreground">
-                            {price.zone?.name} • ₺{price.basePrice.toFixed(2)}
+                            {price.zone?.name} • {formatCurrency(price.basePrice, currencyOptions)}
                           </p>
                           {price.description && (
                             <p className="text-sm text-muted-foreground mt-1">{price.description}</p>
                           )}
                         </div>
                         <div className="flex gap-1">
-                          <button
+                          <Button
                             onClick={() => handleDeletePrice(price.id)}
-                            className="btn btn-sm btn-danger"
+                            variant="destructive"
+                            size="sm"
                           >
                             Sil
-                          </button>
+                          </Button>
                         </div>
                       </div>
                       <div className="flex items-center gap-4 text-sm text-muted-foreground">
                         <span>Öncelik: {price.priority}</span>
                         {price.freeShippingThreshold && (
-                          <span>Ücretsiz: ₺{price.freeShippingThreshold.toFixed(2)}+</span>
+                          <span>Ücretsiz: {formatCurrency(price.freeShippingThreshold, currencyOptions)}+</span>
                         )}
                         {price.estimatedDays && (
                           <span>Tahmini: {price.estimatedDays}</span>
                         )}
-                        <span className={`px-2 py-1 rounded-full text-xs ${
-                          price.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                        }`}>
-                          {price.isActive ? 'Aktif' : 'Pasif'}
-                        </span>
+                        <StatusPill
+                          label={price.isActive ? 'Aktif' : 'Pasif'}
+                          tone={price.isActive ? 'success' : 'destructive'}
+                        />
                       </div>
                     </div>
                   ))}
                 </div>
               )}
-            </div>
+            </SectionShell>
           )}
 
           {/* Customer Prices Tab */}
           {activeTab === 'customer-prices' && (
-            <div className="space-y-6">
-              <div className="flex justify-between items-center">
-                <h2 className="text-xl font-semibold text-foreground">Müşteri Özel Fiyatlar</h2>
-                <button
+            <SectionShell
+              title="Müşteri Özel Fiyatlar"
+              description="Müşteri özel fiyatlarını yönetin ve düzenleyin"
+              actions={
+                <Button
                   onClick={() => setShowCreateCustomerPrice(true)}
-                  className="btn btn-primary"
+                  variant="default"
                 >
                   Yeni Müşteri Fiyatı
-                </button>
-              </div>
-
+                </Button>
+              }
+            >
               {customerPricesLoading ? (
                 <div className="text-center py-8">
                   <div className="spinner mx-auto mb-4"></div>
@@ -414,7 +444,7 @@ export default function ShippingPage() {
               ) : (
                 <div className="space-y-4">
                   {(customerPrices as any)?.map((customerPrice: any) => (
-                    <div key={customerPrice.id} className="bg-card p-4 rounded-lg border border-border">
+                    <div key={customerPrice.id} className="p-4 bg-muted/40 rounded-lg border border-border">
                       <div className="flex justify-between items-start mb-2">
                         <div>
                           <h3 className="font-medium text-foreground">
@@ -424,95 +454,81 @@ export default function ShippingPage() {
                             {customerPrice.zone?.name} • {customerPrice.price?.name}
                           </p>
                           <p className="text-sm text-muted-foreground">
-                            Temel Fiyat: ₺{customerPrice.price?.basePrice.toFixed(2)}
+                            Temel Fiyat: {formatCurrency(customerPrice.price?.basePrice ?? 0, currencyOptions)}
                           </p>
                         </div>
                         <div className="flex gap-1">
-                          <button
+                          <Button
                             onClick={() => handleDeleteCustomerPrice(customerPrice.id)}
-                            className="btn btn-sm btn-danger"
+                            variant="destructive"
+                            size="sm"
                           >
                             Sil
-                          </button>
+                          </Button>
                         </div>
                       </div>
                       <div className="flex items-center gap-4 text-sm text-muted-foreground">
                         <span>
                           {customerPrice.adjustmentType === 'percentage' ? 'Yüzde' : 'Sabit'}: 
                           {customerPrice.adjustmentValue > 0 ? '+' : ''}{customerPrice.adjustmentValue}
-                          {customerPrice.adjustmentType === 'percentage' ? '%' : '₺'}
+                          {customerPrice.adjustmentType === 'percentage' ? '%' : '€'}
                         </span>
-                        <span className={`px-2 py-1 rounded-full text-xs ${
-                          customerPrice.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                        }`}>
-                          {customerPrice.isActive ? 'Aktif' : 'Pasif'}
-                        </span>
+                        <StatusPill
+                          label={customerPrice.isActive ? 'Aktif' : 'Pasif'}
+                          tone={customerPrice.isActive ? 'success' : 'destructive'}
+                        />
                       </div>
                     </div>
                   ))}
                 </div>
               )}
-            </div>
+            </SectionShell>
           )}
 
           {/* Create Zone Modal */}
           {showCreateZone && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-              <div className="bg-card p-6 rounded-lg border border-border max-w-md w-full mx-4">
-                <h3 className="text-lg font-semibold text-foreground mb-4">Yeni Bölge</h3>
-                <form onSubmit={handleCreateZone} className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">
-                      Bölge Adı *
-                    </label>
-                    <input
-                      type="text"
+              <div className="bg-background p-6 rounded-lg border border-border max-w-md w-full mx-4 shadow-lg">
+                <FormLayout
+                  title="Yeni Bölge"
+                  description="Yeni kargo bölgesi oluşturun"
+                >
+                  <form onSubmit={handleCreateZone} className="space-y-4">
+                    <FormField
+                      label="Bölge Adı"
+                      required
                       value={zoneForm.name}
                       onChange={(e) => setZoneForm(prev => ({ ...prev, name: e.target.value }))}
-                      required
-                      className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground"
                     />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">
-                      Açıklama
-                    </label>
-                    <textarea
+                    <FormTextarea
+                      label="Açıklama"
+                      rows={3}
                       value={zoneForm.description}
                       onChange={(e) => setZoneForm(prev => ({ ...prev, description: e.target.value }))}
-                      rows={3}
-                      className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground"
                     />
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      id="isActive"
+                    <FormCheckbox
+                      label="Aktif"
                       checked={zoneForm.isActive}
                       onChange={(e) => setZoneForm(prev => ({ ...prev, isActive: e.target.checked }))}
-                      className="rounded"
                     />
-                    <label htmlFor="isActive" className="text-sm font-medium text-foreground">
-                      Aktif
-                    </label>
-                  </div>
-                  <div className="flex justify-end gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setShowCreateZone(false)}
-                      className="btn btn-outline"
-                    >
-                      İptal
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={createZoneMutation.isPending}
-                      className="btn btn-primary"
-                    >
-                      {createZoneMutation.isPending ? 'Oluşturuluyor...' : 'Oluştur'}
-                    </button>
-                  </div>
-                </form>
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        type="button"
+                        onClick={() => setShowCreateZone(false)}
+                        variant="outline"
+                      >
+                        İptal
+                      </Button>
+                      <Button
+                        type="submit"
+                        disabled={createZoneMutation.isPending}
+                        variant="default"
+                      >
+                        {createZoneMutation.isPending ? 'Oluşturuluyor...' : 'Oluştur'}
+                      </Button>
+                    </div>
+                  </form>
+                </FormLayout>
               </div>
             </div>
           )}
@@ -520,64 +536,50 @@ export default function ShippingPage() {
           {/* Edit Zone Modal */}
           {editingZone && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-              <div className="bg-card p-6 rounded-lg border border-border max-w-md w-full mx-4">
-                <h3 className="text-lg font-semibold text-foreground mb-4">Bölge Düzenle</h3>
-                <form onSubmit={handleUpdateZone} className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">
-                      Bölge Adı *
-                    </label>
-                    <input
-                      type="text"
+              <div className="bg-background p-6 rounded-lg border border-border max-w-md w-full mx-4 shadow-lg">
+                <FormLayout
+                  title="Bölge Düzenle"
+                  description="Kargo bölgesini düzenleyin"
+                >
+                  <form onSubmit={handleUpdateZone} className="space-y-4">
+                    <FormField
+                      label="Bölge Adı"
+                      required
                       value={zoneForm.name}
                       onChange={(e) => setZoneForm(prev => ({ ...prev, name: e.target.value }))}
-                      required
-                      className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground"
                     />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">
-                      Açıklama
-                    </label>
-                    <textarea
+                    <FormTextarea
+                      label="Açıklama"
+                      rows={3}
                       value={zoneForm.description}
                       onChange={(e) => setZoneForm(prev => ({ ...prev, description: e.target.value }))}
-                      rows={3}
-                      className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground"
                     />
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      id="isActiveEdit"
+                    <FormCheckbox
+                      label="Aktif"
                       checked={zoneForm.isActive}
                       onChange={(e) => setZoneForm(prev => ({ ...prev, isActive: e.target.checked }))}
-                      className="rounded"
                     />
-                    <label htmlFor="isActiveEdit" className="text-sm font-medium text-foreground">
-                      Aktif
-                    </label>
-                  </div>
-                  <div className="flex justify-end gap-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setEditingZone(null);
-                        setZoneForm({ name: '', description: '', isActive: true });
-                      }}
-                      className="btn btn-outline"
-                    >
-                      İptal
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={updateZoneMutation.isPending}
-                      className="btn btn-primary"
-                    >
-                      {updateZoneMutation.isPending ? 'Güncelleniyor...' : 'Güncelle'}
-                    </button>
-                  </div>
-                </form>
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        type="button"
+                        onClick={() => {
+                          setEditingZone(null);
+                          setZoneForm({ name: '', description: '', isActive: true });
+                        }}
+                        variant="outline"
+                      >
+                        İptal
+                      </Button>
+                      <Button
+                        type="submit"
+                        disabled={updateZoneMutation.isPending}
+                        variant="default"
+                      >
+                        {updateZoneMutation.isPending ? 'Güncelleniyor...' : 'Güncelle'}
+                      </Button>
+                    </div>
+                  </form>
+                </FormLayout>
               </div>
             </div>
           )}
@@ -585,129 +587,89 @@ export default function ShippingPage() {
           {/* Create Price Modal */}
           {showCreatePrice && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-              <div className="bg-card p-6 rounded-lg border border-border max-w-md w-full mx-4">
-                <h3 className="text-lg font-semibold text-foreground mb-4">Yeni Fiyat</h3>
-                <form onSubmit={handleCreatePrice} className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">
-                      Bölge *
-                    </label>
-                    <select
+              <div className="bg-background p-6 rounded-lg border border-border max-w-md w-full mx-4 shadow-lg">
+                <FormLayout
+                  title="Yeni Fiyat"
+                  description="Yeni kargo fiyatı oluşturun"
+                >
+                  <form onSubmit={handleCreatePrice} className="space-y-4">
+                    <FormSelect
+                      label="Bölge"
+                      required
                       value={priceForm.zoneId}
                       onChange={(e) => setPriceForm(prev => ({ ...prev, zoneId: e.target.value }))}
+                      options={[
+                        { value: '', label: 'Bölge Seçin' },
+                        ...(zones as any)?.map((zone: any) => ({
+                          value: zone.id,
+                          label: zone.name
+                        })) || []
+                      ]}
+                    />
+                    <FormField
+                      label="Fiyat Adı"
                       required
-                      className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground"
-                    >
-                      <option value="">Bölge Seçin</option>
-                      {(zones as any)?.map((zone: any) => (
-                        <option key={zone.id} value={zone.id}>
-                          {zone.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">
-                      Fiyat Adı *
-                    </label>
-                    <input
-                      type="text"
                       value={priceForm.name}
                       onChange={(e) => setPriceForm(prev => ({ ...prev, name: e.target.value }))}
-                      required
-                      className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground"
                     />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">
-                      Açıklama
-                    </label>
-                    <textarea
+                    <FormTextarea
+                      label="Açıklama"
+                      rows={3}
                       value={priceForm.description}
                       onChange={(e) => setPriceForm(prev => ({ ...prev, description: e.target.value }))}
-                      rows={3}
-                      className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground"
                     />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">
-                      Temel Fiyat (₺) *
-                    </label>
-                    <input
+                    <FormField
+                      label="Temel Fiyat (€)"
                       type="number"
                       step="0.01"
                       min="0"
+                      required
                       value={priceForm.basePrice}
                       onChange={(e) => setPriceForm(prev => ({ ...prev, basePrice: parseFloat(e.target.value) || 0 }))}
-                      required
-                      className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground"
                     />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">
-                      Ücretsiz Kargo Eşiği (₺)
-                    </label>
-                    <input
+                    <FormField
+                      label="Ücretsiz Kargo Eşiği (€)"
                       type="number"
                       step="0.01"
                       min="0"
                       value={priceForm.freeShippingThreshold}
                       onChange={(e) => setPriceForm(prev => ({ ...prev, freeShippingThreshold: parseFloat(e.target.value) || 0 }))}
-                      className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground"
                     />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">
-                      Tahmini Süre
-                    </label>
-                    <input
-                      type="text"
+                    <FormField
+                      label="Tahmini Süre"
+                      placeholder="1-2 gün"
                       value={priceForm.estimatedDays}
                       onChange={(e) => setPriceForm(prev => ({ ...prev, estimatedDays: e.target.value }))}
-                      placeholder="1-2 gün"
-                      className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground"
                     />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">
-                      Öncelik
-                    </label>
-                    <input
+                    <FormField
+                      label="Öncelik"
                       type="number"
                       value={priceForm.priority}
                       onChange={(e) => setPriceForm(prev => ({ ...prev, priority: parseInt(e.target.value) || 0 }))}
-                      className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground"
                     />
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      id="isActivePrice"
+                    <FormCheckbox
+                      label="Aktif"
                       checked={priceForm.isActive}
                       onChange={(e) => setPriceForm(prev => ({ ...prev, isActive: e.target.checked }))}
-                      className="rounded"
                     />
-                    <label htmlFor="isActivePrice" className="text-sm font-medium text-foreground">
-                      Aktif
-                    </label>
-                  </div>
-                  <div className="flex justify-end gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setShowCreatePrice(false)}
-                      className="btn btn-outline"
-                    >
-                      İptal
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={createPriceMutation.isPending}
-                      className="btn btn-primary"
-                    >
-                      {createPriceMutation.isPending ? 'Oluşturuluyor...' : 'Oluştur'}
-                    </button>
-                  </div>
-                </form>
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        type="button"
+                        onClick={() => setShowCreatePrice(false)}
+                        variant="outline"
+                      >
+                        İptal
+                      </Button>
+                      <Button
+                        type="submit"
+                        disabled={createPriceMutation.isPending}
+                        variant="default"
+                      >
+                        {createPriceMutation.isPending ? 'Oluşturuluyor...' : 'Oluştur'}
+                      </Button>
+                    </div>
+                  </form>
+                </FormLayout>
               </div>
             </div>
           )}
@@ -715,114 +677,86 @@ export default function ShippingPage() {
           {/* Create Customer Price Modal */}
           {showCreateCustomerPrice && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-              <div className="bg-card p-6 rounded-lg border border-border max-w-md w-full mx-4">
-                <h3 className="text-lg font-semibold text-foreground mb-4">Yeni Müşteri Fiyatı</h3>
-                <form onSubmit={handleCreateCustomerPrice} className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">
-                      Bölge *
-                    </label>
-                    <select
+              <div className="bg-background p-6 rounded-lg border border-border max-w-md w-full mx-4 shadow-lg">
+                <FormLayout
+                  title="Yeni Müşteri Fiyatı"
+                  description="Müşteri özel fiyatı oluşturun"
+                >
+                  <form onSubmit={handleCreateCustomerPrice} className="space-y-4">
+                    <FormSelect
+                      label="Bölge"
+                      required
                       value={customerPriceForm.zoneId}
                       onChange={(e) => setCustomerPriceForm(prev => ({ ...prev, zoneId: e.target.value }))}
+                      options={[
+                        { value: '', label: 'Bölge Seçin' },
+                        ...(zones as any)?.map((zone: any) => ({
+                          value: zone.id,
+                          label: zone.name
+                        })) || []
+                      ]}
+                    />
+                    <FormSelect
+                      label="Fiyat"
                       required
-                      className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground"
-                    >
-                      <option value="">Bölge Seçin</option>
-                      {(zones as any)?.map((zone: any) => (
-                        <option key={zone.id} value={zone.id}>
-                          {zone.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">
-                      Fiyat *
-                    </label>
-                    <select
                       value={customerPriceForm.priceId}
                       onChange={(e) => setCustomerPriceForm(prev => ({ ...prev, priceId: e.target.value }))}
-                      required
-                      className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground"
-                    >
-                      <option value="">Fiyat Seçin</option>
-                      {(prices as any)?.map((price: any) => (
-                        <option key={price.id} value={price.id}>
-                          {price.name} - ₺{price.basePrice.toFixed(2)}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">
-                      Müşteri (Boş bırakırsanız tüm müşteriler için geçerli olur)
-                    </label>
-                    <input
-                      type="text"
+                      options={[
+                        { value: '', label: 'Fiyat Seçin' },
+                        ...(prices as any)?.map((price: any) => ({
+                          value: price.id,
+                          label: `${price.name} - ${formatCurrency(price.basePrice, currencyOptions)}`
+                        })) || []
+                      ]}
+                    />
+                    <FormField
+                      label="Müşteri (Boş bırakırsanız tüm müşteriler için geçerli olur)"
+                      placeholder="Müşteri ID"
                       value={customerPriceForm.customerId}
                       onChange={(e) => setCustomerPriceForm(prev => ({ ...prev, customerId: e.target.value }))}
-                      placeholder="Müşteri ID"
-                      className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground"
                     />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">
-                      Ayarlama Türü *
-                    </label>
-                    <select
+                    <FormSelect
+                      label="Ayarlama Türü"
+                      required
                       value={customerPriceForm.adjustmentType}
                       onChange={(e) => setCustomerPriceForm(prev => ({ ...prev, adjustmentType: e.target.value as 'percentage' | 'fixed' }))}
-                      required
-                      className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground"
-                    >
-                      <option value="percentage">Yüzde</option>
-                      <option value="fixed">Sabit Miktar</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">
-                      Ayarlama Değeri *
-                    </label>
-                    <input
+                      options={[
+                        { value: 'percentage', label: 'Yüzde' },
+                        { value: 'fixed', label: 'Sabit Miktar' }
+                      ]}
+                    />
+                    <FormField
+                      label="Ayarlama Değeri"
                       type="number"
                       step="0.01"
+                      required
+                      placeholder={customerPriceForm.adjustmentType === 'percentage' ? '10 (10% artırır)' : '5 (5€ artırır)'}
                       value={customerPriceForm.adjustmentValue}
                       onChange={(e) => setCustomerPriceForm(prev => ({ ...prev, adjustmentValue: parseFloat(e.target.value) || 0 }))}
-                      required
-                      placeholder={customerPriceForm.adjustmentType === 'percentage' ? '10 (10% artırır)' : '5 (5₺ artırır)'}
-                      className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground"
                     />
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      id="isActiveCustomerPrice"
+                    <FormCheckbox
+                      label="Aktif"
                       checked={customerPriceForm.isActive}
                       onChange={(e) => setCustomerPriceForm(prev => ({ ...prev, isActive: e.target.checked }))}
-                      className="rounded"
                     />
-                    <label htmlFor="isActiveCustomerPrice" className="text-sm font-medium text-foreground">
-                      Aktif
-                    </label>
-                  </div>
-                  <div className="flex justify-end gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setShowCreateCustomerPrice(false)}
-                      className="btn btn-outline"
-                    >
-                      İptal
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={createCustomerPriceMutation.isPending}
-                      className="btn btn-primary"
-                    >
-                      {createCustomerPriceMutation.isPending ? 'Oluşturuluyor...' : 'Oluştur'}
-                    </button>
-                  </div>
-                </form>
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        type="button"
+                        onClick={() => setShowCreateCustomerPrice(false)}
+                        variant="outline"
+                      >
+                        İptal
+                      </Button>
+                      <Button
+                        type="submit"
+                        disabled={createCustomerPriceMutation.isPending}
+                        variant="default"
+                      >
+                        {createCustomerPriceMutation.isPending ? 'Oluşturuluyor...' : 'Oluştur'}
+                      </Button>
+                    </div>
+                  </form>
+                </FormLayout>
               </div>
             </div>
           )}

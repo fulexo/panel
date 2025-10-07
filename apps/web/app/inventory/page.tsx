@@ -32,6 +32,7 @@ import {
   Clock,
   X
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export default function InventoryPage() {
   const { user } = useAuth();
@@ -389,15 +390,14 @@ export default function InventoryPage() {
             {/* Admin View - Approval focused */}
             {isAdmin() && (
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            <button
+            <Button
               onClick={() => setActiveTab('requests')}
-                  className={`btn btn-md flex flex-col items-center justify-center gap-1 shadow-lg hover:shadow-xl transition-all duration-200 w-full h-16 ${
-                    activeTab === 'requests' ? 'btn-warning' : 'btn-outline hover:bg-accent/50'
-                  }`}
-                >
+              variant={activeTab === 'requests' ? 'default' : 'outline'}
+              className="flex flex-col items-center justify-center gap-1 shadow-lg hover:shadow-xl transition-all duration-200 w-full h-16"
+            >
                   <Clock className="h-5 w-5" />
                   <span className="text-xs font-medium leading-tight">Pending Requests</span>
-            </button>
+            </Button>
                 <button 
                   onClick={() => {
                     // Export all requests

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 // import { useAuth } from "@/components/AuthProvider";
 import { useRBAC } from "@/hooks/useRBAC";
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -16,6 +16,17 @@ import {
   useGenerateMonthlyInvoice,
   useUpdateFulfillmentInvoice
 } from "@/hooks/useFulfillmentBilling";
+import { formatCurrency } from "@/lib/formatters";
+import { SectionShell } from "@/components/patterns/SectionShell";
+import { StatusPill } from "@/components/patterns/StatusPill";
+import { MetricCard } from "@/components/patterns/MetricCard";
+import { FormLayout } from "@/components/patterns/FormLayout";
+import { FormField } from "@/components/forms/FormField";
+import { FormSelect } from "@/components/forms/FormSelect";
+import { FormTextarea } from "@/components/forms/FormTextarea";
+import { FormCheckbox } from "@/components/forms/FormCheckbox";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 export default function FulfillmentPage() {
   const { isAdmin } = useRBAC();
@@ -60,6 +71,16 @@ export default function FulfillmentPage() {
   const deleteServiceMutation = useDeleteFulfillmentService();
   const generateInvoiceMutation = useGenerateMonthlyInvoice();
   const updateInvoiceMutation = useUpdateFulfillmentInvoice();
+
+  const currencyOptions = useMemo(
+    () => ({
+      locale: "tr-TR",
+      currency: "EUR",
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }),
+    []
+  );
 
   const handleCreateService = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -210,72 +231,92 @@ export default function FulfillmentPage() {
 
           {/* Stats Cards */}
           {(stats as any) && (
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="bg-card p-4 rounded-lg border border-border">
-                <div className="text-2xl font-bold text-foreground">{(stats as any).totalItems}</div>
-                <div className="text-sm text-muted-foreground">Toplam Hizmet</div>
+            <SectionShell
+              title="Fulfillment Overview"
+              description="Fulfillment hizmetlerinin genel durumu ve faturalandırma özeti"
+            >
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <MetricCard
+                  label="Toplam Hizmet"
+                  value={(stats as any).totalItems}
+                  tone="default"
+                />
+                <MetricCard
+                  label="Faturalanmamış"
+                  value={(stats as any).unbilledItems}
+                  tone="warning"
+                />
+                <MetricCard
+                  label="Toplam Tutar"
+                  value={formatCurrency(Number((stats as any).totalAmount ?? 0), currencyOptions)}
+                  tone="default"
+                />
+                <MetricCard
+                  label="Faturalanmamış Tutar"
+                  value={formatCurrency(Number((stats as any).unbilledAmount ?? 0), currencyOptions)}
+                  tone="warning"
+                />
               </div>
-              <div className="bg-card p-4 rounded-lg border border-border">
-                <div className="text-2xl font-bold text-yellow-600">{(stats as any).unbilledItems}</div>
-                <div className="text-sm text-muted-foreground">Faturalanmamış</div>
-              </div>
-              <div className="bg-card p-4 rounded-lg border border-border">
-                <div className="text-2xl font-bold text-foreground">₺{(stats as any).totalAmount.toFixed(2)}</div>
-                <div className="text-sm text-muted-foreground">Toplam Tutar</div>
-              </div>
-              <div className="bg-card p-4 rounded-lg border border-border">
-                <div className="text-2xl font-bold text-yellow-600">₺{(stats as any).unbilledAmount.toFixed(2)}</div>
-                <div className="text-sm text-muted-foreground">Faturalanmamış Tutar</div>
-              </div>
-            </div>
+            </SectionShell>
           )}
 
           {/* Tabs */}
           <div className="flex space-x-1 bg-accent p-1 rounded-lg">
-            <button
+            <Button
               onClick={() => setActiveTab('services')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              variant={activeTab === 'services' ? 'default' : 'ghost'}
+              size="sm"
+              className={cn(
+                "px-4 py-2 text-sm font-medium transition-colors",
                 activeTab === 'services'
                   ? 'bg-background text-foreground shadow-sm'
                   : 'text-muted-foreground hover:text-foreground'
-              }`}
+              )}
             >
               Hizmetler
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={() => setActiveTab('billing')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              variant={activeTab === 'billing' ? 'default' : 'ghost'}
+              size="sm"
+              className={cn(
+                "px-4 py-2 text-sm font-medium transition-colors",
                 activeTab === 'billing'
                   ? 'bg-background text-foreground shadow-sm'
                   : 'text-muted-foreground hover:text-foreground'
-              }`}
+              )}
             >
               Faturalanmamış Hizmetler
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={() => setActiveTab('invoices')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              variant={activeTab === 'invoices' ? 'default' : 'ghost'}
+              size="sm"
+              className={cn(
+                "px-4 py-2 text-sm font-medium transition-colors",
                 activeTab === 'invoices'
                   ? 'bg-background text-foreground shadow-sm'
                   : 'text-muted-foreground hover:text-foreground'
-              }`}
+              )}
             >
               Aylık Faturalar
-            </button>
+            </Button>
           </div>
 
           {/* Services Tab */}
           {activeTab === 'services' && (
-            <div className="space-y-6">
-              <div className="flex justify-between items-center">
-                <h2 className="text-xl font-semibold text-foreground">Fulfillment Hizmetleri</h2>
-                <button
+            <SectionShell
+              title="Fulfillment Hizmetleri"
+              description="Fulfillment hizmetlerini yönetin ve yeni hizmetler ekleyin"
+              actions={
+                <Button
                   onClick={() => setShowCreateService(true)}
-                  className="btn btn-primary"
+                  variant="default"
                 >
                   Yeni Hizmet
-                </button>
-              </div>
+                </Button>
+              }
+            >
 
               {servicesLoading ? (
                 <div className="text-center py-8">
@@ -285,11 +326,11 @@ export default function FulfillmentPage() {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {(services as any)?.map((service: any) => (
-                    <div key={service.id} className="bg-card p-4 rounded-lg border border-border">
+                    <div key={service.id} className="p-4 bg-muted/40 rounded-lg border border-border">
                       <div className="flex justify-between items-start mb-2">
                         <h3 className="font-medium text-foreground">{service.name}</h3>
                         <div className="flex gap-1">
-                          {/* <button
+                          {/* <Button
                             onClick={() => {
                               setEditingService(service.id);
                               setServiceForm({
@@ -300,16 +341,18 @@ export default function FulfillmentPage() {
                                 isActive: service.isActive,
                               });
                             }}
-                            className="btn btn-sm btn-outline"
+                            variant="outline"
+                            size="sm"
                           >
                             Düzenle
-                          </button> */}
-                          <button
+                          </Button> */}
+                          <Button
                             onClick={() => handleDeleteService(service.id)}
-                            className="btn btn-sm btn-danger"
+                            variant="destructive"
+                            size="sm"
                           >
                             Sil
-                          </button>
+                          </Button>
                         </div>
                       </div>
                       {service.description && (
@@ -317,33 +360,34 @@ export default function FulfillmentPage() {
                       )}
                       <div className="flex items-center justify-between">
                         <span className="text-sm font-medium text-foreground">
-                          ₺{service.basePrice.toFixed(2)}/{service.unit}
+                          {formatCurrency(service.basePrice, currencyOptions)}/{service.unit}
                         </span>
-                        <span className={`px-2 py-1 rounded-full text-xs ${
-                          service.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                        }`}>
-                          {service.isActive ? 'Aktif' : 'Pasif'}
-                        </span>
+                        <StatusPill
+                          label={service.isActive ? 'Aktif' : 'Pasif'}
+                          tone={service.isActive ? 'success' : 'destructive'}
+                        />
                       </div>
                     </div>
                   ))}
                 </div>
               )}
-            </div>
+            </SectionShell>
           )}
 
           {/* Billing Tab */}
           {activeTab === 'billing' && (
-            <div className="space-y-6">
-              <div className="flex justify-between items-center">
-                <h2 className="text-xl font-semibold text-foreground">Faturalanmamış Hizmetler</h2>
-                <button
+            <SectionShell
+              title="Faturalanmamış Hizmetler"
+              description="Faturalanmamış hizmetleri görüntüleyin ve aylık fatura oluşturun"
+              actions={
+                <Button
                   onClick={() => setShowGenerateInvoice(true)}
-                  className="btn btn-primary"
+                  variant="default"
                 >
                   Aylık Fatura Oluştur
-                </button>
-              </div>
+                </Button>
+              }
+            >
 
               {billingLoading ? (
                 <div className="text-center py-8">
@@ -353,7 +397,7 @@ export default function FulfillmentPage() {
               ) : (
                 <div className="space-y-4">
                   {(billingItemsData as any)?.map((item: any) => (
-                    <div key={item.id} className="bg-card p-4 rounded-lg border border-border">
+                    <div key={item.id} className="p-4 bg-muted/40 rounded-lg border border-border">
                       <div className="flex justify-between items-start mb-2">
                         <div>
                           <h3 className="font-medium text-foreground">{item.service.name}</h3>
@@ -361,7 +405,7 @@ export default function FulfillmentPage() {
                             Sipariş: #{item.order.orderNumber} • {item.order.customer.name}
                           </p>
                           <p className="text-sm text-muted-foreground">
-                            {item.quantity} {item.service.unit} × ₺{item.unitPrice.toFixed(2)}
+                            {item.quantity} {item.service.unit} × {formatCurrency(item.unitPrice, currencyOptions)}
                           </p>
                           {item.description && (
                             <p className="text-sm text-muted-foreground mt-1">{item.description}</p>
@@ -369,7 +413,7 @@ export default function FulfillmentPage() {
                         </div>
                         <div className="text-right">
                           <p className="font-semibold text-foreground">
-                            ₺{item.totalPrice.toFixed(2)}
+                            {formatCurrency(item.totalPrice, currencyOptions)}
                           </p>
                           <p className="text-xs text-muted-foreground">
                             {new Date(item.serviceDate).toLocaleDateString('tr-TR')}
@@ -386,42 +430,40 @@ export default function FulfillmentPage() {
                   )}
                 </div>
               )}
-            </div>
+            </SectionShell>
           )}
 
           {/* Invoices Tab */}
           {activeTab === 'invoices' && (
-            <div className="space-y-6">
-              <div className="flex justify-between items-center">
-                <h2 className="text-xl font-semibold text-foreground">Aylık Faturalar</h2>
+            <SectionShell
+              title="Aylık Faturalar"
+              description="Aylık faturaları görüntüleyin ve yönetin"
+              actions={
                 <div className="flex gap-2">
-                  <select
+                  <FormSelect
                     value={selectedMonth}
                     onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
-                    className="px-3 py-2 border border-border rounded-lg bg-background text-foreground"
-                  >
-                    {Array.from({ length: 12 }, (_, i) => (
-                      <option key={i + 1} value={i + 1}>
-                        {new Date(0, i).toLocaleString('tr-TR', { month: 'long' })}
-                      </option>
-                    ))}
-                  </select>
-                  <select
+                    options={Array.from({ length: 12 }, (_, i) => ({
+                      value: i + 1,
+                      label: new Date(0, i).toLocaleString('tr-TR', { month: 'long' })
+                    }))}
+                    className="min-w-[120px]"
+                  />
+                  <FormSelect
                     value={selectedYear}
                     onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-                    className="px-3 py-2 border border-border rounded-lg bg-background text-foreground"
-                  >
-                    {Array.from({ length: 5 }, (_, i) => {
+                    options={Array.from({ length: 5 }, (_, i) => {
                       const year = new Date().getFullYear() - 2 + i;
-                      return (
-                        <option key={year} value={year}>
-                          {year}
-                        </option>
-                      );
+                      return {
+                        value: year,
+                        label: year.toString()
+                      };
                     })}
-                  </select>
+                    className="min-w-[100px]"
+                  />
                 </div>
-              </div>
+              }
+            >
 
               {invoicesLoading ? (
                 <div className="text-center py-8">
@@ -431,7 +473,7 @@ export default function FulfillmentPage() {
               ) : (
                 <div className="space-y-4">
                   {(invoicesData as any)?.map((invoice: any) => (
-                    <div key={invoice.id} className="bg-card p-6 rounded-lg border border-border">
+                    <div key={invoice.id} className="p-6 bg-muted/40 rounded-lg border border-border">
                       <div className="flex justify-between items-start mb-4">
                         <div>
                           <h3 className="text-lg font-semibold text-foreground">
@@ -446,7 +488,7 @@ export default function FulfillmentPage() {
                         </div>
                         <div className="text-right">
                           <p className="text-2xl font-bold text-foreground">
-                            ₺{invoice.totalAmount.toFixed(2)}
+                            {formatCurrency(invoice.totalAmount, currencyOptions)}
                           </p>
                           <div className="flex items-center gap-2 mt-2">
                             <select
@@ -474,7 +516,7 @@ export default function FulfillmentPage() {
                               </p>
                             </div>
                             <p className="text-sm font-medium text-foreground">
-                              ₺{item.totalPrice.toFixed(2)}
+                              {formatCurrency(item.totalPrice, currencyOptions)}
                             </p>
                           </div>
                         ))}
@@ -501,104 +543,80 @@ export default function FulfillmentPage() {
                   )}
                 </div>
               )}
-            </div>
+            </SectionShell>
           )}
 
           {/* Create Service Modal */}
           {showCreateService && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-              <div className="bg-card p-6 rounded-lg border border-border max-w-md w-full mx-4">
-                <h3 className="text-lg font-semibold text-foreground mb-4">Yeni Fulfillment Hizmeti</h3>
-                <form onSubmit={handleCreateService} className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">
-                      Hizmet Adı *
-                    </label>
-                    <input
-                      type="text"
+              <div className="bg-background p-6 rounded-lg border border-border max-w-md w-full mx-4 shadow-lg">
+                <FormLayout
+                  title="Yeni Fulfillment Hizmeti"
+                  description="Fulfillment hizmeti oluşturun"
+                >
+                  <form onSubmit={handleCreateService} className="space-y-4">
+                    <FormField
+                      label="Hizmet Adı"
+                      required
                       value={serviceForm.name}
                       onChange={(e) => setServiceForm(prev => ({ ...prev, name: e.target.value }))}
-                      required
-                      className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground"
                     />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">
-                      Açıklama
-                    </label>
-                    <textarea
+                    <FormTextarea
+                      label="Açıklama"
+                      rows={3}
                       value={serviceForm.description}
                       onChange={(e) => setServiceForm(prev => ({ ...prev, description: e.target.value }))}
-                      rows={3}
-                      className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground"
                     />
-                  </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-foreground mb-2">
-                        Birim *
-                      </label>
-                      <select
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormSelect
+                        label="Birim"
+                        required
                         value={serviceForm.unit}
                         onChange={(e) => setServiceForm(prev => ({ ...prev, unit: e.target.value }))}
-                        required
-                        className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground"
-                      >
-                        <option value="adet">Adet</option>
-                        <option value="kg">Kilogram</option>
-                        <option value="m3">Metreküp</option>
-                        <option value="saat">Saat</option>
-                        <option value="paket">Paket</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-foreground mb-2">
-                        Birim Fiyat (₺) *
-                      </label>
-                      <input
+                        options={[
+                          { value: 'adet', label: 'Adet' },
+                          { value: 'kg', label: 'Kilogram' },
+                          { value: 'm3', label: 'Metreküp' },
+                          { value: 'saat', label: 'Saat' },
+                          { value: 'paket', label: 'Paket' },
+                        ]}
+                      />
+                      <FormField
+                        label="Birim Fiyat (€)"
                         type="number"
                         step="0.01"
                         min="0"
+                        required
                         value={serviceForm.basePrice}
                         onChange={(e) => setServiceForm(prev => ({ ...prev, basePrice: parseFloat(e.target.value) || 0 }))}
-                        required
-                        className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground"
                       />
                     </div>
-                  </div>
 
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      id="isActive"
+                    <FormCheckbox
+                      label="Aktif"
                       checked={serviceForm.isActive}
                       onChange={(e) => setServiceForm(prev => ({ ...prev, isActive: e.target.checked }))}
-                      className="rounded"
                     />
-                    <label htmlFor="isActive" className="text-sm font-medium text-foreground">
-                      Aktif
-                    </label>
-                  </div>
 
-                  <div className="flex justify-end gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setShowCreateService(false)}
-                      className="btn btn-outline"
-                    >
-                      İptal
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={createServiceMutation.isPending}
-                      className="btn btn-primary"
-                    >
-                      {createServiceMutation.isPending ? 'Oluşturuluyor...' : 'Oluştur'}
-                    </button>
-                  </div>
-                </form>
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        type="button"
+                        onClick={() => setShowCreateService(false)}
+                        variant="outline"
+                      >
+                        İptal
+                      </Button>
+                      <Button
+                        type="submit"
+                        disabled={createServiceMutation.isPending}
+                        variant="default"
+                      >
+                        {createServiceMutation.isPending ? 'Oluşturuluyor...' : 'Oluştur'}
+                      </Button>
+                    </div>
+                  </form>
+                </FormLayout>
               </div>
             </div>
           )}
@@ -606,105 +624,79 @@ export default function FulfillmentPage() {
           {/* Generate Invoice Modal */}
           {showGenerateInvoice && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-              <div className="bg-card p-6 rounded-lg border border-border max-w-md w-full mx-4">
-                <h3 className="text-lg font-semibold text-foreground mb-4">Aylık Fatura Oluştur</h3>
-                <form onSubmit={handleGenerateInvoice} className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">
-                      Müşteri ID *
-                    </label>
-                    <input
-                      type="text"
+              <div className="bg-background p-6 rounded-lg border border-border max-w-md w-full mx-4 shadow-lg">
+                <FormLayout
+                  title="Aylık Fatura Oluştur"
+                  description="Aylık fatura oluşturun"
+                >
+                  <form onSubmit={handleGenerateInvoice} className="space-y-4">
+                    <FormField
+                      label="Müşteri ID"
+                      required
                       value={invoiceForm.customerId}
                       onChange={(e) => setInvoiceForm(prev => ({ ...prev, customerId: e.target.value }))}
-                      required
                       placeholder="Müşteri ID girin"
-                      className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground"
                     />
-                  </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-foreground mb-2">
-                        Ay *
-                      </label>
-                      <select
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormSelect
+                        label="Ay"
+                        required
                         value={invoiceForm.month}
                         onChange={(e) => setInvoiceForm(prev => ({ ...prev, month: parseInt(e.target.value) }))}
+                        options={Array.from({ length: 12 }, (_, i) => ({
+                          value: i + 1,
+                          label: new Date(0, i).toLocaleString('tr-TR', { month: 'long' })
+                        }))}
+                      />
+                      <FormSelect
+                        label="Yıl"
                         required
-                        className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground"
-                      >
-                        {Array.from({ length: 12 }, (_, i) => (
-                          <option key={i + 1} value={i + 1}>
-                            {new Date(0, i).toLocaleString('tr-TR', { month: 'long' })}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-foreground mb-2">
-                        Yıl *
-                      </label>
-                      <select
                         value={invoiceForm.year}
                         onChange={(e) => setInvoiceForm(prev => ({ ...prev, year: parseInt(e.target.value) }))}
-                        required
-                        className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground"
-                      >
-                        {Array.from({ length: 5 }, (_, i) => {
+                        options={Array.from({ length: 5 }, (_, i) => {
                           const year = new Date().getFullYear() - 2 + i;
-                          return (
-                            <option key={year} value={year}>
-                              {year}
-                            </option>
-                          );
+                          return {
+                            value: year,
+                            label: year.toString()
+                          };
                         })}
-                      </select>
+                      />
                     </div>
-                  </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">
-                      Vade Tarihi
-                    </label>
-                    <input
+                    <FormField
+                      label="Vade Tarihi"
                       type="date"
                       value={invoiceForm.dueDate}
                       onChange={(e) => setInvoiceForm(prev => ({ ...prev, dueDate: e.target.value }))}
-                      className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground"
                     />
-                  </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">
-                      Notlar
-                    </label>
-                    <textarea
+                    <FormTextarea
+                      label="Notlar"
+                      rows={3}
                       value={invoiceForm.notes}
                       onChange={(e) => setInvoiceForm(prev => ({ ...prev, notes: e.target.value }))}
-                      rows={3}
-                      className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground"
                       placeholder="Fatura notları..."
                     />
-                  </div>
 
-                  <div className="flex justify-end gap-2">
-                    <button
+                    <div className="flex justify-end gap-2">
+                    <Button
                       type="button"
                       onClick={() => setShowGenerateInvoice(false)}
-                      className="btn btn-outline"
+                      variant="outline"
                     >
                       İptal
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       type="submit"
                       disabled={generateInvoiceMutation.isPending}
-                      className="btn btn-primary"
+                      variant="default"
                     >
                       {generateInvoiceMutation.isPending ? 'Oluşturuluyor...' : 'Fatura Oluştur'}
-                    </button>
-                  </div>
-                </form>
+                    </Button>
+                    </div>
+                  </form>
+                </FormLayout>
               </div>
             </div>
           )}

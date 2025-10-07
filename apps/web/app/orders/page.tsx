@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/components/AuthProvider";
 import { useRBAC } from "@/hooks/useRBAC";
@@ -8,6 +8,14 @@ import { useOrders, useUpdateOrderStatus } from "@/hooks/useOrders";
 import { useStores } from "@/hooks/useApi";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import ProtectedComponent from "@/components/ProtectedComponent";
+import { SectionShell } from "@/components/patterns/SectionShell";
+import { MetricCard } from "@/components/patterns/MetricCard";
+import { StatusPill } from "@/components/patterns/StatusPill";
+import type { StatusTone } from "@/components/patterns/StatusPill";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { FormField } from "@/components/forms/FormField";
+import { formatCurrency } from "@/lib/formatters";
+import { cn } from "@/lib/utils";
 import { 
   Plus, 
   ShoppingCart, 
@@ -21,13 +29,15 @@ import {
   Search,
   Filter,
   Download,
-  RefreshCw
+  RefreshCw,
+  Ban
 } from "lucide-react";
 // import { ApiError } from "@/lib/api-client";
 
 export default function OrdersPage() {
   const { user } = useAuth();
   const { isAdmin } = useRBAC();
+  const adminView = isAdmin();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
@@ -41,18 +51,36 @@ export default function OrdersPage() {
   const stores = (storesData as any)?.data || [];
   
   // Fetch orders data
-  const { 
-    data: ordersData, 
-    isLoading
+  const {
+    data: ordersData,
+    isLoading,
+    refetch: refetchOrders,
   } = useOrders({
     page,
     limit: 10,
     ...(search ? { search } : {}),
     ...(statusFilter ? { status: statusFilter } : {}),
     // For admin users, allow store filtering. For customers, use their store
-    ...(isAdmin() && storeFilter ? { storeId: storeFilter } : {}),
-    ...(!isAdmin() && userStoreId ? { storeId: userStoreId } : {}),
-  }) as { data: { data: Array<{ id: string; orderNumber: string; status: string; total: number; createdAt: string; customerEmail: string }>; pagination: { total: number; pages: number } } | undefined; isLoading: boolean; error: unknown };
+    ...(adminView && storeFilter ? { storeId: storeFilter } : {}),
+    ...(!adminView && userStoreId ? { storeId: userStoreId } : {}),
+  }) as {
+    data:
+      | {
+          data: Array<{
+            id: string;
+            orderNumber: string;
+            status: string;
+            total: number;
+            createdAt: string;
+            customerEmail: string;
+          }>;
+          pagination: { total: number; pages: number };
+        }
+      | undefined;
+    isLoading: boolean;
+    refetch: () => Promise<unknown>;
+    error: unknown;
+  };
 
   const updateOrderStatus = useUpdateOrderStatus();
 
@@ -72,30 +100,105 @@ export default function OrdersPage() {
   //   }
   // };
 
-  if (isLoading) {
-    return (
-      <ProtectedRoute>
-        <div className="bg-background flex items-center justify-center py-20">
-          <div className="flex flex-col items-center gap-4">
-            <div className="spinner"></div>
-            <div className="text-lg text-foreground">Loading orders...</div>
-          </div>
-        </div>
-      </ProtectedRoute>
-    );
-  }
-
-  // Error handling removed as error variable is not available
-
   const orders = ordersData?.data || [];
   const totalOrders = ordersData?.pagination?.total || 0;
   const totalPages = ordersData?.pagination?.pages || 1;
 
   // Calculate statistics
-  const statusCounts = orders.reduce((acc: Record<string, number>, order: { id: string; orderNumber: string; status: string; total: number; createdAt: string; customerEmail: string }) => {
-    acc[order.status] = (acc[order.status] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
+  const statusCounts = useMemo(() => {
+    return orders.reduce((acc: Record<string, number>, order: { status: string }) => {
+      acc[order.status] = (acc[order.status] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+  }, [orders]);
+
+  const statusMeta = useMemo((): Record<string, { label: string; tone: StatusTone; icon: typeof ShoppingCart }> => ({
+    pending: { label: "Pending", tone: "warning" as const, icon: Clock },
+    processing: { label: "Processing", tone: "info" as const, icon: RefreshCw },
+    completed: { label: "Completed", tone: "success" as const, icon: CheckCircle },
+    cancelled: { label: "Cancelled", tone: "destructive" as const, icon: Ban },
+  }), []);
+
+  const orderSummaryCards = useMemo(() => {
+    const statusCards = (["pending", "processing", "completed", "cancelled"] as const)
+      .map((statusKey) => {
+        const meta = statusMeta[statusKey];
+        if (!meta) return null;
+        return {
+          key: statusKey,
+          label: meta.label,
+          value: (statusCounts[statusKey] ?? 0).toLocaleString(),
+          context: `${meta.label} orders in view`,
+          icon: meta.icon,
+          tone:
+            statusKey === "completed"
+              ? ("emerald" as const)
+              : statusKey === "cancelled"
+              ? ("destructive" as const)
+              : statusKey === "processing"
+              ? ("blue" as const)
+              : ("warning" as const),
+        };
+      })
+      .filter((card): card is NonNullable<typeof card> => card !== null);
+
+    return [
+      {
+        key: "total",
+        label: "Total Orders",
+        value: totalOrders.toLocaleString(),
+        context: adminView ? "Across all stores" : "Your store",
+        icon: ShoppingCart,
+        tone: "blue" as const,
+      },
+      ...statusCards,
+    ];
+  }, [totalOrders, adminView, statusCounts, statusMeta]);
+
+  const visibleOrderSummaryCards = useMemo(() => orderSummaryCards.slice(0, 5), [orderSummaryCards]);
+
+  const quickActions = useMemo(() => [
+    {
+      key: "create",
+      label: "Create Order",
+      href: "/orders/create",
+      icon: Plus,
+      variant: "default" as const,
+      permission: "orders.manage",
+    },
+    {
+      key: "approvals",
+      label: "Approvals",
+      href: "/orders/approvals",
+      icon: Clock,
+      variant: "warning" as const,
+      permission: "orders.approve",
+    },
+    {
+      key: "shipping",
+      label: "Shipping",
+      href: "/shipping",
+      icon: Truck,
+      variant: "outline" as const,
+      permission: "shipping.manage",
+    },
+    {
+      key: "inventory",
+      label: "Inventory",
+      href: "/inventory",
+      icon: Package,
+      variant: "outline" as const,
+      permission: "inventory.manage",
+    },
+    {
+      key: "inventory-approvals",
+      label: "Inv. Approvals",
+      href: "/inventory/approvals",
+      icon: CheckCircle,
+      variant: "warning" as const,
+      permission: "inventory.approve",
+    },
+  ], []);
 
   return (
     <ProtectedRoute>
@@ -108,224 +211,258 @@ export default function OrdersPage() {
                 Orders
               </h1>
               <p className="text-muted-foreground mobile-text">
-                {isAdmin() ? 'Manage all orders across all stores' : 'View your store orders'}
+                {adminView ? 'Manage all orders across all stores' : 'View your store orders'}
               </p>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-              <ProtectedComponent permission="orders.manage">
-                <Link href="/orders/create" className="btn btn-primary btn-md flex flex-col items-center justify-center gap-1 shadow-lg hover:shadow-xl transition-all duration-200 w-full h-16">
-                  <Plus className="h-5 w-5" />
-                  <span className="text-xs font-medium leading-tight">Create Order</span>
-                </Link>
-              </ProtectedComponent>
-              <ProtectedComponent permission="orders.approve">
-                <Link href="/orders/approvals" className="btn btn-warning btn-md flex flex-col items-center justify-center gap-1 shadow-lg hover:shadow-xl transition-all duration-200 w-full h-16">
-                  <Clock className="h-5 w-5" />
-                  <span className="text-xs font-medium leading-tight">Approvals</span>
-                </Link>
-              </ProtectedComponent>
-              <ProtectedComponent permission="shipping.manage">
-                <Link href="/shipping" className="btn btn-outline btn-md flex flex-col items-center justify-center gap-1 hover:bg-accent/50 transition-all duration-200 w-full h-16">
-                  <Truck className="h-5 w-5" />
-                  <span className="text-xs font-medium leading-tight">Shipping</span>
-                </Link>
-              </ProtectedComponent>
-              <ProtectedComponent permission="inventory.manage">
-                <Link href="/inventory" className="btn btn-outline btn-md flex flex-col items-center justify-center gap-1 hover:bg-accent/50 transition-all duration-200 w-full h-16">
-                  <Package className="h-5 w-5" />
-                  <span className="text-xs font-medium leading-tight">Inventory</span>
-                </Link>
-              </ProtectedComponent>
-              <ProtectedComponent permission="inventory.approve">
-                <Link href="/inventory/approvals" className="btn btn-warning btn-md flex flex-col items-center justify-center gap-1 shadow-lg hover:shadow-xl transition-all duration-200 w-full h-16">
-                  <CheckCircle className="h-5 w-5" />
-                  <span className="text-xs font-medium leading-tight">Inv. Approvals</span>
-                </Link>
-              </ProtectedComponent>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+              {quickActions.map((action) => {
+                const ActionIcon = action.icon;
+                const content = (
+                  <Link
+                    key={action.key}
+                    href={action.href}
+                    className={cn(
+                      buttonVariants({ variant: action.variant, size: "lg" }),
+                      "h-16 w-full flex flex-col items-center justify-center gap-1 text-xs font-medium leading-tight shadow-sm hover:shadow-md"
+                    )}
+                  >
+                    <ActionIcon className="h-5 w-5" aria-hidden="true" />
+                    <span>{action.label}</span>
+                  </Link>
+                );
+
+                if (action.permission) {
+                  return (
+                    <ProtectedComponent permission={action.permission as any} key={action.key}>
+                      {content}
+                    </ProtectedComponent>
+                  );
+                }
+
+                return content;
+              })}
             </div>
           </div>
 
           {/* Enhanced Filters */}
-          <div className="bg-card p-4 sm:p-6 rounded-xl border border-border shadow-sm">
-            <div className="space-y-4">
-              <div className="flex flex-col sm:flex-row gap-4">
-                <div className="flex-1 relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <input
-                    type="text"
-                    placeholder="Search orders by number, customer, or email..."
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 border border-border rounded-lg bg-background text-foreground placeholder-muted-foreground focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200"
-                  />
-                </div>
-                <div className="relative w-full sm:w-auto sm:min-w-[160px]">
-                  <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <SectionShell
+            title="Filters"
+            description="Refine the order list by status, store or keywords"
+          >
+            <div className="flex flex-col gap-4 sm:flex-row">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <FormField
+                  type="text"
+                  value={search}
+                  onChange={(e) => {
+                    setSearch(e.target.value);
+                    setPage(1);
+                  }}
+                  placeholder="Search orders by number, customer, or email"
+                  className="h-11 pl-10"
+                />
+              </div>
+              <div className="relative w-full sm:w-48">
+                <Filter className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <select
+                  value={statusFilter}
+                  onChange={(e) => {
+                    setStatusFilter(e.target.value);
+                    setPage(1);
+                  }}
+                  className="h-11 w-full appearance-none rounded-md border border-border bg-background pl-10 pr-8 text-sm text-foreground transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  aria-label="Filter by order status"
+                >
+                  <option value="">All Statuses</option>
+                  <option value="pending">Pending</option>
+                  <option value="processing">Processing</option>
+                  <option value="completed">Completed</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
+              </div>
+              {adminView && (
+                <div className="relative w-full sm:w-52">
+                  <ShoppingCart className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <select
-                    value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
-                    className="w-full pl-10 pr-8 py-3 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200 appearance-none cursor-pointer"
+                    value={storeFilter}
+                    onChange={(e) => {
+                      setStoreFilter(e.target.value);
+                      setPage(1);
+                    }}
+                    className="h-11 w-full appearance-none rounded-md border border-border bg-background pl-10 pr-8 text-sm text-foreground transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                    aria-label="Filter by store"
                   >
-                    <option value="">All Statuses</option>
-                    <option value="pending">Pending</option>
-                    <option value="processing">Processing</option>
-                    <option value="completed">Completed</option>
-                    <option value="cancelled">Cancelled</option>
+                    <option value="">All Stores ({stores.length})</option>
+                    {stores.map((store: any) => (
+                      <option key={store.id} value={store.id}>
+                        {store.name}
+                      </option>
+                    ))}
                   </select>
                 </div>
-                {isAdmin() && (
-                  <div className="relative w-full sm:w-auto sm:min-w-[180px]">
-                    <ShoppingCart className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <select
-                      value={storeFilter}
-                      onChange={(e) => setStoreFilter(e.target.value)}
-                      className="w-full pl-10 pr-8 py-3 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200 appearance-none cursor-pointer"
-                    >
-                      <option value="">All Stores ({stores.length})</option>
-                      {stores.map((store: any) => (
-                        <option key={store.id} value={store.id}>
-                          {store.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-              </div>
-              <div className="flex flex-col sm:flex-row gap-3">
-                <button className="btn btn-outline btn-md flex items-center justify-center gap-2 hover:bg-accent/50 transition-all duration-200 w-full sm:w-auto sm:min-w-[100px] h-10">
-                  <RefreshCw className="h-4 w-4" />
-                  <span className="text-sm font-medium">Refresh</span>
-                </button>
-                <button className="btn btn-outline btn-md flex items-center justify-center gap-2 hover:bg-accent/50 transition-all duration-200 w-full sm:w-auto sm:min-w-[100px] h-10">
-                  <Download className="h-4 w-4" />
-                  <span className="text-sm font-medium">Export</span>
-                </button>
-              </div>
+              )}
             </div>
-          </div>
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => refetchOrders()}
+                className="gap-2 h-10 w-full sm:w-auto"
+              >
+                <RefreshCw className="h-4 w-4" aria-hidden="true" />
+                Refresh
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="gap-2 h-10 w-full sm:w-auto"
+                onClick={() => window.print()}
+              >
+                <Download className="h-4 w-4" aria-hidden="true" />
+                Export
+              </Button>
+            </div>
+          </SectionShell>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-card p-6 rounded-lg border border-border">
-              <h3 className="text-lg font-semibold text-foreground mb-4">Recent Orders</h3>
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            <SectionShell
+              title="Recent Orders"
+              description="Latest transactions in the current view"
+            >
               <div className="space-y-3">
-                {orders.slice(0, 5).map((order: { id: string; orderNumber: string; status: string; total: number; createdAt: string; customerEmail: string; billingInfo?: { first_name: string; last_name: string } }) => (
-                  <div key={order.id} className="flex justify-between items-center p-3 bg-accent rounded-lg">
-                    <div>
-                      <div className="font-medium">Order #{order.orderNumber}</div>
-                      <div className="text-sm text-muted-foreground">
-                        {order.billingInfo?.first_name} {order.billingInfo?.last_name}
+                {orders.slice(0, 5).map((order: { id: string; orderNumber: string; status: string; total: number; createdAt: string; customerEmail: string; billingInfo?: { first_name: string; last_name: string } }) => {
+                  const meta = statusMeta[order.status] ?? {
+                    label: order.status,
+                    tone: "muted" as StatusTone,
+                  };
+                  const customerName = [order.billingInfo?.first_name, order.billingInfo?.last_name]
+                    .filter(Boolean)
+                    .join(" ") || order.customerEmail;
+
+                  return (
+                    <div
+                      key={order.id}
+                      className="flex items-center justify-between rounded-lg border border-border/70 bg-accent/10 p-4 transition-colors hover:bg-accent/20"
+                    >
+                      <div>
+                        <div className="font-semibold text-foreground">Order #{order.orderNumber}</div>
+                        <div className="text-sm text-muted-foreground">{customerName}</div>
+                      </div>
+                      <div className="text-right space-y-1">
+                        <div className="text-sm font-semibold text-foreground">
+                          {formatCurrency(order.total)}
+                        </div>
+                        <StatusPill label={meta.label} tone={meta.tone} className="justify-end" />
                       </div>
                     </div>
-                    <div className="text-right">
-                      <div className="font-medium">${order.total}</div>
-                      <div className={`text-sm ${
-                        order.status === 'completed' ? 'text-green-600' :
-                        order.status === 'processing' ? 'text-yellow-600' :
-                        order.status === 'cancelled' ? 'text-red-600' :
-                        'text-gray-600'
-                      }`}>
-                        {order.status}
-                      </div>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
                 {orders.length === 0 && (
-                  <div className="text-center py-4 text-muted-foreground">
+                  <div className="py-8 text-center text-sm text-muted-foreground">
                     No orders found
                   </div>
                 )}
               </div>
-            </div>
+            </SectionShell>
 
-            <div className="bg-card p-6 rounded-lg border border-border">
-              <h3 className="text-lg font-semibold text-foreground mb-4">Order Statistics</h3>
-              <div className="space-y-4">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Total Orders</span>
-                  <span className="font-medium">{totalOrders}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Pending</span>
-                  <span className="font-medium text-yellow-600">{statusCounts['pending'] || 0}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Processing</span>
-                  <span className="font-medium text-blue-600">{statusCounts['processing'] || 0}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Completed</span>
-                  <span className="font-medium text-green-600">{statusCounts['completed'] || 0}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Cancelled</span>
-                  <span className="font-medium text-red-600">{statusCounts['cancelled'] || 0}</span>
-                </div>
+            <SectionShell
+              title="Order Snapshot"
+              description="Totals for the current dataset"
+            >
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                {visibleOrderSummaryCards.map((card) => (
+                  <MetricCard
+                    key={card.key}
+                    label={card.label}
+                    value={card.value}
+                    context={card.context}
+                    tone={card.tone}
+                    subtle
+                  />
+                ))}
               </div>
-            </div>
+            </SectionShell>
           </div>
 
-          <div className="bg-card p-4 sm:p-6 rounded-lg border border-border">
-            <h3 className="text-lg font-semibold text-foreground mb-4">All Orders</h3>
+          <SectionShell
+            title="All Orders"
+            description="Paginated list respecting the filters above"
+          >
             <div className="overflow-x-auto">
               <table className="w-full min-w-[600px]">
                 <thead>
-                  <tr className="border-b border-border">
-                    <th className="text-left p-2 sm:p-3 text-sm">Order #</th>
-                    <th className="text-left p-2 sm:p-3 text-sm">Customer</th>
-                    <th className="text-left p-2 sm:p-3 text-sm">Status</th>
-                    <th className="text-left p-2 sm:p-3 text-sm">Total</th>
-                    <th className="text-left p-2 sm:p-3 text-sm">Date</th>
-                    <ProtectedComponent permission="orders.manage">
-                      <th className="text-left p-2 sm:p-3 text-sm">Actions</th>
-                    </ProtectedComponent>
+                  <tr className="border-b border-border bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
+                    <th className="p-3 text-left">Order #</th>
+                    <th className="p-3 text-left">Customer</th>
+                    <th className="p-3 text-left">Status</th>
+                    <th className="p-3 text-left">Total</th>
+                    <th className="p-3 text-left">Date</th>
+                    {adminView && (
+                      <ProtectedComponent permission="orders.manage">
+                        <th className="p-3 text-left">Actions</th>
+                      </ProtectedComponent>
+                    )}
                   </tr>
                 </thead>
                 <tbody>
-                  {orders.map((order: { id: string; orderNumber: string; status: string; total: number; createdAt: string; customerEmail: string; billingInfo?: { first_name: string; last_name: string } }) => (
-                    <tr key={order.id} className="border-b border-border">
-                      <td className="p-2 sm:p-3 text-sm">#{order.orderNumber}</td>
-                      <td className="p-2 sm:p-3 text-sm">
-                        {order.billingInfo?.first_name} {order.billingInfo?.last_name}
-                      </td>
-                      <td className="p-2 sm:p-3">
-                        <span className={`px-2 py-1 rounded-full text-xs ${
-                          order.status === 'completed' ? 'bg-green-100 text-green-800' :
-                          order.status === 'processing' ? 'bg-yellow-100 text-yellow-800' :
-                          order.status === 'cancelled' ? 'bg-red-100 text-red-800' :
-                          'bg-gray-100 text-gray-800'
-                        }`}>
-                          {order.status}
-                        </span>
-                      </td>
-                      <td className="p-2 sm:p-3 text-sm">${order.total}</td>
-                      <td className="p-2 sm:p-3 text-sm">
-                        {new Date(order.createdAt).toLocaleDateString()}
-                      </td>
-                      <ProtectedComponent permission="orders.manage">
-                        <td className="p-2 sm:p-3">
-                          <div className="flex flex-col sm:flex-row gap-2 w-full">
-                            <button className="btn btn-outline btn-sm flex items-center justify-center gap-1 hover:bg-accent/50 transition-all duration-200 w-full sm:w-auto h-8">
-                              <Eye className="h-3 w-3" />
-                              <span className="text-xs font-medium">View</span>
-                            </button>
-                            <select
-                              value={order.status}
-                              onChange={(e) => handleStatusUpdate(order.id, e.target.value)}
-                              className="btn btn-outline btn-sm text-xs hover:bg-accent/50 transition-all duration-200 appearance-none cursor-pointer px-3 py-1.5 w-full sm:w-auto h-8"
-                            >
-                              <option value="pending">Pending</option>
-                              <option value="processing">Processing</option>
-                              <option value="completed">Completed</option>
-                              <option value="cancelled">Cancelled</option>
-                            </select>
-                          </div>
+                  {orders.map((order: { id: string; orderNumber: string; status: string; total: number; createdAt: string; customerEmail: string; billingInfo?: { first_name: string; last_name: string } }) => {
+                    const meta = statusMeta[order.status] ?? {
+                      label: order.status,
+                      tone: "muted" as StatusTone,
+                    };
+                    const customerName = [order.billingInfo?.first_name, order.billingInfo?.last_name]
+                      .filter(Boolean)
+                      .join(" ") || order.customerEmail;
+
+                    return (
+                      <tr key={order.id} className="border-b border-border/60 last:border-b-0">
+                        <td className="p-3 text-sm font-medium text-foreground">#{order.orderNumber}</td>
+                        <td className="p-3 text-sm text-foreground/80">{customerName}</td>
+                        <td className="p-3 text-sm">
+                          <StatusPill label={meta.label} tone={meta.tone} />
                         </td>
-                      </ProtectedComponent>
-                    </tr>
-                  ))}
+                        <td className="p-3 text-sm font-semibold text-foreground">
+                          {formatCurrency(order.total)}
+                        </td>
+                        <td className="p-3 text-sm text-muted-foreground">
+                          {new Date(order.createdAt).toLocaleDateString()}
+                        </td>
+                        {adminView && (
+                          <ProtectedComponent permission="orders.manage">
+                            <td className="p-3">
+                              <div className="flex flex-col gap-2 sm:flex-row">
+                                <Link
+                                  href={`/orders/${order.id}`}
+                                  className={cn(
+                                    buttonVariants({ variant: "outline", size: "sm" }),
+                                    "gap-1 h-8"
+                                  )}
+                                >
+                                  <Eye className="h-3.5 w-3.5" aria-hidden="true" />
+                                  View
+                                </Link>
+                                <select
+                                  value={order.status}
+                                  onChange={(e) => handleStatusUpdate(order.id, e.target.value)}
+                                  className="h-8 min-w-[120px] rounded-md border border-border bg-background px-3 text-xs font-medium text-foreground transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                  aria-label="Update order status"
+                                >
+                                  <option value="pending">Pending</option>
+                                  <option value="processing">Processing</option>
+                                  <option value="completed">Completed</option>
+                                  <option value="cancelled">Cancelled</option>
+                                </select>
+                              </div>
+                            </td>
+                          </ProtectedComponent>
+                        )}
+                      </tr>
+                    );
+                  })}
                   {orders.length === 0 && (
                     <tr>
-                      <td colSpan={isAdmin() ? 6 : 5} className="p-8 text-center text-muted-foreground">
+                      <td colSpan={adminView ? 6 : 5} className="p-8 text-center text-sm text-muted-foreground">
                         No orders found
                       </td>
                     </tr>
@@ -336,49 +473,57 @@ export default function OrdersPage() {
 
             {/* Enhanced Pagination */}
             {totalPages > 1 && (
-              <div className="flex flex-col sm:flex-row items-center justify-between mt-8 gap-4">
+              <div className="mt-8 flex flex-col items-center justify-between gap-4 sm:flex-row">
                 <div className="text-sm text-muted-foreground text-center sm:text-left">
                   Showing {((page - 1) * 10) + 1} to {Math.min(page * 10, totalOrders)} of {totalOrders} orders
                 </div>
-                <div className="flex items-center gap-2 flex-wrap justify-center">
-                  <button
-                    onClick={() => setPage(p => Math.max(1, p - 1))}
+                <div className="flex flex-wrap items-center justify-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
                     disabled={page === 1}
-                    className="btn btn-outline btn-sm flex items-center gap-2 hover:bg-accent/50 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed min-w-[80px] h-8"
+                    className="gap-2 min-w-[80px]"
                   >
-                    <ChevronLeft className="h-4 w-4" />
-                    <span className="text-xs font-medium">Prev</span>
-                  </button>
-                  <div className="flex items-center gap-1 flex-wrap justify-center">
+                    <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+                    Prev
+                  </Button>
+                  <div className="flex flex-wrap items-center justify-center gap-1">
                     {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                       const pageNum = Math.max(1, Math.min(totalPages - 4, page - 2)) + i;
                       return (
-                        <button
+                        <Button
+                          type="button"
                           key={pageNum}
+                          variant={page === pageNum ? "default" : "outline"}
+                          size="sm"
                           onClick={() => setPage(pageNum)}
-                          className={`px-3 py-2 text-xs font-medium rounded-lg transition-all duration-200 min-w-[32px] h-8 ${
-                            page === pageNum
-                              ? 'bg-primary text-primary-foreground shadow-lg'
-                              : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'
-                          }`}
+                          className={cn(
+                            "min-w-[40px] px-3",
+                            page === pageNum ? "shadow-sm" : "text-muted-foreground"
+                          )}
                         >
                           {pageNum}
-                        </button>
+                        </Button>
                       );
                     })}
                   </div>
-                  <button
-                    onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                     disabled={page === totalPages}
-                    className="btn btn-outline btn-sm flex items-center gap-2 hover:bg-accent/50 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed min-w-[80px] h-8"
+                    className="gap-2 min-w-[80px]"
                   >
-                    <span className="text-xs font-medium">Next</span>
-                    <ChevronRight className="h-4 w-4" />
-                  </button>
+                    Next
+                    <ChevronRight className="h-4 w-4" aria-hidden="true" />
+                  </Button>
                 </div>
               </div>
             )}
-          </div>
+          </SectionShell>
         </main>
       </div>
     </ProtectedRoute>

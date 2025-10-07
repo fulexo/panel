@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
 import { useRBAC } from "@/hooks/useRBAC";
@@ -9,6 +9,11 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import ProtectedComponent from "@/components/ProtectedComponent";
 import { ApiError } from "@/lib/api-client";
 import { logger } from "@/lib/logger";
+import { formatCurrency } from "@/lib/formatters";
+import { SectionShell } from "@/components/patterns/SectionShell";
+import { StatusPill } from "@/components/patterns/StatusPill";
+import { FormLayout } from "@/components/patterns/FormLayout";
+import { FormField } from "@/components/forms/FormField";
 
 export default function CustomerDetailPage() {
   const params = useParams();
@@ -55,14 +60,28 @@ export default function CustomerDetailPage() {
   const updateCustomer = useUpdateCustomer();
   const deleteCustomer = useDeleteCustomer();
 
+  const currencyOptions = useMemo(
+    () => ({
+      locale: "tr-TR",
+      currency: "EUR",
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }),
+    []
+  );
+
   if (isLoading) {
     return (
       <ProtectedRoute>
-        <div className="min-h-screen bg-background flex items-center justify-center">
-          <div className="flex flex-col items-center gap-4">
-            <div className="spinner"></div>
-            <div className="text-lg text-foreground">Loading customer details...</div>
-          </div>
+        <div className="min-h-screen bg-background">
+          <main className="mobile-container py-6">
+            <SectionShell
+              title="Loading customer details..."
+              description="Please wait while we fetch customer information"
+            >
+              <div className="spinner"></div>
+            </SectionShell>
+          </main>
         </div>
       </ProtectedRoute>
     );
@@ -71,13 +90,21 @@ export default function CustomerDetailPage() {
   if (error || !customer) {
     return (
       <ProtectedRoute>
-        <div className="min-h-screen bg-background flex items-center justify-center">
-          <div className="flex flex-col items-center gap-4">
-            <div className="text-red-500 text-lg">Error loading customer</div>
-            <div className="text-muted-foreground">
-              {error instanceof ApiError ? error.message : 'Customer not found'}
-            </div>
-          </div>
+        <div className="min-h-screen bg-background">
+          <main className="mobile-container py-6">
+            <SectionShell
+              title="Error loading customer"
+              description={error instanceof ApiError ? error.message : 'Customer not found'}
+              className="max-w-md mx-auto"
+            >
+              <button
+                onClick={() => window.location.reload()}
+                className="btn btn-primary"
+              >
+                Retry
+              </button>
+            </SectionShell>
+          </main>
         </div>
       </ProtectedRoute>
     );
@@ -136,16 +163,6 @@ export default function CustomerDetailPage() {
 
   const displayOrders = Array.isArray(recentOrders) ? recentOrders : [];
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      case 'processing': return 'bg-blue-100 text-blue-800';
-      case 'shipped': return 'bg-purple-100 text-purple-800';
-      case 'delivered': return 'bg-green-100 text-green-800';
-      case 'cancelled': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
 
   return (
     <ProtectedRoute>
@@ -186,7 +203,10 @@ export default function CustomerDetailPage() {
             {/* Customer Information */}
             <div className="lg:col-span-2 space-y-6">
               {/* Customer Profile */}
-              <div className="bg-card p-6 rounded-lg border border-border">
+              <SectionShell
+                title="Customer Profile"
+                description="Basic customer information and contact details"
+              >
                 <div className="flex items-start gap-6">
                   <div className="w-24 h-24 bg-primary rounded-full flex items-center justify-center">
                     <span className="text-3xl text-primary-foreground font-bold">
@@ -210,11 +230,13 @@ export default function CustomerDetailPage() {
                     </div>
                   </div>
                 </div>
-              </div>
+              </SectionShell>
 
               {/* Contact Information */}
-              <div className="bg-card p-6 rounded-lg border border-border">
-                <h3 className="text-lg font-semibold text-foreground mb-4">Contact Information</h3>
+              <SectionShell
+                title="Contact Information"
+                description="Address and contact details"
+              >
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <h4 className="font-medium mb-2">Billing Address</h4>
@@ -239,11 +261,13 @@ export default function CustomerDetailPage() {
                     </div>
                   </div>
                 </div>
-              </div>
+              </SectionShell>
 
               {/* Recent Orders */}
-              <div className="bg-card p-6 rounded-lg border border-border">
-                <h3 className="text-lg font-semibold text-foreground mb-4">Recent Orders</h3>
+              <SectionShell
+                title="Recent Orders"
+                description="Latest orders from this customer"
+              >
                 <div className="space-y-4">
                   {displayOrders.map((order) => (
                     <div key={order.id} className="flex items-center justify-between p-4 border border-border rounded-lg">
@@ -254,37 +278,50 @@ export default function CustomerDetailPage() {
                         </p>
                       </div>
                       <div className="text-right">
-                        <p className="font-medium">₺{order.total.toFixed(2)}</p>
-                        <span className={`px-2 py-1 rounded-full text-xs ${getStatusColor(order.status)}`}>
-                          {order.status.toUpperCase()}
-                        </span>
+                        <p className="font-medium">{formatCurrency(order.total, currencyOptions)}</p>
+                        <StatusPill
+                          label={order.status.toUpperCase()}
+                          tone={
+                            order.status === 'pending' ? 'warning' :
+                            order.status === 'processing' ? 'info' :
+                            order.status === 'shipped' ? 'info' :
+                            order.status === 'delivered' ? 'success' :
+                            order.status === 'cancelled' ? 'destructive' :
+                            'muted'
+                          }
+                        />
                       </div>
                     </div>
                   ))}
                 </div>
-              </div>
+              </SectionShell>
             </div>
 
             {/* Sidebar */}
             <div className="space-y-6">
               {/* Customer Statistics */}
-              <div className="bg-card p-6 rounded-lg border border-border">
-                <h3 className="text-lg font-semibold text-foreground mb-4">Customer Statistics</h3>
+              <SectionShell
+                title="Customer Statistics"
+                description="Order history and spending metrics"
+              >
                 <div className="space-y-4">
-                  <div className="text-center">
-                    <div className="text-3xl font-bold text-primary mb-2">
-                      {displayStats.totalOrders}
+                  <div className="p-4 bg-muted/40 rounded-lg border border-border">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-muted-foreground">Total Orders</p>
+                        <p className="text-2xl font-bold">{displayStats.totalOrders}</p>
+                        <p className="text-xs text-muted-foreground">orders placed</p>
+                      </div>
                     </div>
-                    <p className="text-sm text-muted-foreground">Total Orders</p>
                   </div>
                   <div className="space-y-3">
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Total Spent</span>
-                      <span className="font-medium">₺{displayStats.totalSpent.toFixed(2)}</span>
+                      <span className="font-medium">{formatCurrency(displayStats.totalSpent, currencyOptions)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Average Order</span>
-                      <span className="font-medium">₺{displayStats.averageOrderValue.toFixed(2)}</span>
+                      <span className="font-medium">{formatCurrency(displayStats.averageOrderValue, currencyOptions)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Last Order</span>
@@ -294,24 +331,28 @@ export default function CustomerDetailPage() {
                     </div>
                   </div>
                 </div>
-              </div>
+              </SectionShell>
 
               {/* Customer Actions */}
               <ProtectedComponent permission="customers.manage">
-                <div className="bg-card p-6 rounded-lg border border-border">
-                  <h3 className="text-lg font-semibold text-foreground mb-4">Quick Actions</h3>
+                <SectionShell
+                  title="Quick Actions"
+                  description="Common actions for customer management"
+                >
                   <div className="space-y-2">
                     <button className="btn btn-outline w-full">View All Orders</button>
                     <button className="btn btn-outline w-full">Send Email</button>
                     <button className="btn btn-outline w-full">Create Order</button>
                     <button className="btn btn-outline w-full">Export Data</button>
                   </div>
-                </div>
+                </SectionShell>
               </ProtectedComponent>
 
               {/* Customer Notes */}
-              <div className="bg-card p-6 rounded-lg border border-border">
-                <h3 className="text-lg font-semibold text-foreground mb-4">Customer Notes</h3>
+                <SectionShell
+                  title="Customer Notes"
+                  description="Additional notes and preferences"
+                >
                 <div className="space-y-3">
                   <div className="text-sm">
                     <p className="font-medium">VIP Customer</p>
@@ -322,121 +363,93 @@ export default function CustomerDetailPage() {
                     <p className="text-muted-foreground">Email communication preferred</p>
                   </div>
                 </div>
-              </div>
+              </SectionShell>
             </div>
           </div>
 
           {/* Edit Customer Modal */}
           {showEditModal && (
             <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-              <div className="bg-card p-6 rounded-lg border border-border w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+              <div className="bg-background p-6 rounded-lg border border-border w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-lg">
                 <h3 className="text-lg font-semibold text-foreground mb-4">Edit Customer</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="form-label">First Name</label>
-                    <input
-                      type="text"
+                <FormLayout>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      label="First Name"
                       value={editData.firstName}
                       onChange={(e) => setEditData({...editData, firstName: e.target.value})}
-                      className="form-input"
-                    />
-                  </div>
-                  <div>
-                    <label className="form-label">Last Name</label>
-                    <input
                       type="text"
+                    />
+                    <FormField
+                      label="Last Name"
                       value={editData.lastName}
                       onChange={(e) => setEditData({...editData, lastName: e.target.value})}
-                      className="form-input"
+                      type="text"
                     />
-                  </div>
-                  <div>
-                    <label className="form-label">Email</label>
-                    <input
-                      type="email"
+                    <FormField
+                      label="Email"
                       value={editData.email}
                       onChange={(e) => setEditData({...editData, email: e.target.value})}
-                      className="form-input"
+                      type="email"
                     />
-                  </div>
-                  <div>
-                    <label className="form-label">Phone</label>
-                    <input
-                      type="tel"
+                    <FormField
+                      label="Phone"
                       value={editData.phone}
                       onChange={(e) => setEditData({...editData, phone: e.target.value})}
-                      className="form-input"
+                      type="tel"
                     />
-                  </div>
-                  <div>
-                    <label className="form-label">Company</label>
-                    <input
-                      type="text"
+                    <FormField
+                      label="Company"
                       value={editData.company}
                       onChange={(e) => setEditData({...editData, company: e.target.value})}
-                      className="form-input"
-                    />
-                  </div>
-                  <div>
-                    <label className="form-label">Address</label>
-                    <input
                       type="text"
+                    />
+                    <FormField
+                      label="Address"
                       value={editData.address}
                       onChange={(e) => setEditData({...editData, address: e.target.value})}
-                      className="form-input"
-                    />
-                  </div>
-                  <div>
-                    <label className="form-label">City</label>
-                    <input
                       type="text"
+                    />
+                    <FormField
+                      label="City"
                       value={editData.city}
                       onChange={(e) => setEditData({...editData, city: e.target.value})}
-                      className="form-input"
-                    />
-                  </div>
-                  <div>
-                    <label className="form-label">State</label>
-                    <input
                       type="text"
+                    />
+                    <FormField
+                      label="State"
                       value={editData.state}
                       onChange={(e) => setEditData({...editData, state: e.target.value})}
-                      className="form-input"
-                    />
-                  </div>
-                  <div>
-                    <label className="form-label">Postcode</label>
-                    <input
                       type="text"
+                    />
+                    <FormField
+                      label="Postcode"
                       value={editData.postcode}
                       onChange={(e) => setEditData({...editData, postcode: e.target.value})}
-                      className="form-input"
-                    />
-                  </div>
-                  <div>
-                    <label className="form-label">Country</label>
-                    <input
                       type="text"
+                    />
+                    <FormField
+                      label="Country"
                       value={editData.country}
                       onChange={(e) => setEditData({...editData, country: e.target.value})}
-                      className="form-input"
+                      type="text"
                     />
                   </div>
-                </div>
-                <div className="flex gap-2 mt-6">
-                  <button
-                    onClick={handleUpdate}
-                    className="btn btn-primary"
-                  >
-                    Update Customer
-                  </button>
-                  <button
-                    onClick={() => setShowEditModal(false)}
-                    className="btn btn-outline"
-                  >
-                    Cancel
-                  </button>
-                </div>
+                  <div className="flex gap-2 mt-6">
+                    <button
+                      onClick={handleUpdate}
+                      className="btn btn-primary"
+                    >
+                      Update Customer
+                    </button>
+                    <button
+                      onClick={() => setShowEditModal(false)}
+                      className="btn btn-outline"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </FormLayout>
               </div>
             </div>
           )}
@@ -444,7 +457,7 @@ export default function CustomerDetailPage() {
           {/* Delete Confirmation Modal */}
           {showDeleteModal && (
             <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-              <div className="bg-card p-6 rounded-lg border border-border w-full max-w-md">
+              <div className="bg-background p-6 rounded-lg border border-border w-full max-w-md shadow-lg">
                 <h3 className="text-lg font-semibold text-foreground mb-4">Delete Customer</h3>
                 <p className="text-muted-foreground mb-6">
                   Are you sure you want to delete "{customer.firstName} {customer.lastName}"? This action cannot be undone.

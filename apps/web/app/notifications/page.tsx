@@ -24,6 +24,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
+import { StatusPill } from "@/components/patterns/StatusPill";
 
 type NotificationType = "order" | "inventory" | "customer" | "system" | "return";
 type NotificationPriority = "urgent" | "high" | "medium" | "low";
@@ -223,8 +224,11 @@ export default function NotificationsPage() {
                               <div className="space-y-1">
                                 <div className="flex flex-wrap items-center gap-2">
                                   <h3 className="text-sm font-semibold text-foreground">{notification.title}</h3>
-                                  <Badge variant={priority.badge}>{priority.label}</Badge>
-                                  {!notification.read && <Badge variant="info">Yeni</Badge>}
+                                  <StatusPill 
+                                    label={priority.label} 
+                                    tone={priority.badge === 'destructive' ? 'destructive' : priority.badge === 'warning' ? 'warning' : priority.badge === 'info' ? 'info' : 'muted'} 
+                                  />
+                                  {!notification.read && <StatusPill label="Yeni" tone="info" />}
                                 </div>
                                 <p className="text-sm text-muted-foreground">{notification.message}</p>
                                 <span className="text-xs text-muted-foreground/80">{notification.time}</span>

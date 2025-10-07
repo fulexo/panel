@@ -270,14 +270,14 @@ export class ShipmentsService {
     }
 
     const karrioPayload = await this._mapOrderToKarrioPayload(tenantId, order, parcels);
-    karrioPayload.service = service;
-    karrioPayload.label_type = 'PDF';
+    (karrioPayload as any).service = service;
+    (karrioPayload as any).label_type = 'PDF';
 
     const selectedRateId = payload?.selected_rate_id ? String(payload.selected_rate_id) : undefined;
     if (selectedRateId) {
-      karrioPayload.selected_rate_id = selectedRateId;
+      (karrioPayload as any).selected_rate_id = selectedRateId;
     } else if (Array.isArray(payload?.rates) && payload.rates.length > 0) {
-      karrioPayload.rates = payload.rates;
+      (karrioPayload as any).rates = payload.rates;
     } else {
       throw new BadRequestException('Either selected_rate_id or rates list is required for shipment creation');
     }

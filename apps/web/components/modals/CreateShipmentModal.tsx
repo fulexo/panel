@@ -3,10 +3,11 @@
 import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { apiClient } from "@/lib/api-client";
-import { X, Package, Truck, CheckCircle2, FileText } from "lucide-react";
+import { formatCurrency } from "@/lib/formatters";
+import { X, FileText } from "lucide-react";
+import { FormLayout } from "@/components/patterns/FormLayout";
+import { FormField } from "@/components/forms/FormField";
 
 interface CreateShipmentModalProps {
   isOpen: boolean;
@@ -163,19 +164,14 @@ export function CreateShipmentModal({ isOpen, onClose, orderId }: CreateShipment
     switch (step) {
       case 1:
         return (
-          <form onSubmit={handleParcelSubmit} className="space-y-6">
-            <div className="flex items-center gap-3 text-primary">
-              <Package className="w-5 h-5" />
-              <h2 className="text-lg font-semibold">Paket Bilgileri</h2>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              Lütfen gönderilecek paketin ağırlık ve boyut bilgilerini girin.
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="weight">Ağırlık (kg)</Label>
-                <Input
-                  id="weight"
+          <FormLayout
+            title="Paket Bilgileri"
+            description="Lütfen gönderilecek paketin ağırlık ve boyut bilgilerini girin."
+          >
+            <form onSubmit={handleParcelSubmit} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  label="Ağırlık (kg)"
                   type="number"
                   min="0"
                   step="0.1"
@@ -183,11 +179,8 @@ export function CreateShipmentModal({ isOpen, onClose, orderId }: CreateShipment
                   onChange={(event) => setParcel((prev) => ({ ...prev, weight: event.target.value }))}
                   required
                 />
-              </div>
-              <div>
-                <Label htmlFor="length">Uzunluk (cm)</Label>
-                <Input
-                  id="length"
+                <FormField
+                  label="Uzunluk (cm)"
                   type="number"
                   min="0"
                   step="0.1"
@@ -195,11 +188,8 @@ export function CreateShipmentModal({ isOpen, onClose, orderId }: CreateShipment
                   onChange={(event) => setParcel((prev) => ({ ...prev, length: event.target.value }))}
                   required
                 />
-              </div>
-              <div>
-                <Label htmlFor="width">Genişlik (cm)</Label>
-                <Input
-                  id="width"
+                <FormField
+                  label="Genişlik (cm)"
                   type="number"
                   min="0"
                   step="0.1"
@@ -207,11 +197,8 @@ export function CreateShipmentModal({ isOpen, onClose, orderId }: CreateShipment
                   onChange={(event) => setParcel((prev) => ({ ...prev, width: event.target.value }))}
                   required
                 />
-              </div>
-              <div>
-                <Label htmlFor="height">Yükseklik (cm)</Label>
-                <Input
-                  id="height"
+                <FormField
+                  label="Yükseklik (cm)"
                   type="number"
                   min="0"
                   step="0.1"
@@ -220,159 +207,155 @@ export function CreateShipmentModal({ isOpen, onClose, orderId }: CreateShipment
                   required
                 />
               </div>
-            </div>
-            <div className="flex justify-end gap-2">
-              <Button type="button" variant="outline" onClick={handleClose}>
-                İptal
-              </Button>
-              <Button type="submit">Devam Et</Button>
-            </div>
-          </form>
+              <div className="flex justify-end gap-2">
+                <Button type="button" variant="outline" onClick={handleClose}>
+                  İptal
+                </Button>
+                <Button type="submit">Devam Et</Button>
+              </div>
+            </form>
+          </FormLayout>
         );
       case 2:
         return (
-          <div className="space-y-6">
-            <div className="flex items-center gap-3 text-primary">
-              <Truck className="w-5 h-5" />
-              <h2 className="text-lg font-semibold">Kargo Ücretlerini Al</h2>
+          <FormLayout
+            title="Kargo Ücretlerini Al"
+            description="Paket bilgilerinize göre kargo ücretlerini almak için aşağıdaki butona tıklayın."
+          >
+            <div className="space-y-6">
+              <div className="p-4 border rounded-lg bg-muted/40 text-sm text-muted-foreground space-y-1">
+                <p>
+                  <strong>Ağırlık:</strong> {parcel.weight} kg
+                </p>
+                <p>
+                  <strong>Boyutlar:</strong> {parcel.length} × {parcel.width} × {parcel.height} cm
+                </p>
+              </div>
+              <div className="flex justify-between gap-2">
+                <Button variant="outline" onClick={() => setStep(1)}>
+                  Geri Dön
+                </Button>
+                <Button onClick={handleFetchRates} disabled={ratesLoading}>
+                  {ratesLoading ? "Ücretler Alınıyor..." : "Ücretleri Getir"}
+                </Button>
+              </div>
             </div>
-            <p className="text-sm text-muted-foreground">
-              Paket bilgilerinize göre kargo ücretlerini almak için aşağıdaki butona tıklayın.
-            </p>
-            <div className="p-4 border rounded-lg bg-muted/40 text-sm text-muted-foreground space-y-1">
-              <p>
-                <strong>Ağırlık:</strong> {parcel.weight} kg
-              </p>
-              <p>
-                <strong>Boyutlar:</strong> {parcel.length} × {parcel.width} × {parcel.height} cm
-              </p>
-            </div>
-            <div className="flex justify-between gap-2">
-              <Button variant="outline" onClick={() => setStep(1)}>
-                Geri Dön
-              </Button>
-              <Button onClick={handleFetchRates} disabled={ratesLoading}>
-                {ratesLoading ? "Ücretler Alınıyor..." : "Ücretleri Getir"}
-              </Button>
-            </div>
-          </div>
+          </FormLayout>
         );
       case 3:
         return (
-          <div className="space-y-6">
-            <div className="flex items-center gap-3 text-primary">
-              <Truck className="w-5 h-5" />
-              <h2 className="text-lg font-semibold">Kargo Ücretini Seçin</h2>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              Aşağıdaki seçeneklerden birini seçerek gönderinizi oluşturun.
-            </p>
-            <div className="space-y-3 max-h-64 overflow-y-auto pr-1">
-              {rates.map((rate) => (
-                <button
-                  key={rate.id}
-                  type="button"
-                  onClick={() => {
-                    setSelectedRateId(rate.id);
-                    setError(null);
-                  }}
-                  className={`w-full text-left p-4 border rounded-lg transition-colors ${
-                    selectedRateId === rate.id
-                      ? "border-primary bg-primary/10"
-                      : "border-border hover:border-primary/60"
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-semibold text-foreground">
-                        {rate.carrier_name || rate.carrier || "Taşıyıcı"}
-                      </p>
-                      <p className="text-sm text-muted-foreground capitalize">{rate.service || "standart"}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-lg font-bold text-foreground">
-                        {rate.total_charge
-                          ? `${rate.total_charge} ${rate.currency || "TRY"}`
-                          : "Fiyat Bilinmiyor"}
-                      </p>
-                      {rate.estimated_delivery && (
-                        <p className="text-xs text-muted-foreground">
-                          Teslimat: {rate.estimated_delivery}
+          <FormLayout
+            title="Kargo Ücretini Seçin"
+            description="Aşağıdaki seçeneklerden birini seçerek gönderinizi oluşturun."
+          >
+            <div className="space-y-6">
+              <div className="space-y-3 max-h-64 overflow-y-auto pr-1">
+                {rates.map((rate) => (
+                  <button
+                    key={rate.id}
+                    type="button"
+                    onClick={() => {
+                      setSelectedRateId(rate.id);
+                      setError(null);
+                    }}
+                    className={`w-full text-left p-4 border rounded-lg transition-colors ${
+                      selectedRateId === rate.id
+                        ? "border-primary bg-primary/10"
+                        : "border-border hover:border-primary/60"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-semibold text-foreground">
+                          {rate.carrier_name || rate.carrier || "Taşıyıcı"}
                         </p>
-                      )}
+                        <p className="text-sm text-muted-foreground capitalize">{rate.service || "standart"}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-lg font-bold text-foreground">
+                          {rate.total_charge
+                            ? formatCurrency(Number(rate.total_charge), {
+                                currency: rate.currency || "EUR",
+                              })
+                            : "Fiyat Bilinmiyor"}
+                        </p>
+                        {rate.estimated_delivery && (
+                          <p className="text-xs text-muted-foreground">
+                            Teslimat: {rate.estimated_delivery}
+                          </p>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                </button>
-              ))}
-            </div>
-            {rates.length === 0 && (
-              <div className="p-4 border border-dashed rounded-lg text-sm text-muted-foreground">
-                Gösterilecek kargo ücreti bulunamadı. Lütfen paket bilgilerini kontrol edin.
+                  </button>
+                ))}
               </div>
-            )}
-            <div className="flex justify-between gap-2">
-              <Button variant="outline" onClick={() => setStep(2)}>
-                Geri Dön
-              </Button>
-              <Button onClick={handleCreateShipment} disabled={createLoading || !selectedRateId}>
-                {createLoading ? "Gönderi Oluşturuluyor..." : "Gönderi Oluştur"}
-              </Button>
+              {rates.length === 0 && (
+                <div className="p-4 border border-dashed rounded-lg text-sm text-muted-foreground">
+                  Gösterilecek kargo ücreti bulunamadı. Lütfen paket bilgilerini kontrol edin.
+                </div>
+              )}
+              <div className="flex justify-between gap-2">
+                <Button variant="outline" onClick={() => setStep(2)}>
+                  Geri Dön
+                </Button>
+                <Button onClick={handleCreateShipment} disabled={createLoading || !selectedRateId}>
+                  {createLoading ? "Gönderi Oluşturuluyor..." : "Gönderi Oluştur"}
+                </Button>
+              </div>
             </div>
-          </div>
+          </FormLayout>
         );
       case 4:
         return (
-          <div className="space-y-6 text-center">
-            <div className="flex flex-col items-center gap-3 text-green-600">
-              <CheckCircle2 className="w-12 h-12" />
-              <h2 className="text-xl font-semibold text-foreground">Gönderi Başarıyla Oluşturuldu</h2>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              Etiketi indirerek paketinizi hazırlayabilir ve kargo sürecini takip edebilirsiniz.
-            </p>
-            {shipmentResult?.labelUrl && (
-              <div className="p-4 border rounded-lg bg-muted/40 text-left">
-                <p className="font-medium text-foreground mb-2">Etiket ve Takip Bilgileri</p>
-                <div className="space-y-1 text-sm text-muted-foreground">
-                  <p>
-                    <strong>Taşıyıcı:</strong> {shipmentResult.carrier}
-                  </p>
-                  <p>
-                    <strong>Takip Numarası:</strong> {shipmentResult.trackingNo}
-                  </p>
-                  {shipmentResult.trackingUrl && (
-                    <p>
-                      <strong>Takip:</strong>{" "}
-                      <a
-                        href={shipmentResult.trackingUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-primary underline"
-                      >
-                        Takip Bağlantısı
-                      </a>
-                    </p>
-                  )}
-                </div>
-              </div>
-            )}
-            <div className="flex flex-wrap justify-center gap-3">
+          <FormLayout
+            title="Gönderi Başarıyla Oluşturuldu"
+            description="Etiketi indirerek paketinizi hazırlayabilir ve kargo sürecini takip edebilirsiniz."
+          >
+            <div className="space-y-6 text-center">
               {shipmentResult?.labelUrl && (
-                <Button asChild variant="outline">
-                  <a
-                    href={shipmentResult.labelUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2"
-                  >
-                    <FileText className="w-4 h-4" />
-                    Etiketi Aç
-                  </a>
-                </Button>
+                <div className="p-4 border rounded-lg bg-muted/40 text-left">
+                  <p className="font-medium text-foreground mb-2">Etiket ve Takip Bilgileri</p>
+                  <div className="space-y-1 text-sm text-muted-foreground">
+                    <p>
+                      <strong>Taşıyıcı:</strong> {shipmentResult.carrier}
+                    </p>
+                    <p>
+                      <strong>Takip Numarası:</strong> {shipmentResult.trackingNo}
+                    </p>
+                    {shipmentResult.trackingUrl && (
+                      <p>
+                        <strong>Takip:</strong>{" "}
+                        <a
+                          href={shipmentResult.trackingUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-primary underline"
+                        >
+                          Takip Bağlantısı
+                        </a>
+                      </p>
+                    )}
+                  </div>
+                </div>
               )}
-              <Button onClick={handleClose}>Kapat</Button>
+              <div className="flex flex-wrap justify-center gap-3">
+                {shipmentResult?.labelUrl && (
+                  <Button asChild variant="outline">
+                    <a
+                      href={shipmentResult.labelUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2"
+                    >
+                      <FileText className="w-4 h-4" />
+                      Etiketi Aç
+                    </a>
+                  </Button>
+                )}
+                <Button onClick={handleClose}>Kapat</Button>
+              </div>
             </div>
-          </div>
+          </FormLayout>
         );
       default:
         return null;

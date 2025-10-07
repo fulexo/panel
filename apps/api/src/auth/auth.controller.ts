@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, Req, HttpCode, HttpStatus, BadRequestException, UnauthorizedException, Put } from '@nestjs/common';
+import { Controller, Post, Body, Get, Req, HttpCode, HttpStatus, BadRequestException, Put } from '@nestjs/common';
 import { Request } from 'express';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
@@ -7,7 +7,6 @@ import { TwoFactorService } from './twofactor.service';
 import { Public } from './decorators/public.decorator';
 import { CurrentUser } from './decorators/current-user.decorator';
 import { LoginDto, RegisterDto, Verify2FADto, RefreshTokenDto, UpdateProfileDto, ChangePasswordDto, SetTokensDto } from './dto';
-import { RateLimit } from '../rate-limit.decorator';
 import { ResponseUtil } from '../common/utils/response.util';
 
 @ApiTags('auth')
@@ -23,7 +22,6 @@ export class AuthController {
   @Post('login')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'User login' })
-  @RateLimit({ points: 5, duration: 60_000, scope: 'ip' })
   async login(@Body() dto: LoginDto, @Req() req: Request) {
     const result = await this.authService.login(dto, {
       ipAddress: req.ip,
@@ -70,13 +68,10 @@ export class AuthController {
     );
   }
 
+  @Public()
   @Post('register')
-  @ApiOperation({ summary: 'Register new user (admin only)' })
-  async register(@CurrentUser() user: { id: string; role: string }, @Body() dto: RegisterDto) {
-    // Allow only platform admins or staff to register new users
-    if (!user || user.role !== 'ADMIN') {
-      throw new UnauthorizedException('Not allowed');
-    }
+  @ApiOperation({ summary: 'Register new user' })
+  async register(@Body() dto: RegisterDto) {
     const result = await this.authService.register(dto);
     return ResponseUtil.created(result, 'User registered successfully', '/api/auth/register');
   }

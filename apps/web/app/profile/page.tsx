@@ -5,6 +5,12 @@ import { useAuth } from "@/components/AuthProvider";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { User, Shield, Settings } from 'lucide-react';
 import { logger } from "@/lib/logger";
+import { SectionShell } from "@/components/patterns/SectionShell";
+import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
+import { FormField } from "@/components/forms/FormField";
+import { FormSelect } from "@/components/forms/FormSelect";
+import { FormCheckbox } from "@/components/forms/FormCheckbox";
 
 export default function ProfilePage() {
   const { user } = useAuth();
@@ -80,32 +86,35 @@ export default function ProfilePage() {
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
             {/* Profile Navigation */}
             <div className="lg:col-span-1">
-              <div className="bg-card p-4 rounded-lg border border-border">
+              <SectionShell
+                title="Profile Settings"
+                description="Manage your account settings"
+              >
                 <nav className="space-y-2">
                   {tabs.map((tab) => {
                     const IconComponent = tab.icon as React.ComponentType<{ className?: string }>;
                     return (
-                      <button
+                      <Button
                         key={tab.id}
                         onClick={() => setActiveTab(tab.id)}
-                        className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
-                          activeTab === tab.id
-                            ? "bg-primary text-primary-foreground"
-                            : "hover:bg-accent text-foreground"
-                        }`}
+                        variant={activeTab === tab.id ? "default" : "ghost"}
+                        className="w-full justify-start"
                       >
-                        <IconComponent className="w-5 h-5" />
+                        <IconComponent className="w-5 h-5 mr-3" />
                         <span className="font-medium">{tab.label}</span>
-                      </button>
+                      </Button>
                     );
                   })}
                 </nav>
-              </div>
+              </SectionShell>
             </div>
 
             {/* Profile Content */}
             <div className="lg:col-span-3">
-              <div className="bg-card p-6 rounded-lg border border-border">
+              <SectionShell
+                title="Profile Information"
+                description="Manage your personal and account information"
+              >
                 {/* Personal Information */}
                 {activeTab === "personal" && (
                   <div className="space-y-6">
@@ -127,7 +136,7 @@ export default function ProfilePage() {
                         )}
                       </div>
                       <div>
-                        <button className="btn btn-outline btn-sm">Fotoğraf Değiştir</button>
+                        <Button variant="outline" size="sm">Fotoğraf Değiştir</Button>
                         <p className="text-sm text-muted-foreground mt-1">
                           JPG, PNG veya GIF (max 2MB)
                         </p>
@@ -135,80 +144,66 @@ export default function ProfilePage() {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <label className="form-label">Ad</label>
-                        <input
-                          type="text"
-                          value={profile.personal.firstName}
-                          onChange={(e) => setProfile({
-                            ...profile,
-                            personal: { ...profile.personal, firstName: e.target.value }
-                          })}
-                          className="form-input"
-                        />
-                      </div>
-                      <div>
-                        <label className="form-label">Soyad</label>
-                        <input
-                          type="text"
-                          value={profile.personal.lastName}
-                          onChange={(e) => setProfile({
-                            ...profile,
-                            personal: { ...profile.personal, lastName: e.target.value }
-                          })}
-                          className="form-input"
-                        />
-                      </div>
-                      <div>
-                        <label className="form-label">E-posta</label>
-                        <input
-                          type="email"
-                          value={profile.personal.email}
-                          onChange={(e) => setProfile({
-                            ...profile,
-                            personal: { ...profile.personal, email: e.target.value }
-                          })}
-                          className="form-input"
-                        />
-                      </div>
-                      <div>
-                        <label className="form-label">Telefon</label>
-                        <input
-                          type="tel"
-                          value={profile.personal.phone}
-                          onChange={(e) => setProfile({
-                            ...profile,
-                            personal: { ...profile.personal, phone: e.target.value }
-                          })}
-                          className="form-input"
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="form-label">Hakkında</label>
-                      <textarea
-                        value={profile.personal.bio}
+                      <FormField
+                        label="Ad"
+                        type="text"
+                        value={profile.personal.firstName}
                         onChange={(e) => setProfile({
                           ...profile,
-                          personal: { ...profile.personal, bio: e.target.value }
+                          personal: { ...profile.personal, firstName: e.target.value }
                         })}
-                        className="form-textarea"
-                        rows={4}
-                        placeholder="Kendiniz hakkında kısa bir açıklama yazın..."
+                      />
+                      <FormField
+                        label="Soyad"
+                        type="text"
+                        value={profile.personal.lastName}
+                        onChange={(e) => setProfile({
+                          ...profile,
+                          personal: { ...profile.personal, lastName: e.target.value }
+                        })}
+                      />
+                      <FormField
+                        label="E-posta"
+                        type="email"
+                        value={profile.personal.email}
+                        onChange={(e) => setProfile({
+                          ...profile,
+                          personal: { ...profile.personal, email: e.target.value }
+                        })}
+                      />
+                      <FormField
+                        label="Telefon"
+                        type="tel"
+                        value={profile.personal.phone}
+                        onChange={(e) => setProfile({
+                          ...profile,
+                          personal: { ...profile.personal, phone: e.target.value }
+                        })}
                       />
                     </div>
 
+                    <FormField
+                      label="Hakkında"
+                      type="textarea"
+                      value={profile.personal.bio}
+                      onChange={(e) => setProfile({
+                        ...profile,
+                        personal: { ...profile.personal, bio: e.target.value }
+                      })}
+                      rows={4}
+                      placeholder="Kendiniz hakkında kısa bir açıklama yazın..."
+                    />
+
                     <div className="flex gap-2">
-                      <button
+                      <Button
                         onClick={() => handleSave("personal")}
-                        className="btn btn-primary"
+                        variant="default"
                       >
                         Kaydet
-                      </button>
-                      <button className="btn btn-outline">
+                      </Button>
+                      <Button variant="outline">
                         İptal
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 )}
@@ -223,48 +218,39 @@ export default function ProfilePage() {
                       <div className="border border-border rounded-lg p-4">
                         <h3 className="text-lg font-semibold text-foreground mb-4">Şifre Değiştir</h3>
                         <div className="space-y-4">
-                          <div>
-                            <label className="form-label">Mevcut Şifre</label>
-                            <input
-                              type="password"
-                              value={profile.security.currentPassword}
-                              onChange={(e) => setProfile({
-                                ...profile,
-                                security: { ...profile.security, currentPassword: e.target.value }
-                              })}
-                              className="form-input"
-                            />
-                          </div>
-                          <div>
-                            <label className="form-label">Yeni Şifre</label>
-                            <input
-                              type="password"
-                              value={profile.security.newPassword}
-                              onChange={(e) => setProfile({
-                                ...profile,
-                                security: { ...profile.security, newPassword: e.target.value }
-                              })}
-                              className="form-input"
-                            />
-                          </div>
-                          <div>
-                            <label className="form-label">Yeni Şifre Tekrar</label>
-                            <input
-                              type="password"
-                              value={profile.security.confirmPassword}
-                              onChange={(e) => setProfile({
-                                ...profile,
-                                security: { ...profile.security, confirmPassword: e.target.value }
-                              })}
-                              className="form-input"
-                            />
-                          </div>
-                          <button
+                          <FormField
+                            label="Mevcut Şifre"
+                            type="password"
+                            value={profile.security.currentPassword}
+                            onChange={(e) => setProfile({
+                              ...profile,
+                              security: { ...profile.security, currentPassword: e.target.value }
+                            })}
+                          />
+                          <FormField
+                            label="Yeni Şifre"
+                            type="password"
+                            value={profile.security.newPassword}
+                            onChange={(e) => setProfile({
+                              ...profile,
+                              security: { ...profile.security, newPassword: e.target.value }
+                            })}
+                          />
+                          <FormField
+                            label="Yeni Şifre Tekrar"
+                            type="password"
+                            value={profile.security.confirmPassword}
+                            onChange={(e) => setProfile({
+                              ...profile,
+                              security: { ...profile.security, confirmPassword: e.target.value }
+                            })}
+                          />
+                          <Button
                             onClick={handlePasswordChange}
-                            className="btn btn-primary"
+                            variant="default"
                           >
                             Şifre Değiştir
-                          </button>
+                          </Button>
                         </div>
                       </div>
 
@@ -278,15 +264,15 @@ export default function ProfilePage() {
                               {profile.security.twoFactorEnabled ? "Etkin" : "Devre dışı"}
                             </p>
                           </div>
-                          <button
+                          <Button
                             onClick={() => setProfile({
                               ...profile,
                               security: { ...profile.security, twoFactorEnabled: !profile.security.twoFactorEnabled }
                             })}
-                            className={`btn ${profile.security.twoFactorEnabled ? 'btn-destructive' : 'btn-primary'}`}
+                            variant={profile.security.twoFactorEnabled ? "destructive" : "default"}
                           >
                             {profile.security.twoFactorEnabled ? 'Devre Dışı Bırak' : 'Etkinleştir'}
-                          </button>
+                          </Button>
                         </div>
                       </div>
 
@@ -306,14 +292,14 @@ export default function ProfilePage() {
                               <p className="font-medium">Mobil Uygulama</p>
                               <p className="text-sm text-muted-foreground">iOS • iPhone • 2 saat önce</p>
                             </div>
-                            <button className="btn btn-sm btn-outline">Sonlandır</button>
+                            <Button variant="outline" size="sm">Sonlandır</Button>
                           </div>
                           <div className="flex justify-between items-center py-2">
                             <div>
                               <p className="font-medium">Chrome</p>
                               <p className="text-sm text-muted-foreground">Windows • 1 gün önce</p>
                             </div>
-                            <button className="btn btn-sm btn-outline">Sonlandır</button>
+                            <Button variant="outline" size="sm">Sonlandır</Button>
                           </div>
                         </div>
                       </div>
@@ -330,155 +316,127 @@ export default function ProfilePage() {
                       <div>
                         <h3 className="text-lg font-semibold text-foreground mb-4">Dil ve Bölge</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                            <label className="form-label">Dil</label>
-                            <select
-                              value={profile.preferences.language}
-                              onChange={(e) => setProfile({
-                                ...profile,
-                                preferences: { ...profile.preferences, language: e.target.value }
-                              })}
-                              className="form-select"
-                            >
-                              <option value="tr">Türkçe</option>
-                              <option value="en">English</option>
-                            </select>
-                          </div>
-                          <div>
-                            <label className="form-label">Saat Dilimi</label>
-                            <select
-                              value={profile.preferences.timezone}
-                              onChange={(e) => setProfile({
-                                ...profile,
-                                preferences: { ...profile.preferences, timezone: e.target.value }
-                              })}
-                              className="form-select"
-                            >
-                              <option value="Europe/Istanbul">Europe/Istanbul</option>
-                              <option value="Europe/London">Europe/London</option>
-                              <option value="America/New_York">America/New_York</option>
-                            </select>
-                          </div>
+                          <FormSelect
+                            label="Dil"
+                            value={profile.preferences.language}
+                            onChange={(e) => setProfile({
+                              ...profile,
+                              preferences: { ...profile.preferences, language: e.target.value }
+                            })}
+                            options={[
+                              { value: "tr", label: "Türkçe" },
+                              { value: "en", label: "English" }
+                            ]}
+                          />
+                          <FormSelect
+                            label="Saat Dilimi"
+                            value={profile.preferences.timezone}
+                            onChange={(e) => setProfile({
+                              ...profile,
+                              preferences: { ...profile.preferences, timezone: e.target.value }
+                            })}
+                            options={[
+                              { value: "Europe/Istanbul", label: "Europe/Istanbul" },
+                              { value: "Europe/London", label: "Europe/London" },
+                              { value: "America/New_York", label: "America/New_York" }
+                            ]}
+                          />
                         </div>
                       </div>
 
                       <div>
                         <h3 className="text-lg font-semibold text-foreground mb-4">Bildirimler</h3>
                         <div className="space-y-3">
-                          <label className="flex items-center gap-3">
-                            <input
-                              type="checkbox"
-                              checked={profile.preferences.notifications.email}
-                              onChange={(e) => setProfile({
-                                ...profile,
-                                preferences: {
-                                  ...profile.preferences,
-                                  notifications: { ...profile.preferences.notifications, email: e.target.checked }
-                                }
-                              })}
-                              className="form-checkbox"
-                            />
-                            <span>E-posta bildirimleri</span>
-                          </label>
-                          <label className="flex items-center gap-3">
-                            <input
-                              type="checkbox"
-                              checked={profile.preferences.notifications.push}
-                              onChange={(e) => setProfile({
-                                ...profile,
-                                preferences: {
-                                  ...profile.preferences,
-                                  notifications: { ...profile.preferences.notifications, push: e.target.checked }
-                                }
-                              })}
-                              className="form-checkbox"
-                            />
-                            <span>Push bildirimleri</span>
-                          </label>
-                          <label className="flex items-center gap-3">
-                            <input
-                              type="checkbox"
-                              checked={profile.preferences.notifications.sms}
-                              onChange={(e) => setProfile({
-                                ...profile,
-                                preferences: {
-                                  ...profile.preferences,
-                                  notifications: { ...profile.preferences.notifications, sms: e.target.checked }
-                                }
-                              })}
-                              className="form-checkbox"
-                            />
-                            <span>SMS bildirimleri</span>
-                          </label>
+                          <FormCheckbox
+                            checked={profile.preferences.notifications.email}
+                            onChange={(e) => setProfile({
+                              ...profile,
+                              preferences: {
+                                ...profile.preferences,
+                                notifications: { ...profile.preferences.notifications, email: e.target.checked }
+                              }
+                            })}
+                            label="E-posta bildirimleri"
+                          />
+                          <FormCheckbox
+                            checked={profile.preferences.notifications.push}
+                            onChange={(e) => setProfile({
+                              ...profile,
+                              preferences: {
+                                ...profile.preferences,
+                                notifications: { ...profile.preferences.notifications, push: e.target.checked }
+                              }
+                            })}
+                            label="Push bildirimleri"
+                          />
+                          <FormCheckbox
+                            checked={profile.preferences.notifications.sms}
+                            onChange={(e) => setProfile({
+                              ...profile,
+                              preferences: {
+                                ...profile.preferences,
+                                notifications: { ...profile.preferences.notifications, sms: e.target.checked }
+                              }
+                            })}
+                            label="SMS bildirimleri"
+                          />
                         </div>
                       </div>
 
                       <div>
                         <h3 className="text-lg font-semibold text-foreground mb-4">Gizlilik</h3>
                         <div className="space-y-3">
-                          <label className="flex items-center gap-3">
-                            <input
-                              type="checkbox"
-                              checked={profile.preferences.privacy.profileVisible}
-                              onChange={(e) => setProfile({
-                                ...profile,
-                                preferences: {
-                                  ...profile.preferences,
-                                  privacy: { ...profile.preferences.privacy, profileVisible: e.target.checked }
-                                }
-                              })}
-                              className="form-checkbox"
-                            />
-                            <span>Profilimi herkese görünür yap</span>
-                          </label>
-                          <label className="flex items-center gap-3">
-                            <input
-                              type="checkbox"
-                              checked={profile.preferences.privacy.showEmail}
-                              onChange={(e) => setProfile({
-                                ...profile,
-                                preferences: {
-                                  ...profile.preferences,
-                                  privacy: { ...profile.preferences.privacy, showEmail: e.target.checked }
-                                }
-                              })}
-                              className="form-checkbox"
-                            />
-                            <span>E-posta adresimi göster</span>
-                          </label>
-                          <label className="flex items-center gap-3">
-                            <input
-                              type="checkbox"
-                              checked={profile.preferences.privacy.showPhone}
-                              onChange={(e) => setProfile({
-                                ...profile,
-                                preferences: {
-                                  ...profile.preferences,
-                                  privacy: { ...profile.preferences.privacy, showPhone: e.target.checked }
-                                }
-                              })}
-                              className="form-checkbox"
-                            />
-                            <span>Telefon numaramı göster</span>
-                          </label>
+                          <FormCheckbox
+                            checked={profile.preferences.privacy.profileVisible}
+                            onChange={(e) => setProfile({
+                              ...profile,
+                              preferences: {
+                                ...profile.preferences,
+                                privacy: { ...profile.preferences.privacy, profileVisible: e.target.checked }
+                              }
+                            })}
+                            label="Profilimi herkese görünür yap"
+                          />
+                          <FormCheckbox
+                            checked={profile.preferences.privacy.showEmail}
+                            onChange={(e) => setProfile({
+                              ...profile,
+                              preferences: {
+                                ...profile.preferences,
+                                privacy: { ...profile.preferences.privacy, showEmail: e.target.checked }
+                              }
+                            })}
+                            label="E-posta adresimi göster"
+                          />
+                          <FormCheckbox
+                            checked={profile.preferences.privacy.showPhone}
+                            onChange={(e) => setProfile({
+                              ...profile,
+                              preferences: {
+                                ...profile.preferences,
+                                privacy: { ...profile.preferences.privacy, showPhone: e.target.checked }
+                              }
+                            })}
+                            label="Telefon numaramı göster"
+                          />
                         </div>
                       </div>
                     </div>
 
                     <div className="flex gap-2">
-                      <button
+                      <Button
                         onClick={() => handleSave("preferences")}
-                        className="btn btn-primary"
+                        variant="default"
                       >
                         Kaydet
-                      </button>
-                      <button className="btn btn-outline">
+                      </Button>
+                      <Button variant="outline">
                         İptal
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 )}
-              </div>
+              </SectionShell>
             </div>
           </div>
         </main>

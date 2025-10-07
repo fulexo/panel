@@ -7,6 +7,9 @@ import { useAuth } from "@/components/AuthProvider";
 import { useRBAC } from "@/hooks/useRBAC";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { Settings, Shield, Link, Palette } from 'lucide-react';
+import { SectionShell } from "@/components/patterns/SectionShell";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 export default function SettingsPage() {
   useAuth();
@@ -18,7 +21,7 @@ export default function SettingsPage() {
       timezone: "Europe/Istanbul",
       language: "tr",
       dateFormat: "DD/MM/YYYY",
-      currency: "TRY",
+      currency: "EUR",
       notifications: true,
       emailNotifications: true,
       smsNotifications: false,
@@ -79,32 +82,40 @@ export default function SettingsPage() {
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
             {/* Settings Navigation */}
             <div className="lg:col-span-1">
-              <div className="bg-card p-4 rounded-lg border border-border">
+              <SectionShell
+                title="Settings Navigation"
+                description="Manage your application settings"
+              >
                 <nav className="space-y-2">
                   {tabs.map((tab) => {
                     const IconComponent = tab.icon as React.ComponentType<{ className?: string }>;
                     return (
-                      <button
+                      <Button
                         key={tab.id}
                         onClick={() => setActiveTab(tab.id)}
-                        className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
+                        variant={activeTab === tab.id ? "default" : "ghost"}
+                        className={cn(
+                          "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors justify-start",
                           activeTab === tab.id
                             ? "bg-primary text-primary-foreground"
                             : "hover:bg-accent text-foreground"
-                        }`}
+                        )}
                       >
                         <IconComponent className="w-5 h-5" />
                         <span className="font-medium">{tab.label}</span>
-                      </button>
+                      </Button>
                     );
                   })}
                 </nav>
-              </div>
+              </SectionShell>
             </div>
 
             {/* Settings Content */}
             <div className="lg:col-span-3">
-              <div className="bg-card p-6 rounded-lg border border-border">
+              <SectionShell
+                title="Settings Content"
+                description="Configure your application settings"
+              >
                 {/* General Settings */}
                 {activeTab === "general" && (
                   <div className="space-y-6">
@@ -162,9 +173,9 @@ export default function SettingsPage() {
                           })}
                           className="form-select"
                         >
-                          <option value="TRY">₺ TRY</option>
-                          <option value="USD">$ USD</option>
                           <option value="EUR">€ EUR</option>
+                          <option value="USD">$ USD</option>
+                          <option value="TRY">TRY</option>
                         </select>
                       </div>
                     </div>
@@ -212,15 +223,15 @@ export default function SettingsPage() {
                     </div>
 
                     <div className="flex gap-2">
-                      <button
+                      <Button
                         onClick={() => handleSave("general")}
-                        className="btn btn-primary"
+                        variant="default"
                       >
                         Kaydet
-                      </button>
-                      <button className="btn btn-outline">
+                      </Button>
+                      <Button variant="outline">
                         Sıfırla
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 )}
@@ -305,15 +316,15 @@ export default function SettingsPage() {
                     </div>
 
                     <div className="flex gap-2">
-                      <button
+                      <Button
                         onClick={() => handleSave("security")}
-                        className="btn btn-primary"
+                        variant="default"
                       >
                         Kaydet
-                      </button>
-                      <button className="btn btn-outline">
+                      </Button>
+                      <Button variant="outline">
                         Sıfırla
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 )}
@@ -444,15 +455,15 @@ export default function SettingsPage() {
                     </div>
 
                     <div className="flex gap-2">
-                      <button
+                      <Button
                         onClick={() => handleSave("integrations")}
-                        className="btn btn-primary"
+                        variant="default"
                       >
                         Kaydet
-                      </button>
-                      <button className="btn btn-outline">
+                      </Button>
+                      <Button variant="outline">
                         Sıfırla
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 )}
@@ -520,19 +531,19 @@ export default function SettingsPage() {
                     </div>
 
                     <div className="flex gap-2">
-                      <button
+                      <Button
                         onClick={() => handleSave("appearance")}
-                        className="btn btn-primary"
+                        variant="default"
                       >
                         Kaydet
-                      </button>
-                      <button className="btn btn-outline">
+                      </Button>
+                      <Button variant="outline">
                         Sıfırla
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 )}
-              </div>
+              </SectionShell>
             </div>
           </div>
         </main>

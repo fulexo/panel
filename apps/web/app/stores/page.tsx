@@ -4,10 +4,10 @@ import { logger } from "@/lib/logger";
 import { useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import { useRBAC } from "@/hooks/useRBAC";
-import { useStores, useDeleteStore, useSyncStore, useTestStoreConnection } from "@/hooks/useApi";
+import { useStores, useCreateStore, useDeleteStore, useSyncStore, useTestStoreConnection } from "@/hooks/useApi";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import ProtectedComponent from "@/components/ProtectedComponent";
-import { ApiError } from "@/lib/api-client";
+import { ApiError, apiClient } from "@/lib/api-client";
 import {
   Building,
   Plus,
@@ -36,6 +36,13 @@ export default function StoresPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingStore, setEditingStore] = useState<string | null>(null);
   const [testingConnection, setTestingConnection] = useState<string | null>(null);
+  const [createForm, setCreateForm] = useState({
+    name: '',
+    url: '',
+    customerEmail: '',
+    consumerKey: '',
+    consumerSecret: ''
+  });
   
   // Fetch stores data
   const { 
@@ -49,6 +56,7 @@ export default function StoresPage() {
     ...(statusFilter ? { status: statusFilter } : {}),
   }) as { data: { data: Array<{ id: string; name: string; url: string; status: string; lastSync?: string; customer?: { email: string; firstName: string; lastName: string } }>; pagination: { total: number; pages: number } } | undefined; isLoading: boolean; error: ApiError | null };
 
+  const createStore = useCreateStore();
   const deleteStore = useDeleteStore();
   const syncStore = useSyncStore();
   const testConnection = useTestStoreConnection();
@@ -109,6 +117,69 @@ export default function StoresPage() {
       logger.error('Failed to test connection:', error);
     } finally {
       setTestingConnection(null);
+    }
+  };
+
+  const handleCreateStore = async () => {
+    if (!createForm.name || !createForm.url || !createForm.customerEmail || !createForm.consumerKey || !createForm.consumerSecret) {
+      window.alert('Please fill in all required fields.');
+      return;
+    }
+
+    try {
+      // First, find customer by email using apiClient
+      const customersData = await apiClient.getCustomers({
+        search: createForm.customerEmail,
+        limit: 1
+      });
+      let customer = customersData.data?.find((c: any) => c.email === createForm.customerEmail);
+      
+      // If customer not found, create a new one
+      if (!customer) {
+        try {
+          const newCustomer = await apiClient.createCustomer({
+            firstName: createForm.customerEmail.split('@')[0], // Use email prefix as first name
+            lastName: '',
+            email: createForm.customerEmail,
+            phone: '',
+            company: '',
+            addressLine1: '',
+            city: '',
+            state: '',
+            postalCode: '',
+            country: 'TR'
+          });
+          customer = newCustomer;
+        } catch (createError) {
+          logger.error('Failed to create customer:', createError);
+          window.alert('Failed to create customer. Please try again.');
+          return;
+        }
+      }
+
+      // Create store with customer ID
+      await createStore.mutateAsync({
+        name: createForm.name,
+        url: createForm.url,
+        customerId: customer.id,
+        consumerKey: createForm.consumerKey,
+        consumerSecret: createForm.consumerSecret
+      });
+      
+      // Reset form and close modal
+      setCreateForm({
+        name: '',
+        url: '',
+        customerEmail: '',
+        consumerKey: '',
+        consumerSecret: ''
+      });
+      setShowCreateModal(false);
+      
+      window.alert('Store created successfully!');
+    } catch (error) {
+      logger.error('Failed to create store:', error);
+      window.alert('Failed to create store. Please try again.');
     }
   };
 
@@ -561,43 +632,53 @@ export default function StoresPage() {
                   </div>
                   <div className="space-y-4">
                     <div>
-                      <label className="form-label">Store Name</label>
+                      <label className="form-label">Store Name *</label>
                       <input
                         type="text"
                         className="form-input"
                         placeholder="Enter store name"
+                        value={createForm.name}
+                        onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
                       />
                     </div>
                     <div>
-                      <label className="form-label">Store URL</label>
+                      <label className="form-label">Store URL *</label>
                       <input
                         type="url"
                         className="form-input"
                         placeholder="https://example.com"
+                        value={createForm.url}
+                        onChange={(e) => setCreateForm({ ...createForm, url: e.target.value })}
                       />
                     </div>
                     <div>
-                      <label className="form-label">Customer Email</label>
+                      <label className="form-label">Customer Email *</label>
                       <input
                         type="email"
                         className="form-input"
                         placeholder="customer@example.com"
+                        value={createForm.customerEmail}
+                        onChange={(e) => setCreateForm({ ...createForm, customerEmail: e.target.value })}
                       />
                     </div>
                     <div>
-                      <label className="form-label">WooCommerce Consumer Key</label>
+                      <label className="form-label">WooCommerce Consumer Key *</label>
                       <input
                         type="text"
                         className="form-input"
                         placeholder="Enter consumer key"
+                        value={createForm.consumerKey}
+                        onChange={(e) => setCreateForm({ ...createForm, consumerKey: e.target.value })}
                       />
                     </div>
                     <div>
-                      <label className="form-label">WooCommerce Consumer Secret</label>
+                      <label className="form-label">WooCommerce Consumer Secret *</label>
                       <input
                         type="password"
                         className="form-input"
                         placeholder="Enter consumer secret"
+                        value={createForm.consumerSecret}
+                        onChange={(e) => setCreateForm({ ...createForm, consumerSecret: e.target.value })}
                       />
                     </div>
                   </div>
@@ -610,11 +691,12 @@ export default function StoresPage() {
                       Cancel
                     </button>
                     <button 
-                      onClick={() => setShowCreateModal(false)}
+                      onClick={handleCreateStore}
+                      disabled={createStore.isPending}
                       className="flex-1 sm:flex-none inline-flex items-center justify-center px-6 py-3 border border-transparent text-sm font-medium rounded-lg text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary focus:ring-offset-background disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-primary transition-all duration-200 shadow-sm hover:shadow-md"
                     >
                       <Plus className="w-4 h-4 mr-2" />
-                      Create Store
+                      {createStore.isPending ? 'Creating...' : 'Create Store'}
                     </button>
                   </div>
                 </div>
