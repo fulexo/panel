@@ -136,9 +136,7 @@ export default function CustomersPage() {
       if (formData.password && formData.password.length < 6) errors['password'] = 'Password must be at least 6 characters';
     }
     
-    if (isAdmin() && formData.assignedStores.length === 0) {
-      errors['assignedStores'] = 'At least one store must be assigned';
-    }
+    // Store assignment is optional
     
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
@@ -179,9 +177,10 @@ export default function CustomersPage() {
     
     try {
       const customerData = {
-        ...formData,
-        stores: formData.assignedStores,
-        storeId: formData.assignedStores[0] || '',
+        email: formData.email,
+        name: `${formData.firstName} ${formData.lastName}`.trim(),
+        country: 'TR', // Default country
+        ...(formData.assignedStores.length > 0 && { storeId: formData.assignedStores[0] }),
       };
       
       await createCustomer.mutateAsync(customerData);
@@ -341,12 +340,6 @@ export default function CustomersPage() {
   const activeCount = customers.filter((c: any) => c.isActive !== false).length;
   const inactiveCount = customers.filter((c: any) => c.isActive === false).length;
   
-  console.log('Customer stats debug:', { 
-    total: customers.length, 
-    adminCount, 
-    customerCount, 
-    customers: customers.map(c => ({ email: c.email, role: c.role })) 
-  });
 
   return (
     <ProtectedRoute>
@@ -851,7 +844,7 @@ export default function CustomersPage() {
 
                   {/* Store Assignment */}
                   <div>
-                    <label className="form-label">Store Assignment *</label>
+                    <label className="form-label">Store Assignment</label>
                     <div className={`border rounded-lg p-4 ${formErrors['assignedStores'] ? 'border-red-500' : 'border-border'}`}>
                       {/* Store Search */}
                       <div className="mb-4">
@@ -1115,7 +1108,7 @@ export default function CustomersPage() {
 
                   {/* Store Assignment */}
                   <div>
-                    <label className="form-label">Store Assignment *</label>
+                    <label className="form-label">Store Assignment</label>
                     <div className={`border rounded-lg p-4 ${formErrors['assignedStores'] ? 'border-red-500' : 'border-border'}`}>
                       {/* Store Search */}
                       <div className="mb-4">

@@ -70,8 +70,8 @@ export default function CalendarWidget() {
 
     return (
       <div className="grid grid-cols-7 gap-1 text-xs">
-        {['P', 'S', 'Ç', 'P', 'C', 'C', 'P'].map(day => (
-          <div key={day} className="p-1 text-center font-medium text-foreground/80">
+        {['P', 'S', 'Ç', 'P', 'C', 'C', 'P'].map((day, index) => (
+          <div key={`day-header-${index}`} className="p-1 text-center font-medium text-foreground/80">
             {day}
           </div>
         ))}

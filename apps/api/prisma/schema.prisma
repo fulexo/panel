@@ -71,7 +71,6 @@ model User {
   auditLogs     AuditLog[]
   requests      Request[]
   requestComments RequestComment[]
-  stores        Store[]  // Customer can have stores
   supportTickets SupportTicket[] // Customer support tickets
   carts         Cart[]   // Customer shopping carts
   inventoryRequests InventoryRequest[] // Customer inventory requests
@@ -168,7 +167,7 @@ model RemoteEntityMap {
 model Customer {
   id              String   @id @default(uuid())
   tenantId        String
-  storeId         String
+  storeId         String?
   wooId           String?  // WooCommerce customer ID
   email           String
   emailNormalized String?  // Normalized email for searching
@@ -198,7 +197,7 @@ model Customer {
   updatedAt       DateTime @updatedAt
   
   tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  store           Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  stores          Store[]
   orders          Order[]
   shippingPrices  CustomerShippingPrice[]
 
@@ -636,14 +635,13 @@ model Store {
   lastSyncAt     DateTime?
   syncStatus     String?  // success, error, pending
   lastError      String?
-  customerId     String   // Links to User (customer)
+  customerId     String   // Links to Customer
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
   
-  customer       User     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  customer       Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
   orders         Order[]
   products       Product[]
-  customers      Customer[]
   inventoryApprovals InventoryApproval[]
   supportTickets SupportTicket[]
   carts         Cart[]

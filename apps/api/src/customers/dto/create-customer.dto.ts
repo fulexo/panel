@@ -54,5 +54,6 @@ export class CreateCustomerDto {
   tags?: string[];
 
   @IsString()
-  storeId!: string;
+  @IsOptional()
+  storeId?: string;
 }

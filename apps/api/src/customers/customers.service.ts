@@ -144,12 +144,11 @@ export class CustomersService {
   }
 
   async create(tenantId: string, body: CreateCustomerDto) {
-    return this.runTenant(tenantId, async (db) => db.customer.create({ 
-      data: { 
+    return this.runTenant(tenantId, async (db) => {
+      const data: any = { 
         tenant: {
           connect: { id: tenantId }
         },
-        store: { connect: { id: body.storeId } },
         email: body.email || '', 
         emailNormalized: body.email ? String(body.email).toLowerCase() : null, 
         name: body.name || null, 
@@ -164,8 +163,13 @@ export class CustomersService {
         country: body['country'] || null,
         notes: body['notes'] || null,
         tags: body['tags'] || [],
-      } 
-    }));
+      };
+      
+      // Note: storeId is no longer used as it was removed from schema
+      // Customer-Store relationship is now handled through Store.customerId
+      
+      return db.customer.create({ data });
+    });
   }
 
   async update(tenantId: string, id: string, body: UpdateCustomerDto) {

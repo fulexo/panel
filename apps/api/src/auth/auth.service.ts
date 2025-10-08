@@ -26,13 +26,6 @@ export class AuthService {
       where: { email: dto.email },
       include: { 
         tenant: true,
-        stores: {
-          select: {
-            id: true,
-            name: true,
-            status: true,
-          },
-        },
       },
     });
 
@@ -122,7 +115,6 @@ export class AuthService {
         role: user.role,
         tenantId: user.tenantId || undefined,
         tenantName: user.tenant?.name,
-        stores: user.stores || [],
       },
     };
   }
@@ -183,13 +175,6 @@ export class AuthService {
       where: { id: payload.sub },
       include: { 
         tenant: true,
-        stores: {
-          select: {
-            id: true,
-            name: true,
-            status: true,
-          },
-        },
       },
     });
 
@@ -246,13 +231,6 @@ export class AuthService {
       where: { id: userId },
       include: { 
         tenant: true,
-        stores: {
-          select: {
-            id: true,
-            name: true,
-            status: true,
-          },
-        },
       },
     });
 
@@ -302,7 +280,6 @@ export class AuthService {
         role: user.role,
         tenantId: user.tenantId || undefined,
         tenantName: user.tenant?.name,
-        stores: user.stores || [],
       },
     };
   }
@@ -320,13 +297,6 @@ export class AuthService {
         twofaEnabled: true,
         createdAt: true,
         lastLoginAt: true,
-        stores: {
-          select: {
-            id: true,
-            name: true,
-            status: true,
-          },
-        },
         tenant: {
           select: {
             id: true,

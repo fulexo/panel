@@ -51,7 +51,6 @@ export class StoresService {
             select: {
               orders: true,
               products: true,
-              customers: true,
             },
           },
         },
@@ -87,7 +86,6 @@ export class StoresService {
           select: {
             orders: true,
             products: true,
-            customers: true,
           },
         },
       },
@@ -102,7 +100,7 @@ export class StoresService {
 
   async create(createStoreDto: CreateStoreDto) {
     // Check if customer exists
-    const customer = await this.prisma.user.findUnique({
+    const customer = await this.prisma.customer.findUnique({
       where: { id: createStoreDto.customerId },
     });
 
@@ -278,7 +276,6 @@ export class StoresService {
           select: {
             orders: true,
             products: true,
-            customers: true,
           },
         },
       },

@@ -45,10 +45,26 @@ async function main() {
   });
   console.log('✅ Created customer user:', customer.email);
 
+  // Create a Customer record for the store
+  const customerRecord = await prisma.customer.create({
+    data: {
+      tenantId: tenant.id,
+      email: 'customer@fulexo.com',
+      emailNormalized: 'customer@fulexo.com',
+      name: 'Demo Customer',
+      firstName: 'Demo',
+      lastName: 'Customer',
+      company: 'Demo Company',
+      city: 'Istanbul',
+      country: 'TR',
+    },
+  });
+  console.log('✅ Created customer record:', customerRecord.name);
+
   // Create default store
   const store = await prisma.store.create({
     data: {
-      customerId: customer.id,
+      customerId: customerRecord.id,
       name: 'Demo Store',
       url: 'https://demo-store.com',
       consumerKey: 'demo_key',
@@ -59,8 +75,10 @@ async function main() {
   console.log('✅ Created default store:', store.name);
 
   // Create default policy
-  const policy = await prisma.policy.create({
-    data: {
+  const policy = await prisma.policy.upsert({
+    where: { tenantId_name: { tenantId: tenant.id, name: 'Default Policy' } },
+    update: {},
+    create: {
       tenantId: tenant.id,
       name: 'Default Policy',
       description: 'Default visibility and action policy',
@@ -95,24 +113,28 @@ async function main() {
   console.log('✅ Created default policy:', policy.name);
 
   // Create sample ownership rule
-  await prisma.ownershipRule.create({
-    data: {
-      tenantId: tenant.id,
-      entityType: 'order',
-      priority: 10,
-      conditionsJson: {
-        conditions: [
-          { field: 'order.order_source', op: 'in', value: ['shop', 'amazon'] },
-        ],
-      },
-      actionJson: {
-        action: 'assign',
+  try {
+    await prisma.ownershipRule.create({
+      data: {
         tenantId: tenant.id,
+        entityType: 'order',
+        priority: 10,
+        conditionsJson: {
+          conditions: [
+            { field: 'order.order_source', op: 'in', value: ['shop', 'amazon'] },
+          ],
+        },
+        actionJson: {
+          action: 'assign',
+          tenantId: tenant.id,
+        },
+        active: true,
       },
-      active: true,
-    },
-  });
-  console.log('✅ Created sample ownership rule');
+    });
+    console.log('✅ Created sample ownership rule');
+  } catch (error) {
+    console.log('ℹ️ Ownership rule already exists, skipping...');
+  }
 
   // Create sample customers
   const sampleCustomers = [

@@ -138,15 +138,8 @@ export default function StoresPage() {
       if (!customer) {
         try {
           const newCustomer = await apiClient.createCustomer({
-            firstName: createForm.customerEmail.split('@')[0], // Use email prefix as first name
-            lastName: '',
             email: createForm.customerEmail,
-            phone: '',
-            company: '',
-            addressLine1: '',
-            city: '',
-            state: '',
-            postalCode: '',
+            name: createForm.customerEmail.split('@')[0], // Use email prefix as name
             country: 'TR'
           });
           customer = newCustomer;

@@ -115,13 +115,13 @@ class ApiClient {
     return this.request(`/api/stores/${id}`);
   }
 
-  async createStore(data: {
+  createStore = async (data: {
     name: string;
     url: string;
     consumerKey: string;
     consumerSecret: string;
     customerId: string;
-  }) {
+  }) => {
     return this.request('/api/stores', {
       method: 'POST',
       body: JSON.stringify(data),
@@ -418,13 +418,22 @@ class ApiClient {
     return this.request(`/api/customers/${id}`);
   }
 
-  async createCustomer(data: {
-    firstName: string;
-    lastName: string;
+  createCustomer = async (data: {
     email: string;
-    phone?: string;
-    storeId: string;
-  }) {
+    name?: string;
+    phoneE164?: string;
+    company?: string;
+    vatId?: string;
+    addressLine1?: string;
+    addressLine2?: string;
+    city?: string;
+    state?: string;
+    postalCode?: string;
+    country?: string;
+    notes?: string;
+    tags?: string[];
+    storeId?: string;
+  }) => {
     return this.request('/api/customers', {
       method: 'POST',
       body: JSON.stringify(data),
