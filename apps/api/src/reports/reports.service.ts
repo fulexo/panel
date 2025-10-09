@@ -62,7 +62,7 @@ export class ReportsService {
           sku: true,
           stock: true,
         },
-        take: 10, // Limit to 10 products
+        take: 3, // Limit to 3 products
       });
 
       return {

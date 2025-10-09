@@ -25,7 +25,7 @@ import { FormField } from "@/components/forms/FormField";
 import { FormSelect } from "@/components/forms/FormSelect";
 import { FormTextarea } from "@/components/forms/FormTextarea";
 import { FormCheckbox } from "@/components/forms/FormCheckbox";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 export default function FulfillmentPage() {
@@ -444,7 +444,7 @@ export default function FulfillmentPage() {
                     value={selectedMonth}
                     onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
                     options={Array.from({ length: 12 }, (_, i) => ({
-                      value: i + 1,
+                      value: (i + 1).toString(),
                       label: new Date(0, i).toLocaleString('tr-TR', { month: 'long' })
                     }))}
                     className="min-w-[120px]"
@@ -455,7 +455,7 @@ export default function FulfillmentPage() {
                     options={Array.from({ length: 5 }, (_, i) => {
                       const year = new Date().getFullYear() - 2 + i;
                       return {
-                        value: year,
+                        value: year.toString(),
                         label: year.toString()
                       };
                     })}
@@ -645,7 +645,7 @@ export default function FulfillmentPage() {
                         value={invoiceForm.month}
                         onChange={(e) => setInvoiceForm(prev => ({ ...prev, month: parseInt(e.target.value) }))}
                         options={Array.from({ length: 12 }, (_, i) => ({
-                          value: i + 1,
+                          value: (i + 1).toString(),
                           label: new Date(0, i).toLocaleString('tr-TR', { month: 'long' })
                         }))}
                       />
@@ -657,7 +657,7 @@ export default function FulfillmentPage() {
                         options={Array.from({ length: 5 }, (_, i) => {
                           const year = new Date().getFullYear() - 2 + i;
                           return {
-                            value: year,
+                            value: year.toString(),
                             label: year.toString()
                           };
                         })}

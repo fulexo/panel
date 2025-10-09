@@ -49,33 +49,26 @@ export class InventoryController {
   @Roles('ADMIN', 'CUSTOMER')
   async rejectChange(
     @Param('id') id: string,
-    @Body() body: { reason: string },
     @CurrentUser() user: User,
   ) {
-    return this.inventoryService.rejectChange(id, user.id, body.reason);
+    return this.inventoryService.rejectChange(id, user.id);
   }
 
   @Get('approvals/:id')
-  async getApproval(@Param('id') id: string, @CurrentUser() user: User) {
-    return this.inventoryService.getApproval(id, user);
+  async getApproval(@Param('id') id: string) {
+    return this.inventoryService.getApproval(id);
   }
 
   @Get('stock-levels')
   async getStockLevels(
     @CurrentUser() user: User,
-    @Query('page') page?: string,
-    @Query('limit') limit?: string,
     @Query('storeId') storeId?: string,
     @Query('lowStock') lowStock?: string,
   ) {
-    const safePage = normalizePage(page, 1);
-    const safeLimit = normalizeLimit(limit, 25, 200);
     const userStoreId = user.role === 'CUSTOMER' ? user.stores?.[0]?.id : storeId;
     const lowStockFlag = typeof lowStock === 'string' ? ['true', '1'].includes(lowStock.toLowerCase()) : false;
-    return this.inventoryService.getStockLevels({
-      page: safePage,
-      limit: safeLimit,
-      storeId: userStoreId,
+    return this.inventoryService.getStockLevels(user.tenantId || '', {
+      storeId: userStoreId || undefined,
       lowStock: lowStockFlag,
     });
   }

@@ -74,6 +74,20 @@ async function main() {
   });
   console.log('✅ Created default store:', store.name);
 
+  // Create WooCommerce store for products
+  const wooStore = await prisma.wooStore.create({
+    data: {
+      tenantId: tenant.id,
+      name: 'Demo WooCommerce Store',
+      baseUrl: 'https://demo-store.com',
+      consumerKey: 'demo_key',
+      consumerSecret: 'demo_secret',
+      apiVersion: 'v3',
+      active: true,
+    },
+  });
+  console.log('✅ Created WooCommerce store:', wooStore.name);
+
   // Create default policy
   const policy = await prisma.policy.upsert({
     where: { tenantId_name: { tenantId: tenant.id, name: 'Default Policy' } },
@@ -196,7 +210,7 @@ async function main() {
     const product = await prisma.product.create({
       data: {
         ...productData,
-        storeId: store.id,
+        storeId: wooStore.id,
         regularPrice: productData.price,
       },
     });

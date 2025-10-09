@@ -242,33 +242,58 @@ export interface WooCommerceCustomer {
 export class WooCommerceService {
   constructor(private prisma: PrismaService) {}
 
+
   // New methods for the updated stores system
   async testConnection(config: WooCommerceConfig): Promise<{ success: boolean; message: string; error?: string }> {
-    try {
-      const url = `${config.url}/wp-json/wc/v3/system_status`;
-      const response = await fetch(url, {
-        headers: {
-          'Authorization': buildAuthHeader(config.consumerKey, config.consumerSecret),
-          'Content-Type': 'application/json',
-        },
-      });
+    const urlFormats = [
+      `${config.url.replace(/\/$/, '')}/wp-json/wc/v3/system_status`,
+      `${config.url.replace(/\/$/, '')}/index.php?rest_route=/wc/v3/system_status`,
+      `${config.url.replace(/\/$/, '')}/wp-json/wc/v2/system_status`,
+      `${config.url.replace(/\/$/, '')}/index.php?rest_route=/wc/v2/system_status`
+    ];
 
-      if (response.ok) {
-        return { success: true, message: 'Connection successful' };
-      } else {
-        return { 
-          success: false, 
-          message: 'Connection failed', 
-          error: `HTTP ${response.status}: ${response.statusText}` 
-        };
+    for (const url of urlFormats) {
+      try {
+        console.log(`Testing URL: ${url}`);
+        const response = await fetch(url, {
+          headers: {
+            'Authorization': buildAuthHeader(config.consumerKey, config.consumerSecret),
+            'Content-Type': 'application/json',
+          },
+        });
+
+        console.log(`Response status: ${response.status}`);
+        
+        if (response.ok) {
+          const data = await response.json();
+          console.log('Connection successful, response:', data);
+          return { success: true, message: `Connection successful using ${url}` };
+        } else if (response.status === 401) {
+          const errorText = await response.text();
+          console.log(`401 Error for ${url}:`, errorText);
+          // Try next URL format for 401 errors
+          continue;
+        } else {
+          const errorText = await response.text();
+          console.log(`Error ${response.status} for ${url}:`, errorText);
+          return { 
+            success: false, 
+            message: 'Connection failed', 
+            error: `HTTP ${response.status}: ${response.statusText} - ${errorText}` 
+          };
+        }
+      } catch (error) {
+        console.log(`Network error for ${url}:`, error);
+        // Try next URL format for network errors
+        continue;
       }
-    } catch (error) {
-      return { 
-        success: false, 
-        message: 'Connection failed', 
-        error: (error as Error).message 
-      };
     }
+
+    return { 
+      success: false, 
+      message: 'Connection failed', 
+      error: 'All URL formats failed - WooCommerce REST API may not be enabled or API keys are invalid' 
+    };
   }
 
   async syncStore(store: { id: string; url: string; consumerKey: string; consumerSecret: string }, tenantId: string): Promise<{ success: boolean; message: string; syncedItems: { products: number; orders: number; customers: number } }> {
@@ -311,8 +336,50 @@ export class WooCommerceService {
     let page = 1;
     const perPage = 100;
 
+    console.log(`Starting products sync for store ${storeId}`);
+    
+    // Try different URL formats for products
+    const urlFormats = [
+      `${config.url.replace(/\/$/, '')}/wp-json/wc/v3/products`,
+      `${config.url.replace(/\/$/, '')}/index.php?rest_route=/wc/v3/products`,
+      `${config.url.replace(/\/$/, '')}/wp-json/wc/v2/products`,
+      `${config.url.replace(/\/$/, '')}/index.php?rest_route=/wc/v2/products`
+    ];
+
+    let workingUrl = '';
+    for (const baseUrl of urlFormats) {
+      try {
+        const testUrl = `${baseUrl}?page=1&per_page=1`;
+        console.log(`Testing products URL: ${testUrl}`);
+        const response = await fetch(testUrl, {
+          headers: {
+            'Authorization': buildAuthHeader(config.consumerKey, config.consumerSecret),
+            'Content-Type': 'application/json',
+          },
+        });
+
+        console.log(`Products test response status: ${response.status}`);
+        
+        if (response.ok) {
+          workingUrl = baseUrl;
+          console.log(`Working products URL found: ${baseUrl}`);
+          break;
+        }
+      } catch (error) {
+        console.log(`Products URL test failed: ${error}`);
+        continue;
+      }
+    }
+
+    if (!workingUrl) {
+      console.log('No working products URL found');
+      return products;
+    }
+    
     while (true) {
-      const url = `${config.url}/wp-json/wc/v3/products?page=${page}&per_page=${perPage}`;
+      const url = `${workingUrl}?page=${page}&per_page=${perPage}`;
+      console.log(`Fetching products from: ${url}`);
+      
       const response = await fetch(url, {
         headers: {
           'Authorization': buildAuthHeader(config.consumerKey, config.consumerSecret),
@@ -320,7 +387,12 @@ export class WooCommerceService {
         },
       });
 
-      if (!response.ok) break;
+      console.log(`Products response status: ${response.status}`);
+      
+      if (!response.ok) {
+        console.log(`Products fetch failed: ${response.status} ${response.statusText}`);
+        break;
+      }
 
       const data = await response.json();
       if (data.length === 0) break;
@@ -406,13 +478,65 @@ export class WooCommerceService {
     return products;
   }
 
-  private async syncOrders(config: WooCommerceConfig, storeId: string, tenantId: string): Promise<WooCommerceOrder[]> {
+  private async syncOrders(config: WooCommerceConfig, wooStoreId: string, tenantId: string): Promise<WooCommerceOrder[]> {
     const orders: WooCommerceOrder[] = [];
     let page = 1;
     const perPage = 100;
 
+    // Find the corresponding Store ID from WooStore ID
+    const wooStore = await this.prisma.wooStore.findUnique({
+      where: { id: wooStoreId }
+    });
+
+    if (!wooStore) {
+      throw new Error('WooStore not found');
+    }
+
+    // Find the corresponding Store record
+    const store = await this.prisma.store.findFirst({
+      where: { url: wooStore.baseUrl }
+    });
+
+    if (!store) {
+      throw new Error('Corresponding Store not found for WooStore');
+    }
+
+    const storeId = store.id;
+
+    // Try different URL formats for orders
+    const urlFormats = [
+      `${config.url.replace(/\/$/, '')}/wp-json/wc/v3/orders`,
+      `${config.url.replace(/\/$/, '')}/index.php?rest_route=/wc/v3/orders`,
+      `${config.url.replace(/\/$/, '')}/wp-json/wc/v2/orders`,
+      `${config.url.replace(/\/$/, '')}/index.php?rest_route=/wc/v2/orders`
+    ];
+
+    let workingUrl = '';
+    for (const baseUrl of urlFormats) {
+      try {
+        const testUrl = `${baseUrl}?page=1&per_page=1`;
+        const response = await fetch(testUrl, {
+          headers: {
+            'Authorization': buildAuthHeader(config.consumerKey, config.consumerSecret),
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (response.ok) {
+          workingUrl = baseUrl;
+          break;
+        }
+      } catch (error) {
+        continue;
+      }
+    }
+
+    if (!workingUrl) {
+      throw new Error('No working WooCommerce API URL found for orders');
+    }
+
     while (true) {
-      const url = `${config.url}/wp-json/wc/v3/orders?page=${page}&per_page=${perPage}`;
+      const url = `${workingUrl}?page=${page}&per_page=${perPage}`;
       const response = await fetch(url, {
         headers: {
           'Authorization': buildAuthHeader(config.consumerKey, config.consumerSecret),
@@ -431,7 +555,7 @@ export class WooCommerceService {
 
     // Store orders in database
     for (const order of orders) {
-      await this.prisma.order.upsert({
+      const orderRecord = await this.prisma.order.upsert({
         where: { 
           wooId_storeId: { 
             wooId: order.id.toString(), 
@@ -443,7 +567,9 @@ export class WooCommerceService {
           status: order.status,
           currency: order.currency,
           total: parseFloat(order.total) || 0,
-          customerId: order.customer_id?.toString(),
+          customerId: null, // Set to null to avoid foreign key constraint issues
+          customerEmail: order.billing?.email || order.customer_id?.toString(),
+          customerPhone: order.billing?.phone,
           billingInfo: order.billing,
           shippingInfo: order.shipping,
           lineItems: order.line_items,
@@ -463,7 +589,9 @@ export class WooCommerceService {
           status: order.status,
           currency: order.currency,
           total: parseFloat(order.total) || 0,
-          customerId: order.customer_id?.toString(),
+          customerId: null, // Set to null to avoid foreign key constraint issues
+          customerEmail: order.billing?.email || order.customer_id?.toString(),
+          customerPhone: order.billing?.phone,
           billingInfo: order.billing,
           shippingInfo: order.shipping,
           lineItems: order.line_items,
@@ -476,15 +604,56 @@ export class WooCommerceService {
           lastSyncedAt: new Date(),
         },
       });
+
+      // Sync order items
+      if (order.line_items && order.line_items.length > 0) {
+        // Delete existing items first
+        await this.prisma.orderItem.deleteMany({
+          where: { orderId: orderRecord.id }
+        });
+
+        // Create new items
+        for (const item of order.line_items) {
+          await this.prisma.orderItem.create({
+            data: {
+              orderId: orderRecord.id,
+              sku: item.sku,
+              name: item.name,
+              qty: Number(item.quantity),
+              price: new Decimal(item.price || '0'),
+            },
+          });
+        }
+      }
     }
 
     return orders;
   }
 
-  private async syncCustomers(config: WooCommerceConfig, storeId: string, tenantId: string): Promise<WooCommerceCustomer[]> {
+  private async syncCustomers(config: WooCommerceConfig, wooStoreId: string, tenantId: string): Promise<WooCommerceCustomer[]> {
     const customers: WooCommerceCustomer[] = [];
     let page = 1;
     const perPage = 100;
+
+    // Find the corresponding Store ID from WooStore ID
+    const wooStore = await this.prisma.wooStore.findUnique({
+      where: { id: wooStoreId }
+    });
+
+    if (!wooStore) {
+      throw new Error('WooStore not found');
+    }
+
+    // Find the corresponding Store record
+    const store = await this.prisma.store.findFirst({
+      where: { url: wooStore.baseUrl }
+    });
+
+    if (!store) {
+      throw new Error('Corresponding Store not found for WooStore');
+    }
+
+    const storeId = store.id;
 
     while (true) {
       const url = `${config.url}/wp-json/wc/v3/customers?page=${page}&per_page=${perPage}`;
@@ -614,6 +783,12 @@ export class WooCommerceService {
   async listStores(tenantId: string){
     return this.prisma.withTenant(tenantId, async (tx) => 
       tx.wooStore.findMany({ orderBy: { createdAt: 'desc' } })
+    );
+  }
+
+  async getStore(tenantId: string, storeId: string){
+    return this.prisma.withTenant(tenantId, async (tx) => 
+      tx.wooStore.findUnique({ where: { id: storeId } })
     );
   }
 

@@ -1,13 +1,21 @@
 "use client";
 
 import { logger } from "@/lib/logger";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import { useRBAC } from "@/hooks/useRBAC";
-import { useStores, useCreateStore, useDeleteStore, useSyncStore, useTestStoreConnection } from "@/hooks/useApi";
+import { useStores, useStore, useCreateStore, useUpdateStore, useDeleteStore, useSyncStore, useTestStoreConnection } from "@/hooks/useApi";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import ProtectedComponent from "@/components/ProtectedComponent";
+import { SectionShell } from "@/components/patterns/SectionShell";
+import { MetricCard } from "@/components/patterns/MetricCard";
+import { StatusPill } from "@/components/patterns/StatusPill";
+import type { StatusTone } from "@/components/patterns/StatusPill";
+import { Button } from "@/components/ui/button";
+import { FormField } from "@/components/forms/FormField";
+import { FormSelect } from "@/components/forms/FormSelect";
 import { ApiError, apiClient } from "@/lib/api-client";
+import { cn } from "@/lib/utils";
 import {
   Building,
   Plus,
@@ -18,20 +26,21 @@ import {
   TestTube,
   Edit,
   Trash2,
-  AlertTriangle,
-  CheckCircle,
-  XCircle,
-  Clock,
   X,
-  ChevronLeft,
-  ChevronRight
+  CheckCircle,
+  AlertCircle,
+  ExternalLink,
+  Settings,
+  Globe,
+  Key,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 
 export default function StoresPage() {
-  useAuth();
-  const { isAdmin, isCustomer } = useRBAC();
-  const [page, setPage] = useState(1);
-  const [search, setSearch] = useState("");
+  const { user } = useAuth();
+  const { hasPermission } = useRBAC();
+  const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingStore, setEditingStore] = useState<string | null>(null);
@@ -43,120 +52,51 @@ export default function StoresPage() {
     consumerKey: '',
     consumerSecret: ''
   });
-  
-  // Fetch stores data
-  const { 
-    data: storesData, 
-    isLoading,
-    error
-  } = useStores({
-    page,
-    limit: 10,
-    ...(search ? { search } : {}),
-    ...(statusFilter ? { status: statusFilter } : {}),
-  }) as { data: { data: Array<{ id: string; name: string; url: string; status: string; lastSync?: string; customer?: { email: string; firstName: string; lastName: string } }>; pagination: { total: number; pages: number } } | undefined; isLoading: boolean; error: ApiError | null };
+  const [editForm, setEditForm] = useState({
+    name: '',
+    url: '',
+    consumerKey: '',
+    consumerSecret: ''
+  });
+
+  const { data: storesData, isLoading, error, refetch } = useStores({
+    search: searchTerm,
+  });
 
   const createStore = useCreateStore();
+  const updateStore = useUpdateStore();
   const deleteStore = useDeleteStore();
   const syncStore = useSyncStore();
   const testConnection = useTestStoreConnection();
 
-  if (isLoading) {
-    return (
-      <ProtectedRoute>
-        <div className="min-h-screen bg-background flex items-center justify-center">
-          <div className="flex flex-col items-center gap-4">
-            <div className="spinner"></div>
-            <div className="text-lg text-foreground">Loading stores...</div>
-          </div>
-        </div>
-      </ProtectedRoute>
-    );
-  }
+  // Fetch store data for editing
+  const { data: storeData, isLoading: storeLoading } = useStore(editingStore || '');
 
-  if (error) {
-    return (
-      <ProtectedRoute>
-        <div className="min-h-screen bg-background flex items-center justify-center">
-          <div className="flex flex-col items-center gap-4">
-            <div className="text-red-500 text-lg">Error loading stores</div>
-            <div className="text-muted-foreground">
-              {error instanceof ApiError ? error.message : 'Unknown error'}
-            </div>
-          </div>
-        </div>
-      </ProtectedRoute>
-    );
-  }
-
-  const stores = storesData?.data || [];
-  const totalStores = storesData?.pagination?.total || 0;
-  const totalPages = storesData?.pagination?.pages || 1;
-
-  // Calculate statistics
-  const statusCounts = stores.reduce((acc: Record<string, number>, store: { id: string; name: string; url: string; status: string; lastSync?: string; customer?: { email: string; firstName: string; lastName: string } }) => {
-    acc[store.status] = (acc[store.status] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
-
-  const errorStores = stores.filter((store: { id: string; name: string; url: string; status: string; lastSync?: string; customer?: { email: string; firstName: string; lastName: string } }) => store.status === 'error');
-
-  const handleSyncStore = async (storeId: string) => {
-    try {
-      await syncStore.mutateAsync(storeId);
-    } catch (error) {
-      logger.error('Failed to sync store:', error);
+  // Update edit form when store data is loaded
+  useEffect(() => {
+    if (storeData && editingStore) {
+      setEditForm({
+        name: (storeData as any).name || '',
+        url: (storeData as any).url || '',
+        consumerKey: (storeData as any).consumerKey || '',
+        consumerSecret: (storeData as any).consumerSecret || ''
+      });
     }
-  };
-
-  const handleTestConnection = async (storeId: string) => {
-    setTestingConnection(storeId);
-    try {
-      await testConnection.mutateAsync(storeId);
-    } catch (error) {
-      logger.error('Failed to test connection:', error);
-    } finally {
-      setTestingConnection(null);
-    }
-  };
+  }, [storeData, editingStore]);
 
   const handleCreateStore = async () => {
-    if (!createForm.name || !createForm.url || !createForm.customerEmail || !createForm.consumerKey || !createForm.consumerSecret) {
+    if (!createForm.name || !createForm.url || !createForm.consumerKey || !createForm.consumerSecret) {
       window.alert('Please fill in all required fields.');
       return;
     }
 
     try {
-      // First, find customer by email using apiClient
-      const customersData = await apiClient.getCustomers({
-        search: createForm.customerEmail,
-        limit: 1
-      });
-      let customer = customersData.data?.find((c: any) => c.email === createForm.customerEmail);
-      
-      // If customer not found, create a new one
-      if (!customer) {
-        try {
-          const newCustomer = await apiClient.createCustomer({
-            email: createForm.customerEmail,
-            name: createForm.customerEmail.split('@')[0], // Use email prefix as name
-            country: 'TR'
-          });
-          customer = newCustomer;
-        } catch (createError) {
-          logger.error('Failed to create customer:', createError);
-          window.alert('Failed to create customer. Please try again.');
-          return;
-        }
-      }
-
-      // Create store with customer ID
       await createStore.mutateAsync({
         name: createForm.name,
         url: createForm.url,
-        customerId: customer.id,
         consumerKey: createForm.consumerKey,
-        consumerSecret: createForm.consumerSecret
+        consumerSecret: createForm.consumerSecret,
+        customerId: user?.id || 'default-customer-id'
       });
       
       // Reset form and close modal
@@ -176,74 +116,134 @@ export default function StoresPage() {
     }
   };
 
-  const handleExportStores = () => {
-    if (!storesData?.data || storesData.data.length === 0) {
-      window.alert('No stores to export.');
+  const handleUpdateStore = async () => {
+    if (!editingStore || !editForm.name || !editForm.url || !editForm.consumerKey || !editForm.consumerSecret) {
+      window.alert('Please fill in all required fields.');
       return;
     }
     
-    const csvData = storesData.data.map((store: any) => ({
-      Name: store.name || 'Unknown',
-      URL: store.url || 'No URL',
-      Status: store.status || 'Unknown',
-      Customer: store.customer ? `${store.customer.firstName || ''} ${store.customer.lastName || ''}`.trim() || store.customer.email : 'No customer',
-      LastSync: store.lastSync ? new Date(store.lastSync).toLocaleDateString() : 'Never',
-      Created: store.createdAt ? new Date(store.createdAt).toLocaleDateString() : 'N/A'
-    }));
-    
-    const csv = csvData.length > 0 && csvData[0] ? [
-      Object.keys(csvData[0]).join(','),
-      ...csvData.map(row => Object.values(row || {}).join(','))
-    ].join('\n') : 'No data to export';
-    
-    const blob = new window.Blob([csv], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `stores-export-${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
-    window.URL.revokeObjectURL(url);
+    try {
+      await updateStore.mutateAsync({
+        id: editingStore,
+        data: {
+          name: editForm.name,
+          url: editForm.url,
+          consumerKey: editForm.consumerKey,
+          consumerSecret: editForm.consumerSecret
+        }
+      });
+      
+      // Reset form and close modal
+      setEditForm({
+        name: '',
+        url: '',
+        consumerKey: '',
+        consumerSecret: ''
+      });
+      setEditingStore(null);
+      
+      window.alert('Store updated successfully!');
+    } catch (error) {
+      logger.error('Failed to update store:', error);
+      window.alert('Failed to update store. Please try again.');
+    }
   };
 
-  const handleBulkSync = async () => {
-    if (!storesData?.data || storesData.data.length === 0) {
-      window.alert('No stores to sync.');
-      return;
-    }
-
-    const connectedStores = storesData.data.filter((store: any) => store.status === 'connected');
-    
-    if (connectedStores.length === 0) {
-      window.alert('No connected stores to sync.');
-      return;
-    }
-
-    if (!window.confirm(`Sync ${connectedStores.length} connected stores? This may take a few minutes.`)) {
+  const handleDeleteStore = async (storeId: string) => {
+    if (!window.confirm('Are you sure you want to delete this store?')) {
       return;
     }
 
     try {
-      const syncPromises = connectedStores.map((store: any) => 
-        syncStore.mutateAsync(store.id).catch(error => {
-          logger.error(`Failed to sync store ${store.name}:`, error);
-          return { store: store.name, error: error.message };
-        })
-      );
-
-      const results = await Promise.allSettled(syncPromises);
-      const successful = results.filter(r => r.status === 'fulfilled').length;
-      const failed = results.filter(r => r.status === 'rejected').length;
-
-      window.alert(`Bulk sync completed!\nSuccessful: ${successful}\nFailed: ${failed}`);
+      await deleteStore.mutateAsync(storeId);
+      window.alert('Store deleted successfully!');
     } catch (error) {
-      logger.error('Bulk sync failed:', error);
-      window.alert('Bulk sync failed. Please try again.');
+      logger.error('Failed to delete store:', error);
+      window.alert('Failed to delete store. Please try again.');
     }
   };
 
+  const handleSyncStore = async (storeId: string) => {
+    try {
+      await syncStore.mutateAsync(storeId);
+      window.alert('Store synced successfully!');
+    } catch (error) {
+      logger.error('Failed to sync store:', error);
+      window.alert('Failed to sync store. Please try again.');
+    }
+  };
+
+  const handleTestConnection = async (storeId: string) => {
+    setTestingConnection(storeId);
+    try {
+      await testConnection.mutateAsync(storeId);
+      window.alert('Connection test successful!');
+    } catch (error) {
+      logger.error('Connection test failed:', error);
+      window.alert('Connection test failed. Please check your credentials.');
+    } finally {
+      setTestingConnection(null);
+    }
+  };
+
+  const handleExportCSV = async () => {
+    try {
+      const response = await fetch('/api/stores/export?' + new URLSearchParams({
+        search: searchTerm,
+        status: statusFilter
+      }));
+      
+      if (!response.ok) {
+        throw new Error('Export failed');
+      }
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `stores-${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      logger.error('Failed to export stores:', error);
+      window.alert('Failed to export stores. Please try again.');
+    }
+  };
+
+  const getStatusBadge = (status: string) => {
+    const statusConfig: Record<string, { tone: StatusTone; icon: any }> = {
+      connected: { tone: "success", icon: CheckCircle },
+      disconnected: { tone: "destructive", icon: AlertCircle },
+      syncing: { tone: "warning", icon: RefreshCw },
+    };
+
+    const config = statusConfig[status] || statusConfig.disconnected;
+    const Icon = config.icon;
+
+    return (
+      <StatusPill label={status} tone={config.tone} icon={Icon} />
+    );
+  };
+
+  if (!hasPermission('stores:read')) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-6xl mb-4">🚫</div>
+          <h1 className="text-2xl font-bold text-foreground mb-2">Access Denied</h1>
+          <p className="text-muted-foreground">You don't have permission to access this page.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <ProtectedRoute>
-      <ProtectedComponent role="ADMIN" fallback={
+      <ProtectedComponent 
+        role="ADMIN" 
+        fallback={
         <div className="min-h-screen bg-background flex items-center justify-center">
           <div className="text-center">
             <div className="text-6xl mb-4">🚫</div>
@@ -251,446 +251,332 @@ export default function StoresPage() {
             <p className="text-muted-foreground">You don't have permission to access this page.</p>
           </div>
         </div>
-      }>
-        <div className="bg-background">
-          <main className="mobile-container py-6 space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
-              <div className="space-y-1">
-                <h1 className="mobile-heading text-foreground flex items-center gap-3">
-                  <Building className="h-10 w-10 text-primary" />
-                  {isAdmin() ? 'Stores Management' : 'My Stores'}
-                </h1>
-                <p className="text-muted-foreground mobile-text">
-                  {isAdmin() 
-                    ? 'Manage all customer stores and their WooCommerce connections'
-                    : 'Manage your stores and WooCommerce connections'
-                  }
-                </p>
-              </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                <button 
-                  onClick={handleExportStores}
-                  className="btn btn-outline btn-md flex flex-col items-center justify-center gap-1 hover:bg-accent/50 transition-all duration-200 w-full h-16"
+        }
+      >
+        <div className="space-y-6">
+          {/* Header */}
+          <SectionShell
+            title="Stores Management"
+            description="Manage your connected stores and their settings"
+            actions={
+              <div className="flex items-center gap-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => refetch()}
                 >
-                  <Download className="h-6 w-6" />
-                  <span className="text-xs font-medium leading-tight">Export</span>
-                </button>
-                <button 
-                  onClick={handleBulkSync}
-                  className="btn btn-outline btn-md flex flex-col items-center justify-center gap-1 hover:bg-accent/50 transition-all duration-200 w-full h-16"
-                >
-                  <RefreshCw className="h-6 w-6" />
-                  <span className="text-xs font-medium leading-tight">Bulk Sync</span>
-                </button>
-                {(isAdmin() || isCustomer()) && (
-                  <button 
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  Refresh
+                </Button>
+                {hasPermission('stores:create') && (
+                  <Button
                     onClick={() => setShowCreateModal(true)}
-                    className="btn btn-primary btn-md flex flex-col items-center justify-center gap-1 shadow-lg hover:shadow-xl transition-all duration-200 w-full h-16"
+                    size="sm"
                   >
-                    <Plus className="h-6 w-6" />
-                    <span className="text-xs font-medium leading-tight">{isAdmin() ? 'Add Store' : 'Add My Store'}</span>
-                  </button>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Store
+                  </Button>
                 )}
               </div>
-            </div>
+            }
+          />
 
-            {/* Enhanced Filters */}
-            <div className="bg-card p-4 sm:p-6 rounded-xl border border-border shadow-sm">
-              <div className="space-y-4">
+          {/* Filters */}
+          <SectionShell>
                 <div className="flex flex-col sm:flex-row gap-4">
-                  <div className="flex-1 relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <div className="flex-1">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
                     <input
                       type="text"
-                      placeholder="Search stores by name, URL, or customer..."
-                      value={search}
-                      onChange={(e) => setSearch(e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 border border-border rounded-lg bg-background text-foreground placeholder-muted-foreground focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200"
+                    placeholder="Search stores by name or URL..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 border border-border rounded-lg text-sm text-foreground bg-background focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                     />
                   </div>
-                  <div className="relative w-full sm:w-auto sm:min-w-[160px]">
-                    <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <select
+              </div>
+              <div className="flex gap-2">
+                <FormSelect
                       value={statusFilter}
                       onChange={(e) => setStatusFilter(e.target.value)}
-                      className="w-full pl-10 pr-8 py-3 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200 appearance-none cursor-pointer"
-                    >
-                      <option value="">All Status</option>
-                      <option value="connected">Connected</option>
-                      <option value="disconnected">Disconnected</option>
-                      <option value="error">Error</option>
-                    </select>
+                  options={[
+                    { value: "", label: "All Status" },
+                    { value: "connected", label: "Connected" },
+                    { value: "disconnected", label: "Disconnected" },
+                    { value: "syncing", label: "Syncing" },
+                  ]}
+                  className="min-w-[140px]"
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleExportCSV}
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Export
+                </Button>
                   </div>
                 </div>
-              </div>
-            </div>
+          </SectionShell>
 
-            {/* Statistics Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <div className="bg-white dark:bg-card/50 p-4 rounded-lg border border-border/50">
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                    <Building className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-                  </div>
-                  <span className="text-sm font-medium text-muted-foreground">Total Stores</span>
-                </div>
-                <div className="text-2xl font-bold text-foreground">{totalStores}</div>
-                <div className="text-xs text-muted-foreground">all stores</div>
-              </div>
-
-              <div className="bg-white dark:bg-card/50 p-4 rounded-lg border border-border/50">
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
-                    <CheckCircle className="h-6 w-6 text-green-600 dark:text-green-400" />
-                  </div>
-                  <span className="text-sm font-medium text-muted-foreground">Connected</span>
-                </div>
-                <div className="text-2xl font-bold text-foreground">{statusCounts['connected'] || 0}</div>
-                <div className="text-xs text-muted-foreground">active connections</div>
-              </div>
-
-              <div className="bg-white dark:bg-card/50 p-4 rounded-lg border border-border/50">
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="p-2 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg">
-                    <Clock className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
-                  </div>
-                  <span className="text-sm font-medium text-muted-foreground">Disconnected</span>
-                </div>
-                <div className="text-2xl font-bold text-foreground">{statusCounts['disconnected'] || 0}</div>
-                <div className="text-xs text-muted-foreground">inactive connections</div>
-              </div>
-
-              <div className="bg-white dark:bg-card/50 p-4 rounded-lg border border-border/50">
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-lg">
-                    <XCircle className="h-6 w-6 text-red-600 dark:text-red-400" />
-                  </div>
-                  <span className="text-sm font-medium text-muted-foreground">Errors</span>
-                </div>
-                <div className="text-2xl font-bold text-foreground">{statusCounts['error'] || 0}</div>
-                <div className="text-xs text-muted-foreground">connection errors</div>
-              </div>
-            </div>
-
-            {/* Error Stores Alert */}
-            {errorStores.length > 0 && (
-              <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-lg border border-red-200 dark:border-red-800/30">
-                <div className="flex items-center gap-2 mb-3">
-                  <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400" />
-                  <h3 className="font-semibold text-red-800 dark:text-red-200">Connection Errors ({errorStores.length})</h3>
-                </div>
-                <div className="space-y-2">
-                  {errorStores.slice(0, 3).map((store: { id: string; name: string; url: string; status: string; lastSync?: string; customer?: { email: string; firstName: string; lastName: string } }) => (
-                    <div key={store.id} className="flex justify-between items-center p-3 bg-white dark:bg-red-900/10 rounded-lg border border-red-200 dark:border-red-800/20">
-                      <div>
-                        <div className="font-medium text-red-800 dark:text-red-200">{store.name}</div>
-                        <div className="text-sm text-red-600 dark:text-red-400">{store.url}</div>
-                      </div>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => handleTestConnection(store.id)}
-                          disabled={testingConnection === store.id}
-                          className="btn btn-sm btn-outline"
-                        >
-                          {testingConnection === store.id ? 'Testing...' : 'Test'}
-                        </button>
-                        <button
-                          onClick={() => handleSyncStore(store.id)}
-                          className="btn btn-sm btn-primary"
-                        >
-                          Sync
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+          {/* Stats */}
+          {storesData && (
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <MetricCard
+                title="Total Stores"
+                value={storesData.pagination?.total || 0}
+                icon={Building}
+                trend={null}
+              />
+              <MetricCard
+                title="Connected"
+                value={storesData.data?.filter(store => store.status === 'connected').length || 0}
+                icon={CheckCircle}
+                trend={null}
+              />
+              <MetricCard
+                title="Disconnected"
+                value={storesData.data?.filter(store => store.status === 'disconnected').length || 0}
+                icon={AlertCircle}
+                trend={null}
+              />
+              <MetricCard
+                title="Syncing"
+                value={storesData.data?.filter(store => store.status === 'syncing').length || 0}
+                icon={RefreshCw}
+                trend={null}
+              />
               </div>
             )}
 
             {/* Stores Table */}
-            <div className="bg-card p-6 rounded-xl border border-border shadow-sm">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-semibold text-foreground">All Stores</h3>
-                <div className="flex gap-2">
-                  <button 
-                    onClick={handleExportStores}
-                    className="btn btn-outline btn-sm"
-                  >
-                    Export
-                  </button>
-                  <button 
-                    onClick={handleBulkSync}
-                    className="btn btn-outline btn-sm"
-                  >
-                    Bulk Sync
-                  </button>
+          <SectionShell title="Stores">
+            <div className="overflow-x-auto">
+              {isLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="flex flex-col items-center gap-4">
+                    <div className="spinner"></div>
+                    <div className="text-lg text-foreground">Loading stores...</div>
+                  </div>
+                </div>
+              ) : error ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="text-center">
+                    <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold text-foreground mb-2">Error Loading Stores</h3>
+                    <p className="text-muted-foreground mb-4">There was an error loading the stores data.</p>
+                    <Button
+                      onClick={() => refetch()}
+                    >
+                      <RefreshCw className="w-4 h-4 mr-2" />
+                      Try Again
+                    </Button>
+                  </div>
+                </div>
+              ) : !storesData?.data || storesData.data.length === 0 ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="text-center">
+                    <Building className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold text-foreground mb-2">No Stores Found</h3>
+                    <p className="text-muted-foreground mb-4">
+                      {searchTerm || statusFilter
+                        ? "No stores match your current filters."
+                        : "You haven't added any stores yet."}
+                    </p>
+                    {hasPermission('stores:create') && (
+                      <Button
+                        onClick={() => setShowCreateModal(true)}
+                      >
+                        <Plus className="w-4 h-4 mr-2" />
+                        Add Your First Store
+                      </Button>
+                    )}
                 </div>
               </div>
-              
-              <div className="overflow-x-auto">
+              ) : (
                 <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-border">
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-foreground/80 dark:text-foreground/90 uppercase tracking-wider min-w-[200px]">
+                  <thead className="bg-muted/50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                         Store
                       </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-foreground/80 dark:text-foreground/90 uppercase tracking-wider min-w-[150px]">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                         URL
                       </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-foreground/80 dark:text-foreground/90 uppercase tracking-wider min-w-[150px]">
-                        Customer
-                      </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-foreground/80 dark:text-foreground/90 uppercase tracking-wider min-w-[100px]">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                         Status
                       </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-foreground/80 dark:text-foreground/90 uppercase tracking-wider min-w-[120px]">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                         Last Sync
                       </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-foreground/80 dark:text-foreground/90 uppercase tracking-wider min-w-[200px]">
+                      <th className="px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
                         Actions
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="bg-background divide-y divide-border">
-                    {stores.map((store: { id: string; name: string; url: string; status: string; lastSync?: string; customer?: { email: string; firstName: string; lastName: string } }) => (
-                      <tr key={store.id} className="hover:bg-muted/20 transition-colors duration-150">
-                        <td className="px-6 py-4">
+                  <tbody className="divide-y divide-border">
+                    {storesData.data.map((store) => (
+                      <tr key={store.id} className="hover:bg-muted/50">
+                        <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2">
-                                <p className="text-sm font-medium text-foreground truncate max-w-[180px]">
-                                  {store.name}
-                                </p>
+                            <div className="flex-shrink-0 h-10 w-10">
+                              <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                                <Building className="h-5 w-5 text-primary" />
                               </div>
-                              <div className="flex items-center gap-2 mt-1">
-                                <p className="text-xs text-muted-foreground">
-                                  ID: {store.id.slice(0, 8)}
-                                </p>
+                              </div>
+                            <div className="ml-4">
+                              <div className="text-sm font-medium text-foreground">{store.name}</div>
+                              <div className="text-sm text-muted-foreground">
+                                {store.customer?.email || 'No customer assigned'}
                               </div>
                             </div>
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <Globe className="w-4 h-4 text-muted-foreground mr-2" />
                           <a 
                             href={store.url} 
                             target="_blank" 
                             rel="noopener noreferrer"
-                            className="text-primary hover:underline text-sm font-mono"
+                              className="text-sm text-primary hover:text-primary/80 flex items-center"
                           >
                             {store.url}
+                              <ExternalLink className="w-3 h-3 ml-1" />
                           </a>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div>
-                            <div className="text-sm font-medium text-foreground">{store.customer?.firstName} {store.customer?.lastName}</div>
-                            <div className="text-xs text-muted-foreground">{store.customer?.email}</div>
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`inline-flex items-center px-2.5 py-1.5 rounded-full text-xs font-medium ${
-                            store.status === 'connected' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' :
-                            store.status === 'disconnected' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300' :
-                            store.status === 'error' ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300' :
-                            'bg-gray-100 text-gray-800 dark:bg-gray-700/50 dark:text-gray-300'
-                          }`}>
-                            {store.status}
-                          </span>
+                          {getStatusBadge(store.status)}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-muted-foreground">
-                            {store.lastSync ? new Date(store.lastSync).toLocaleDateString() : 'Never'}
-                          </div>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
+                          {store.lastSyncAt
+                            ? new Date(store.lastSyncAt).toLocaleDateString()
+                            : 'Never'}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center gap-2">
-                            <button 
-                              onClick={() => setEditingStore(store.id)}
-                              className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-primary bg-primary/10 hover:bg-primary/20 dark:bg-primary/20 dark:hover:bg-primary/30 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary focus:ring-offset-background transition-all duration-200"
-                            >
-                              <Edit className="h-3 w-3 mr-1" />
-                              Edit
-                            </button>
-                            <button
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          <div className="flex items-center justify-end gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
                               onClick={() => handleTestConnection(store.id)}
                               disabled={testingConnection === store.id}
-                              className="inline-flex items-center px-3 py-1.5 border border-border text-xs font-medium rounded-md text-foreground bg-background hover:bg-muted/50 dark:hover:bg-muted/30 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary focus:ring-offset-background transition-all duration-200"
                             >
-                              <TestTube className="h-3 w-3 mr-1" />
+                              <TestTube className="w-3 h-3 mr-1" />
                               {testingConnection === store.id ? 'Testing...' : 'Test'}
-                            </button>
-                            <button
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
                               onClick={() => handleSyncStore(store.id)}
-                              className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-blue-800 bg-blue-100 hover:bg-blue-200 dark:text-blue-200 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 focus:ring-offset-background transition-all duration-200"
+                              disabled={syncStore.isPending}
                             >
-                              <RefreshCw className="h-3 w-3 mr-1" />
+                              <RefreshCw className="w-3 h-3 mr-1" />
                               Sync
-                            </button>
-                            <button
-                              onClick={() => deleteStore.mutate(store.id)}
-                              className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-red-800 bg-red-100 hover:bg-red-200 dark:text-red-200 dark:bg-red-900/30 dark:hover:bg-red-900/50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 focus:ring-offset-background transition-all duration-200"
-                            >
-                              <Trash2 className="h-3 w-3 mr-1" />
+                            </Button>
+                            {hasPermission('stores:update') && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setEditingStore(store.id)}
+                              >
+                                <Edit className="w-3 h-3 mr-1" />
+                                Edit
+                              </Button>
+                            )}
+                            {hasPermission('stores:delete') && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleDeleteStore(store.id)}
+                                className="text-red-700 border-red-200 hover:bg-red-50"
+                              >
+                                <Trash2 className="w-3 h-3 mr-1" />
                               Delete
-                            </button>
+                              </Button>
+                            )}
                           </div>
                         </td>
                       </tr>
                     ))}
-                    {stores.length === 0 && (
-                      <tr>
-                        <td colSpan={6} className="px-6 py-12 text-center">
-                          <div className="flex flex-col items-center justify-center">
-                            <Building className="h-16 w-16 text-muted-foreground/40 mb-4" />
-                            <p className="text-lg font-medium text-muted-foreground mb-2">No stores found</p>
-                            <p className="text-sm text-muted-foreground">
-                              {search || statusFilter ? 
-                                'Try adjusting your filters to see more stores.' :
-                                'Get started by adding your first store.'
-                              }
-                            </p>
-                          </div>
-                        </td>
-                      </tr>
-                    )}
                   </tbody>
                 </table>
-              </div>
-
-              {/* Enhanced Pagination */}
-              {totalPages > 1 && (
-                <div className="flex flex-col sm:flex-row items-center justify-between mt-8 gap-4">
-                  <div className="text-sm text-muted-foreground text-center sm:text-left">
-                    Showing {((page - 1) * 10) + 1} to {Math.min(page * 10, totalStores)} of {totalStores} stores
-                  </div>
-                  <div className="flex items-center gap-2 flex-wrap justify-center">
-                    <button
-                      onClick={() => setPage(p => Math.max(1, p - 1))}
-                      disabled={page === 1}
-                      className="btn btn-outline btn-sm flex items-center gap-2 hover:bg-accent/50 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed min-w-[80px] h-8"
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                      <span className="text-xs font-medium">Prev</span>
-                    </button>
-                    <div className="flex items-center gap-1 flex-wrap justify-center">
-                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                        const pageNum = Math.max(1, Math.min(totalPages - 4, page - 2)) + i;
-                        return (
-                          <button
-                            key={pageNum}
-                            onClick={() => setPage(pageNum)}
-                            className={`px-3 py-2 text-xs font-medium rounded-lg transition-all duration-200 min-w-[32px] h-8 ${
-                              page === pageNum
-                                ? 'bg-primary text-primary-foreground shadow-lg'
-                                : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'
-                            }`}
-                          >
-                            {pageNum}
-                          </button>
-                        );
-                      })}
-                    </div>
-                    <button
-                      onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                      disabled={page === totalPages}
-                      className="btn btn-outline btn-sm flex items-center gap-2 hover:bg-accent/50 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed min-w-[80px] h-8"
-                    >
-                      <span className="text-xs font-medium">Next</span>
-                      <ChevronRight className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
               )}
             </div>
+          </SectionShell>
 
             {/* Create Store Modal */}
             {showCreateModal && (
-              <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                <div className="bg-card p-6 sm:p-8 rounded-xl border border-border shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-                  <div className="flex items-center justify-between mb-6">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-primary/10 rounded-lg">
-                        <Plus className="h-7 w-7 text-primary" />
-                      </div>
-                      <div>
-                        <h3 className="text-xl font-semibold text-foreground">Create New Store</h3>
-                        <p className="text-sm text-muted-foreground">Add a new store and connect it to WooCommerce</p>
-                      </div>
-                    </div>
-                    <button
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+              <div className="bg-background rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+                <div className="flex items-center justify-between p-6 border-b border-border">
+                  <h3 className="text-lg font-semibold text-foreground">Add New Store</h3>
+                  <Button
+                    variant="ghost"
+                    size="sm"
                       onClick={() => setShowCreateModal(false)}
-                      className="p-2 hover:bg-muted/50 rounded-lg transition-colors"
                     >
-                      <X className="h-5 w-5 text-muted-foreground" />
-                    </button>
+                    <X className="w-5 h-5" />
+                  </Button>
                   </div>
-                  <div className="space-y-4">
-                    <div>
-                      <label className="form-label">Store Name *</label>
-                      <input
+                <div className="p-6 space-y-4">
+                  <FormField
+                    label="Store Name"
+                    required
                         type="text"
-                        className="form-input"
                         placeholder="Enter store name"
                         value={createForm.name}
                         onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
                       />
-                    </div>
-                    <div>
-                      <label className="form-label">Store URL *</label>
-                      <input
+                  <FormField
+                    label="Store URL"
+                    required
                         type="url"
-                        className="form-input"
                         placeholder="https://example.com"
                         value={createForm.url}
                         onChange={(e) => setCreateForm({ ...createForm, url: e.target.value })}
                       />
-                    </div>
-                    <div>
-                      <label className="form-label">Customer Email *</label>
-                      <input
+                  <FormField
+                    label="Customer Email"
                         type="email"
-                        className="form-input"
                         placeholder="customer@example.com"
                         value={createForm.customerEmail}
                         onChange={(e) => setCreateForm({ ...createForm, customerEmail: e.target.value })}
                       />
-                    </div>
-                    <div>
-                      <label className="form-label">WooCommerce Consumer Key *</label>
-                      <input
+                  <FormField
+                    label="WooCommerce Consumer Key"
+                    required
                         type="text"
-                        className="form-input"
                         placeholder="Enter consumer key"
                         value={createForm.consumerKey}
                         onChange={(e) => setCreateForm({ ...createForm, consumerKey: e.target.value })}
                       />
-                    </div>
-                    <div>
-                      <label className="form-label">WooCommerce Consumer Secret *</label>
-                      <input
+                  <FormField
+                    label="WooCommerce Consumer Secret"
+                    required
                         type="password"
-                        className="form-input"
                         placeholder="Enter consumer secret"
                         value={createForm.consumerSecret}
                         onChange={(e) => setCreateForm({ ...createForm, consumerSecret: e.target.value })}
                       />
                     </div>
-                  </div>
-                  <div className="flex flex-col sm:flex-row gap-3 mt-8 pt-6 border-t border-border">
-                    <button 
+                <div className="flex flex-col sm:flex-row gap-3 p-6 border-t border-border">
+                  <Button
+                    variant="outline"
                       onClick={() => setShowCreateModal(false)}
-                      className="flex-1 sm:flex-none inline-flex items-center justify-center px-6 py-3 border border-border text-sm font-medium rounded-lg text-foreground bg-background hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary focus:ring-offset-background transition-all duration-200"
+                    className="flex-1 sm:flex-none"
                     >
-                      <X className="w-4 h-4 mr-2" />
                       Cancel
-                    </button>
-                    <button 
+                  </Button>
+                  <Button
                       onClick={handleCreateStore}
                       disabled={createStore.isPending}
-                      className="flex-1 sm:flex-none inline-flex items-center justify-center px-6 py-3 border border-transparent text-sm font-medium rounded-lg text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary focus:ring-offset-background disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-primary transition-all duration-200 shadow-sm hover:shadow-md"
+                    className="flex-1 sm:flex-none"
                     >
                       <Plus className="w-4 h-4 mr-2" />
                       {createStore.isPending ? 'Creating...' : 'Create Store'}
-                    </button>
+                  </Button>
                   </div>
                 </div>
               </div>
@@ -698,79 +584,83 @@ export default function StoresPage() {
 
             {/* Edit Store Modal */}
             {editingStore && (
-              <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                <div className="bg-card p-6 sm:p-8 rounded-xl border border-border shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-                  <div className="flex items-center justify-between mb-6">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                        <Edit className="h-7 w-7 text-blue-600 dark:text-blue-400" />
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+              <div className="bg-background rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+                <div className="flex items-center justify-between p-6 border-b border-border">
+                  <h3 className="text-lg font-semibold text-foreground">Edit Store</h3>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setEditingStore(null)}
+                  >
+                    <X className="w-5 h-5" />
+                  </Button>
                       </div>
-                      <div>
-                        <h3 className="text-xl font-semibold text-foreground">Edit Store</h3>
-                        <p className="text-sm text-muted-foreground">Update store information and settings</p>
+                {storeLoading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="flex flex-col items-center gap-4">
+                      <div className="spinner"></div>
+                      <div className="text-lg text-foreground">Loading store data...</div>
                       </div>
                     </div>
-                    <button
-                      onClick={() => setEditingStore(null)}
-                      className="p-2 hover:bg-muted/50 rounded-lg transition-colors"
-                    >
-                      <X className="h-5 w-5 text-muted-foreground" />
-                    </button>
-                  </div>
+                ) : (
                   <div className="space-y-4">
-                    <div>
-                      <label className="form-label">Store Name</label>
-                      <input
+                    <div className="p-6 space-y-4">
+                      <FormField
+                        label="Store Name"
+                        required
                         type="text"
-                        className="form-input"
                         placeholder="Enter store name"
+                        value={editForm.name}
+                        onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
                       />
-                    </div>
-                    <div>
-                      <label className="form-label">Store URL</label>
-                      <input
+                      <FormField
+                        label="Store URL"
+                        required
                         type="url"
-                        className="form-input"
                         placeholder="https://example.com"
+                        value={editForm.url}
+                        onChange={(e) => setEditForm({ ...editForm, url: e.target.value })}
                       />
-                    </div>
-                    <div>
-                      <label className="form-label">WooCommerce Consumer Key</label>
-                      <input
+                      <FormField
+                        label="WooCommerce Consumer Key"
+                        required
                         type="text"
-                        className="form-input"
                         placeholder="Enter consumer key"
+                        value={editForm.consumerKey}
+                        onChange={(e) => setEditForm({ ...editForm, consumerKey: e.target.value })}
                       />
-                    </div>
-                    <div>
-                      <label className="form-label">WooCommerce Consumer Secret</label>
-                      <input
+                      <FormField
+                        label="WooCommerce Consumer Secret"
+                        required
                         type="password"
-                        className="form-input"
                         placeholder="Enter consumer secret"
+                        value={editForm.consumerSecret}
+                        onChange={(e) => setEditForm({ ...editForm, consumerSecret: e.target.value })}
                       />
                     </div>
-                  </div>
-                  <div className="flex flex-col sm:flex-row gap-3 mt-8 pt-6 border-t border-border">
-                    <button 
+                    <div className="flex flex-col sm:flex-row gap-3 p-6 border-t border-border">
+                      <Button
+                        variant="outline"
                       onClick={() => setEditingStore(null)}
-                      className="flex-1 sm:flex-none inline-flex items-center justify-center px-6 py-3 border border-border text-sm font-medium rounded-lg text-foreground bg-background hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary focus:ring-offset-background transition-all duration-200"
+                        className="flex-1 sm:flex-none"
                     >
-                      <X className="w-4 h-4 mr-2" />
                       Cancel
-                    </button>
-                    <button 
-                      onClick={() => setEditingStore(null)}
-                      className="flex-1 sm:flex-none inline-flex items-center justify-center px-6 py-3 border border-transparent text-sm font-medium rounded-lg text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary focus:ring-offset-background disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-primary transition-all duration-200 shadow-sm hover:shadow-md"
+                      </Button>
+                      <Button 
+                        onClick={handleUpdateStore}
+                        disabled={updateStore.isPending || storeLoading}
+                        className="flex-1 sm:flex-none"
                     >
                       <Edit className="w-4 h-4 mr-2" />
-                      Update Store
-                    </button>
-                  </div>
+                        {updateStore.isPending ? 'Updating...' : 'Update Store'}
+                      </Button>
                 </div>
               </div>
             )}
-          </main>
+              </div>
+            </div>
+          )}
         </div>
       </ProtectedComponent>
     </ProtectedRoute>

@@ -8,7 +8,7 @@ import { useRBAC } from "@/hooks/useRBAC";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { Settings, Shield, Link, Palette } from 'lucide-react';
 import { SectionShell } from "@/components/patterns/SectionShell";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 export default function SettingsPage() {

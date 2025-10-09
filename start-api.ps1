@@ -20,9 +20,9 @@ if (!(Test-Path "../../.env")) {
     exit 1
 }
 
-Write-Host "API servisi baslatiliyor (Port 4000)..." -ForegroundColor Green
-Write-Host "API Docs: http://localhost:4000/docs" -ForegroundColor Cyan
-Write-Host "Health Check: http://localhost:4000/health" -ForegroundColor Cyan
+Write-Host "API servisi baslatiliyor (Port 3000)..." -ForegroundColor Green
+Write-Host "API Docs: http://localhost:3000/docs" -ForegroundColor Cyan
+Write-Host "Health Check: http://localhost:3000/health" -ForegroundColor Cyan
 
 # API servisini başlat
-$env:PORT=4000; npm run dev
+$env:PORT=3000; npm run dev

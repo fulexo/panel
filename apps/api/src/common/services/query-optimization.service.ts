@@ -78,7 +78,7 @@ export class QueryOptimizationService {
     return this.prisma.forTenant(tenantId).customer.findMany({
       ...options,
       include: {
-        store: {
+        stores: {
           select: {
             id: true,
             name: true,
@@ -115,7 +115,7 @@ export class QueryOptimizationService {
     return this.prisma.forTenant(tenantId).product.findMany({
       ...options,
       include: {
-        store: {
+        wooStore: {
           select: {
             id: true,
             name: true,

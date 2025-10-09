@@ -21,7 +21,7 @@ import { SectionShell } from "@/components/patterns/SectionShell";
 import { StatusPill } from "@/components/patterns/StatusPill";
 import { FormLayout } from "@/components/patterns/FormLayout";
 import { FormField, FormSelect, FormTextarea, FormCheckbox } from "@/components/forms";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 export default function ShippingPage() {

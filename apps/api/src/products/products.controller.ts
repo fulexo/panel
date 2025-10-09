@@ -274,5 +274,14 @@ export class ProductsController {
 
   }
 
+  @Get(':id/sales')
+  @ApiOperation({ summary: 'Get product sales statistics' })
+  async getProductSales(
+    @CurrentUser() user: { id: string; email: string; role: string; tenantId: string },
+    @Param('id') id: string,
+  ) {
+    return this.products.getProductSales(user.tenantId, id);
+  }
+
 }
 

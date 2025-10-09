@@ -42,7 +42,7 @@ export default function DashboardPage() {
   ) as { data: DashboardStats | undefined; isLoading: boolean; error: ApiError | null };
   
   const { data: recentOrders, isLoading: ordersLoading } = useOrders({
-    limit: 5,
+    limit: 3,
     ...(adminView ? {} : userStoreId ? { storeId: userStoreId } : {}),
   }) as { data: { data: Array<{ id: string; orderNumber: string; createdAt: string; status: string; total: number }>; pagination: { total: number; pages: number } } | undefined; isLoading: boolean; error: unknown };
   

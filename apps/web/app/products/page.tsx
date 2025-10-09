@@ -535,7 +535,7 @@ export default function ProductsPage() {
       Stock: p.stockQuantity,
       Status: p.status,
       Category: p.category || "",
-      Store: p.store?.name || "",
+      Store: p.wooStore?.name || "",
       Total_Sales: p.salesData?.totalSales || 0,
       Total_Revenue: p.salesData?.totalRevenue || 0,
       Last_Sale: p.salesData?.lastSaleDate
@@ -956,7 +956,7 @@ export default function ProductsPage() {
                         </td>
                       {adminView && (
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-foreground">{product.store?.name || 'N/A'}</div>
+                            <div className="text-sm text-foreground">{product.wooStore?.name || 'N/A'}</div>
                           </td>
                       )}
                       <ProtectedComponent permission="products.manage">
@@ -1610,7 +1610,7 @@ export default function ProductsPage() {
                   {adminView && viewingProduct.store && (
                     <div>
                       <label className="text-sm font-medium text-muted-foreground">Store</label>
-                      <p className="text-lg text-foreground">{viewingProduct.store.name}</p>
+                      <p className="text-lg text-foreground">{viewingProduct.wooStore?.name || 'N/A'}</p>
                     </div>
                   )}
                   <div>

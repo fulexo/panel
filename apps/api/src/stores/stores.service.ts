@@ -50,7 +50,6 @@ export class StoresService {
           _count: {
             select: {
               orders: true,
-              products: true,
             },
           },
         },
@@ -85,7 +84,6 @@ export class StoresService {
         _count: {
           select: {
             orders: true,
-            products: true,
           },
         },
       },
@@ -275,7 +273,6 @@ export class StoresService {
         _count: {
           select: {
             orders: true,
-            products: true,
           },
         },
       },

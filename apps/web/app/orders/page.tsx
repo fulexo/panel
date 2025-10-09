@@ -53,7 +53,6 @@ export default function OrdersPage() {
   // Fetch orders data
   const {
     data: ordersData,
-    isLoading,
     refetch: refetchOrders,
   } = useOrders({
     page,

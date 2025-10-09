@@ -37,8 +37,33 @@ export class WooController {
 
   @Post('stores/:id/test')
   @ApiOperation({ summary: 'Test Woo store connection' })
-  async test(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string){
-    return this.woo.testStoreConnection(user.tenantId, id);
+  async testStore(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string){
+    const store = await this.woo.getStore(user.tenantId, id);
+    if (!store) {
+      throw new Error('Store not found');
+    }
+    
+    return this.woo.testConnection({
+      url: store.baseUrl,
+      consumerKey: store.consumerKey,
+      consumerSecret: store.consumerSecret,
+    });
+  }
+
+  @Post('stores/:id/sync')
+  @ApiOperation({ summary: 'Sync Woo store data' })
+  async syncStore(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string){
+    const store = await this.woo.getStore(user.tenantId, id);
+    if (!store) {
+      throw new Error('Store not found');
+    }
+    
+    return this.woo.syncStore({
+      id: store.id,
+      url: store.baseUrl,
+      consumerKey: store.consumerKey,
+      consumerSecret: store.consumerSecret,
+    }, user.tenantId);
   }
 
   @Post('stores/:id/register-webhooks')

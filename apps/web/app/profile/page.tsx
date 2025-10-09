@@ -7,7 +7,6 @@ import { User, Shield, Settings } from 'lucide-react';
 import { logger } from "@/lib/logger";
 import { SectionShell } from "@/components/patterns/SectionShell";
 import { Button } from "@/components/ui/button";
-import { buttonVariants } from "@/components/ui/button";
 import { FormField } from "@/components/forms/FormField";
 import { FormSelect } from "@/components/forms/FormSelect";
 import { FormCheckbox } from "@/components/forms/FormCheckbox";
@@ -190,7 +189,6 @@ export default function ProfilePage() {
                         ...profile,
                         personal: { ...profile.personal, bio: e.target.value }
                       })}
-                      rows={4}
                       placeholder="Kendiniz hakkında kısa bir açıklama yazın..."
                     />
 
