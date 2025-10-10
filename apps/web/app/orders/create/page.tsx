@@ -374,7 +374,7 @@ export default function CreateOrderPage() {
       });
 
       addNotification({
-        type: "success",
+        type: "info",
         title: "Sipariş oluşturuldu",
         message: "Siparişiniz başarıyla oluşturuldu ve onay bekliyor.",
       });
@@ -412,7 +412,7 @@ export default function CreateOrderPage() {
           <form onSubmit={handleSubmit} className="mx-auto flex max-w-5xl flex-col gap-6">
             <div className="space-y-2">
               <h1 className="mobile-heading text-foreground flex items-center gap-3">
-                <ShoppingCart className="h-7 w-7 text-primary" aria-hidden />
+                <ShoppingCart className="h-7 w-7 text-foreground" aria-hidden />
                 Yeni Sipariş
               </h1>
               <p className="text-sm text-muted-foreground">
@@ -421,7 +421,7 @@ export default function CreateOrderPage() {
             </div>
 
             {formErrors['cart'] && (
-              <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive">
+              <div className="rounded-lg border border-border bg-accent/10 p-4 text-sm text-foreground">
                 {formErrors['cart']}
               </div>
             )}
@@ -734,7 +734,7 @@ export default function CreateOrderPage() {
               )}
 
               {calculatedShipping && calculatedShipping.options.length === 0 && (
-                <div className="rounded-md border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-600 dark:text-amber-300">
+                <div className="rounded-md border border-border bg-accent/10 px-4 py-3 text-sm text-foreground">
                   Seçtiğiniz bölge için aktif kargo seçeneği bulunamadı.
                 </div>
               )}
@@ -751,8 +751,8 @@ export default function CreateOrderPage() {
                         className={cn(
                           "flex cursor-pointer flex-col gap-2 rounded-lg border p-4 transition",
                           selectedShippingOption === option.id
-                            ? "border-primary bg-primary/10"
-                            : "border-border/70 hover:border-primary/60 hover:bg-accent/10"
+                            ? "border-border bg-accent/10"
+                            : "border-border/70 hover:border-border hover:bg-accent/10"
                         )}
                       >
                         <div className="flex items-start justify-between gap-4">
@@ -763,7 +763,7 @@ export default function CreateOrderPage() {
                               value={option.id}
                               checked={selectedShippingOption === option.id}
                               onChange={(event) => handleShippingOptionSelect(event.target.value)}
-                              className="h-4 w-4 accent-primary"
+                              className="h-4 w-4 accent-foreground"
                             />
                             <div>
                               <p className="font-medium text-foreground">{option.name}</p>
@@ -790,7 +790,7 @@ export default function CreateOrderPage() {
                     ))}
                   </div>
                   {formErrors['shippingOption'] && (
-                    <p className="text-sm font-medium text-destructive">
+                    <p className="text-sm font-medium text-foreground">
                       {formErrors['shippingOption']}
                     </p>
                   )}

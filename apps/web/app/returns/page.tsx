@@ -1,7 +1,7 @@
 "use client";
 
 import { ComponentProps, useMemo, useState } from "react";
-import { RotateCcw, Download, Filter, PackageSearch, CalendarDays, CheckCircle2, AlertTriangle, XCircle } from "lucide-react";
+import { RotateCcw, Download, Filter, PackageSearch, CalendarDays, CheckCircle2, AlertTriangle, XCircle, Plus } from "lucide-react";
 
 import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
@@ -35,24 +35,24 @@ type ReturnStatus = "pending" | "approved" | "rejected" | "processed" | string;
 const statusMeta: Record<ReturnStatus, { label: string; badge: ComponentProps<typeof Badge>["variant"]; description: string }>
   = {
     pending: {
-      label: "Pending",
-      badge: "warning",
-      description: "Awaiting team review and decision",
+      label: "Beklemede",
+      badge: "outline",
+      description: "İnceleme bekliyor",
     },
     approved: {
-      label: "Approved",
-      badge: "success",
-      description: "Return accepted and ready for processing",
+      label: "Onaylandı",
+      badge: "outline",
+      description: "İade onaylandı",
     },
     rejected: {
-      label: "Rejected",
-      badge: "destructive",
-      description: "Return was rejected and is closed",
+      label: "Reddedildi",
+      badge: "outline",
+      description: "İade reddedildi",
     },
     processed: {
-      label: "Processed",
-      badge: "info",
-      description: "Return has been processed and finalised",
+      label: "İşlendi",
+      badge: "outline",
+      description: "İade tamamlandı",
     },
   } as const;
 
@@ -168,83 +168,82 @@ export default function ReturnsPage() {
   return (
     <ProtectedRoute>
       <div className="min-h-screen bg-background">
-        <main className="mobile-container space-y-8 py-8">
+        <main className="mobile-container py-6 space-y-6">
+          {/* Header */}
           <PageHeader
             title="İade Yönetimi"
             description={
               isAdmin()
-                ? "Mağazalar arası tüm iade süreçlerini yönetin, durumları güncelleyin ve kritik iadeleri takip edin."
-                : "Mağazanızdaki iadeleri takip edin, durumlarını güncelleyin ve müşteri taleplerini yönetin."
+                ? "Mağazalar arası tüm iade süreçlerini yönetin"
+                : "Mağazanızdaki iadeleri takip edin"
             }
             icon={RotateCcw}
             actions={
               <ProtectedComponent permission="returns.manage">
                 <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
                   <DialogTrigger asChild>
-                    <Button size="sm">Yeni İade</Button>
+                    <Button size="sm" className="gap-2">
+                      <Plus className="h-4 w-4" />
+                      <span className="hidden sm:inline">Yeni İade</span>
+                    </Button>
                   </DialogTrigger>
-                  <DialogContent>
+                  <DialogContent className="max-w-md">
                     <DialogHeader>
                       <DialogTitle>Yeni iade talebi oluştur</DialogTitle>
                       <DialogDescription>
                         Müşteriniz için yeni bir iade süreci başlatmak için gerekli bilgileri doldurun.
                       </DialogDescription>
                     </DialogHeader>
-                    <FormLayout
-                      title="Yeni İade Talebi"
-                      description="Müşteriniz için yeni bir iade süreci başlatmak için gerekli bilgileri doldurun."
-                    >
-                      <div className="grid gap-4 py-2">
-                        <FormField
-                          label="Sipariş Numarası"
-                          value={createForm.orderNumber}
-                          onChange={(event) =>
-                            setCreateForm((prev) => ({ ...prev, orderNumber: event.target.value }))
-                          }
-                          placeholder="Örn. 12345"
-                        />
-                        <FormField
-                          label="Ürün"
-                          value={createForm.product}
-                          onChange={(event) =>
-                            setCreateForm((prev) => ({ ...prev, product: event.target.value }))
-                          }
-                          placeholder="Ürün adı veya SKU"
-                        />
-                        <FormField
-                          label="Adet"
-                          type="number"
-                          min={1}
-                          value={createForm.quantity}
-                          onChange={(event) =>
-                            setCreateForm((prev) => ({ ...prev, quantity: Number(event.target.value) }))
-                          }
-                        />
-                        <FormSelect
-                          label="İade Sebebi"
-                          value={createForm.reason}
-                          onChange={(e) =>
-                            setCreateForm((prev) => ({ ...prev, reason: e.target.value }))
-                          }
-                          placeholder="Sebep seçin"
-                          options={[
-                            { value: "defective", label: "Arızalı / Hasarlı" },
-                            { value: "wrong_item", label: "Yanlış ürün gönderimi" },
-                            { value: "not_as_described", label: "Ürün açıklamasıyla uyumsuz" },
-                            { value: "changed_mind", label: "Müşteri fikrini değiştirdi" },
-                            { value: "other", label: "Diğer" },
-                          ]}
-                        />
-                        <FormTextarea
-                          label="Açıklama"
-                          value={createForm.description}
-                          onChange={(event) =>
-                            setCreateForm((prev) => ({ ...prev, description: event.target.value }))
-                          }
-                          placeholder="İade talebiyle ilgili ek bilgiler"
-                        />
-                      </div>
-                    </FormLayout>
+                    <div className="space-y-4 py-2">
+                      <FormField
+                        label="Sipariş Numarası"
+                        value={createForm.orderNumber}
+                        onChange={(event) =>
+                          setCreateForm((prev) => ({ ...prev, orderNumber: event.target.value }))
+                        }
+                        placeholder="Örn. 12345"
+                      />
+                      <FormField
+                        label="Ürün"
+                        value={createForm.product}
+                        onChange={(event) =>
+                          setCreateForm((prev) => ({ ...prev, product: event.target.value }))
+                        }
+                        placeholder="Ürün adı veya SKU"
+                      />
+                      <FormField
+                        label="Adet"
+                        type="number"
+                        min={1}
+                        value={createForm.quantity}
+                        onChange={(event) =>
+                          setCreateForm((prev) => ({ ...prev, quantity: Number(event.target.value) }))
+                        }
+                      />
+                      <FormSelect
+                        label="İade Sebebi"
+                        value={createForm.reason}
+                        onChange={(e) =>
+                          setCreateForm((prev) => ({ ...prev, reason: e.target.value }))
+                        }
+                        placeholder="Sebep seçin"
+                        options={[
+                          { value: "defective", label: "Arızalı / Hasarlı" },
+                          { value: "wrong_item", label: "Yanlış ürün gönderimi" },
+                          { value: "not_as_described", label: "Ürün açıklamasıyla uyumsuz" },
+                          { value: "changed_mind", label: "Müşteri fikrini değiştirdi" },
+                          { value: "other", label: "Diğer" },
+                        ]}
+                      />
+                      <FormTextarea
+                        label="Açıklama"
+                        value={createForm.description}
+                        onChange={(event) =>
+                          setCreateForm((prev) => ({ ...prev, description: event.target.value }))
+                        }
+                        placeholder="İade talebiyle ilgili ek bilgiler"
+                      />
+                    </div>
                     <DialogFooter>
                       <Button
                         type="button"
@@ -263,268 +262,240 @@ export default function ReturnsPage() {
             }
           />
 
-          <div className="grid gap-6 lg:grid-cols-4">
-            <Card className="lg:col-span-1">
-              <CardHeader className="space-y-1">
-                <CardTitle className="text-base font-semibold">Genel Durum</CardTitle>
-                <CardDescription>Toplam {totalReturns} iade kaydı</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {statusOrder.map((status) => {
-                  const meta = statusMeta[status] ?? {
-                    label: status,
-                    badge: "muted" as const,
-                    description: "",
-                  };
-                  const count = groupedReturns[status]?.length ?? 0;
-                  return (
-                    <div key={status} className="flex items-center justify-between rounded-lg border border-border/60 bg-muted/40 px-3 py-2">
-                      <div className="flex flex-col">
-                        <span className="text-sm font-medium text-foreground">{meta.label}</span>
-                        <span className="text-xs text-muted-foreground">{meta.description}</span>
-                      </div>
-                      <Badge variant={meta.badge || "default"}>{count}</Badge>
-                    </div>
-                  );
-                })}
-              </CardContent>
-            </Card>
+          {/* Stats Cards */}
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+            {statusOrder.map((status) => {
+              const meta = statusMeta[status] ?? {
+                label: status,
+                badge: "muted" as const,
+                description: "",
+              };
+              const count = groupedReturns[status]?.length ?? 0;
+              return (
+                <Card key={status} className="text-center">
+                  <CardContent className="p-4">
+                    <div className="text-2xl font-bold text-foreground">{count}</div>
+                    <div className="text-sm text-muted-foreground">{meta.label}</div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
 
-            <Card className="lg:col-span-3">
-              <CardHeader className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                <div className="space-y-1">
-                  <CardTitle className="text-base font-semibold">Filtreler</CardTitle>
-                  <CardDescription>Arama, durum veya tarih aralığına göre daraltın</CardDescription>
-                </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <Button variant="outline" size="sm" className="gap-2">
-                    <Download className="h-4 w-4" />
-                    Dışa Aktar
-                  </Button>
-                  <Button variant="outline" size="sm" className="gap-2">
-                    <Filter className="h-4 w-4" />
-                    Gelişmiş Filtre
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid gap-3 md:grid-cols-[2fr_1fr_1fr]">
-                  <div className="flex items-center gap-2 rounded-lg border border-input bg-background px-3 py-2 focus-within:ring-2 focus-within:ring-ring">
-                    <PackageSearch className="h-4 w-4 text-muted-foreground" />
+          {/* Filters */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Filtreler</CardTitle>
+              <CardDescription>Arama ve durum filtreleri</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <div className="flex-1">
+                  <div className="relative">
+                    <PackageSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <FormField
                       value={search}
                       onChange={(event) => setSearch(event.target.value)}
                       placeholder="Sipariş, müşteri veya ürün ara"
-                      className="border-0 px-0 shadow-none focus-visible:ring-0"
+                      className="pl-10"
                     />
                   </div>
-                  <FormSelect
-                    value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value as ReturnStatus | "")}
-                    placeholder="Tüm durumlar"
-                    options={[
-                      { value: "", label: "Tüm durumlar" },
-                      ...statusOrder.map((status) => ({
-                        value: status,
-                        label: statusMeta[status]?.label ?? status,
-                      })),
-                    ]}
-                  />
-                  <Button variant="outline" size="sm" className="justify-start gap-2">
-                    <CalendarDays className="h-4 w-4" />
-                    Tarih Aralığı
+                </div>
+                <FormSelect
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value as ReturnStatus | "")}
+                  placeholder="Tüm durumlar"
+                  options={[
+                    { value: "", label: "Tüm durumlar" },
+                    ...statusOrder.map((status) => ({
+                      value: status,
+                      label: statusMeta[status]?.label ?? status,
+                    })),
+                  ]}
+                />
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" className="gap-2">
+                    <Download className="h-4 w-4" />
+                    <span className="hidden sm:inline">Dışa Aktar</span>
+                  </Button>
+                  <Button variant="outline" size="sm" className="gap-2">
+                    <Filter className="h-4 w-4" />
+                    <span className="hidden sm:inline">Filtre</span>
                   </Button>
                 </div>
+              </div>
+            </CardContent>
+          </Card>
 
-                <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as ReturnStatus | "all") }>
-                  <TabsList className="w-full justify-start gap-1 overflow-x-auto">
-                    <TabsTrigger value="all" className="gap-2">
-                      Tümü
-                      <Badge variant="muted">{returns.length}</Badge>
+          {/* Returns List */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">İade Listesi</CardTitle>
+              <CardDescription>Toplam {totalReturns} iade kaydı</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as ReturnStatus | "all")}>
+                <TabsList className="grid w-full grid-cols-5">
+                  <TabsTrigger value="all" className="text-xs">
+                    Tümü ({returns.length})
+                  </TabsTrigger>
+                  {statusOrder.map((status) => (
+                    <TabsTrigger key={status} value={status} className="text-xs">
+                      {statusMeta[status]?.label?.slice(0, 3) ?? status.slice(0, 3)} ({groupedReturns[status]?.length ?? 0})
                     </TabsTrigger>
-                    {statusOrder.map((status) => (
-                      <TabsTrigger key={status} value={status} className="gap-2">
-                        {statusMeta[status]?.label ?? status}
-                        <Badge variant={statusMeta[status]?.badge ?? "muted"}>
-                          {groupedReturns[status]?.length ?? 0}
-                        </Badge>
-                      </TabsTrigger>
-                    ))}
-                  </TabsList>
-                  <TabsContent value={activeTab} className="mt-4">
+                  ))}
+                </TabsList>
+                
+                <TabsContent value={activeTab} className="mt-6">
+                  {filteredReturns.length === 0 ? (
+                    <EmptyState
+                      icon={PackageSearch}
+                      title="Kriterlere uygun iade bulunamadı"
+                      description="Arama kriterlerinizi değiştirmeyi deneyin"
+                    />
+                  ) : (
                     <div className="space-y-4">
-                      {filteredReturns.length === 0 ? (
-                        <EmptyState
-                          icon={PackageSearch}
-                          title="Kriterlere uygun iade bulunamadı"
-                          description="Arama kriterlerinizi değiştirmeyi deneyin veya tüm iadeleri görüntüleyin."
-                        />
-                      ) : (
-                        <div className="overflow-hidden rounded-xl border border-border">
-                          <table className="min-w-full divide-y divide-border/60">
-                            <thead className="bg-muted/60">
-                              <tr>
-                                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">Sipariş</th>
-                                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">Ürün</th>
-                                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">Adet</th>
-                                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">Sebep</th>
-                                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">Durum</th>
-                                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">Talep Tarihi</th>
-                                {isAdmin() && (
-                                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">Mağaza</th>
-                                )}
-                                <ProtectedComponent permission="returns.manage">
-                                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground">İşlemler</th>
-                                </ProtectedComponent>
-                              </tr>
-                            </thead>
-                            <tbody className="divide-y divide-border/60">
-                              {filteredReturns.map((returnItem) => {
-                                const meta = statusMeta[returnItem.status] ?? {
-                                  label: returnItem.status,
-                                  badge: "muted" as const,
-                                };
-                                return (
-                                  <tr key={returnItem.id} className="bg-background">
-                                    <td className="px-4 py-3">
-                                      <div className="font-medium text-foreground">#{returnItem.orderNumber}</div>
-                                      {returnItem.notes && (
-                                        <p className="text-xs text-muted-foreground">{returnItem.notes}</p>
+                      {filteredReturns.map((returnItem) => {
+                        const meta = statusMeta[returnItem.status] ?? {
+                          label: returnItem.status,
+                          badge: "muted" as const,
+                        };
+                        return (
+                          <Card key={returnItem.id} className="hover:shadow-md transition-shadow">
+                            <CardContent className="p-4">
+                              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                                <div className="space-y-2">
+                                  <div className="flex items-center gap-2">
+                                    <h3 className="font-semibold text-foreground">#{returnItem.orderNumber}</h3>
+                                    <Badge variant={meta.badge || "default"}>{meta.label}</Badge>
+                                  </div>
+                                  <div className="text-sm text-muted-foreground">
+                                    <div>{returnItem.productName}</div>
+                                    <div className="flex items-center gap-4 text-xs">
+                                      <span>{returnItem.quantity} adet</span>
+                                      <span>{returnItem.reason}</span>
+                                      <span>{new Date(returnItem.requestedAt).toLocaleDateString("tr-TR")}</span>
+                                      {isAdmin() && returnItem.store && (
+                                        <span>{returnItem.store.name}</span>
                                       )}
-                                    </td>
-                                    <td className="px-4 py-3">
-                                      <div className="text-sm font-medium text-foreground">{returnItem.productName}</div>
-                                    </td>
-                                    <td className="px-4 py-3 text-sm text-muted-foreground">{returnItem.quantity}</td>
-                                    <td className="px-4 py-3 text-sm text-muted-foreground">{returnItem.reason}</td>
-                                    <td className="px-4 py-3">
-                                      <Badge variant={meta.badge || "default"}>{meta.label}</Badge>
-                                    </td>
-                                    <td className="px-4 py-3 text-sm text-muted-foreground">
-                                      {new Date(returnItem.requestedAt).toLocaleDateString("tr-TR")}
-                                    </td>
-                                    {isAdmin() && (
-                                      <td className="px-4 py-3 text-sm text-muted-foreground">
-                                        {returnItem.store?.name ?? "-"}
-                                      </td>
+                                    </div>
+                                  </div>
+                                </div>
+                                
+                                <ProtectedComponent permission="returns.manage">
+                                  <div className="flex gap-2">
+                                    <Button
+                                      asChild
+                                      variant="outline"
+                                      size="sm"
+                                    >
+                                      <a href={`/returns/${returnItem.id}`}>Detay</a>
+                                    </Button>
+                                    {returnItem.status === "pending" && (
+                                      <>
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          onClick={() => handleStatusUpdate(returnItem.id, "approved")}
+                                          className="gap-1"
+                                        >
+                                          <CheckCircle2 className="h-4 w-4" />
+                                          <span className="hidden sm:inline">Onayla</span>
+                                        </Button>
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          onClick={() => handleStatusUpdate(returnItem.id, "rejected")}
+                                          className="gap-1"
+                                        >
+                                          <XCircle className="h-4 w-4" />
+                                          <span className="hidden sm:inline">Reddet</span>
+                                        </Button>
+                                      </>
                                     )}
-                                    <ProtectedComponent permission="returns.manage">
-                                      <td className="px-4 py-3">
-                                        <div className="flex justify-end gap-2">
-                                          <Button
-                                            asChild
-                                            variant="outline"
-                                            size="sm"
-                                            className="gap-2"
-                                          >
-                                            <a href={`/returns/${returnItem.id}`}>Detay</a>
-                                          </Button>
-                                          {returnItem.status === "pending" && (
-                                            <>
-                                              <Button
-                                                variant="success"
-                                                size="sm"
-                                                className="gap-2"
-                                                onClick={() => handleStatusUpdate(returnItem.id, "approved")}
-                                              >
-                                                <CheckCircle2 className="h-4 w-4" />
-                                                Onayla
-                                              </Button>
-                                              <Button
-                                                variant="destructive"
-                                                size="sm"
-                                                className="gap-2"
-                                                onClick={() => handleStatusUpdate(returnItem.id, "rejected")}
-                                              >
-                                                <XCircle className="h-4 w-4" />
-                                                Reddet
-                                              </Button>
-                                            </>
-                                          )}
-                                        </div>
-                                      </td>
-                                    </ProtectedComponent>
-                                  </tr>
-                                );
-                              })}
-                            </tbody>
-                          </table>
-                        </div>
-                      )}
+                                  </div>
+                                </ProtectedComponent>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        );
+                      })}
                     </div>
-                  </TabsContent>
-                </Tabs>
+                  )}
+                </TabsContent>
+              </Tabs>
 
-                {totalPages > 1 && (
-                  <div className="flex items-center justify-between border-t border-border pt-4">
-                    <span className="text-xs text-muted-foreground">
-                      Toplam {totalReturns} kayıt – Sayfa {page}/{totalPages}
-                    </span>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setPage((prev) => Math.max(1, prev - 1))}
-                        disabled={page === 1}
-                      >
-                        Önceki
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
-                        disabled={page === totalPages}
-                      >
-                        Sonraki
-                      </Button>
-                    </div>
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex flex-col gap-4 border-t border-border pt-4 sm:flex-row sm:items-center sm:justify-between">
+                  <span className="text-sm text-muted-foreground text-center sm:text-left">
+                    Toplam {totalReturns} kayıt – Sayfa {page}/{totalPages}
+                  </span>
+                  <div className="flex items-center justify-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPage((prev) => Math.max(1, prev - 1))}
+                      disabled={page === 1}
+                    >
+                      Önceki
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
+                      disabled={page === totalPages}
+                    >
+                      Sonraki
+                    </Button>
                   </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
+          {/* Pending Returns Alert */}
           {pendingReturns.length > 0 && (
-            <Card className="border-amber-500/40 bg-amber-500/5">
-              <CardHeader className="flex flex-col gap-2">
-                <CardTitle className="flex items-center gap-2 text-amber-700 dark:text-amber-200">
-                  <AlertTriangle className="h-5 w-5" /> Bekleyen kritik iadeler
+            <Card className="border-border bg-accent/10">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-foreground">
+                  <AlertTriangle className="h-5 w-5" />
+                  Bekleyen Kritik İadeler ({pendingReturns.length})
                 </CardTitle>
                 <CardDescription>
-                  Müşteri memnuniyetini korumak için aşağıdaki iadeleri inceleyip bir aksiyon alın.
+                  Müşteri memnuniyetini korumak için aşağıdaki iadeleri inceleyin
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
-                {pendingReturns.slice(0, 5).map((returnItem) => (
+                {pendingReturns.slice(0, 3).map((returnItem) => (
                   <div
                     key={returnItem.id}
-                    className="flex flex-col gap-3 rounded-lg border border-amber-400/40 bg-background/80 p-4 shadow-sm lg:flex-row lg:items-center lg:justify-between"
+                    className="flex flex-col gap-3 rounded-lg border border-border bg-background/80 p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between"
                   >
-                    <div>
-                      <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                        #{returnItem.orderNumber}
-                        <Badge variant="warning">Beklemede</Badge>
+                    <div className="space-y-1">
+                      <div className="font-semibold text-foreground">#{returnItem.orderNumber}</div>
+                      <div className="text-sm text-muted-foreground">
+                        {returnItem.productName} · {returnItem.quantity} adet
                       </div>
-                      <p className="text-sm text-muted-foreground">
-                        {returnItem.productName} · {returnItem.quantity} adet – {returnItem.reason}
-                      </p>
                     </div>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex gap-2">
                       <Button
-                        variant="success"
+                        variant="outline"
                         size="sm"
                         onClick={() => handleStatusUpdate(returnItem.id, "approved")}
-                        className="gap-2"
+                        className="gap-1"
                       >
-                        <CheckCircle2 className="h-4 w-4" /> Onayla
+                        <CheckCircle2 className="h-4 w-4" />
+                        <span className="hidden sm:inline">Onayla</span>
                       </Button>
                       <Button
-                        variant="destructive"
+                        variant="outline"
                         size="sm"
                         onClick={() => handleStatusUpdate(returnItem.id, "rejected")}
-                        className="gap-2"
+                        className="gap-1"
                       >
-                        <XCircle className="h-4 w-4" /> Reddet
+                        <XCircle className="h-4 w-4" />
+                        <span className="hidden sm:inline">Reddet</span>
                       </Button>
                     </div>
                   </div>

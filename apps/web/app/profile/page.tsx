@@ -96,7 +96,7 @@ export default function ProfilePage() {
                       <Button
                         key={tab.id}
                         onClick={() => setActiveTab(tab.id)}
-                        variant={activeTab === tab.id ? "default" : "ghost"}
+                        variant={activeTab === tab.id ? "outline" : "ghost"}
                         className="w-full justify-start"
                       >
                         <IconComponent className="w-5 h-5 mr-3" />
@@ -121,7 +121,7 @@ export default function ProfilePage() {
                     
                     {/* Avatar Section */}
                     <div className="flex items-center gap-6">
-                      <div className="w-24 h-24 bg-primary rounded-full flex items-center justify-center">
+                      <div className="w-24 h-24 bg-foreground rounded-full flex items-center justify-center">
                         {profile.personal.avatar ? (
                           <img
                             src={profile.personal.avatar}
@@ -129,7 +129,7 @@ export default function ProfilePage() {
                             className="w-24 h-24 rounded-full object-cover"
                           />
                         ) : (
-                          <span className="text-3xl text-primary-foreground font-bold">
+                          <span className="text-3xl text-background font-bold">
                             {profile.personal.firstName.charAt(0)}{profile.personal.lastName.charAt(0)}
                           </span>
                         )}
@@ -195,7 +195,7 @@ export default function ProfilePage() {
                     <div className="flex gap-2">
                       <Button
                         onClick={() => handleSave("personal")}
-                        variant="default"
+                        variant="outline"
                       >
                         Kaydet
                       </Button>
@@ -245,7 +245,7 @@ export default function ProfilePage() {
                           />
                           <Button
                             onClick={handlePasswordChange}
-                            variant="default"
+                            variant="outline"
                           >
                             Şifre Değiştir
                           </Button>
@@ -267,7 +267,7 @@ export default function ProfilePage() {
                               ...profile,
                               security: { ...profile.security, twoFactorEnabled: !profile.security.twoFactorEnabled }
                             })}
-                            variant={profile.security.twoFactorEnabled ? "destructive" : "default"}
+                            variant={profile.security.twoFactorEnabled ? "outline" : "outline"}
                           >
                             {profile.security.twoFactorEnabled ? 'Devre Dışı Bırak' : 'Etkinleştir'}
                           </Button>
@@ -283,7 +283,7 @@ export default function ProfilePage() {
                               <p className="font-medium">Mevcut Oturum</p>
                               <p className="text-sm text-muted-foreground">Chrome • Windows • İstanbul</p>
                             </div>
-                            <span className="text-green-600 text-sm">Aktif</span>
+                            <span className="text-foreground text-sm">Aktif</span>
                           </div>
                           <div className="flex justify-between items-center py-2 border-b border-border">
                             <div>
@@ -424,7 +424,7 @@ export default function ProfilePage() {
                     <div className="flex gap-2">
                       <Button
                         onClick={() => handleSave("preferences")}
-                        variant="default"
+                        variant="outline"
                       >
                         Kaydet
                       </Button>

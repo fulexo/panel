@@ -19,8 +19,8 @@ export const FormCheckbox = forwardRef<HTMLInputElement, FormCheckboxProps>(
             ref={ref}
             type="checkbox"
             className={cn(
-              'w-4 h-4 text-primary bg-input border-border rounded focus:ring-primary',
-              fieldError && 'border-destructive focus:border-destructive',
+              'w-4 h-4 text-foreground bg-input border-border rounded focus:ring-ring',
+              fieldError && 'border-border focus:border-border',
               className
             )}
             {...props}
@@ -28,12 +28,12 @@ export const FormCheckbox = forwardRef<HTMLInputElement, FormCheckboxProps>(
           {label && (
             <span className="text-sm font-medium text-foreground">
               {label}
-              {required && <span className="text-destructive ml-1">*</span>}
+              {required && <span className="text-foreground ml-1">*</span>}
             </span>
           )}
         </label>
         {fieldError && (
-          <p className="text-sm text-destructive">{fieldError}</p>
+          <p className="text-sm text-foreground">{fieldError}</p>
         )}
         {helperText && !fieldError && (
           <p className="text-sm text-muted-foreground">{helperText}</p>

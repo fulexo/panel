@@ -14,23 +14,20 @@ export type MetricTone =
 const toneStyles: Record<MetricTone, string> = {
   default:
     "bg-accent/40 text-foreground border-border/60 dark:bg-accent/20 dark:text-foreground",
-  blue: "bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-200",
-  green:
-    "bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-200",
-  purple:
-    "bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/30 dark:text-purple-200",
-  emerald:
-    "bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-200",
-  warning:
-    "bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/30 dark:text-amber-200",
-  destructive:
-    "bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-200",
+  blue: "bg-accent/10 text-foreground border-border",
+  green: "bg-accent/10 text-foreground border-border",
+  purple: "bg-accent/10 text-foreground border-border",
+  emerald: "bg-accent/10 text-foreground border-border",
+  warning: "bg-accent/10 text-foreground border-border",
+  destructive: "bg-accent/10 text-foreground border-border",
 };
 
 export interface MetricCardProps {
   icon?: ComponentType<{ className?: string }>;
-  label: string;
+  title?: string;
+  label?: string;
   value: ReactNode;
+  description?: string;
   context?: ReactNode;
   tone?: MetricTone;
   isLoading?: boolean;
@@ -43,49 +40,55 @@ export interface MetricCardProps {
  */
 export function MetricCard({
   icon: Icon,
+  title,
   label,
   value,
+  description,
   context,
   tone = "default",
   isLoading,
   subtle,
 }: MetricCardProps) {
+  const displayLabel = title || label;
+  
   return (
     <Card
       className={cn(
-        "relative overflow-hidden border border-border/70 bg-card shadow-sm transition-shadow hover:shadow-md",
+        "relative overflow-hidden border border-border/70 bg-card shadow-sm transition-shadow hover:shadow-md h-24 sm:h-32",
         subtle && "bg-card/80 dark:bg-card/60"
       )}
     >
-      <CardContent className="flex flex-col gap-3 p-5">
-        <div className="flex items-start justify-between gap-3">
-          <div className="space-y-1.5">
-            <p className="text-sm font-medium text-muted-foreground">{label}</p>
-            {isLoading ? (
-              <span className="inline-block h-8 w-24 animate-pulse rounded-md bg-muted/60" aria-hidden>
-                &nbsp;
-              </span>
-            ) : (
-              <div className="text-2xl font-semibold text-foreground">{value}</div>
+      <CardContent className="p-3 sm:p-6 h-full flex flex-col">
+        <div className="flex items-start justify-between h-full">
+          <div className="flex-1 flex flex-col justify-between h-full">
+            <div>
+              <p className="text-xs sm:text-sm font-medium text-muted-foreground mb-2">{displayLabel}</p>
+              {isLoading ? (
+                <div className="h-6 sm:h-8 w-16 sm:w-24 animate-pulse rounded-md bg-muted/60" aria-hidden />
+              ) : (
+                <div className="text-xl sm:text-3xl font-bold text-foreground leading-none">{value}</div>
+              )}
+            </div>
+            {(description || context) && (
+              <div className="mt-auto">
+                <p className="text-xs font-medium text-muted-foreground/90 dark:text-muted-foreground">
+                  {description || context}
+                </p>
+              </div>
             )}
           </div>
           {Icon && (
-            <span
+            <div
               aria-hidden="true"
               className={cn(
-                "inline-flex h-10 w-10 items-center justify-center rounded-xl border text-base",
+                "flex h-10 w-10 sm:h-14 sm:w-14 items-center justify-center rounded-xl border flex-shrink-0 ml-2 sm:ml-4",
                 toneStyles[tone]
               )}
             >
-              <Icon className="h-5 w-5" />
-            </span>
+              <Icon className="h-5 w-5 sm:h-7 sm:w-7" />
+            </div>
           )}
         </div>
-        {context && (
-          <p className="text-xs font-medium text-muted-foreground/90 dark:text-muted-foreground">
-            {context}
-          </p>
-        )}
       </CardContent>
     </Card>
   );

@@ -242,7 +242,7 @@ function formatRange(range: string) {
 }
 
 function growthBadge(value: number) {
-  const variant = value >= 0 ? "success" : "destructive";
+  const variant = value >= 0 ? "outline" : "outline";
   const prefix = value >= 0 ? "+" : "";
   return <Badge variant={variant}>{`${prefix}${value}%`}</Badge>;
 }
@@ -389,7 +389,7 @@ export default function ReportsPage() {
                       <TabsTrigger
                         key={tab.id}
                         value={tab.id}
-                        className="justify-start gap-3 rounded-lg border border-transparent px-3 py-2 text-sm font-medium transition-all data-[state=active]:border-primary data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
+                        className="justify-start gap-3 rounded-lg border border-transparent px-3 py-2 text-sm font-medium transition-all data-[state=active]:border-border data-[state=active]:bg-accent/10 data-[state=active]:text-foreground"
                       >
                         <tab.icon className="h-4 w-4" />
                         {tab.label}
@@ -458,7 +458,7 @@ export default function ReportsPage() {
                             </div>
                             <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
                               <div
-                                className="h-full rounded-full bg-primary"
+                                className="h-full rounded-full bg-foreground"
                                 style={{ width: `${Math.min(category.percentage, 100)}%` }}
                               />
                             </div>
@@ -532,7 +532,7 @@ export default function ReportsPage() {
                                 On hand {item.current} • Minimum {item.min}
                               </p>
                             </div>
-                            <Badge variant={item.status === "critical" ? "destructive" : "warning"}>
+                            <Badge variant={item.status === "critical" ? "outline" : "outline"}>
                               {item.status === "critical" ? "Critical" : "Low"}
                             </Badge>
                           </div>
@@ -720,13 +720,13 @@ export default function ReportsPage() {
                         inventory.stockAlerts.map((alert) => (
                           <div
                             key={alert.name}
-                            className="flex items-center justify-between rounded-lg border border-border/60 bg-[hsl(var(--warning))]/15 px-3 py-2 dark:bg-[hsl(var(--warning))]/20"
+                            className="flex items-center justify-between rounded-lg border border-border/60 bg-accent/15 px-3 py-2 dark:bg-accent/20"
                           >
                             <div>
                               <p className="text-sm font-medium text-foreground">{alert.name}</p>
                               <p className="text-xs text-muted-foreground">{alert.current} remaining • {alert.daysLeft} days</p>
                             </div>
-                            <Badge variant="warning">Attention</Badge>
+                            <Badge variant="outline">Attention</Badge>
                           </div>
                         ))
                       )}
@@ -785,7 +785,7 @@ export default function ReportsPage() {
                             </div>
                             <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
                               <div
-                                className="h-full rounded-full bg-primary"
+                                className="h-full rounded-full bg-foreground"
                                 style={{ width: `${Math.min(expense.percentage, 100)}%` }}
                               />
                             </div>
@@ -802,7 +802,7 @@ export default function ReportsPage() {
                       <CardDescription>Percentage of revenue retained as profit.</CardDescription>
                     </CardHeader>
                     <CardContent className="text-center">
-                      <div className="text-6xl font-semibold text-primary">{financial.profitMargin.toFixed(1)}%</div>
+                      <div className="text-6xl font-semibold text-foreground">{financial.profitMargin.toFixed(1)}%</div>
                       <p className="mt-2 text-sm text-muted-foreground">Target healthy margins by monitoring expenses regularly.</p>
                     </CardContent>
                   </Card>

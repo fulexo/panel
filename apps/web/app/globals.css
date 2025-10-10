@@ -167,11 +167,11 @@
   }
 
   .status-cancelled {
-    @apply bg-rose-100 text-rose-900 dark:bg-rose-500/20 dark:text-rose-100 font-medium;
+    @apply bg-accent/10 text-foreground font-medium;
   }
 
   .status-failed {
-    @apply bg-rose-100 text-rose-900 dark:bg-rose-500/20 dark:text-rose-100 font-medium;
+    @apply bg-accent/10 text-foreground font-medium;
   }
 }
 
@@ -195,15 +195,15 @@
   
   /* Loading spinner with better contrast */
   .spinner {
-    @apply animate-spin rounded-full h-8 w-8 border-b-2 border-primary;
+    @apply animate-spin rounded-full h-8 w-8 border-b-2 border-foreground;
   }
   
   .spinner-sm {
-    @apply animate-spin rounded-full h-4 w-4 border-b-2 border-primary;
+    @apply animate-spin rounded-full h-4 w-4 border-b-2 border-foreground;
   }
   
   .spinner-lg {
-    @apply animate-spin rounded-full h-12 w-12 border-b-2 border-primary;
+    @apply animate-spin rounded-full h-12 w-12 border-b-2 border-foreground;
   }
   
   /* Enhanced card styles */
@@ -212,7 +212,7 @@
   }
   
   .card-hover {
-    @apply transition-all duration-200 hover:shadow-lg hover:shadow-primary/5 hover:scale-[1.01] hover:border-primary/20;
+    @apply transition-all duration-200 hover:shadow-lg hover:shadow-foreground/5 hover:scale-[1.01] hover:border-border;
   }
   
   .card-interactive {
@@ -245,15 +245,15 @@
   }
 
   .btn-danger {
-    @apply btn bg-red-600 text-white hover:bg-red-700 focus:ring-red-500 shadow-lg hover:shadow-xl;
+    @apply btn bg-foreground text-background hover:bg-muted-foreground focus:ring-ring shadow-lg hover:shadow-xl;
   }
   
   .btn-success {
-    @apply btn bg-green-600 text-white hover:bg-green-700 focus:ring-green-600 shadow-lg hover:shadow-xl;
+    @apply btn bg-foreground text-background hover:bg-muted-foreground focus:ring-ring shadow-lg hover:shadow-xl;
   }
 
   .btn-warning {
-    @apply btn bg-yellow-600 text-white hover:bg-yellow-700 focus:ring-yellow-500 shadow-lg hover:shadow-xl;
+    @apply btn bg-foreground text-background hover:bg-muted-foreground focus:ring-ring shadow-lg hover:shadow-xl;
   }
   
   .btn-sm {
@@ -416,15 +416,15 @@
   }
   
   .badge-success {
-    @apply bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400;
+    @apply bg-accent/10 text-foreground;
   }
   
   .badge-warning {
-    @apply bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400;
+    @apply bg-accent/10 text-foreground;
   }
   
   .badge-error {
-    @apply bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400;
+    @apply bg-accent/10 text-foreground;
   }
 
   /* Enhanced alert styles */
@@ -433,19 +433,19 @@
   }
   
   .alert-info {
-    @apply bg-blue-50 text-blue-800 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800;
+    @apply bg-accent/10 text-foreground border-border;
   }
   
   .alert-success {
-    @apply bg-green-50 text-green-800 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800;
+    @apply bg-accent/10 text-foreground border-border;
   }
   
   .alert-warning {
-    @apply bg-yellow-50 text-yellow-800 border-yellow-200 dark:bg-yellow-900/20 dark:text-yellow-400 dark:border-yellow-800;
+    @apply bg-accent/10 text-foreground border-border;
   }
   
   .alert-error {
-    @apply bg-red-50 text-red-800 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800;
+    @apply bg-accent/10 text-foreground border-border;
   }
 
   /* Sidebar responsive utilities */

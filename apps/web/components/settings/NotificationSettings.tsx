@@ -20,7 +20,7 @@ export function NotificationSettings() {
         <label htmlFor="orderAlerts" className="text-sm font-medium">Order Alerts</label>
         <input type="checkbox" checked={notifications.orderAlerts} />
       </div>
-      <button className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 h-10 px-4 py-2">
+      <button className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium bg-foreground text-background hover:bg-muted-foreground h-10 px-4 py-2">
         Save Notification Settings
       </button>
     </div>

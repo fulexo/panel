@@ -134,7 +134,7 @@ export default function ShippingCalculatorPage() {
               <button
                 onClick={handleCalculate}
                 disabled={!selectedZone || orderTotal <= 0 || isCalculating}
-                className="btn btn-primary"
+                className="btn btn-outline"
               >
                 {isCalculating ? "Hesaplanıyor..." : "Kargo Hesapla"}
               </button>

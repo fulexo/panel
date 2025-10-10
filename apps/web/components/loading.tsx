@@ -21,7 +21,7 @@ export const Loading: React.FC<LoadingProps> = ({
     <div className={`flex flex-col items-center justify-center ${className}`}>
       <div className={`${sizeClasses[size]} animate-spin`}>
         <svg
-          className="w-full h-full text-blue-600"
+          className="w-full h-full text-foreground"
           fill="none"
           viewBox="0 0 24 24"
         >
@@ -51,7 +51,7 @@ export const Loading: React.FC<LoadingProps> = ({
 
 export const LoadingSpinner: React.FC<{ className?: string }> = ({ className = '' }) => (
   <div className={`flex justify-center items-center ${className}`}>
-    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-foreground"></div>
   </div>
 );
 

@@ -76,7 +76,7 @@ export default function StoreDetailPage() {
       <ProtectedRoute>
         <div className="min-h-screen bg-background flex items-center justify-center">
           <div className="flex flex-col items-center gap-4">
-            <div className="text-red-500 text-lg">Error loading store</div>
+            <div className="text-foreground text-lg">Error loading store</div>
             <div className="text-muted-foreground">
               {error instanceof ApiError ? error.message : 'Store not found'}
             </div>
@@ -183,7 +183,7 @@ export default function StoreDetailPage() {
               <ProtectedComponent permission="stores.manage">
                 <button 
                   onClick={handleEdit}
-                  className="btn btn-primary"
+                  className="btn btn-outline"
                 >
                   Edit Store
                 </button>
@@ -191,7 +191,7 @@ export default function StoreDetailPage() {
               <ProtectedComponent permission="stores.manage">
                 <button 
                   onClick={() => setShowDeleteModal(true)}
-                  className="btn btn-destructive"
+                  className="btn btn-outline"
                 >
                   Delete
                 </button>
@@ -210,15 +210,15 @@ export default function StoreDetailPage() {
                   <div className="flex gap-2">
                     <StatusPill
                       label={store.status.toUpperCase()}
-                      tone={store.status === 'active' ? 'success' : store.status === 'error' ? 'destructive' : 'muted'}
+                      tone={store.status === 'active' ? 'default' : store.status === 'error' ? 'default' : 'muted'}
                     />
                     <StatusPill
                       label={store.connectionStatus.toUpperCase()}
-                      tone={store.connectionStatus === 'connected' ? 'success' : 'destructive'}
+                      tone={store.connectionStatus === 'connected' ? 'default' : 'default'}
                     />
                     <StatusPill
                       label={store.syncStatus.toUpperCase()}
-                      tone={store.syncStatus === 'synced' ? 'success' : store.syncStatus === 'syncing' ? 'info' : 'destructive'}
+                      tone={store.syncStatus === 'synced' ? 'default' : store.syncStatus === 'syncing' ? 'default' : 'default'}
                     />
                   </div>
                 }
@@ -236,7 +236,7 @@ export default function StoreDetailPage() {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div>
                     <p className="text-sm text-muted-foreground">Store URL</p>
-                    <p className="font-medium text-blue-600">
+                    <p className="font-medium text-foreground">
                       <a href={store.url} target="_blank" rel="noopener noreferrer">
                         {store.url}
                       </a>
@@ -322,7 +322,7 @@ export default function StoreDetailPage() {
                         <p className="font-medium">{log.count} items</p>
                         <StatusPill
                           label={log.status.toUpperCase()}
-                          tone={log.status === 'success' ? 'success' : 'destructive'}
+                          tone={log.status === 'success' ? 'default' : 'default'}
                         />
                       </div>
                     </div>
@@ -340,7 +340,7 @@ export default function StoreDetailPage() {
               >
                 <div className="space-y-4">
                   <div className="text-center">
-                    <div className="text-3xl font-bold text-primary mb-2">
+                    <div className="text-3xl font-bold text-foreground mb-2">
                       {displayStats.totalProducts}
                     </div>
                     <p className="text-sm text-muted-foreground">Total Products</p>
@@ -382,7 +382,7 @@ export default function StoreDetailPage() {
                     <span className="text-muted-foreground">Status</span>
                     <StatusPill
                       label={store.syncStatus.toUpperCase()}
-                      tone={store.syncStatus === 'synced' ? 'success' : store.syncStatus === 'syncing' ? 'info' : 'destructive'}
+                      tone={store.syncStatus === 'synced' ? 'default' : store.syncStatus === 'syncing' ? 'default' : 'default'}
                     />
                   </div>
                 </div>
@@ -425,21 +425,21 @@ export default function StoreDetailPage() {
                     <span className="text-muted-foreground">Connection</span>
                     <StatusPill
                       label={store.connectionStatus}
-                      tone={store.connectionStatus === 'connected' ? 'success' : 'destructive'}
+                      tone={store.connectionStatus === 'connected' ? 'default' : 'default'}
                     />
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-muted-foreground">Sync Status</span>
                     <StatusPill
                       label={store.syncStatus}
-                      tone={store.syncStatus === 'synced' ? 'success' : store.syncStatus === 'syncing' ? 'info' : 'destructive'}
+                      tone={store.syncStatus === 'synced' ? 'default' : store.syncStatus === 'syncing' ? 'default' : 'default'}
                     />
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-muted-foreground">API Health</span>
                     <StatusPill
                       label="Healthy"
-                      tone="success"
+                      tone="default"
                     />
                   </div>
                 </div>
@@ -488,7 +488,7 @@ export default function StoreDetailPage() {
                   <div className="flex gap-2 mt-6">
                     <button
                       onClick={handleUpdate}
-                      className="btn btn-primary"
+                      className="btn btn-outline"
                     >
                       Update Store
                     </button>
@@ -515,7 +515,7 @@ export default function StoreDetailPage() {
                 <div className="flex gap-2">
                   <button
                     onClick={handleDelete}
-                    className="btn btn-destructive"
+                    className="btn btn-outline"
                   >
                     Delete Store
                   </button>

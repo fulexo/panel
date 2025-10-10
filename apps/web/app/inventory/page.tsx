@@ -30,9 +30,23 @@ import {
   Settings,
   CheckCircle,
   Clock,
-  X
+  X,
+  MapPin,
+  Users,
+  Filter
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { EmptyState } from "@/components/EmptyState";
+import { PageHeader } from "@/components/PageHeader";
+import { MetricCard } from "@/components/patterns/MetricCard";
 
 export default function InventoryPage() {
   const { user } = useAuth();
@@ -41,9 +55,12 @@ export default function InventoryPage() {
   
   // State management
   const [activeTab, setActiveTab] = useState<'requests' | 'stock-adjustment' | 'new-product' | 'bulk-operations'>('requests');
-  const [selectedStore, setSelectedStore] = useState<string>("");
+  const [selectedStore, setSelectedStore] = useState<string>("all");
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [showCreateStockModal, setShowCreateStockModal] = useState(false);
+  const [showCreateProductModal, setShowCreateProductModal] = useState(false);
+  const [showBulkModal, setShowBulkModal] = useState(false);
 
   // Form states
   const [stockForm, setStockForm] = useState({
@@ -81,6 +98,8 @@ export default function InventoryPage() {
   useEffect(() => {
     if (user?.stores?.[0]?.id) {
       setSelectedStore(user.stores[0].id);
+    } else {
+      setSelectedStore("all");
     }
   }, [user]);
 
@@ -90,14 +109,14 @@ export default function InventoryPage() {
 
   // Fetch data
   const { data: productsData } = useProducts({
-    storeId: selectedStore,
+    storeId: selectedStore === "all" ? undefined : selectedStore,
     limit: 100,
     ...(search ? { search } : {}),
   });
 
   const { data: requestsData } = useInventoryRequests({
-    storeId: selectedStore,
-    ...(statusFilter ? { status: statusFilter } : {}),
+    storeId: selectedStore === "all" ? undefined : selectedStore,
+    ...(statusFilter && statusFilter !== "all" ? { status: statusFilter } : {}),
   });
 
   const { data: statsData } = useInventoryRequestStats();
@@ -157,7 +176,7 @@ export default function InventoryPage() {
     
     setIsSubmitting(true);
     try {
-      // Process CSV data based on active tab
+      // Process CSV data based on activeTab
       if (activeTab === 'stock-adjustment') {
         // Process stock adjustments
         for (const row of csvPreviewData) {
@@ -194,7 +213,7 @@ export default function InventoryPage() {
       }
       
       addNotification({
-        type: 'success',
+        type: 'info',
         title: 'Başarılı',
         message: `${csvPreviewData.length} adet kayıt işleme alındı`
       });
@@ -217,9 +236,9 @@ export default function InventoryPage() {
   const handleCreateStockAdjustment = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!selectedStore || !stockForm.productId) {
+    if (selectedStore === "all" || !stockForm.productId) {
       addNotification({
-        type: 'warning',
+        type: 'info',
         title: 'Eksik Bilgi',
         message: 'Lütfen mağaza ve ürün seçin'
       });
@@ -246,10 +265,12 @@ export default function InventoryPage() {
       });
       
       addNotification({
-        type: 'success',
+        type: 'info',
         title: 'Başarılı',
         message: 'Stok düzenleme talebi oluşturuldu'
       });
+      
+      setShowCreateStockModal(false);
     } catch (error) {
       logger.error("Stock adjustment request failed", error);
       addNotification({
@@ -290,9 +311,9 @@ export default function InventoryPage() {
   const handleCreateNewProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!selectedStore || !productForm.name || !productForm.sku) {
+    if (selectedStore === "all" || !productForm.name || !productForm.sku) {
       addNotification({
-        type: 'warning',
+        type: 'info',
         title: 'Eksik Bilgi',
         message: 'Lütfen gerekli alanları doldurun'
       });
@@ -332,10 +353,12 @@ export default function InventoryPage() {
       setImagePreviewUrls([]);
       
       addNotification({
-        type: 'success',
+        type: 'info',
         title: 'Başarılı',
         message: 'Yeni ürün talebi oluşturuldu'
       });
+      
+      setShowCreateProductModal(false);
     } catch (error) {
       logger.error("New product request failed", error);
       addNotification({
@@ -353,7 +376,7 @@ export default function InventoryPage() {
       try {
         await deleteRequestMutation.mutateAsync(id);
         addNotification({
-          type: 'success',
+          type: 'info',
           title: 'Başarılı',
           message: 'Talep silindi'
         });
@@ -375,851 +398,815 @@ export default function InventoryPage() {
     <ProtectedRoute>
       <div className="bg-background">
         <main className="mobile-container py-6 space-y-6">
-          {/* Header and Action Buttons */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
-            <div className="space-y-1">
-              <h1 className="mobile-heading text-foreground flex items-center gap-3">
-                <Package className="h-8 w-8 text-primary" />
-                {isAdmin() ? 'Inventory Management' : 'Inventory Requests'}
-              </h1>
-              <p className="text-muted-foreground mobile-text">
-                {isAdmin() ? 'Review and approve inventory requests from all stores' : 'Request inventory changes for your store'}
-              </p>
-          </div>
-
-            {/* Admin View - Approval focused */}
-            {isAdmin() && (
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            <Button
-              onClick={() => setActiveTab('requests')}
-              variant={activeTab === 'requests' ? 'default' : 'outline'}
-              className="flex flex-col items-center justify-center gap-1 shadow-lg hover:shadow-xl transition-all duration-200 w-full h-16"
-            >
-                  <Clock className="h-5 w-5" />
-                  <span className="text-xs font-medium leading-tight">Pending Requests</span>
-            </Button>
-                <button 
-                  onClick={() => {
-                    // Export all requests
-                    const csvData = requests.map((r: any) => ({
-                      Type: r.type,
-                      Title: r.title,
-                      Status: r.status,
-                      Store: r.store?.name || '',
-                      Customer: r.customer?.name || '',
-                      Created: new Date(r.createdAt).toLocaleDateString()
-                    }));
-                    
-                    if (csvData.length > 0) {
-                      const csv = [
-                        Object.keys(csvData[0]).join(','),
-                        ...csvData.map((row: any) => Object.values(row).join(','))
-                      ].join('\n');
-                      
-                      const blob = new window.Blob([csv], { type: 'text/csv' });
-                      const url = window.URL.createObjectURL(blob);
-                      const a = document.createElement('a');
-                      a.href = url;
-                      a.download = `inventory-requests-${new Date().toISOString().split('T')[0]}.csv`;
-                      a.click();
-                      window.URL.revokeObjectURL(url);
-                    }
-                  }}
-                  className="btn btn-outline btn-md flex flex-col items-center justify-center gap-1 hover:bg-accent/50 transition-all duration-200 w-full h-16"
-                >
-                  <Download className="h-5 w-5" />
-                  <span className="text-xs font-medium leading-tight">Export Report</span>
-                </button>
-                <button 
-                  onClick={() => window.location.reload()}
-                  className="btn btn-outline btn-md flex flex-col items-center justify-center gap-1 hover:bg-accent/50 transition-all duration-200 w-full h-16"
-                >
-                  <RefreshCw className="h-5 w-5" />
-                  <span className="text-xs font-medium leading-tight">Refresh</span>
-                </button>
+          {/* Page Header */}
+          <PageHeader
+            title={isAdmin() ? 'Inventory Management' : 'Inventory Requests'}
+            description={isAdmin() ? 'Review and approve inventory requests from all stores' : 'Request inventory changes for your store'}
+            icon={Package}
+            actions={
+              <div className="flex gap-2">
+                {isAdmin() && (
+                  <>
+                    <Button
+                      onClick={() => {
+                        const csvData = requests.map((r: any) => ({
+                          Type: r.type,
+                          Title: r.title,
+                          Status: r.status,
+                          Store: r.store?.name || '',
+                          Customer: r.customer?.name || '',
+                          Created: new Date(r.createdAt).toLocaleDateString()
+                        }));
+                        
+                        if (csvData.length > 0) {
+                          const csv = [
+                            Object.keys(csvData[0]).join(','),
+                            ...csvData.map((row: any) => Object.values(row).join(','))
+                          ].join('\n');
+                          
+                          const blob = new window.Blob([csv], { type: 'text/csv' });
+                          const url = window.URL.createObjectURL(blob);
+                          const a = document.createElement('a');
+                          a.href = url;
+                          a.download = `inventory-requests-${new Date().toISOString().split('T')[0]}.csv`;
+                          a.click();
+                          window.URL.revokeObjectURL(url);
+                        }
+                      }}
+                      variant="outline"
+                      size="sm"
+                      className="gap-2"
+                    >
+                      <Download className="h-4 w-4" />
+                      <span>Export Report</span>
+                    </Button>
+                    <Button
+                      onClick={() => window.location.reload()}
+                      variant="outline"
+                      size="sm"
+                      className="gap-2"
+                    >
+                      <RefreshCw className="h-4 w-4" />
+                      <span>Refresh</span>
+                    </Button>
+                  </>
+                )}
               </div>
-            )}
-
-            {/* Customer View - Request creation focused */}
-            {isCustomer() && (
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <button
-              onClick={() => setActiveTab('stock-adjustment')}
-                  className={`btn btn-md flex flex-col items-center justify-center gap-1 shadow-lg hover:shadow-xl transition-all duration-200 w-full h-16 ${
-                    activeTab === 'stock-adjustment' ? 'btn-primary' : 'btn-outline hover:bg-accent/50'
-                  }`}
-                >
-                  <Edit className="h-5 w-5" />
-                  <span className="text-xs font-medium leading-tight">Stock Edit</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('new-product')}
-                  className={`btn btn-md flex flex-col items-center justify-center gap-1 shadow-lg hover:shadow-xl transition-all duration-200 w-full h-16 ${
-                    activeTab === 'new-product' ? 'btn-primary' : 'btn-outline hover:bg-accent/50'
-                  }`}
-                >
-                  <Plus className="h-5 w-5" />
-                  <span className="text-xs font-medium leading-tight">New Product</span>
-                </button>
-                <button 
-                  onClick={() => setActiveTab('bulk-operations')}
-                  className={`btn btn-md flex flex-col items-center justify-center gap-1 transition-all duration-200 w-full h-16 ${
-                    activeTab === 'bulk-operations' ? 'btn-primary shadow-lg' : 'btn-outline hover:bg-accent/50'
-                  }`}
-                >
-                  <Upload className="h-5 w-5" />
-                  <span className="text-xs font-medium leading-tight">Bulk CSV</span>
-                </button>
-                <button 
-                  onClick={() => setActiveTab('requests')}
-                  className={`btn btn-md flex flex-col items-center justify-center gap-1 transition-all duration-200 w-full h-16 ${
-                    activeTab === 'requests' ? 'btn-warning shadow-lg' : 'btn-outline hover:bg-accent/50'
-                  }`}
-                >
-                  <Clock className="h-5 w-5" />
-                  <span className="text-xs font-medium leading-tight">My Requests</span>
-            </button>
-              </div>
-            )}
-          </div>
+            }
+          />
 
           {/* Store Selection for Admin */}
           {isAdmin() && (
-            <div className="bg-card p-6 rounded-xl border border-border shadow-sm">
-              <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-primary/10 rounded-lg">
-                    <Settings className="h-5 w-5 text-primary" />
-                </div>
-                        <div>
-                    <label className="text-sm font-medium text-foreground">Store Selection</label>
-                    <p className="text-xs text-muted-foreground">Choose a store to manage its inventory requests</p>
-                        </div>
-                </div>
-                <select
-                  value={selectedStore}
-                  onChange={(e) => setSelectedStore(e.target.value)}
-                  className="flex-1 max-w-md px-4 py-3 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200"
-                >
-                  <option value="">🏪 All Stores ({stores.length})</option>
-                  {stores.map((store: any) => (
-                    <option key={store.id} value={store.id}>
-                      {store.name} ({store._count?.inventoryRequests || 0} requests)
-                    </option>
-                  ))}
-                </select>
-                        </div>
-                      </div>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Settings className="h-5 w-5" />
+                  Store Selection
+                </CardTitle>
+                <CardDescription>Choose a store to manage its inventory requests</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Select value={selectedStore} onValueChange={setSelectedStore}>
+                  <SelectTrigger className="max-w-md">
+                    <SelectValue placeholder="Select a store" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">🏪 All Stores ({stores.length})</SelectItem>
+                    {stores.map((store: any) => (
+                      <SelectItem key={store.id} value={store.id}>
+                        {store.name} ({store._count?.inventoryRequests || 0} requests)
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </CardContent>
+            </Card>
           )}
 
           {/* Customer Store Info */}
           {isCustomer() && user?.stores?.[0] && (
-            <div className="bg-card p-4 rounded-xl border border-border shadow-sm">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-primary/10 rounded-lg">
-                  <Package className="h-5 w-5 text-primary" />
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-accent/10 rounded-lg">
+                    <Package className="h-5 w-5 text-foreground" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-foreground">Store: {user.stores[0].name}</p>
+                    <p className="text-xs text-muted-foreground">Managing inventory for your store</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm font-medium text-foreground">Store: {user.stores[0].name}</p>
-                  <p className="text-xs text-muted-foreground">Managing inventory for your store</p>
-                </div>
-              </div>
-                        </div>
-                      )}
+              </CardContent>
+            </Card>
+          )}
 
           {/* Statistics Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="bg-card p-6 rounded-xl border border-border shadow-sm hover:shadow-md transition-shadow duration-200">
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-2 bg-primary/10 rounded-lg">
-                  <FileText className="h-6 w-6 text-primary" />
-                        </div>
-                <div className="text-right">
-                  <div className="text-2xl font-bold text-foreground">{(stats as any)?.total || 0}</div>
-                  <p className="text-sm text-muted-foreground">Total Requests</p>
-                </div>
-              </div>
-              <p className="text-xs text-muted-foreground">All inventory requests</p>
-            </div>
-
-            <div className="bg-card p-6 rounded-xl border border-border shadow-sm hover:shadow-md transition-shadow duration-200">
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-2 bg-yellow-100 rounded-lg">
-                  <Clock className="h-6 w-6 text-yellow-600" />
-                        </div>
-                <div className="text-right">
-                  <div className="text-2xl font-bold text-yellow-600">{(stats as any)?.pending || 0}</div>
-                  <p className="text-sm text-muted-foreground">Pending</p>
-                </div>
-              </div>
-              <p className="text-xs text-yellow-600">Awaiting approval</p>
-            </div>
-
-            <div className="bg-card p-6 rounded-xl border border-border shadow-sm hover:shadow-md transition-shadow duration-200">
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-2 bg-green-100 rounded-lg">
-                  <CheckCircle className="h-6 w-6 text-green-600" />
-                        </div>
-                <div className="text-right">
-                  <div className="text-2xl font-bold text-green-600">{(stats as any)?.approved || 0}</div>
-                  <p className="text-sm text-muted-foreground">Approved</p>
-                </div>
-              </div>
-              <p className="text-xs text-green-600">Successfully approved</p>
-            </div>
-
-            <div className="bg-card p-6 rounded-xl border border-border shadow-sm hover:shadow-md transition-shadow duration-200">
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-2 bg-red-100 rounded-lg">
-                  <AlertTriangle className="h-6 w-6 text-red-600" />
-                </div>
-                <div className="text-right">
-                  <div className="text-2xl font-bold text-red-600">{(stats as any)?.rejected || 0}</div>
-                  <p className="text-sm text-muted-foreground">Rejected</p>
-                </div>
-              </div>
-              <p className="text-xs text-red-600">Needs revision</p>
-            </div>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            <MetricCard
+              title="Total Requests"
+              value={(stats as any)?.total || 0}
+              description="All inventory requests"
+              icon={FileText}
+              tone="default"
+            />
+            <MetricCard
+              title="Pending"
+              value={(stats as any)?.pending || 0}
+              description="Awaiting approval"
+              icon={Clock}
+              tone="default"
+            />
+            <MetricCard
+              title="Approved"
+              value={(stats as any)?.approved || 0}
+              description="Successfully approved"
+              icon={CheckCircle}
+              tone="default"
+            />
+            <MetricCard
+              title="Rejected"
+              value={(stats as any)?.rejected || 0}
+              description="Needs revision"
+              icon={AlertTriangle}
+              tone="default"
+            />
           </div>
 
-          {/* Content based on active tab */}
-          <div className="bg-card p-6 rounded-xl border border-border shadow-sm">
-            {activeTab === 'requests' && (
-              <div className="space-y-6">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                  <div>
-                    <h3 className="text-lg font-semibold text-foreground">
-                      {isAdmin() ? 'All Inventory Requests' : 'My Inventory Requests'}
-                    </h3>
-                    <p className="text-sm text-muted-foreground">
-                      {isAdmin() ? 'Review and approve requests from all stores' : 'Track your inventory requests status'}
-                    </p>
-                  </div>
-                  <div className="flex gap-2">
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <input
-                        type="text"
-                        placeholder="Search requests..."
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        className="pl-10 pr-4 py-2 border border-border rounded-lg bg-background text-foreground w-64 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200"
-                      />
-                    </div>
-                    <select
-                      value={statusFilter}
-                      onChange={(e) => setStatusFilter(e.target.value)}
-                      className="px-3 py-2 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200"
-                    >
-                      <option value="">All Status</option>
-                      <option value="pending">Pending</option>
-                      <option value="approved">Approved</option>
-                      <option value="rejected">Rejected</option>
-                    </select>
-                  </div>
-                </div>
+          {/* Tabs */}
+          <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)}>
+            <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 gap-1 h-auto">
+              <TabsTrigger value="requests" className="text-xs sm:text-sm flex items-center justify-center gap-1 py-2 px-3">
+                <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="hidden xs:inline">Requests</span>
+                <span className="xs:hidden">Req</span>
+              </TabsTrigger>
+              <TabsTrigger value="stock-adjustment" className="text-xs sm:text-sm flex items-center justify-center gap-1 py-2 px-3">
+                <Edit className="h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="hidden xs:inline">Stock Edit</span>
+                <span className="xs:hidden">Stock</span>
+              </TabsTrigger>
+              <TabsTrigger value="new-product" className="text-xs sm:text-sm flex items-center justify-center gap-1 py-2 px-3">
+                <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="hidden xs:inline">New Product</span>
+                <span className="xs:hidden">New</span>
+              </TabsTrigger>
+              <TabsTrigger value="bulk-operations" className="text-xs sm:text-sm flex items-center justify-center gap-1 py-2 px-3">
+                <Upload className="h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="hidden xs:inline">Bulk CSV</span>
+                <span className="xs:hidden">Bulk</span>
+              </TabsTrigger>
+            </TabsList>
 
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-border">
-                    <thead className="bg-muted/50 dark:bg-muted/20">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-semibold text-foreground/80 uppercase tracking-wider">Type</th>
-                        <th className="px-6 py-3 text-left text-xs font-semibold text-foreground/80 uppercase tracking-wider">Title</th>
-                        {isAdmin() && (
-                          <>
-                            <th className="px-6 py-3 text-left text-xs font-semibold text-foreground/80 uppercase tracking-wider">Store</th>
-                            <th className="px-6 py-3 text-left text-xs font-semibold text-foreground/80 uppercase tracking-wider">Customer</th>
-                          </>
-                        )}
-                        <th className="px-6 py-3 text-left text-xs font-semibold text-foreground/80 uppercase tracking-wider">Status</th>
-                        <th className="px-6 py-3 text-left text-xs font-semibold text-foreground/80 uppercase tracking-wider">Created</th>
-                        <th className="px-6 py-3 text-left text-xs font-semibold text-foreground/80 uppercase tracking-wider">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-background divide-y divide-border">
+            {/* Requests Tab */}
+            <TabsContent value="requests" className="mt-6">
+              <Card>
+                <CardHeader>
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div>
+                      <CardTitle>
+                        {isAdmin() ? 'All Inventory Requests' : 'My Inventory Requests'}
+                      </CardTitle>
+                      <CardDescription>
+                        {isAdmin() ? 'Review and approve requests from all stores' : 'Track your inventory requests status'}
+                      </CardDescription>
+                    </div>
+                    <div className="flex flex-col gap-3">
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          type="text"
+                          placeholder="Search requests..."
+                          value={search}
+                          onChange={(e) => setSearch(e.target.value)}
+                          className="pl-10 w-full"
+                        />
+                      </div>
+                      <Select value={statusFilter} onValueChange={setStatusFilter}>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="All Status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Status</SelectItem>
+                          <SelectItem value="pending">Pending</SelectItem>
+                          <SelectItem value="approved">Approved</SelectItem>
+                          <SelectItem value="rejected">Rejected</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {requests.length === 0 ? (
+                    <EmptyState
+                      icon={FileText}
+                      title="No requests found"
+                      description={isAdmin() ? 'No inventory requests to review' : 'Create your first inventory request'}
+                      action={
+                        isCustomer() ? (
+                          <div className="flex gap-2">
+                            <Button
+                              onClick={() => setActiveTab('stock-adjustment')}
+                              variant="outline"
+                              size="sm"
+                            >
+                              Request Stock Edit
+                            </Button>
+                            <Button
+                              onClick={() => setActiveTab('new-product')}
+                              variant="outline"
+                              size="sm"
+                            >
+                              Request New Product
+                            </Button>
+                          </div>
+                        ) : undefined
+                      }
+                    />
+                  ) : (
+                    <div className="space-y-4">
                       {requests.map((request: any) => (
-                        <tr key={request.id} className="hover:bg-muted/20 transition-colors duration-150">
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={`inline-flex items-center px-2.5 py-1.5 rounded-full text-xs font-medium ${
-                              request.type === 'stock_adjustment' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300' :
-                              request.type === 'new_product' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' :
-                              'bg-gray-100 text-gray-800 dark:bg-gray-700/50 dark:text-gray-300'
-                            }`}>
-                              {request.type === 'stock_adjustment' ? 'Stock Edit' : 
-                               request.type === 'new_product' ? 'New Product' : request.type}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4">
-                            <div className="text-sm font-medium text-foreground">{request.title}</div>
-                            <div className="text-sm text-muted-foreground">{request.description}</div>
-                          </td>
-                          {isAdmin() && (
-                            <>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <div className="text-sm text-foreground">{request.store?.name || 'N/A'}</div>
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <div className="text-sm text-foreground">{request.customer?.name || request.customer?.email || 'N/A'}</div>
-                              </td>
-                            </>
-                          )}
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={`inline-flex items-center px-2.5 py-1.5 rounded-full text-xs font-medium ${
-                              request.status === 'approved' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' :
-                              request.status === 'rejected' ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300' :
-                              'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300'
-                            }`}>
-                              {request.status}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-foreground">
-                            {new Date(request.createdAt).toLocaleDateString()}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex items-center gap-2">
-                              <button 
-                                onClick={() => {
-                                  addNotification({
-                                    type: 'info',
-                                    title: 'Request Details',
-                                    message: `Viewing ${request.title}. Detailed view coming soon!`
-                                  });
-                                }}
-                                className="inline-flex items-center px-3 py-1.5 border border-border text-xs font-medium rounded-md text-foreground bg-background hover:bg-muted/50 dark:hover:bg-muted/30 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all duration-200"
-                              >
-                                <Eye className="h-3 w-3 mr-1" />
-                                View
-                              </button>
-                              
-                              {/* Admin approval buttons */}
-                              {isAdmin() && request.status === 'pending' && (
+                        <Card key={request.id} className="hover:shadow-md transition-shadow">
+                          <CardContent className="pt-4 sm:pt-6">
+                            <div className="space-y-4">
+                              <div className="flex flex-col gap-3">
+                                <div className="flex flex-wrap gap-2">
+                                  <Badge variant="outline" className="text-xs">
+                                    {request.type === 'stock_adjustment' ? 'Stock Edit' : 
+                                     request.type === 'new_product' ? 'New Product' : request.type}
+                                  </Badge>
+                                  <Badge variant="outline" className="text-xs">
+                                    {request.status}
+                                  </Badge>
+                                </div>
+                                <div>
+                                  <h3 className="text-base sm:text-lg font-semibold text-foreground mb-1">{request.title}</h3>
+                                  <p className="text-sm text-muted-foreground mb-2 line-clamp-2">{request.description}</p>
+                                </div>
+                                <div className="text-xs sm:text-sm text-muted-foreground space-y-1">
+                                  {isAdmin() && (
+                                    <>
+                                      <div>Store: {request.store?.name || 'N/A'}</div>
+                                      <div>Customer: {request.customer?.name || request.customer?.email || 'N/A'}</div>
+                                    </>
+                                  )}
+                                  <div>Created: {new Date(request.createdAt).toLocaleDateString()}</div>
+                                </div>
+                              </div>
+                              <div className="flex flex-wrap gap-2">
+                                <Button
+                                  onClick={() => {
+                                    addNotification({
+                                      type: 'info',
+                                      title: 'Request Details',
+                                      message: `Viewing ${request.title}. Detailed view coming soon!`
+                                    });
+                                  }}
+                                  variant="outline"
+                                  size="sm"
+                                  className="gap-2 flex-1 sm:flex-none"
+                                >
+                                  <Eye className="h-4 w-4" />
+                                  <span>View</span>
+                                </Button>
+                                
+                                {/* Admin approval buttons */}
+                                {isAdmin() && request.status === 'pending' && (
+                                  <>
+                                    <Button
+                                      onClick={() => {
+                                        addNotification({
+                                          type: 'info',
+                                          title: 'Request Approved',
+                                          message: `${request.title} has been approved. Sync to WooCommerce pending.`
+                                        });
+                                      }}
+                                      variant="outline"
+                                      size="sm"
+                                      className="gap-2 flex-1 sm:flex-none"
+                                    >
+                                      <CheckCircle className="h-4 w-4" />
+                                      <span>Approve</span>
+                                    </Button>
+                                    <Button
+                                      onClick={() => {
+                                        addNotification({
+                                          type: 'info',
+                                          title: 'Request Rejected',
+                                          message: `${request.title} has been rejected. Customer will be notified.`
+                                        });
+                                      }}
+                                      variant="outline"
+                                      size="sm"
+                                      className="gap-2 flex-1 sm:flex-none"
+                                    >
+                                      <X className="h-4 w-4" />
+                                      <span>Reject</span>
+                                    </Button>
+                                  </>
+                                )}
+                                
+                                {/* Customer delete button for pending requests */}
+                                {isCustomer() && request.status === 'pending' && (
+                                  <Button
+                                    onClick={() => handleDeleteRequest(request.id)}
+                                    variant="outline"
+                                    size="sm"
+                                    className="gap-2 flex-1 sm:flex-none"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                    <span>Delete</span>
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Stock Adjustment Tab */}
+            <TabsContent value="stock-adjustment" className="mt-6">
+              <Card>
+                <CardHeader>
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div>
+                      <CardTitle>Stock Adjustment</CardTitle>
+                      <CardDescription>Request changes to product stock levels</CardDescription>
+                    </div>
+                    <Dialog open={showCreateStockModal} onOpenChange={setShowCreateStockModal}>
+                      <DialogTrigger asChild>
+                        <Button className="gap-2">
+                          <Plus className="h-4 w-4" />
+                          <span>New Stock Request</span>
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="w-[95vw] max-w-md max-h-[90vh] overflow-y-auto mx-auto">
+                        <DialogHeader>
+                          <DialogTitle>Create Stock Adjustment Request</DialogTitle>
+                          <DialogDescription>Request changes to product stock levels</DialogDescription>
+                        </DialogHeader>
+                        <form onSubmit={handleCreateStockAdjustment} className="space-y-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="product">Product *</Label>
+                            <Select
+                              value={stockForm.productId}
+                              onValueChange={(value) => {
+                                const product = products.find((p: any) => p.id === value);
+                                setStockForm(prev => ({
+                                  ...prev,
+                                  productId: value,
+                                  currentStock: product?.stockQuantity || 0
+                                }));
+                              }}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select a product" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {products.map((product: any) => (
+                                  <SelectItem key={product.id} value={product.id}>
+                                    {product.name} ({product.sku}) - Current: {product.stockQuantity}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <Label htmlFor="currentStock">Current Stock</Label>
+                              <Input
+                                id="currentStock"
+                                type="number"
+                                value={stockForm.currentStock}
+                                readOnly
+                                className="bg-muted/20"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="requestedStock">Requested Stock *</Label>
+                              <Input
+                                id="requestedStock"
+                                type="number"
+                                value={stockForm.requestedStock}
+                                onChange={(e) => setStockForm(prev => ({ ...prev, requestedStock: parseInt(e.target.value) || 0 }))}
+                                required
+                                min="0"
+                              />
+                            </div>
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <Label htmlFor="stockDifference">Stock Difference</Label>
+                            <Input
+                              id="stockDifference"
+                              type="text"
+                              value={stockForm.requestedStock - stockForm.currentStock > 0 ? 
+                                `+${stockForm.requestedStock - stockForm.currentStock}` : 
+                                `${stockForm.requestedStock - stockForm.currentStock}`}
+                              readOnly
+                              className="bg-muted/20"
+                            />
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <Label htmlFor="adjustmentReason">Adjustment Reason *</Label>
+                            <Textarea
+                              id="adjustmentReason"
+                              value={stockForm.adjustmentReason}
+                              onChange={(e) => setStockForm(prev => ({ ...prev, adjustmentReason: e.target.value }))}
+                              rows={3}
+                              placeholder="Explain why this stock adjustment is needed..."
+                              required
+                            />
+                          </div>
+                          
+                          <div className="flex flex-col sm:flex-row gap-3 pt-4">
+                            <Button
+                              type="submit"
+                              disabled={isSubmitting || selectedStore === "all"}
+                              className="flex-1 gap-2"
+                            >
+                              {isSubmitting ? (
                                 <>
-                                  <button 
-                                    onClick={() => {
-                                      addNotification({
-                                        type: 'success',
-                                        title: 'Request Approved',
-                                        message: `${request.title} has been approved. Sync to WooCommerce pending.`
-                                      });
-                                    }}
-                                    className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-green-800 bg-green-100 hover:bg-green-200 dark:text-green-200 dark:bg-green-900/30 dark:hover:bg-green-900/50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200"
-                                  >
-                                    <CheckCircle className="h-3 w-3 mr-1" />
-                                    Approve
-                                  </button>
-                                  <button 
-                                    onClick={() => {
-                                      addNotification({
-                                        type: 'warning',
-                                        title: 'Request Rejected',
-                                        message: `${request.title} has been rejected. Customer will be notified.`
-                                      });
-                                    }}
-                                    className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-red-800 bg-red-100 hover:bg-red-200 dark:text-red-200 dark:bg-red-900/30 dark:hover:bg-red-900/50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-200"
-                                  >
-                                    <X className="h-3 w-3 mr-1" />
-                                    Reject
-                                  </button>
+                                  <RefreshCw className="h-4 w-4 animate-spin" />
+                                  <span>Submitting...</span>
+                                </>
+                              ) : (
+                                <>
+                                  <BarChart3 className="h-4 w-4" />
+                                  <span>Submit Request</span>
                                 </>
                               )}
-                              
-                              {/* Customer delete button for pending requests */}
-                              {isCustomer() && request.status === 'pending' && (
-                                <button 
-                                  onClick={() => handleDeleteRequest(request.id)}
-                                  className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-red-800 bg-red-100 hover:bg-red-200 dark:text-red-200 dark:bg-red-900/30 dark:hover:bg-red-900/50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-200"
-                                >
-                                  <Trash2 className="h-3 w-3 mr-1" />
-                                  Delete
-                                </button>
-                        )}
-                      </div>
-                          </td>
-                        </tr>
-                  ))}
-                  {requests.length === 0 && (
-                        <tr>
-                          <td colSpan={isAdmin() ? 7 : 5} className="px-6 py-12 text-center">
-                            <div className="flex flex-col items-center justify-center">
-                              <FileText className="h-12 w-12 text-muted-foreground/40 mb-4" />
-                              <p className="text-lg font-medium text-muted-foreground mb-2">No requests found</p>
-                              <p className="text-sm text-muted-foreground">
-                                {isAdmin() ? 'No inventory requests to review' : 'Create your first inventory request'}
-                              </p>
-                              {isCustomer() && (
-                                <div className="mt-4 flex gap-2">
-                                  <button
-                                    onClick={() => setActiveTab('stock-adjustment')}
-                                    className="btn btn-primary btn-sm"
-                                  >
-                                    Request Stock Edit
-                                  </button>
-                                  <button
-                                    onClick={() => setActiveTab('new-product')}
-                                    className="btn btn-outline btn-sm"
-                                  >
-                                    Request New Product
-                                  </button>
-                    </div>
-                  )}
-                </div>
-                          </td>
-                        </tr>
-              )}
-                    </tbody>
-                  </table>
-                </div>
-            </div>
-          )}
-
-          {activeTab === 'stock-adjustment' && (
-            <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-lg font-semibold text-foreground">Stock Adjustment</h3>
-                    <p className="text-sm text-muted-foreground">Request changes to product stock levels</p>
+                            </Button>
+                            <Button
+                              type="button"
+                              onClick={() => setShowCreateStockModal(false)}
+                              variant="outline"
+                              className="flex-1"
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        </form>
+                      </DialogContent>
+                    </Dialog>
                   </div>
-                </div>
-
-                <form onSubmit={handleCreateStockAdjustment} className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                      <label className="form-label">Product *</label>
-                  <select
-                    value={stockForm.productId}
-                    onChange={(e) => {
-                          const productId = e.target.value;
-                          const product = products.find((p: any) => p.id === productId);
-                      setStockForm(prev => ({
-                        ...prev,
-                            productId,
-                            currentStock: product?.stockQuantity || 0
-                      }));
-                    }}
-                        className="form-select"
-                    required
-                  >
-                        <option value="">Select a product</option>
-                    {products.map((product: any) => (
-                      <option key={product.id} value={product.id}>
-                            {product.name} ({product.sku}) - Current: {product.stockQuantity}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                  <div>
-                      <label className="form-label">Current Stock</label>
-                    <input
-                      type="number"
-                      value={stockForm.currentStock}
-                        readOnly
-                        className="form-input bg-muted/20"
-                    />
-                  </div>
-                  <div>
-                      <label className="form-label">Requested Stock *</label>
-                    <input
-                      type="number"
-                      value={stockForm.requestedStock}
-                      onChange={(e) => setStockForm(prev => ({ ...prev, requestedStock: parseInt(e.target.value) || 0 }))}
-                        className="form-input"
-                      required
-                        min="0"
-                    />
-                  </div>
-                <div>
-                      <label className="form-label">Stock Difference</label>
-                      <input
-                        type="text"
-                        value={stockForm.requestedStock - stockForm.currentStock > 0 ? 
-                          `+${stockForm.requestedStock - stockForm.currentStock}` : 
-                          `${stockForm.requestedStock - stockForm.currentStock}`}
-                        readOnly
-                        className={`form-input ${
-                          stockForm.requestedStock - stockForm.currentStock > 0 ? 'text-green-600' : 
-                          stockForm.requestedStock - stockForm.currentStock < 0 ? 'text-red-600' : 
-                          'text-gray-600'
-                        }`}
-                      />
-                    </div>
-                    <div className="md:col-span-2">
-                      <label className="form-label">Adjustment Reason *</label>
-                  <textarea
-                    value={stockForm.adjustmentReason}
-                    onChange={(e) => setStockForm(prev => ({ ...prev, adjustmentReason: e.target.value }))}
-                        className="form-textarea"
-                    rows={3}
-                        placeholder="Explain why this stock adjustment is needed..."
-                        required
+                </CardHeader>
+                <CardContent>
+                  <EmptyState
+                    icon={Edit}
+                    title="No stock adjustment requests"
+                    description="Create your first stock adjustment request to get started"
+                    action={
+                      <Button
+                        onClick={() => setShowCreateStockModal(true)}
+                        className="gap-2"
+                      >
+                        <Plus className="h-4 w-4" />
+                        <span>Create Stock Request</span>
+                      </Button>
+                    }
                   />
-                    </div>
-                </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
 
-                  <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t border-border">
-                <button
-                  type="submit"
-                      disabled={isSubmitting || !selectedStore}
-                      className="flex-1 sm:flex-none inline-flex items-center justify-center px-6 py-3 border border-transparent text-sm font-medium rounded-lg text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary focus:ring-offset-background disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md"
-                    >
-                      {isSubmitting ? (
-                        <>
-                          <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                            <path className="opacity-75" fill="currentColor" d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                          </svg>
-                          Submitting Request...
-                        </>
-                      ) : (
-                        <>
-                          <BarChart3 className="h-4 w-4 mr-2" />
-                          Submit Stock Adjustment Request
-                        </>
-                      )}
-                </button>
-                    <button
-                      type="button"
-                      onClick={() => setStockForm({
-                        productId: '',
-                        currentStock: 0,
-                        requestedStock: 0,
-                        adjustmentReason: '',
-                      })}
-                      disabled={isSubmitting}
-                      className="flex-1 sm:flex-none inline-flex items-center justify-center px-6 py-3 border border-border text-sm font-medium rounded-lg text-foreground bg-background hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary focus:ring-offset-background disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
-                    >
-                      <RefreshCw className="h-4 w-4 mr-2" />
-                      Reset Form
-                    </button>
-                  </div>
-              </form>
-            </div>
-          )}
-
-          {activeTab === 'new-product' && (
-            <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-lg font-semibold text-foreground">New Product Request</h3>
-                    <p className="text-sm text-muted-foreground">Request to add a new product to your store</p>
-                  </div>
-                </div>
-
-                <form onSubmit={handleCreateNewProduct} className="space-y-6">
-                  {/* Product Images */}
-                  <div>
-                    <label className="form-label">Product Images</label>
-                    <div className="space-y-4">
-                      <div className="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-primary/50 transition-colors duration-200">
-                        <input
-                          type="file"
-                          multiple
-                          accept="image/*"
-                          onChange={(e) => handleImageUpload(e.target.files)}
-                          className="hidden"
-                          id="product-image-upload"
-                        />
-                        <label htmlFor="product-image-upload" className="cursor-pointer">
-                          <Upload className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                          <p className="text-sm text-foreground font-medium">Click to upload product images</p>
-                          <p className="text-xs text-muted-foreground">PNG, JPG, WEBP up to 5 images</p>
-                    </label>
-                      </div>
-
-                      {imagePreviewUrls.length > 0 && (
-                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-                          {imagePreviewUrls.map((url: string, index: number) => (
-                            <div key={index} className="relative group">
-                              <img 
-                                src={url} 
-                                alt={`Preview ${index + 1}`}
-                                className="w-full h-24 object-cover rounded-lg border border-border"
-                              />
-                              <button
-                                type="button"
-                                onClick={() => removeImage(index)}
-                                className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-all duration-200 shadow-lg"
-                              >
-                                <X className="h-3 w-3" />
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* New Product Tab */}
+            <TabsContent value="new-product" className="mt-6">
+              <Card>
+                <CardHeader>
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div>
-                      <label className="form-label">Product Name *</label>
-                    <input
-                      type="text"
-                      value={productForm.name}
-                      onChange={(e) => setProductForm(prev => ({ ...prev, name: e.target.value }))}
-                        className="form-input"
-                        placeholder="Enter product name"
-                      required
-                    />
-                  </div>
-                  <div>
-                      <label className="form-label">SKU *</label>
-                    <input
-                      type="text"
-                      value={productForm.sku}
-                      onChange={(e) => setProductForm(prev => ({ ...prev, sku: e.target.value }))}
-                        className="form-input"
-                        placeholder="Enter SKU"
-                        required
-                    />
-                  </div>
-                  <div>
-                      <label className="form-label">Price *</label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      value={productForm.price}
-                      onChange={(e) => setProductForm(prev => ({ ...prev, price: parseFloat(e.target.value) || 0 }))}
-                        className="form-input"
-                        placeholder="0.00"
-                      required
-                    />
-                  </div>
-                  <div>
-                      <label className="form-label">Regular Price</label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      value={productForm.regularPrice}
-                      onChange={(e) => setProductForm(prev => ({ ...prev, regularPrice: parseFloat(e.target.value) || 0 }))}
-                        className="form-input"
-                        placeholder="0.00"
-                    />
-                  </div>
-                  <div>
-                      <label className="form-label">Initial Stock Quantity *</label>
-                    <input
-                      type="number"
-                      value={productForm.stockQuantity}
-                      onChange={(e) => setProductForm(prev => ({ ...prev, stockQuantity: parseInt(e.target.value) || 0 }))}
-                        className="form-input"
-                        placeholder="0"
-                        required
-                        min="0"
-                    />
-                  </div>
-                <div>
-                      <label className="form-label">Weight (kg)</label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={productForm.weight}
-                        onChange={(e) => setProductForm(prev => ({ ...prev, weight: parseFloat(e.target.value) || 0 }))}
-                        className="form-input"
-                        placeholder="0.00"
-                      />
+                      <CardTitle>New Product Request</CardTitle>
+                      <CardDescription>Request to add a new product to your store</CardDescription>
                     </div>
-                    <div className="md:col-span-2">
-                      <label className="form-label">Short Description</label>
-                      <input
-                        type="text"
-                        value={productForm.shortDescription}
-                        onChange={(e) => setProductForm(prev => ({ ...prev, shortDescription: e.target.value }))}
-                        className="form-input"
-                        placeholder="Brief product description"
-                      />
-                    </div>
-                    <div className="md:col-span-2">
-                      <label className="form-label">Description</label>
-                  <textarea
-                    value={productForm.description}
-                    onChange={(e) => setProductForm(prev => ({ ...prev, description: e.target.value }))}
-                        className="form-textarea"
-                    rows={4}
-                        placeholder="Detailed product description"
+                    <Dialog open={showCreateProductModal} onOpenChange={setShowCreateProductModal}>
+                      <DialogTrigger asChild>
+                        <Button className="gap-2">
+                          <Plus className="h-4 w-4" />
+                          <span>New Product Request</span>
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto mx-auto">
+                        <DialogHeader>
+                          <DialogTitle>Create New Product Request</DialogTitle>
+                          <DialogDescription>Request to add a new product to your store</DialogDescription>
+                        </DialogHeader>
+                        <form onSubmit={handleCreateNewProduct} className="space-y-4">
+                          {/* Product Images */}
+                          <div className="space-y-2">
+                            <Label>Product Images</Label>
+                            <div className="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-border transition-colors duration-200">
+                              <input
+                                type="file"
+                                multiple
+                                accept="image/*"
+                                onChange={(e) => handleImageUpload(e.target.files)}
+                                className="hidden"
+                                id="product-image-upload"
+                              />
+                              <label htmlFor="product-image-upload" className="cursor-pointer">
+                                <Upload className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                                <p className="text-sm text-foreground font-medium">Click to upload product images</p>
+                                <p className="text-xs text-muted-foreground">PNG, JPG, WEBP up to 5 images</p>
+                              </label>
+                            </div>
+
+                            {imagePreviewUrls.length > 0 && (
+                              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                                {imagePreviewUrls.map((url: string, index: number) => (
+                                  <div key={index} className="relative group">
+                                    <img 
+                                      src={url} 
+                                      alt={`Preview ${index + 1}`}
+                                      className="w-full h-24 object-cover rounded-lg border border-border"
+                                    />
+                                    <Button
+                                      type="button"
+                                      onClick={() => removeImage(index)}
+                                      size="sm"
+                                      variant="destructive"
+                                      className="absolute -top-2 -right-2 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-all duration-200"
+                                    >
+                                      <X className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <Label htmlFor="productName">Product Name *</Label>
+                              <Input
+                                id="productName"
+                                type="text"
+                                value={productForm.name}
+                                onChange={(e) => setProductForm(prev => ({ ...prev, name: e.target.value }))}
+                                placeholder="Enter product name"
+                                required
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="sku">SKU *</Label>
+                              <Input
+                                id="sku"
+                                type="text"
+                                value={productForm.sku}
+                                onChange={(e) => setProductForm(prev => ({ ...prev, sku: e.target.value }))}
+                                placeholder="Enter SKU"
+                                required
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="price">Price *</Label>
+                              <Input
+                                id="price"
+                                type="number"
+                                step="0.01"
+                                value={productForm.price}
+                                onChange={(e) => setProductForm(prev => ({ ...prev, price: parseFloat(e.target.value) || 0 }))}
+                                placeholder="0.00"
+                                required
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="regularPrice">Regular Price</Label>
+                              <Input
+                                id="regularPrice"
+                                type="number"
+                                step="0.01"
+                                value={productForm.regularPrice}
+                                onChange={(e) => setProductForm(prev => ({ ...prev, regularPrice: parseFloat(e.target.value) || 0 }))}
+                                placeholder="0.00"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="stockQuantity">Initial Stock Quantity *</Label>
+                              <Input
+                                id="stockQuantity"
+                                type="number"
+                                value={productForm.stockQuantity}
+                                onChange={(e) => setProductForm(prev => ({ ...prev, stockQuantity: parseInt(e.target.value) || 0 }))}
+                                placeholder="0"
+                                required
+                                min="0"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="weight">Weight (kg)</Label>
+                              <Input
+                                id="weight"
+                                type="number"
+                                step="0.01"
+                                value={productForm.weight}
+                                onChange={(e) => setProductForm(prev => ({ ...prev, weight: parseFloat(e.target.value) || 0 }))}
+                                placeholder="0.00"
+                              />
+                            </div>
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <Label htmlFor="shortDescription">Short Description</Label>
+                            <Input
+                              id="shortDescription"
+                              type="text"
+                              value={productForm.shortDescription}
+                              onChange={(e) => setProductForm(prev => ({ ...prev, shortDescription: e.target.value }))}
+                              placeholder="Brief product description"
+                            />
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <Label htmlFor="description">Description</Label>
+                            <Textarea
+                              id="description"
+                              value={productForm.description}
+                              onChange={(e) => setProductForm(prev => ({ ...prev, description: e.target.value }))}
+                              rows={4}
+                              placeholder="Detailed product description"
+                            />
+                          </div>
+                          
+                          <div className="flex flex-col sm:flex-row gap-3 pt-4">
+                            <Button
+                              type="submit"
+                              disabled={isSubmitting || selectedStore === "all"}
+                              className="flex-1 gap-2"
+                            >
+                              {isSubmitting ? (
+                                <>
+                                  <RefreshCw className="h-4 w-4 animate-spin" />
+                                  <span>Submitting...</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Plus className="h-4 w-4" />
+                                  <span>Submit Request</span>
+                                </>
+                              )}
+                            </Button>
+                            <Button
+                              type="button"
+                              onClick={() => setShowCreateProductModal(false)}
+                              variant="outline"
+                              className="flex-1"
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        </form>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <EmptyState
+                    icon={Plus}
+                    title="No new product requests"
+                    description="Create your first new product request to get started"
+                    action={
+                      <Button
+                        onClick={() => setShowCreateProductModal(true)}
+                        className="gap-2"
+                      >
+                        <Plus className="h-4 w-4" />
+                        <span>Create Product Request</span>
+                      </Button>
+                    }
                   />
-                    </div>
-                </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
 
-                  <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t border-border">
-                    <button
-                      type="submit"
-                      disabled={isSubmitting || !selectedStore}
-                      className="flex-1 sm:flex-none inline-flex items-center justify-center px-6 py-3 border border-transparent text-sm font-medium rounded-lg text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary focus:ring-offset-background disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md"
-                    >
-                      {isSubmitting ? (
-                        <>
-                          <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                            <path className="opacity-75" fill="currentColor" d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                          </svg>
-                          Submitting Request...
-                        </>
-                      ) : (
-                        <>
-                          <Plus className="h-4 w-4 mr-2" />
-                          Submit New Product Request
-                        </>
-                      )}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setProductForm({
-                          name: '',
-                          sku: '',
-                          price: 0,
-                          regularPrice: 0,
-                          description: '',
-                          shortDescription: '',
-                          weight: 0,
-                          stockQuantity: 0,
-                          categories: [],
-                          tags: [],
-                          images: [],
-                        });
-                        setImageFiles([]);
-                        setImagePreviewUrls([]);
-                      }}
-                      disabled={isSubmitting}
-                      className="flex-1 sm:flex-none inline-flex items-center justify-center px-6 py-3 border border-border text-sm font-medium rounded-lg text-foreground bg-background hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary focus:ring-offset-background disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
-                    >
-                      <RefreshCw className="h-4 w-4 mr-2" />
-                      Reset Form
-                    </button>
-                </div>
-                </form>
-              </div>
-            )}
+            {/* Bulk Operations Tab */}
+            <TabsContent value="bulk-operations" className="mt-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Bulk Operations</CardTitle>
+                  <CardDescription>
+                    {isAdmin() ? 'Process CSV files for bulk inventory operations' : 'Upload CSV files for bulk inventory requests'}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                    {/* CSV Upload for Stock Adjustments */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-lg">Bulk Stock Adjustments</CardTitle>
+                        <CardDescription>Upload CSV file for bulk stock updates</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-border transition-colors duration-200">
+                          <input
+                            type="file"
+                            accept=".csv"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                setActiveTab('stock-adjustment');
+                                handleCsvUpload(file);
+                              }
+                            }}
+                            className="hidden"
+                            id="stock-csv-upload"
+                          />
+                          <label htmlFor="stock-csv-upload" className="cursor-pointer">
+                            <BarChart3 className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                            <p className="text-sm text-foreground font-medium">Upload Stock CSV</p>
+                            <p className="text-xs text-muted-foreground">Format: SKU, CurrentStock, NewStock, Reason</p>
+                          </label>
+                        </div>
+                        <Button
+                          onClick={() => {
+                            const csvContent = 'SKU,CurrentStock,NewStock,Reason\nSAMPLE-001,10,25,Restock from supplier\nSAMPLE-002,5,0,Discontinued product';
+                            const blob = new window.Blob([csvContent], { type: 'text/csv' });
+                            const url = window.URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = 'stock-adjustment-template.csv';
+                            a.click();
+                            window.URL.revokeObjectURL(url);
+                          }}
+                          variant="outline"
+                          size="sm"
+                          className="w-full mt-4 gap-2"
+                        >
+                          <Download className="h-4 w-4" />
+                          <span>Download Template</span>
+                        </Button>
+                      </CardContent>
+                    </Card>
 
-            {activeTab === 'bulk-operations' && (
-              <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                <div>
-                    <h3 className="text-lg font-semibold text-foreground">Bulk Operations</h3>
-                    <p className="text-sm text-muted-foreground">
-                      {isAdmin() ? 'Process CSV files for bulk inventory operations' : 'Upload CSV files for bulk inventory requests'}
-                    </p>
+                    {/* CSV Upload for New Products */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-lg">Bulk New Products</CardTitle>
+                        <CardDescription>Upload CSV file for bulk product creation</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-border transition-colors duration-200">
+                          <input
+                            type="file"
+                            accept=".csv"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                setActiveTab('new-product');
+                                handleCsvUpload(file);
+                              }
+                            }}
+                            className="hidden"
+                            id="product-csv-upload"
+                          />
+                          <label htmlFor="product-csv-upload" className="cursor-pointer">
+                            <Package className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                            <p className="text-sm text-foreground font-medium">Upload Products CSV</p>
+                            <p className="text-xs text-muted-foreground">Format: Name, SKU, Price, Stock, Description, Category</p>
+                          </label>
+                        </div>
+                        <Button
+                          onClick={() => {
+                            const csvContent = 'Name,SKU,Price,Stock,Description,Category\nSample Phone,PHONE-001,299.99,50,Premium smartphone,Electronics\nSample Case,CASE-001,29.99,100,Protective phone case,Accessories';
+                            const blob = new window.Blob([csvContent], { type: 'text/csv' });
+                            const url = window.URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = 'new-products-template.csv';
+                            a.click();
+                            window.URL.revokeObjectURL(url);
+                          }}
+                          variant="outline"
+                          size="sm"
+                          className="w-full mt-4 gap-2"
+                        >
+                          <Download className="h-4 w-4" />
+                          <span>Download Template</span>
+                        </Button>
+                      </CardContent>
+                    </Card>
                   </div>
-                  {!selectedStore && isCustomer() && (
-                    <div className="text-sm text-red-600">
-                      Please ensure your store is selected
-                    </div>
-                  )}
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* CSV Upload for Stock Adjustments */}
-                  <div className="space-y-4">
-                    <h4 className="text-md font-medium text-foreground">Bulk Stock Adjustments</h4>
-                    <div className="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-primary/50 transition-colors duration-200">
-                  <input
-                        type="file"
-                        accept=".csv"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            setActiveTab('stock-adjustment');
-                            handleCsvUpload(file);
-                          }
-                        }}
-                        className="hidden"
-                        id="stock-csv-upload"
-                      />
-                      <label htmlFor="stock-csv-upload" className="cursor-pointer">
-                        <BarChart3 className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                        <p className="text-sm text-foreground font-medium">Upload Stock CSV</p>
-                        <p className="text-xs text-muted-foreground">Format: SKU, CurrentStock, NewStock, Reason</p>
-                      </label>
-                    </div>
-                    <button
-                      onClick={() => {
-                        const csvContent = 'SKU,CurrentStock,NewStock,Reason\nSAMPLE-001,10,25,Restock from supplier\nSAMPLE-002,5,0,Discontinued product';
-                        const blob = new window.Blob([csvContent], { type: 'text/csv' });
-                        const url = window.URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = 'stock-adjustment-template.csv';
-                        a.click();
-                        window.URL.revokeObjectURL(url);
-                      }}
-                      className="btn btn-outline btn-sm w-full"
-                    >
-                      <Download className="h-4 w-4 mr-2" />
-                      Download Template
-                    </button>
-                </div>
-
-                  {/* CSV Upload for New Products */}
-                  <div className="space-y-4">
-                    <h4 className="text-md font-medium text-foreground">Bulk New Products</h4>
-                    <div className="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-primary/50 transition-colors duration-200">
-                      <input
-                        type="file"
-                        accept=".csv"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            setActiveTab('new-product');
-                            handleCsvUpload(file);
-                          }
-                        }}
-                        className="hidden"
-                        id="product-csv-upload"
-                      />
-                      <label htmlFor="product-csv-upload" className="cursor-pointer">
-                        <Package className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                        <p className="text-sm text-foreground font-medium">Upload Products CSV</p>
-                        <p className="text-xs text-muted-foreground">Format: Name, SKU, Price, Stock, Description, Category</p>
-                      </label>
-                    </div>
-                <button
-                      onClick={() => {
-                        const csvContent = 'Name,SKU,Price,Stock,Description,Category\nSample Phone,PHONE-001,299.99,50,Premium smartphone,Electronics\nSample Case,CASE-001,29.99,100,Protective phone case,Accessories';
-                        const blob = new window.Blob([csvContent], { type: 'text/csv' });
-                        const url = window.URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = 'new-products-template.csv';
-                        a.click();
-                        window.URL.revokeObjectURL(url);
-                      }}
-                      className="btn btn-outline btn-sm w-full"
-                    >
-                      <Download className="h-4 w-4 mr-2" />
-                      Download Template
-                </button>
-                  </div>
-                </div>
-            </div>
-          )}
-          </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
         </main>
       </div>
 
       {/* CSV Preview Modal */}
       {showCsvPreview && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-card p-6 sm:p-8 rounded-xl border border-border shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-primary/10 rounded-lg">
-                  <FileText className="h-6 w-6 text-primary" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-semibold text-foreground">CSV Preview</h3>
-                  <p className="text-sm text-muted-foreground">Preview and confirm your CSV data before processing</p>
-                </div>
-              </div>
-              <button
-                onClick={() => {
-                  setShowCsvPreview(false);
-                  setCsvFile(null);
-                  setCsvPreviewData([]);
-                }}
-                className="p-2 hover:bg-muted/50 rounded-lg transition-colors duration-200"
-              >
-                <X className="h-5 w-5 text-muted-foreground" />
-              </button>
-            </div>
+        <Dialog open={showCsvPreview} onOpenChange={setShowCsvPreview}>
+          <DialogContent className="w-[95vw] max-w-4xl max-h-[90vh] overflow-y-auto mx-auto">
+            <DialogHeader>
+              <DialogTitle>CSV Preview</DialogTitle>
+              <DialogDescription>Preview and confirm your CSV data before processing</DialogDescription>
+            </DialogHeader>
             
             <div className="space-y-4">
               <div className="flex items-center justify-between">
@@ -1257,42 +1244,39 @@ export default function InventoryPage() {
               </div>
             </div>
             
-            <div className="flex flex-col sm:flex-row gap-3 mt-6 pt-6 border-t border-border">
-              <button
+            <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t border-border">
+              <Button
                 onClick={processCsvData}
                 disabled={isSubmitting}
-                className="flex-1 sm:flex-none inline-flex items-center justify-center px-6 py-3 border border-transparent text-sm font-medium rounded-lg text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary focus:ring-offset-background disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md"
+                className="flex-1 gap-2"
               >
                 {isSubmitting ? (
                   <>
-                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Processing CSV Data...
+                    <RefreshCw className="h-4 w-4 animate-spin" />
+                    <span>Processing...</span>
                   </>
                 ) : (
                   <>
-                    <Upload className="h-4 w-4 mr-2" />
-                    Process {csvPreviewData.length} Records
+                    <Upload className="h-4 w-4" />
+                    <span>Process {csvPreviewData.length} Records</span>
                   </>
                 )}
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={() => {
                   setShowCsvPreview(false);
                   setCsvFile(null);
                   setCsvPreviewData([]);
                 }}
                 disabled={isSubmitting}
-                className="flex-1 sm:flex-none inline-flex items-center justify-center px-6 py-3 border border-border text-sm font-medium rounded-lg text-foreground bg-background hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary focus:ring-offset-background disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                variant="outline"
+                className="flex-1"
               >
-                <X className="h-4 w-4 mr-2" />
                 Cancel
-              </button>
+              </Button>
             </div>
-          </div>
-        </div>
+          </DialogContent>
+        </Dialog>
       )}
     </ProtectedRoute>
   );

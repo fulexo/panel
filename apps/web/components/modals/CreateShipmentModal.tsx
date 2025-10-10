@@ -260,8 +260,8 @@ export function CreateShipmentModal({ isOpen, onClose, orderId }: CreateShipment
                     }}
                     className={`w-full text-left p-4 border rounded-lg transition-colors ${
                       selectedRateId === rate.id
-                        ? "border-primary bg-primary/10"
-                        : "border-border hover:border-primary/60"
+                        ? "border-border bg-accent/10"
+                        : "border-border hover:border-border"
                     }`}
                   >
                     <div className="flex items-center justify-between">
@@ -329,7 +329,7 @@ export function CreateShipmentModal({ isOpen, onClose, orderId }: CreateShipment
                           href={shipmentResult.trackingUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-primary underline"
+                          className="text-foreground underline"
                         >
                           Takip Bağlantısı
                         </a>
@@ -376,11 +376,11 @@ export function CreateShipmentModal({ isOpen, onClose, orderId }: CreateShipment
             {[1, 2, 3, 4].map((stepNumber) => (
               <div
                 key={stepNumber}
-                className={`flex items-center gap-2 ${step === stepNumber ? "text-primary" : "text-muted-foreground"}`}
+                className={`flex items-center gap-2 ${step === stepNumber ? "text-foreground" : "text-muted-foreground"}`}
               >
                 <span
                   className={`w-6 h-6 rounded-full border flex items-center justify-center text-xs ${
-                    step === stepNumber ? "border-primary bg-primary/10" : "border-border"
+                    step === stepNumber ? "border-border bg-accent/10" : "border-border"
                   }`}
                 >
                   {stepNumber}
@@ -396,7 +396,7 @@ export function CreateShipmentModal({ isOpen, onClose, orderId }: CreateShipment
           </div>
 
           {error && (
-            <div className="p-3 bg-destructive/10 border border-destructive/30 text-destructive text-sm rounded-lg">
+            <div className="p-3 bg-accent/10 border border-border text-foreground text-sm rounded-lg">
               {error}
             </div>
           )}

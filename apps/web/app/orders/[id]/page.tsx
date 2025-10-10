@@ -67,7 +67,7 @@ export default function OrderDetailPage() {
     
     if (!fulfillmentForm.serviceId) {
       addNotification({
-        type: 'warning',
+        type: 'info',
         title: 'Eksik Bilgi',
         message: 'Lütfen hizmet seçin'
       });
@@ -93,7 +93,7 @@ export default function OrderDetailPage() {
       });
       setShowAddFulfillment(false);
       addNotification({
-        type: 'success',
+        type: 'info',
         title: 'Başarılı',
         message: 'Fulfillment hizmeti eklendi'
       });
@@ -131,7 +131,7 @@ export default function OrderDetailPage() {
         serviceDate: new Date().toISOString().split('T')[0],
       });
       addNotification({
-        type: 'success',
+        type: 'info',
         title: 'Başarılı',
         message: 'Fulfillment hizmeti güncellendi'
       });
@@ -149,7 +149,7 @@ export default function OrderDetailPage() {
       try {
         await deleteBillingItemMutation.mutateAsync(id);
         addNotification({
-          type: 'success',
+          type: 'info',
           title: 'Başarılı',
           message: 'Fulfillment hizmeti silindi'
         });
@@ -231,7 +231,7 @@ export default function OrderDetailPage() {
             <div className="flex gap-2">
               <Button
                 onClick={() => setShipmentModalOpen(true)}
-                variant="default"
+                variant="outline"
               >
                 Gönderi Oluştur
               </Button>
@@ -357,7 +357,7 @@ export default function OrderDetailPage() {
                 actions={
                   <Button
                     onClick={() => setShowAddFulfillment(true)}
-                    variant="default"
+                    variant="outline"
                   >
                     Hizmet Ekle
                   </Button>
@@ -404,7 +404,7 @@ export default function OrderDetailPage() {
                               </Button>
                               <Button
                                 onClick={() => handleDeleteFulfillment(item.id)}
-                                variant="destructive"
+                                variant="outline"
                                 size="sm"
                               >
                                 Sil
@@ -414,9 +414,7 @@ export default function OrderDetailPage() {
                         </div>
                       </div>
                       <div className="flex items-center gap-2 text-sm">
-                        <span className={`px-2 py-1 rounded-full text-xs ${
-                          item.isBilled ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                        }`}>
+                        <span className={`px-2 py-1 rounded-full text-xs bg-accent text-foreground`}>
                           {item.isBilled ? 'Faturalandı' : 'Faturalanmadı'}
                         </span>
                         {item.isBilled && (
@@ -534,7 +532,7 @@ export default function OrderDetailPage() {
                     <Button
                       type="submit"
                       disabled={createBillingItemMutation.isPending}
-                      variant="default"
+                      variant="outline"
                     >
                       {createBillingItemMutation.isPending ? 'Ekleniyor...' : 'Ekle'}
                     </Button>
@@ -626,7 +624,7 @@ export default function OrderDetailPage() {
                     <Button
                       type="submit"
                       disabled={updateBillingItemMutation.isPending}
-                      variant="default"
+                      variant="outline"
                     >
                       {updateBillingItemMutation.isPending ? 'Güncelleniyor...' : 'Güncelle'}
                     </Button>

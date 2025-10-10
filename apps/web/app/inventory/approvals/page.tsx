@@ -76,7 +76,7 @@ export default function InventoryApprovalsPage() {
         adminNotes: '',
       });
       addNotification({
-        type: 'success',
+        type: 'info',
         title: 'Başarılı',
         message: `Talep ${reviewForm.status === 'approved' ? 'onaylandı' : 'reddedildi'}`
       });
@@ -121,20 +121,20 @@ export default function InventoryApprovalsPage() {
     {
       label: "Bekleyen",
       value: (stats as any).pending || 0,
-      tone: "text-yellow-600",
-      accent: "bg-yellow-500/10 border-yellow-500/40",
+      tone: "text-foreground",
+      accent: "bg-accent/10 border-border",
     },
     {
       label: "Onaylanan",
       value: (stats as any).approved || 0,
-      tone: "text-green-600",
-      accent: "bg-green-500/10 border-green-500/40",
+      tone: "text-foreground",
+      accent: "bg-accent/10 border-border",
     },
     {
       label: "Reddedilen",
       value: (stats as any).rejected || 0,
-      tone: "text-red-600",
-      accent: "bg-red-500/10 border-red-500/40",
+      tone: "text-foreground",
+      accent: "bg-accent/10 border-border",
     },
   ];
 

@@ -66,8 +66,8 @@ export default function ProductDetailPage() {
 
   const statusMeta = useMemo(
     () => ({
-      active: { label: "Active", tone: "success" as const },
-      draft: { label: "Draft", tone: "warning" as const },
+      active: { label: "Active", tone: "default" as const },
+      draft: { label: "Draft", tone: "default" as const },
       archived: { label: "Archived", tone: "muted" as const },
       inactive: { label: "Inactive", tone: "muted" as const },
     }),
@@ -92,7 +92,7 @@ export default function ProductDetailPage() {
       <ProtectedRoute>
         <div className="min-h-screen bg-background flex items-center justify-center">
           <div className="flex flex-col items-center gap-4">
-            <div className="text-red-500 text-lg">Error loading product</div>
+            <div className="text-foreground text-lg">Error loading product</div>
             <div className="text-muted-foreground">
               {error instanceof ApiError ? error.message : 'Product not found'}
             </div>
@@ -165,12 +165,12 @@ export default function ProductDetailPage() {
 
   const stockStatus = useMemo(() => {
     if (product.stockQuantity === 0) {
-      return { label: "Out of Stock", tone: "destructive" as const };
+      return { label: "Out of Stock", tone: "default" as const };
     }
     if (product.stockQuantity < 10) {
-      return { label: "Low Stock", tone: "warning" as const };
+      return { label: "Low Stock", tone: "default" as const };
     }
-    return { label: "In Stock", tone: "success" as const };
+    return { label: "In Stock", tone: "default" as const };
   }, [product.stockQuantity]);
 
   const quickActions = [
@@ -232,7 +232,7 @@ export default function ProductDetailPage() {
               </ProtectedComponent>
               <ProtectedComponent permission="products.manage">
                 <Button
-                  variant="destructive"
+                  variant="outline"
                   onClick={() => setShowDeleteModal(true)}
                 >
                   Delete
@@ -340,7 +340,7 @@ export default function ProductDetailPage() {
                     </div>
                     <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
                       <div
-                        className="h-full rounded-full bg-primary"
+                        className="h-full rounded-full bg-foreground"
                         style={{ width: `${Math.min(product.stockQuantity, 100)}%` }}
                       />
                     </div>
@@ -424,8 +424,8 @@ export default function ProductDetailPage() {
               <div className="bg-card w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-xl border border-border p-6 sm:p-8 shadow-2xl">
                 <div className="mb-6 flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="rounded-lg bg-primary/10 p-2">
-                      <Edit className="h-6 w-6 text-primary" />
+                    <div className="rounded-lg bg-accent/10 p-2">
+                      <Edit className="h-6 w-6 text-foreground" />
                     </div>
                     <div>
                       <h3 className="text-xl font-semibold text-foreground">Edit Product</h3>
@@ -584,7 +584,7 @@ export default function ProductDetailPage() {
                   Are you sure you want to delete "{product.name}"? This action cannot be undone.
                 </p>
                 <div className="mt-6 flex flex-col gap-2 sm:flex-row">
-                  <Button type="button" variant="destructive" onClick={handleDelete} className="flex-1">
+                  <Button type="button" variant="outline" onClick={handleDelete} className="flex-1">
                     Delete Product
                   </Button>
                   <Button

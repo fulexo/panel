@@ -136,7 +136,7 @@ export default function Sidebar({ isOpen, onClose, isDesktopCollapsed = false, o
                 href={item.href}
                 className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors group ${
                   isActive(item.href)
-                    ? 'bg-primary text-primary-foreground'
+                    ? 'bg-foreground text-background'
                     : 'hover:bg-accent text-muted-foreground hover:text-foreground'
                 } ${isDesktopCollapsed ? 'lg:justify-center lg:px-2' : ''}`}
                 onClick={() => onClose()}
@@ -169,12 +169,12 @@ export default function Sidebar({ isOpen, onClose, isDesktopCollapsed = false, o
         fixed top-0 left-0 h-full bg-card border-r border-border z-50 transform transition-all duration-300 ease-in-out
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
         lg:translate-x-0 lg:fixed lg:z-40
-        ${isDesktopCollapsed ? 'lg:w-16' : 'lg:w-80'}
-        w-80
+        ${isDesktopCollapsed ? 'lg:w-16' : 'lg:w-56'}
+        w-64
       `}>
         <div className="flex flex-col h-full">
           {/* Header */}
-          <div className={`p-6 border-b border-border ${isDesktopCollapsed ? 'lg:p-4' : ''}`}>
+          <div className={`p-4 border-b border-border ${isDesktopCollapsed ? 'lg:p-4' : ''}`}>
             <div className="flex items-center justify-between">
               {!isDesktopCollapsed && (
                 <Link href="/dashboard" className="font-bold text-2xl text-foreground">

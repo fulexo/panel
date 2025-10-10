@@ -215,7 +215,7 @@ export function FileUpload({
         className={`
           border-2 border-dashed rounded-lg p-8 text-center transition-colors
           ${isDragOver
-            ? 'border-blue-500 bg-blue-50'
+            ? 'border-border bg-accent/10'
             : 'border-gray-300 hover:border-gray-400'
           }
         `}
@@ -233,7 +233,7 @@ export function FileUpload({
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="text-blue-600 hover:text-blue-500 font-medium"
+              className="text-foreground hover:text-muted-foreground font-medium"
             >
               dosya seçin
             </button>
@@ -272,10 +272,10 @@ export function FileUpload({
                       </span>
                     )}
                     {upload.status === 'completed' && (
-                      <Check className="h-4 w-4 text-green-500" />
+                      <Check className="h-4 w-4 text-foreground" />
                     )}
                     {upload.status === 'error' && (
-                      <AlertCircle className="h-4 w-4 text-red-500" />
+                      <AlertCircle className="h-4 w-4 text-foreground" />
                     )}
                     <Button
                       variant="ghost"
@@ -299,7 +299,7 @@ export function FileUpload({
                 )}
                 
                 {upload.status === 'completed' && (
-                  <p className="text-xs text-green-600 mt-1">
+                  <p className="text-xs text-foreground mt-1">
                     Yükleme tamamlandı
                   </p>
                 )}

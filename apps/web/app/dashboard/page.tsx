@@ -48,7 +48,7 @@ export default function DashboardPage() {
   
   const { data: stores, isLoading: storesLoading } = useStores() as { data: { data: Array<{ id: string; name: string; status: string; url: string }> } | undefined; isLoading: boolean; error: unknown };
 
-  if (statsLoading || ordersLoading || (adminView && storesLoading)) {
+  if (statsLoading || ordersLoading || storesLoading) {
     return (
       <ProtectedRoute>
         <div className="min-h-screen bg-background flex items-center justify-center">
@@ -66,44 +66,22 @@ export default function DashboardPage() {
       <ProtectedRoute>
         <div className="min-h-screen bg-background flex items-center justify-center">
           <div className="flex flex-col items-center gap-4 max-w-md mx-auto p-6">
-            <div className="p-3 bg-red-100 dark:bg-red-900/30 rounded-full">
-              <AlertTriangle className="h-8 w-8 text-red-600" />
+            <div className="p-3 bg-accent rounded-full">
+              <AlertTriangle className="h-8 w-8 text-foreground" />
             </div>
             <div className="text-center">
-              <div className="text-red-500 text-lg font-semibold mb-2">Dashboard Error</div>
+              <div className="text-foreground text-lg font-semibold mb-2">Dashboard Error</div>
               <div className="text-muted-foreground text-sm mb-4">
                 {statsError instanceof ApiError ? statsError.message : 'Failed to load dashboard data'}
               </div>
               <div className="text-xs text-muted-foreground mb-6">
                 {statsError instanceof ApiError && statsError.message.includes('token') ? 
-                  'Authentication token missing. Please login again.' :
                   'This usually happens when your session has expired or the API server is not responding.'
+                  : 'Please try refreshing the page or contact support if the problem persists.'
                 }
               </div>
-              <div className="text-xs bg-muted/20 p-3 rounded-lg mb-6">
-                <strong>Debug Info:</strong><br/>
-                User: {user ? `${user.email} (${user.role})` : 'Not logged in'}<br/>
-                Error: {statsError instanceof ApiError ? `${statsError.status} - ${statsError.message}` : 'Unknown error'}
-              </div>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-3 w-full">
-              <Button 
-                onClick={() => window.location.reload()} 
-                variant="default"
-                className="flex-1"
-              >
-                Retry Dashboard
-              </Button>
-              <Button 
-                onClick={() => {
-                  sessionStorage.clear();
-                  localStorage.clear();
-                  window.location.href = '/login';
-                }} 
-                variant="outline"
-                className="flex-1"
-              >
-                Re-login
+              <Button onClick={() => window.location.reload()} variant="outline">
+                Try Again
               </Button>
             </div>
           </div>
@@ -119,7 +97,7 @@ export default function DashboardPage() {
       value: stats?.totalOrders?.toLocaleString() ?? "0",
       context: adminView ? "Across all stores" : "This month",
       icon: ShoppingCart,
-      tone: "blue" as const,
+      tone: "default" as const,
     },
     {
       key: "products",
@@ -127,7 +105,7 @@ export default function DashboardPage() {
       value: stats?.totalProducts?.toLocaleString() ?? "0",
       context: adminView ? "Total products" : "In your store",
       icon: Package,
-      tone: "green" as const,
+      tone: "default" as const,
     },
     {
       key: "customers",
@@ -135,7 +113,7 @@ export default function DashboardPage() {
       value: stats?.totalCustomers?.toLocaleString() ?? "0",
       context: adminView ? "Panel users" : "Store customers",
       icon: Users,
-      tone: "purple" as const,
+      tone: "default" as const,
     },
     {
       key: "revenue",
@@ -143,47 +121,9 @@ export default function DashboardPage() {
       value: formatCurrency(stats?.totalRevenue ?? 0),
       context: adminView ? "Total revenue" : "This month",
       icon: TrendingUp,
-      tone: "emerald" as const,
+      tone: "default" as const,
     },
   ];
-
-  type QuickActionTone =
-    | "blue"
-    | "green"
-    | "purple"
-    | "orange"
-    | "indigo"
-    | "teal"
-    | "amber"
-    | "rose"
-    | "slate"
-    | "cyan";
-
-  const quickActionToneClasses: Record<QuickActionTone, string> = {
-    blue: "border-blue-200/70 bg-blue-50 dark:border-blue-800/60 dark:bg-blue-900/25",
-    green: "border-green-200/70 bg-green-50 dark:border-green-800/60 dark:bg-green-900/25",
-    purple: "border-purple-200/70 bg-purple-50 dark:border-purple-800/60 dark:bg-purple-900/25",
-    orange: "border-orange-200/70 bg-orange-50 dark:border-orange-800/60 dark:bg-orange-900/25",
-    indigo: "border-indigo-200/70 bg-indigo-50 dark:border-indigo-800/60 dark:bg-indigo-900/25",
-    teal: "border-teal-200/70 bg-teal-50 dark:border-teal-800/60 dark:bg-teal-900/25",
-    amber: "border-amber-200/70 bg-amber-50 dark:border-amber-800/60 dark:bg-amber-900/25",
-    rose: "border-rose-200/70 bg-rose-50 dark:border-rose-800/60 dark:bg-rose-900/25",
-    slate: "border-slate-200/70 bg-slate-50 dark:border-slate-700/60 dark:bg-slate-900/30",
-    cyan: "border-cyan-200/70 bg-cyan-50 dark:border-cyan-800/60 dark:bg-cyan-900/25",
-  };
-
-  const quickActionIconClasses: Record<QuickActionTone, string> = {
-    blue: "bg-blue-600",
-    green: "bg-green-600",
-    purple: "bg-purple-600",
-    orange: "bg-orange-500",
-    indigo: "bg-indigo-600",
-    teal: "bg-teal-600",
-    amber: "bg-amber-500",
-    rose: "bg-rose-600",
-    slate: "bg-slate-600",
-    cyan: "bg-cyan-600",
-  };
 
   const quickActions = [
     {
@@ -192,7 +132,6 @@ export default function DashboardPage() {
       description: "Manage orders & shipping",
       href: "/orders",
       icon: ShoppingCart,
-      tone: "blue" as QuickActionTone,
       adminOnly: false,
     },
     {
@@ -201,7 +140,6 @@ export default function DashboardPage() {
       description: "Manage product catalog",
       href: "/products",
       icon: Package,
-      tone: "green" as QuickActionTone,
       adminOnly: false,
     },
     {
@@ -210,7 +148,6 @@ export default function DashboardPage() {
       description: "Manage panel users",
       href: "/customers",
       icon: Users,
-      tone: "purple" as QuickActionTone,
       adminOnly: false,
     },
     {
@@ -219,7 +156,6 @@ export default function DashboardPage() {
       description: "Stock management",
       href: "/inventory",
       icon: BarChart3,
-      tone: "orange" as QuickActionTone,
       adminOnly: false,
     },
     {
@@ -228,7 +164,6 @@ export default function DashboardPage() {
       description: "Manage customer stores",
       href: "/stores",
       icon: Building,
-      tone: "indigo" as QuickActionTone,
       adminOnly: true,
     },
     {
@@ -237,7 +172,6 @@ export default function DashboardPage() {
       description: "Logistics & delivery",
       href: "/shipping",
       icon: Truck,
-      tone: "teal" as QuickActionTone,
       adminOnly: true,
     },
     {
@@ -246,7 +180,6 @@ export default function DashboardPage() {
       description: "Review pending orders",
       href: "/orders/approvals",
       icon: Clock,
-      tone: "amber" as QuickActionTone,
       adminOnly: true,
     },
     {
@@ -255,7 +188,6 @@ export default function DashboardPage() {
       description: "Review stock requests",
       href: "/inventory/approvals",
       icon: CheckCircle,
-      tone: "rose" as QuickActionTone,
       adminOnly: true,
     },
     {
@@ -264,7 +196,6 @@ export default function DashboardPage() {
       description: "Help & tickets",
       href: "/support",
       icon: ClipboardList,
-      tone: "slate" as QuickActionTone,
       adminOnly: false,
     },
     {
@@ -273,31 +204,27 @@ export default function DashboardPage() {
       description: "Analytics & insights",
       href: "/reports",
       icon: BarChart3,
-      tone: "cyan" as QuickActionTone,
       adminOnly: false,
     },
   ];
-
-  const visibleQuickActions = quickActions.filter((action) =>
-    action.adminOnly ? adminView : true
-  );
 
   return (
     <ProtectedRoute>
       <div className="bg-background">
         <main className="mobile-container py-6 space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
+          {/* Header */}
+          <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
             <div className="space-y-1">
               <h1 className="mobile-heading text-foreground flex items-center gap-3">
-                <BarChart3 className="h-8 w-8 text-blue-600 dark:text-primary" />
+                <BarChart3 className="h-8 w-8 text-foreground" />
                 Dashboard
               </h1>
-              <p className="text-gray-700 dark:text-gray-400 mobile-text font-medium">
-                {adminView ? 'Overview of all stores and operations' : 'Your store overview and statistics'}
+              <p className="text-muted-foreground mobile-text">
+                {adminView ? "Overview of all stores and activities" : "Your store overview and quick actions"}
               </p>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              <Button asChild variant="default" className="flex flex-col items-center justify-center gap-1 shadow-lg hover:shadow-xl transition-all duration-200 w-full h-16">
+            <div className="grid grid-cols-3 gap-3">
+              <Button asChild variant="outline" className="flex flex-col items-center justify-center gap-1 shadow-lg hover:shadow-xl transition-all duration-200 w-full h-16">
                 <Link href="/orders/create">
                   <Plus className="h-5 w-5" />
                   <span className="text-xs font-medium leading-tight">Create Order</span>
@@ -338,7 +265,7 @@ export default function DashboardPage() {
               actions={
                 <Link
                   href="/orders"
-                  className="text-sm font-semibold text-primary transition-colors hover:text-primary/80"
+                  className="text-sm font-semibold text-foreground transition-colors hover:text-muted-foreground"
                 >
                   View all
                 </Link>
@@ -352,7 +279,7 @@ export default function DashboardPage() {
                       className="flex items-center justify-between rounded-lg border border-border/60 bg-accent/10 p-4 transition-colors hover:bg-accent/20"
                     >
                       <div className="flex items-center gap-3">
-                        <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                        <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-foreground text-background">
                           <ShoppingCart className="h-4 w-4" aria-hidden="true" />
                         </span>
                         <div>
@@ -366,16 +293,7 @@ export default function DashboardPage() {
                         <div className="font-semibold text-foreground">
                           {formatCurrency(order.total)}
                         </div>
-                        <span
-                          className={cn(
-                            "text-sm font-medium",
-                            order.status === "completed"
-                              ? "text-emerald-700 dark:text-emerald-300"
-                              : order.status === "processing"
-                              ? "text-amber-600 dark:text-amber-300"
-                              : "text-muted-foreground"
-                          )}
-                        >
+                        <span className="text-sm font-medium text-muted-foreground">
                           {order.status}
                         </span>
                       </div>
@@ -395,7 +313,7 @@ export default function DashboardPage() {
               actions={
                 <Link
                   href="/inventory"
-                  className="text-sm font-semibold text-primary transition-colors hover:text-primary/80"
+                  className="text-sm font-semibold text-foreground transition-colors hover:text-muted-foreground"
                 >
                   Manage inventory
                 </Link>
@@ -409,20 +327,10 @@ export default function DashboardPage() {
                     return (
                       <div
                         key={product.id}
-                        className={cn(
-                          "flex items-center justify-between rounded-lg border p-4 transition-colors",
-                          critical
-                            ? "border-red-300/70 bg-red-500/10 dark:border-red-800/60 dark:bg-red-900/20"
-                            : "border-amber-300/70 bg-amber-500/10 dark:border-amber-800/60 dark:bg-amber-900/20"
-                        )}
+                        className="flex items-center justify-between rounded-lg border border-border bg-accent/10 p-4 transition-colors hover:bg-accent/20"
                       >
                         <div className="flex items-center gap-3">
-                          <span
-                            className={cn(
-                              "inline-flex h-9 w-9 items-center justify-center rounded-lg text-white",
-                              critical ? "bg-red-600" : "bg-amber-500"
-                            )}
-                          >
+                          <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-foreground text-background">
                             <Package className="h-4 w-4" aria-hidden="true" />
                           </span>
                           <div>
@@ -432,14 +340,7 @@ export default function DashboardPage() {
                         </div>
                         <div className="text-right">
                           <div className="font-semibold text-foreground">{product.stock} left</div>
-                          <span
-                            className={cn(
-                              "text-sm font-medium",
-                              critical
-                                ? "text-red-700 dark:text-red-300"
-                                : "text-amber-700 dark:text-amber-300"
-                            )}
-                          >
+                          <span className="text-sm font-medium text-muted-foreground">
                             {critical ? "Critical" : "Warning"}
                           </span>
                         </div>
@@ -457,83 +358,92 @@ export default function DashboardPage() {
 
           {/* Quick Actions */}
           <SectionShell
-            title={
-              <span className="flex items-center gap-2 text-lg font-semibold text-foreground">
-                <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                  <TrendingUp className="h-5 w-5" aria-hidden="true" />
-                </span>
-                Quick Actions
-              </span>
-            }
-            description="Frequently used features and shortcuts"
+            title="Quick Actions"
+            description="Common tasks and navigation"
           >
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-              {visibleQuickActions.map((action) => {
-                const Icon = action.icon;
-                return (
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+              {quickActions
+                .filter(action => adminView || !action.adminOnly)
+                .map((action) => (
                   <Link
                     key={action.key}
                     href={action.href}
-                    className={cn(
-                      "group flex min-h-[120px] flex-col justify-center rounded-xl border p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
-                      quickActionToneClasses[action.tone]
-                    )}
+                    className="group flex min-h-[120px] flex-col justify-center rounded-xl border border-border bg-card p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
-                    <div className="mb-3 flex items-center gap-3">
-                      <span
-                        className={cn(
-                          "inline-flex h-10 w-10 items-center justify-center rounded-lg text-white shadow-sm",
-                          quickActionIconClasses[action.tone]
-                        )}
-                      >
-                        <Icon className="h-5 w-5" aria-hidden="true" />
+                    <div className="flex flex-col items-center gap-3 text-center">
+                      <span className="inline-flex h-12 w-12 items-center justify-center rounded-lg bg-foreground text-background">
+                        <action.icon className="h-6 w-6" aria-hidden="true" />
                       </span>
-                      <div className="font-semibold text-card-foreground">{action.label}</div>
+                      <div>
+                        <div className="font-semibold text-foreground group-hover:text-muted-foreground">
+                          {action.label}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {action.description}
+                        </div>
+                      </div>
                     </div>
-                    <p className="text-sm font-medium text-card-foreground/80">{action.description}</p>
                   </Link>
-                );
-              })}
+                ))}
             </div>
           </SectionShell>
 
-          {/* Calendar Widget */}
-          <CalendarWidget />
+          {/* Stores Overview and Calendar (Admin Only) */}
+          {adminView && stores?.data && stores.data.length > 0 && (
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+              <SectionShell
+                title="Stores Overview"
+                description="Connected stores status"
+                actions={
+                  <Link
+                    href="/stores"
+                    className="text-sm font-semibold text-foreground transition-colors hover:text-muted-foreground"
+                  >
+                    Manage stores
+                  </Link>
+                }
+              >
+                <div className="space-y-3">
+                  {stores.data.slice(0, 5).map((store: { id: string; name: string; status: string; url: string }) => (
+                    <div
+                      key={store.id}
+                      className="flex items-center justify-between rounded-lg border border-border bg-accent/10 p-4 transition-colors hover:bg-accent/20"
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-foreground text-background">
+                          <Building className="h-4 w-4" aria-hidden="true" />
+                        </span>
+                        <div>
+                          <div className="font-semibold text-foreground">{store.name}</div>
+                          <div className="text-sm text-muted-foreground">{store.url}</div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-accent text-foreground">
+                          {store.status}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </SectionShell>
 
-          {adminView && stores?.data && (
+              <SectionShell
+                title="Calendar"
+                description="Upcoming events and deadlines"
+              >
+                <CalendarWidget />
+              </SectionShell>
+            </div>
+          )}
+
+          {/* Calendar Widget (Customer Only) */}
+          {!adminView && (
             <SectionShell
-              title="Store Overview"
-              description="Monitor all connected customer stores"
+              title="Calendar"
+              description="Upcoming events and deadlines"
             >
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {stores.data.map((store: { id: string; name: string; status: string; url: string; _count?: { orders: number } }) => (
-                  <div key={store.id} className="p-4 bg-gradient-to-br from-accent/20 to-accent/10 rounded-xl border border-border hover:shadow-md transition-all duration-200">
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className={`p-2 rounded-lg ${
-                        store.status === 'connected' ? 'bg-green-500' : 'bg-red-500'
-                      }`}>
-                        <Building className="h-4 w-4 text-white" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="font-semibold text-foreground truncate">{store.name}</div>
-                        <div className="text-xs text-muted-foreground truncate">{store.url}</div>
-                      </div>
-                    </div>
-                    <div className="flex justify-between items-center">
-                    <div className="text-sm text-foreground/80 font-medium">
-                      {store._count?.orders || 0} orders
-                    </div>
-                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                        store.status === 'connected' ? 
-                          'bg-green-100 text-gray-900 dark:bg-green-900/30 dark:text-green-300' : 
-                          'bg-red-100 text-gray-900 dark:bg-red-900/30 dark:text-red-300'
-                      }`}>
-                        {store.status}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <CalendarWidget />
             </SectionShell>
           )}
         </main>

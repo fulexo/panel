@@ -9,13 +9,13 @@ import { Order } from '@/types/api';
 
 const getStatusColor = (status: string) => {
   switch (status) {
-    case 'pending': return 'bg-yellow-100 text-yellow-800';
-    case 'processing': return 'bg-blue-100 text-blue-800';
-    case 'shipped': return 'bg-purple-100 text-purple-800';
-    case 'delivered': return 'bg-green-100 text-green-800';
-    case 'cancelled': return 'bg-red-100 text-red-800';
-    case 'refunded': return 'bg-gray-100 text-gray-800';
-    default: return 'bg-gray-100 text-gray-800';
+    case 'pending': return 'bg-accent/10 text-foreground';
+    case 'processing': return 'bg-accent/10 text-foreground';
+    case 'shipped': return 'bg-accent/10 text-foreground';
+    case 'delivered': return 'bg-accent/10 text-foreground';
+    case 'cancelled': return 'bg-accent/10 text-foreground';
+    case 'refunded': return 'bg-accent/10 text-foreground';
+    default: return 'bg-accent/10 text-foreground';
   }
 };
 
@@ -153,7 +153,7 @@ export function OrdersTable({
                 variant="outline"
                 size="sm"
                 onClick={() => onDelete(order)}
-                className="text-destructive hover:text-destructive"
+                className="text-foreground hover:text-muted-foreground"
               >
                 Delete
               </Button>

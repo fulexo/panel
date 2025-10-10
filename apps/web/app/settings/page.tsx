@@ -93,11 +93,11 @@ export default function SettingsPage() {
                       <Button
                         key={tab.id}
                         onClick={() => setActiveTab(tab.id)}
-                        variant={activeTab === tab.id ? "default" : "ghost"}
+                        variant={activeTab === tab.id ? "outline" : "ghost"}
                         className={cn(
                           "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors justify-start",
                           activeTab === tab.id
-                            ? "bg-primary text-primary-foreground"
+                            ? "bg-background text-foreground"
                             : "hover:bg-accent text-foreground"
                         )}
                       >
@@ -225,7 +225,7 @@ export default function SettingsPage() {
                     <div className="flex gap-2">
                       <Button
                         onClick={() => handleSave("general")}
-                        variant="default"
+                        variant="outline"
                       >
                         Kaydet
                       </Button>
@@ -256,7 +256,7 @@ export default function SettingsPage() {
                           />
                           <span>2FA'yı etkinleştir</span>
                           {settings.security.twoFactorAuth && (
-                            <span className="text-green-600 text-sm">✓ Etkin</span>
+                            <span className="text-foreground text-sm">✓ Etkin</span>
                           )}
                         </div>
                       </div>
@@ -318,7 +318,7 @@ export default function SettingsPage() {
                     <div className="flex gap-2">
                       <Button
                         onClick={() => handleSave("security")}
-                        variant="default"
+                        variant="outline"
                       >
                         Kaydet
                       </Button>
@@ -457,7 +457,7 @@ export default function SettingsPage() {
                     <div className="flex gap-2">
                       <Button
                         onClick={() => handleSave("integrations")}
-                        variant="default"
+                        variant="outline"
                       >
                         Kaydet
                       </Button>
@@ -533,7 +533,7 @@ export default function SettingsPage() {
                     <div className="flex gap-2">
                       <Button
                         onClick={() => handleSave("appearance")}
-                        variant="default"
+                        variant="outline"
                       >
                         Kaydet
                       </Button>

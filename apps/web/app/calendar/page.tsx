@@ -6,14 +6,16 @@ import { useRBAC } from '@/hooks/useRBAC';
 import { useCalendarEvents, useCreateCalendarEvent, useUpdateCalendarEvent, useDeleteCalendarEvent, useBusinessHours, useSetBusinessHours, useHolidays, useCreateHoliday } from '@/hooks/useCalendar';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Edit, Trash2, Clock, MapPin, CalendarDays } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Plus, Edit, Trash2, Clock, MapPin, CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths } from 'date-fns';
 import { tr } from 'date-fns/locale';
-import EventModal from '@/components/EventModal';
-import { BusinessHoursModal } from '@/components/BusinessHoursModal';
-import HolidayModal from '@/components/HolidayModal';
 import { PageHeader } from '@/components/PageHeader';
 import { cn } from '@/lib/utils';
 
@@ -27,17 +29,15 @@ interface CalendarEvent {
   allDay?: boolean;
 }
 
-
-
 const eventTypes = {
-  general: { label: 'Genel', tone: 'bg-primary/15 text-primary' },
-  meeting: { label: 'Toplantı', tone: 'bg-[hsl(var(--info))]/15 text-[hsl(var(--info))]' },
-  holiday: { label: 'Tatil', tone: 'bg-destructive/15 text-destructive' },
-  maintenance: { label: 'Bakım', tone: 'bg-[hsl(var(--warning))]/15 text-[hsl(var(--warning))]' },
+  general: { label: 'Genel', tone: 'bg-accent/10 text-foreground' },
+  meeting: { label: 'Toplantı', tone: 'bg-accent/10 text-foreground' },
+  holiday: { label: 'Tatil', tone: 'bg-accent/10 text-foreground' },
+  maintenance: { label: 'Bakım', tone: 'bg-accent/10 text-foreground' },
   closed: { label: 'Kapalı', tone: 'bg-muted text-muted-foreground' },
 };
 
-const weekdays = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
+const weekdays = ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt'];
 
 export default function CalendarPage() {
   useAuth();
@@ -49,6 +49,16 @@ export default function CalendarPage() {
   const [showBusinessHoursModal, setShowBusinessHoursModal] = useState(false);
   const [showHolidayModal, setShowHolidayModal] = useState(false);
   const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
+
+  // Event form state
+  const [eventForm, setEventForm] = useState({
+    title: '',
+    description: '',
+    type: 'general',
+    startAt: '',
+    endAt: '',
+    allDay: false,
+  });
 
   // Load data using hooks
   const from = startOfMonth(currentDate).toISOString();
@@ -101,7 +111,7 @@ export default function CalendarPage() {
     return (
       <div className="grid grid-cols-7 gap-1">
         {weekdays.map(day => (
-          <div key={day} className="p-2 text-center text-sm font-medium text-muted-foreground">
+          <div key={day} className="p-2 text-center text-xs sm:text-sm font-medium text-muted-foreground">
             {day}
           </div>
         ))}
@@ -119,37 +129,41 @@ export default function CalendarPage() {
               type="button"
               onClick={() => setSelectedDate(day)}
               className={cn(
-                'group flex min-h-[110px] flex-col rounded-xl border border-border/70 p-3 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+                'group flex min-h-[60px] sm:min-h-[80px] flex-col rounded-lg border border-border/70 p-1 sm:p-2 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
                 !isCurrentMonth && 'bg-muted/40 text-muted-foreground',
-                isToday && 'border-primary bg-primary/10 text-primary',
-                !isWorking && 'border-destructive/40 bg-destructive/5',
+                isToday && 'border-border bg-accent/10 text-foreground',
+                !isWorking && 'border-border/40 bg-accent/5',
                 isSelected && 'ring-2 ring-offset-2 ring-ring',
-                'hover:border-primary hover:bg-primary/10'
+                'hover:border-border hover:bg-accent/10'
               )}
             >
-              <div className="mb-2 flex items-start justify-between">
-                <span className={cn('text-sm font-semibold', isToday && 'text-primary')}>{format(day, 'd')}</span>
+              <div className="mb-1 flex items-start justify-between">
+                <span className={cn('text-xs sm:text-sm font-semibold', isToday && 'text-foreground')}>
+                  {format(day, 'd')}
+                </span>
                 {holiday && (
-                  <Badge variant="destructive" className="text-[10px] uppercase tracking-wide">
+                  <Badge variant="outline" className="text-[8px] sm:text-[10px] uppercase tracking-wide">
                     Tatil
                   </Badge>
                 )}
               </div>
 
-              <div className="space-y-1">
-                {dayEvents.slice(0, 2).map((event: any) => (
+              <div className="space-y-0.5 flex-1">
+                {dayEvents.slice(0, 1).map((event: any) => (
                   <div
                     key={event.id}
                     className={cn(
-                      'line-clamp-2 rounded-md px-2 py-1 text-xs font-medium shadow-sm',
+                      'line-clamp-1 rounded px-1 py-0.5 text-[10px] sm:text-xs font-medium shadow-sm',
                       eventTypes[event.type as keyof typeof eventTypes]?.tone || 'bg-muted text-muted-foreground'
                     )}
                   >
                     {event.title}
                   </div>
                 ))}
-                {dayEvents.length > 2 && (
-                  <div className="text-xs text-muted-foreground">+{dayEvents.length - 2} daha</div>
+                {dayEvents.length > 1 && (
+                  <div className="text-[10px] sm:text-xs text-muted-foreground">
+                    +{dayEvents.length - 1}
+                  </div>
                 )}
               </div>
             </button>
@@ -161,11 +175,27 @@ export default function CalendarPage() {
 
   const handleCreateEvent = () => {
     setEditingEvent(null);
+    setEventForm({
+      title: '',
+      description: '',
+      type: 'general',
+      startAt: selectedDate ? format(selectedDate, 'yyyy-MM-dd') : '',
+      endAt: selectedDate ? format(selectedDate, 'yyyy-MM-dd') : '',
+      allDay: false,
+    });
     setShowEventModal(true);
   };
 
   const handleEditEvent = (event: CalendarEvent) => {
     setEditingEvent(event);
+    setEventForm({
+      title: event.title,
+      description: event.description || '',
+      type: event.type,
+      startAt: format(new Date(event.startAt), 'yyyy-MM-dd'),
+      endAt: format(new Date(event.endAt), 'yyyy-MM-dd'),
+      allDay: event.allDay || false,
+    });
     setShowEventModal(true);
   };
 
@@ -179,28 +209,30 @@ export default function CalendarPage() {
     }
   };
 
-  const handleSaveEvent = async (eventData: Omit<CalendarEvent, 'id'>) => {
+  const handleSaveEvent = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
     try {
       if (editingEvent) {
         await updateEventMutation.mutateAsync({
           id: editingEvent.id,
           data: {
-            title: eventData.title,
-            ...(eventData.description && { description: eventData.description }),
-            type: eventData.type,
-            startDate: eventData.startAt,
-            endDate: eventData.endAt,
-            ...(eventData.allDay !== undefined && { allDay: eventData.allDay }),
+            title: eventForm.title,
+            ...(eventForm.description && { description: eventForm.description }),
+            type: eventForm.type,
+            startDate: eventForm.startAt,
+            endDate: eventForm.endAt,
+            ...(eventForm.allDay !== undefined && { allDay: eventForm.allDay }),
           },
         });
       } else {
         await createEventMutation.mutateAsync({
-          title: eventData.title,
-          ...(eventData.description && { description: eventData.description }),
-          type: eventData.type,
-          startDate: eventData.startAt,
-          endDate: eventData.endAt,
-          ...(eventData.allDay !== undefined && { allDay: eventData.allDay }),
+          title: eventForm.title,
+          ...(eventForm.description && { description: eventForm.description }),
+          type: eventForm.type,
+          startDate: eventForm.startAt,
+          endDate: eventForm.endAt,
+          ...(eventForm.allDay !== undefined && { allDay: eventForm.allDay }),
         });
       }
       
@@ -235,7 +267,7 @@ export default function CalendarPage() {
         <main className="mobile-container py-6">
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-foreground mx-auto mb-4"></div>
               <p className="text-muted-foreground">Takvim yükleniyor...</p>
             </div>
           </div>
@@ -247,24 +279,28 @@ export default function CalendarPage() {
   return (
     <ProtectedRoute>
       <div className="min-h-screen bg-background">
-        <main className="mobile-container py-8 space-y-6">
+        <main className="mobile-container py-6 space-y-6">
           <PageHeader
             title="Takvim Yönetimi"
             description="Mağaza operasyonlarınızı, çalışma saatlerini ve özel günleri tek ekrandan planlayın."
             icon={CalendarDays}
             actions={
               <div className="flex flex-wrap items-center gap-2">
-                <Button variant="outline" size="sm" onClick={() => setCurrentDate(subMonths(currentDate, 1))}>
-                  ← Önceki
+                <Button variant="outline" size="sm" onClick={() => setCurrentDate(subMonths(currentDate, 1))} className="gap-1">
+                  <ChevronLeft className="h-4 w-4" />
+                  <span className="hidden sm:inline">Önceki</span>
                 </Button>
                 <Button variant="outline" size="sm" onClick={() => setCurrentDate(new Date())}>
                   Bugün
                 </Button>
-                <Button variant="outline" size="sm" onClick={() => setCurrentDate(addMonths(currentDate, 1))}>
-                  Sonraki →
+                <Button variant="outline" size="sm" onClick={() => setCurrentDate(addMonths(currentDate, 1))} className="gap-1">
+                  <span className="hidden sm:inline">Sonraki</span>
+                  <ChevronRight className="h-4 w-4" />
                 </Button>
                 <Button size="sm" onClick={handleCreateEvent} className="gap-2">
-                  <Plus className="h-4 w-4" /> Etkinlik Ekle
+                  <Plus className="h-4 w-4" />
+                  <span className="hidden sm:inline">Etkinlik Ekle</span>
+                  <span className="sm:hidden">Ekle</span>
                 </Button>
               </div>
             }
@@ -276,20 +312,21 @@ export default function CalendarPage() {
 
           {/* Calendar */}
           <Card>
-            <CardContent className="p-0">
+            <CardContent className="p-2 sm:p-4">
               {renderCalendar()}
             </CardContent>
           </Card>
 
           {/* Management Tools */}
           {isAdmin() && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Clock className="w-5 h-5" />
+                  <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                    <Clock className="w-4 h-4 sm:w-5 sm:h-5" />
                     Çalışma Saatleri
                   </CardTitle>
+                  <CardDescription>Haftalık çalışma saatlerini yönetin</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">
@@ -298,7 +335,7 @@ export default function CalendarPage() {
                         key={bh.id}
                         className="flex items-center justify-between rounded-lg border border-border/70 bg-muted/40 px-3 py-2"
                       >
-                        <span className="text-sm font-semibold text-foreground">{weekdays[bh.weekday]}</span>
+                        <span className="text-xs sm:text-sm font-semibold text-foreground">{weekdays[bh.weekday]}</span>
                         <span className="text-xs text-muted-foreground">
                           {bh.startTime} - {bh.endTime}
                         </span>
@@ -317,26 +354,27 @@ export default function CalendarPage() {
 
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <MapPin className="w-5 h-5" />
+                  <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                    <MapPin className="w-4 h-4 sm:w-5 sm:h-5" />
                     Resmi Tatiller
                   </CardTitle>
+                  <CardDescription>Resmi tatil günlerini yönetin</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">
                     {holidays.slice(0, 5).map((holiday: any) => (
                       <div
                         key={holiday.id}
-                        className="flex items-center justify-between rounded-lg border border-destructive/40 bg-destructive/5 px-3 py-2"
+                        className="flex items-center justify-between rounded-lg border border-border/40 bg-accent/5 px-3 py-2"
                       >
-                        <span className="text-sm font-semibold text-destructive">{holiday.name}</span>
+                        <span className="text-xs sm:text-sm font-semibold text-foreground">{holiday.name}</span>
                         <span className="text-xs text-muted-foreground">
                           {format(new Date(holiday.date), 'dd MMM', { locale: tr })}
                         </span>
                       </div>
                     ))}
                     {holidays.length > 5 && (
-                      <div className="text-sm text-muted-foreground text-center">
+                      <div className="text-xs sm:text-sm text-muted-foreground text-center">
                         +{holidays.length - 5} daha
                       </div>
                     )}
@@ -357,20 +395,20 @@ export default function CalendarPage() {
           {selectedDate && (
             <Card>
               <CardHeader>
-                <CardTitle>
+                <CardTitle className="text-base sm:text-lg">
                   {format(selectedDate, 'dd MMMM yyyy', { locale: tr })} Etkinlikleri
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-2">
+                <div className="space-y-3">
                   {getEventsForDate(selectedDate).map((event: any) => (
-                    <div key={event.id} className="flex items-center justify-between rounded-lg border border-border/70 bg-background/80 p-3">
+                    <div key={event.id} className="flex flex-col sm:flex-row sm:items-center justify-between rounded-lg border border-border/70 bg-background/80 p-3 gap-3">
                       <div className="flex-1">
-                        <h4 className="font-medium">{event.title}</h4>
+                        <h4 className="font-medium text-sm sm:text-base">{event.title}</h4>
                         {event.description && (
-                          <p className="text-sm text-muted-foreground">{event.description}</p>
+                          <p className="text-xs sm:text-sm text-muted-foreground mt-1">{event.description}</p>
                         )}
-                        <div className="flex items-center gap-2 mt-1">
+                        <div className="flex items-center gap-2 mt-2">
                           <Badge className={eventTypes[event.type as keyof typeof eventTypes]?.tone || 'bg-muted text-muted-foreground'}>
                             {eventTypes[event.type as keyof typeof eventTypes]?.label || event.type}
                           </Badge>
@@ -384,21 +422,25 @@ export default function CalendarPage() {
                           variant="outline"
                           size="sm"
                           onClick={() => handleEditEvent(event)}
+                          className="gap-1"
                         >
-                          <Edit className="w-4 h-4" />
+                          <Edit className="w-3 h-3 sm:w-4 sm:h-4" />
+                          <span className="hidden sm:inline">Düzenle</span>
                         </Button>
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={() => handleDeleteEvent(event.id)}
+                          className="gap-1"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
+                          <span className="hidden sm:inline">Sil</span>
                         </Button>
                       </div>
                     </div>
                   ))}
                   {getEventsForDate(selectedDate).length === 0 && (
-                    <p className="text-muted-foreground text-center py-4">
+                    <p className="text-muted-foreground text-center py-4 text-sm">
                       Bu tarihte etkinlik bulunmuyor
                     </p>
                   )}
@@ -407,30 +449,203 @@ export default function CalendarPage() {
             </Card>
           )}
 
-          {/* Modals */}
-          <EventModal
-            isOpen={showEventModal}
-            onClose={() => {
-              setShowEventModal(false);
-              setEditingEvent(null);
-            }}
-            onSave={handleSaveEvent}
-            event={editingEvent}
-            selectedDate={selectedDate}
-          />
+          {/* Event Modal */}
+          <Dialog open={showEventModal} onOpenChange={setShowEventModal}>
+            <DialogContent className="w-[95vw] max-w-md max-h-[90vh] overflow-y-auto mx-auto">
+              <DialogHeader>
+                <DialogTitle>{editingEvent ? 'Etkinlik Düzenle' : 'Yeni Etkinlik'}</DialogTitle>
+                <DialogDescription>
+                  {editingEvent ? 'Etkinlik bilgilerini güncelleyin' : 'Yeni bir etkinlik oluşturun'}
+                </DialogDescription>
+              </DialogHeader>
+              <form onSubmit={handleSaveEvent} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="title">Başlık *</Label>
+                  <Input
+                    id="title"
+                    value={eventForm.title}
+                    onChange={(e) => setEventForm(prev => ({ ...prev, title: e.target.value }))}
+                    placeholder="Etkinlik başlığı"
+                    required
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="description">Açıklama</Label>
+                  <Textarea
+                    id="description"
+                    value={eventForm.description}
+                    onChange={(e) => setEventForm(prev => ({ ...prev, description: e.target.value }))}
+                    placeholder="Etkinlik açıklaması"
+                    rows={3}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="type">Tür</Label>
+                  <Select value={eventForm.type} onValueChange={(value) => setEventForm(prev => ({ ...prev, type: value }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Etkinlik türü seçin" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(eventTypes).map(([key, type]) => (
+                        <SelectItem key={key} value={key}>
+                          {type.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="startAt">Başlangıç Tarihi *</Label>
+                    <Input
+                      id="startAt"
+                      type="date"
+                      value={eventForm.startAt}
+                      onChange={(e) => setEventForm(prev => ({ ...prev, startAt: e.target.value }))}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="endAt">Bitiş Tarihi *</Label>
+                    <Input
+                      id="endAt"
+                      type="date"
+                      value={eventForm.endAt}
+                      onChange={(e) => setEventForm(prev => ({ ...prev, endAt: e.target.value }))}
+                      required
+                    />
+                  </div>
+                </div>
+                
+                <div className="flex flex-col sm:flex-row gap-3 pt-4">
+                  <Button type="submit" className="flex-1 gap-2">
+                    <Plus className="h-4 w-4" />
+                    <span>{editingEvent ? 'Güncelle' : 'Oluştur'}</span>
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={() => setShowEventModal(false)}
+                    variant="outline"
+                    className="flex-1"
+                  >
+                    İptal
+                  </Button>
+                </div>
+              </form>
+            </DialogContent>
+          </Dialog>
 
-          <BusinessHoursModal
-            isOpen={showBusinessHoursModal}
-            onClose={() => setShowBusinessHoursModal(false)}
-            onSave={handleSaveBusinessHours}
-            currentHours={businessHours}
-          />
+          {/* Business Hours Modal */}
+          <Dialog open={showBusinessHoursModal} onOpenChange={setShowBusinessHoursModal}>
+            <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto mx-auto">
+              <DialogHeader>
+                <DialogTitle>Çalışma Saatleri</DialogTitle>
+                <DialogDescription>Haftalık çalışma saatlerini düzenleyin</DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                {weekdays.map((day, index) => {
+                  const businessHour = businessHours.find((bh: any) => bh.weekday === index);
+                  return (
+                    <div key={day} className="flex items-center justify-between p-3 border border-border rounded-lg">
+                      <span className="text-sm font-medium">{day}</span>
+                      <div className="flex items-center gap-2">
+                        <Input
+                          type="time"
+                          defaultValue={businessHour?.startTime || '09:00'}
+                          className="w-24"
+                        />
+                        <span className="text-muted-foreground">-</span>
+                        <Input
+                          type="time"
+                          defaultValue={businessHour?.endTime || '18:00'}
+                          className="w-24"
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="flex flex-col sm:flex-row gap-3 pt-4">
+                <Button onClick={() => setShowBusinessHoursModal(false)} className="flex-1">
+                  Kaydet
+                </Button>
+                <Button
+                  onClick={() => setShowBusinessHoursModal(false)}
+                  variant="outline"
+                  className="flex-1"
+                >
+                  İptal
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
 
-          <HolidayModal
-            isOpen={showHolidayModal}
-            onClose={() => setShowHolidayModal(false)}
-            onSave={handleSaveHoliday}
-          />
+          {/* Holiday Modal */}
+          <Dialog open={showHolidayModal} onOpenChange={setShowHolidayModal}>
+            <DialogContent className="w-[95vw] max-w-md max-h-[90vh] overflow-y-auto mx-auto">
+              <DialogHeader>
+                <DialogTitle>Yeni Tatil</DialogTitle>
+                <DialogDescription>Resmi tatil günü ekleyin</DialogDescription>
+              </DialogHeader>
+              <form onSubmit={(e) => {
+                e.preventDefault();
+                const formData = new FormData(e.currentTarget);
+                handleSaveHoliday({
+                  name: formData.get('name') as string,
+                  date: formData.get('date') as string,
+                  description: formData.get('description') as string,
+                });
+              }} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="holidayName">Tatil Adı *</Label>
+                  <Input
+                    id="holidayName"
+                    name="name"
+                    placeholder="Tatil adı"
+                    required
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="holidayDate">Tarih *</Label>
+                  <Input
+                    id="holidayDate"
+                    name="date"
+                    type="date"
+                    required
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="holidayDescription">Açıklama</Label>
+                  <Textarea
+                    id="holidayDescription"
+                    name="description"
+                    placeholder="Tatil açıklaması"
+                    rows={3}
+                  />
+                </div>
+                
+                <div className="flex flex-col sm:flex-row gap-3 pt-4">
+                  <Button type="submit" className="flex-1 gap-2">
+                    <Plus className="h-4 w-4" />
+                    <span>Ekle</span>
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={() => setShowHolidayModal(false)}
+                    variant="outline"
+                    className="flex-1"
+                  >
+                    İptal
+                  </Button>
+                </div>
+              </form>
+            </DialogContent>
+          </Dialog>
         </main>
       </div>
     </ProtectedRoute>

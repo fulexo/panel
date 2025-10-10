@@ -209,13 +209,13 @@ export function NotificationToast({ notification }: { notification: Notification
   const getColorClasses = () => {
     switch (notification.type) {
       case 'success':
-        return 'bg-green-500/10 border-green-500/20 text-green-500';
+        return 'bg-accent/10 border-border text-foreground';
       case 'error':
-        return 'bg-red-500/10 border-red-500/20 text-red-500';
+        return 'bg-accent/10 border-border text-foreground';
       case 'warning':
-        return 'bg-yellow-500/10 border-yellow-500/20 text-yellow-500';
+        return 'bg-accent/10 border-border text-foreground';
       case 'info':
-        return 'bg-blue-500/10 border-blue-500/20 text-blue-500';
+        return 'bg-accent/10 border-border text-foreground';
       default:
         return 'bg-gray-500/10 border-gray-500/20 text-gray-500';
     }

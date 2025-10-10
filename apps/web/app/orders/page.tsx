@@ -112,10 +112,10 @@ export default function OrdersPage() {
   }, [orders]);
 
   const statusMeta = useMemo((): Record<string, { label: string; tone: StatusTone; icon: typeof ShoppingCart }> => ({
-    pending: { label: "Pending", tone: "warning" as const, icon: Clock },
-    processing: { label: "Processing", tone: "info" as const, icon: RefreshCw },
-    completed: { label: "Completed", tone: "success" as const, icon: CheckCircle },
-    cancelled: { label: "Cancelled", tone: "destructive" as const, icon: Ban },
+    pending: { label: "Pending", tone: "default" as const, icon: Clock },
+    processing: { label: "Processing", tone: "default" as const, icon: RefreshCw },
+    completed: { label: "Completed", tone: "default" as const, icon: CheckCircle },
+    cancelled: { label: "Cancelled", tone: "default" as const, icon: Ban },
   }), []);
 
   const orderSummaryCards = useMemo(() => {
@@ -131,12 +131,12 @@ export default function OrdersPage() {
           icon: meta.icon,
           tone:
             statusKey === "completed"
-              ? ("emerald" as const)
+              ? ("default" as const)
               : statusKey === "cancelled"
-              ? ("destructive" as const)
+              ? ("default" as const)
               : statusKey === "processing"
-              ? ("blue" as const)
-              : ("warning" as const),
+              ? ("default" as const)
+              : ("default" as const),
         };
       })
       .filter((card): card is NonNullable<typeof card> => card !== null);
@@ -148,7 +148,7 @@ export default function OrdersPage() {
         value: totalOrders.toLocaleString(),
         context: adminView ? "Across all stores" : "Your store",
         icon: ShoppingCart,
-        tone: "blue" as const,
+        tone: "default" as const,
       },
       ...statusCards,
     ];
@@ -162,7 +162,7 @@ export default function OrdersPage() {
       label: "Create Order",
       href: "/orders/create",
       icon: Plus,
-      variant: "default" as const,
+      variant: "outline" as const,
       permission: "orders.manage",
     },
     {
@@ -170,7 +170,7 @@ export default function OrdersPage() {
       label: "Approvals",
       href: "/orders/approvals",
       icon: Clock,
-      variant: "warning" as const,
+      variant: "outline" as const,
       permission: "orders.approve",
     },
     {
@@ -194,7 +194,7 @@ export default function OrdersPage() {
       label: "Inv. Approvals",
       href: "/inventory/approvals",
       icon: CheckCircle,
-      variant: "warning" as const,
+      variant: "outline" as const,
       permission: "inventory.approve",
     },
   ], []);
@@ -206,7 +206,7 @@ export default function OrdersPage() {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
             <div className="space-y-1">
               <h1 className="mobile-heading text-foreground flex items-center gap-3">
-                <ShoppingCart className="h-8 w-8 text-primary" />
+                <ShoppingCart className="h-8 w-8 text-foreground" />
                 Orders
               </h1>
               <p className="text-muted-foreground mobile-text">
@@ -270,7 +270,7 @@ export default function OrdersPage() {
                     setStatusFilter(e.target.value);
                     setPage(1);
                   }}
-                  className="h-11 w-full appearance-none rounded-md border border-border bg-background pl-10 pr-8 text-sm text-foreground transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  className="h-11 w-full appearance-none rounded-md border border-border bg-background pl-10 pr-8 text-sm text-foreground transition-colors focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20"
                   aria-label="Filter by order status"
                 >
                   <option value="">All Statuses</option>
@@ -289,7 +289,7 @@ export default function OrdersPage() {
                       setStoreFilter(e.target.value);
                       setPage(1);
                     }}
-                    className="h-11 w-full appearance-none rounded-md border border-border bg-background pl-10 pr-8 text-sm text-foreground transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                    className="h-11 w-full appearance-none rounded-md border border-border bg-background pl-10 pr-8 text-sm text-foreground transition-colors focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20"
                     aria-label="Filter by store"
                   >
                     <option value="">All Stores ({stores.length})</option>
@@ -392,14 +392,14 @@ export default function OrdersPage() {
               <table className="w-full min-w-[600px]">
                 <thead>
                   <tr className="border-b border-border bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
-                    <th className="p-3 text-left">Order #</th>
-                    <th className="p-3 text-left">Customer</th>
-                    <th className="p-3 text-left">Status</th>
-                    <th className="p-3 text-left">Total</th>
-                    <th className="p-3 text-left">Date</th>
+                    <th className="px-6 py-3 text-left">Order #</th>
+                    <th className="px-6 py-3 text-left">Customer</th>
+                    <th className="px-6 py-3 text-center">Status</th>
+                    <th className="px-6 py-3 text-right">Total</th>
+                    <th className="px-6 py-3 text-center">Date</th>
                     {adminView && (
                       <ProtectedComponent permission="orders.manage">
-                        <th className="p-3 text-left">Actions</th>
+                        <th className="px-6 py-3 text-center">Actions</th>
                       </ProtectedComponent>
                     )}
                   </tr>
@@ -416,21 +416,21 @@ export default function OrdersPage() {
 
                     return (
                       <tr key={order.id} className="border-b border-border/60 last:border-b-0">
-                        <td className="p-3 text-sm font-medium text-foreground">#{order.orderNumber}</td>
-                        <td className="p-3 text-sm text-foreground/80">{customerName}</td>
-                        <td className="p-3 text-sm">
+                        <td className="px-6 py-4 text-sm font-medium text-foreground">#{order.orderNumber}</td>
+                        <td className="px-6 py-4 text-sm text-foreground/80">{customerName}</td>
+                        <td className="px-6 py-4 text-sm text-center">
                           <StatusPill label={meta.label} tone={meta.tone} />
                         </td>
-                        <td className="p-3 text-sm font-semibold text-foreground">
+                        <td className="px-6 py-4 text-sm font-semibold text-foreground text-right">
                           {formatCurrency(order.total)}
                         </td>
-                        <td className="p-3 text-sm text-muted-foreground">
+                        <td className="px-6 py-4 text-sm text-muted-foreground text-center">
                           {new Date(order.createdAt).toLocaleDateString()}
                         </td>
                         {adminView && (
                           <ProtectedComponent permission="orders.manage">
-                            <td className="p-3">
-                              <div className="flex flex-col gap-2 sm:flex-row">
+                            <td className="px-6 py-4 text-center">
+                              <div className="flex flex-col gap-2 sm:flex-row justify-center">
                                 <Link
                                   href={`/orders/${order.id}`}
                                   className={cn(
@@ -444,7 +444,7 @@ export default function OrdersPage() {
                                 <select
                                   value={order.status}
                                   onChange={(e) => handleStatusUpdate(order.id, e.target.value)}
-                                  className="h-8 min-w-[120px] rounded-md border border-border bg-background px-3 text-xs font-medium text-foreground transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                  className="h-8 min-w-[120px] rounded-md border border-border bg-background px-3 text-xs font-medium text-foreground transition-colors focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20"
                                   aria-label="Update order status"
                                 >
                                   <option value="pending">Pending</option>
@@ -495,7 +495,7 @@ export default function OrdersPage() {
                         <Button
                           type="button"
                           key={pageNum}
-                          variant={page === pageNum ? "default" : "outline"}
+                          variant={page === pageNum ? "outline" : "outline"}
                           size="sm"
                           onClick={() => setPage(pageNum)}
                           className={cn(

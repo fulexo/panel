@@ -18,7 +18,7 @@ export const FormRadio = forwardRef<HTMLInputElement, FormRadioProps>(
           <div className="space-y-1">
             <label className="block text-sm font-medium text-foreground">
               {label}
-              {required && <span className="text-destructive ml-1">*</span>}
+              {required && <span className="text-foreground ml-1">*</span>}
             </label>
           </div>
         )}
@@ -31,8 +31,8 @@ export const FormRadio = forwardRef<HTMLInputElement, FormRadioProps>(
                 name={name}
                 value={option.value}
                 className={cn(
-                  'w-4 h-4 text-primary bg-input border-border focus:ring-primary focus:ring-2',
-                  error && 'border-destructive focus:border-destructive',
+                  'w-4 h-4 text-foreground bg-input border-border focus:ring-ring focus:ring-2',
+                  error && 'border-border focus:border-border',
                   className
                 )}
                 {...props}
@@ -42,7 +42,7 @@ export const FormRadio = forwardRef<HTMLInputElement, FormRadioProps>(
           ))}
         </div>
         {error && (
-          <p className="text-sm text-destructive">{error}</p>
+          <p className="text-sm text-foreground">{error}</p>
         )}
         {helperText && !error && (
           <p className="text-sm text-muted-foreground">{helperText}</p>

@@ -99,7 +99,7 @@ export default function CustomerDetailPage() {
             >
               <button
                 onClick={() => window.location.reload()}
-                className="btn btn-primary"
+                className="btn btn-outline"
               >
                 Retry
               </button>
@@ -183,7 +183,7 @@ export default function CustomerDetailPage() {
               <ProtectedComponent permission="customers.manage">
                 <button 
                   onClick={handleEdit}
-                  className="btn btn-primary"
+                  className="btn btn-outline"
                 >
                   Edit Customer
                 </button>
@@ -191,7 +191,7 @@ export default function CustomerDetailPage() {
               <ProtectedComponent permission="customers.manage">
                 <button 
                   onClick={() => setShowDeleteModal(true)}
-                  className="btn btn-destructive"
+                  className="btn btn-outline"
                 >
                   Delete
                 </button>
@@ -208,8 +208,8 @@ export default function CustomerDetailPage() {
                 description="Basic customer information and contact details"
               >
                 <div className="flex items-start gap-6">
-                  <div className="w-24 h-24 bg-primary rounded-full flex items-center justify-center">
-                    <span className="text-3xl text-primary-foreground font-bold">
+                  <div className="w-24 h-24 bg-foreground rounded-full flex items-center justify-center">
+                    <span className="text-3xl text-background font-bold">
                       {customer.firstName.charAt(0)}{customer.lastName.charAt(0)}
                     </span>
                   </div>
@@ -282,11 +282,11 @@ export default function CustomerDetailPage() {
                         <StatusPill
                           label={order.status.toUpperCase()}
                           tone={
-                            order.status === 'pending' ? 'warning' :
-                            order.status === 'processing' ? 'info' :
-                            order.status === 'shipped' ? 'info' :
-                            order.status === 'delivered' ? 'success' :
-                            order.status === 'cancelled' ? 'destructive' :
+                            order.status === 'pending' ? 'default' :
+                            order.status === 'processing' ? 'default' :
+                            order.status === 'shipped' ? 'default' :
+                            order.status === 'delivered' ? 'default' :
+                            order.status === 'cancelled' ? 'default' :
                             'muted'
                           }
                         />
@@ -438,7 +438,7 @@ export default function CustomerDetailPage() {
                   <div className="flex gap-2 mt-6">
                     <button
                       onClick={handleUpdate}
-                      className="btn btn-primary"
+                      className="btn btn-outline"
                     >
                       Update Customer
                     </button>
@@ -465,7 +465,7 @@ export default function CustomerDetailPage() {
                 <div className="flex gap-2">
                   <button
                     onClick={handleDelete}
-                    className="btn btn-destructive"
+                    className="btn btn-outline"
                   >
                     Delete Customer
                   </button>

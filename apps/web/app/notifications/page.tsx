@@ -48,8 +48,8 @@ const typeMeta: Record<NotificationType, { label: string; icon: typeof Bell }> =
 };
 
 const priorityMeta: Record<NotificationPriority, { label: string; badge: ComponentProps<typeof Badge>["variant"]; tone: string }> = {
-  urgent: { label: "Acil", badge: "destructive", tone: "border-destructive/50 bg-destructive/10 text-destructive" },
-  high: { label: "Yüksek", badge: "warning", tone: "border-[hsl(var(--warning))]/40 bg-[hsl(var(--warning))]/10 text-[hsl(var(--warning))]" },
+  urgent: { label: "Acil", badge: "default", tone: "border-border/50 bg-accent/10 text-foreground" },
+  high: { label: "Yüksek", badge: "default", tone: "border-border/40 bg-accent/10 text-foreground" },
   medium: { label: "Orta", badge: "info", tone: "border-[hsl(var(--info))]/40 bg-[hsl(var(--info))]/10 text-[hsl(var(--info))]" },
   low: { label: "Düşük", badge: "muted", tone: "border-border/70 bg-muted/60 text-muted-foreground" },
 };
@@ -192,7 +192,7 @@ export default function NotificationsPage() {
                       <TabsTrigger
                         key={tab.id}
                         value={tab.id}
-                        className="flex items-center gap-2 rounded-full border border-transparent bg-muted/60 px-4 py-2 text-sm font-medium data-[state=active]:border-primary data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
+                        className="flex items-center gap-2 rounded-full border border-transparent bg-muted/60 px-4 py-2 text-sm font-medium data-[state=active]:border-border data-[state=active]:bg-accent/10 data-[state=active]:text-foreground"
                       >
                         <tab.icon className="h-4 w-4" />
                         {tab.label}
@@ -226,7 +226,7 @@ export default function NotificationsPage() {
                                   <h3 className="text-sm font-semibold text-foreground">{notification.title}</h3>
                                   <StatusPill 
                                     label={priority.label} 
-                                    tone={priority.badge === 'destructive' ? 'destructive' : priority.badge === 'warning' ? 'warning' : priority.badge === 'info' ? 'info' : 'muted'} 
+                                    tone={priority.badge === 'default' ? 'default' : priority.badge === 'default' ? 'default' : priority.badge === 'info' ? 'info' : 'muted'} 
                                   />
                                   {!notification.read && <StatusPill label="Yeni" tone="info" />}
                                 </div>
@@ -244,7 +244,7 @@ export default function NotificationsPage() {
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => deleteNotification(notification.id)}
-                                className="text-muted-foreground hover:text-destructive"
+                                className="text-muted-foreground hover:text-foreground"
                               >
                                 <Trash2 className="h-4 w-4" />
                               </Button>

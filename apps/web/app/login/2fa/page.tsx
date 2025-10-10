@@ -50,14 +50,14 @@ export default function TwoFAPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-900 via-purple-900 to-gray-900 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-background p-4">
       <div className="w-full max-w-md">
         {/* Logo and Title */}
         <div className="text-center mb-8 animate-fade-in">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-primary rounded-2xl mb-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-foreground rounded-2xl mb-4">
             <span className="text-2xl">🔐</span>
           </div>
-          <h1 className="mobile-heading text-white mb-2">Two-Factor Authentication</h1>
+          <h1 className="mobile-heading text-foreground mb-2">Two-Factor Authentication</h1>
           <p className="text-muted-foreground">Enter the 2FA code from your authenticator app</p>
         </div>
 
@@ -104,7 +104,7 @@ export default function TwoFAPage() {
 
             <button
               disabled={loading}
-              className="w-full btn btn-primary btn-lg btn-animate"
+              className="w-full btn btn-outline btn-lg btn-animate"
             >
               {loading ? (
                 <div className="flex items-center justify-center gap-2">
@@ -119,7 +119,7 @@ export default function TwoFAPage() {
 
           {/* Help Text */}
           <div className="mt-6 p-4 bg-accent/50 rounded-lg">
-            <h3 className="text-sm font-medium text-primary mb-2">Need Help?</h3>
+            <h3 className="text-sm font-medium text-foreground mb-2">Need Help?</h3>
             <div className="text-xs text-muted space-y-1">
               <div>• Open your authenticator app (Google Authenticator, Authy, etc.)</div>
               <div>• Enter the 6-digit code displayed</div>

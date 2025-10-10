@@ -93,7 +93,7 @@ export function PageHeader({
       <div className={cn("flex flex-col gap-3", align === "center" && "items-center lg:items-start") }>
         <div className="flex items-center gap-3">
           {Icon && (
-            <span className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            <span className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-accent/10 text-foreground">
               <Icon className="h-6 w-6" />
             </span>
           )}

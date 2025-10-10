@@ -12,11 +12,11 @@ import Link from 'next/link';
 
 
 const eventTypes = {
-  general: { label: 'Genel', color: 'bg-blue-100 text-blue-800' },
-  meeting: { label: 'Toplantı', color: 'bg-green-100 text-green-800' },
-  holiday: { label: 'Tatil', color: 'bg-red-100 text-red-800' },
-  maintenance: { label: 'Bakım', color: 'bg-yellow-100 text-yellow-800' },
-  closed: { label: 'Kapalı', color: 'bg-gray-100 text-gray-800' },
+  general: { label: 'Genel', color: 'bg-accent/10 text-foreground' },
+  meeting: { label: 'Toplantı', color: 'bg-accent/10 text-foreground' },
+  holiday: { label: 'Tatil', color: 'bg-accent/10 text-foreground' },
+  maintenance: { label: 'Bakım', color: 'bg-accent/10 text-foreground' },
+  closed: { label: 'Kapalı', color: 'bg-accent/10 text-foreground' },
 };
 
 export default function CalendarWidget() {
@@ -87,15 +87,15 @@ export default function CalendarWidget() {
               className={`
                 p-1 text-center cursor-pointer rounded hover:bg-gray-100
                 ${!isCurrentMonth ? 'text-gray-500' : 'text-gray-700'}
-                ${isToday ? 'bg-blue-100 text-blue-600 font-bold' : ''}
-                ${holiday ? 'bg-red-100 text-red-600' : ''}
-                ${dayEvents.length > 0 ? 'bg-green-100' : ''}
+                ${isToday ? 'bg-accent/10 text-foreground font-bold' : ''}
+                ${holiday ? 'bg-accent/10 text-foreground' : ''}
+                ${dayEvents.length > 0 ? 'bg-accent/10' : ''}
               `}
             >
               <div className="relative">
                 {format(day, 'd')}
                 {dayEvents.length > 0 && (
-                  <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full"></div>
+                  <div className="absolute -top-1 -right-1 w-2 h-2 bg-foreground rounded-full"></div>
                 )}
               </div>
             </div>
@@ -118,7 +118,7 @@ export default function CalendarWidget() {
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-center h-32">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-foreground"></div>
           </div>
         </CardContent>
       </Card>
@@ -201,14 +201,14 @@ export default function CalendarWidget() {
             </h4>
             <div className="space-y-1">
               {holidays.slice(0, 3).map((holiday: any) => (
-                <div key={holiday.id} className="flex items-center gap-2 p-2 bg-red-50 rounded text-sm">
+                <div key={holiday.id} className="flex items-center gap-2 p-2 bg-accent/10 rounded text-sm">
                   <div className="flex-1">
                     <div className="font-medium">{holiday.name}</div>
                     <div className="text-xs text-muted-foreground">
                       {format(new Date(holiday.date), 'dd MMM')}
                     </div>
                   </div>
-                  <Badge variant="destructive" className="text-xs">
+                  <Badge variant="outline" className="text-xs">
                     Tatil
                   </Badge>
                 </div>

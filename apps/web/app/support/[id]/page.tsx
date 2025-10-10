@@ -100,7 +100,7 @@ export default function SupportTicketDetailPage() {
             >
               <button
                 onClick={() => window.location.reload()}
-                className="btn btn-primary"
+                className="btn btn-outline"
               >
                 Retry
               </button>
@@ -157,7 +157,7 @@ export default function SupportTicketDetailPage() {
               <ProtectedComponent permission="support.manage">
                 <button 
                   onClick={() => setShowStatusModal(true)}
-                  className="btn btn-primary"
+                  className="btn btn-outline"
                 >
                   Update Status
                 </button>
@@ -177,20 +177,20 @@ export default function SupportTicketDetailPage() {
                     <StatusPill
                       label={ticket.status.toUpperCase()}
                       tone={
-                        ticket.status === 'open' ? 'success' :
-                        ticket.status === 'in_progress' ? 'info' :
-                        ticket.status === 'pending' ? 'warning' :
-                        ticket.status === 'resolved' ? 'success' :
+                        ticket.status === 'open' ? 'default' :
+                        ticket.status === 'in_progress' ? 'default' :
+                        ticket.status === 'pending' ? 'default' :
+                        ticket.status === 'resolved' ? 'default' :
                         'muted'
                       }
                     />
                     <StatusPill
                       label={ticket.priority.toUpperCase()}
                       tone={
-                        ticket.priority === 'low' ? 'success' :
-                        ticket.priority === 'medium' ? 'warning' :
-                        ticket.priority === 'high' ? 'destructive' :
-                        ticket.priority === 'urgent' ? 'destructive' :
+                        ticket.priority === 'low' ? 'default' :
+                        ticket.priority === 'medium' ? 'default' :
+                        ticket.priority === 'high' ? 'default' :
+                        ticket.priority === 'urgent' ? 'default' :
                         'muted'
                       }
                     />
@@ -242,7 +242,7 @@ export default function SupportTicketDetailPage() {
                       messages.map((message) => (
                         <div key={message.id} className={`p-4 rounded-lg ${
                           message.senderType === 'customer' 
-                            ? 'bg-blue-50 border-l-4 border-blue-500' 
+                            ? 'bg-accent/10 border-l-4 border-border' 
                             : 'bg-gray-50 border-l-4 border-gray-500'
                         }`}>
                           <div className="flex items-center gap-2 mb-2">
@@ -264,7 +264,7 @@ export default function SupportTicketDetailPage() {
                                     href={attachment.url}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                                    className="text-sm text-foreground hover:text-muted-foreground flex items-center gap-1"
                                   >
                                     📎 {attachment.name}
                                   </a>
@@ -298,7 +298,7 @@ export default function SupportTicketDetailPage() {
                   <div className="flex gap-2">
                     <button
                       onClick={handleSendMessage}
-                      className="btn btn-primary"
+                      className="btn btn-outline"
                       disabled={!newMessage.trim()}
                     >
                       Send Message
@@ -345,10 +345,10 @@ export default function SupportTicketDetailPage() {
                     <StatusPill
                       label={ticket.priority.toUpperCase()}
                       tone={
-                        ticket.priority === 'low' ? 'success' :
-                        ticket.priority === 'medium' ? 'warning' :
-                        ticket.priority === 'high' ? 'destructive' :
-                        ticket.priority === 'urgent' ? 'destructive' :
+                        ticket.priority === 'low' ? 'default' :
+                        ticket.priority === 'medium' ? 'default' :
+                        ticket.priority === 'high' ? 'default' :
+                        ticket.priority === 'urgent' ? 'default' :
                         'muted'
                       }
                     />
@@ -398,7 +398,7 @@ export default function SupportTicketDetailPage() {
               >
                 <div className="space-y-3">
                   <div className="flex items-center gap-3">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <div className="w-2 h-2 bg-foreground rounded-full"></div>
                     <div>
                       <p className="text-sm font-medium">Ticket Created</p>
                       <p className="text-xs text-muted-foreground">
@@ -408,7 +408,7 @@ export default function SupportTicketDetailPage() {
                   </div>
                   {ticket.status === 'in_progress' && (
                     <div className="flex items-center gap-3">
-                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                      <div className="w-2 h-2 bg-foreground rounded-full"></div>
                       <div>
                         <p className="text-sm font-medium">In Progress</p>
                         <p className="text-xs text-muted-foreground">
@@ -419,7 +419,7 @@ export default function SupportTicketDetailPage() {
                   )}
                   {ticket.status === 'resolved' && (
                     <div className="flex items-center gap-3">
-                      <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                      <div className="w-2 h-2 bg-foreground rounded-full"></div>
                       <div>
                         <p className="text-sm font-medium">Resolved</p>
                         <p className="text-xs text-muted-foreground">
@@ -454,7 +454,7 @@ export default function SupportTicketDetailPage() {
                   <div className="flex gap-2 mt-6">
                     <button
                       onClick={handleStatusUpdate}
-                      className="btn btn-primary"
+                      className="btn btn-outline"
                     >
                       Update Status
                     </button>

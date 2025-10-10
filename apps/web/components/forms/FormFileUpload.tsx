@@ -101,7 +101,7 @@ export const FormFileUpload = forwardRef<HTMLInputElement, FormFileUploadProps>(
         {label && (
           <label className="block text-sm font-medium text-foreground">
             {label}
-            {required && <span className="text-destructive ml-1">*</span>}
+            {required && <span className="text-foreground ml-1">*</span>}
           </label>
         )}
         
@@ -109,9 +109,9 @@ export const FormFileUpload = forwardRef<HTMLInputElement, FormFileUploadProps>(
           className={cn(
             'relative border-2 border-dashed rounded-lg p-6 transition-colors',
             dragActive 
-              ? 'border-primary bg-primary/5' 
-              : 'border-border hover:border-primary/50',
-            error && 'border-destructive',
+              ? 'border-border bg-accent/5' 
+              : 'border-border hover:border-border',
+            error && 'border-border',
             className
           )}
           onDragEnter={handleDrag}
@@ -154,7 +154,7 @@ export const FormFileUpload = forwardRef<HTMLInputElement, FormFileUploadProps>(
                   <button
                     type="button"
                     onClick={() => removeFile(index)}
-                    className="text-destructive hover:text-destructive/80 p-1"
+                    className="text-foreground hover:text-muted-foreground p-1"
                   >
                     <X className="h-4 w-4" />
                   </button>
@@ -165,7 +165,7 @@ export const FormFileUpload = forwardRef<HTMLInputElement, FormFileUploadProps>(
         )}
 
         {error && (
-          <p className="text-sm text-destructive">{error}</p>
+          <p className="text-sm text-foreground">{error}</p>
         )}
         {helperText && !error && (
           <p className="text-sm text-muted-foreground">{helperText}</p>

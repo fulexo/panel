@@ -18,8 +18,8 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
   const [desktopSidebarCollapsed, setDesktopSidebarCollapsed] = useState(false);
   const isDesktop = useMediaQuery('(min-width: 1024px)');
 
-  const sidebarOffset = desktopSidebarCollapsed ? '4rem' : '20rem';
-  const sidebarOffsetPx = desktopSidebarCollapsed ? '64px' : '320px';
+  const sidebarOffset = desktopSidebarCollapsed ? '4rem' : '14rem';
+  const sidebarOffsetPx = desktopSidebarCollapsed ? '64px' : '224px';
   const mainStyle = isDesktop ? { marginLeft: sidebarOffset } : { marginLeft: 0 };
   const headerStyle = { left: isDesktop ? sidebarOffsetPx : 0, right: 0 };
 
@@ -64,7 +64,10 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
             <Link href="/dashboard" className="font-bold text-xl text-foreground">
               Fulexo
             </Link>
-            <div className="w-10"></div> {/* Spacer for centering */}
+            <div className="flex items-center gap-2">
+              <div className="w-6"></div> {/* Left spacer */}
+              <ThemeToggle />
+            </div>
           </div>
         </div>
 
@@ -114,7 +117,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
 
         {/* Main Content */}
         <main
-          className={`transition-all duration-300 ease-in-out ${desktopSidebarCollapsed ? 'lg:ml-16' : 'lg:ml-80'} pt-20 lg:pt-16 min-h-screen`}
+          className={`transition-all duration-300 ease-in-out ${desktopSidebarCollapsed ? 'lg:ml-16' : 'lg:ml-56'} pt-20 lg:pt-16 min-h-screen`}
           style={mainStyle}
         >
           {children}

@@ -21,7 +21,7 @@ export function GeneralSettings() {
           className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm mt-1"
         />
       </div>
-      <button className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 h-10 px-4 py-2">
+      <button className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium bg-foreground text-background hover:bg-muted-foreground h-10 px-4 py-2">
         Save General Settings
       </button>
     </div>

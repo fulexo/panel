@@ -99,7 +99,7 @@ export default function ReturnDetailPage() {
             >
               <button
                 onClick={() => window.location.reload()}
-                className="btn btn-primary"
+                className="btn btn-outline"
               >
                 Retry
               </button>
@@ -141,7 +141,7 @@ export default function ReturnDetailPage() {
               <ProtectedComponent permission="returns.manage">
                 <button 
                   onClick={() => setShowStatusModal(true)}
-                  className="btn btn-primary"
+                  className="btn btn-outline"
                 >
                   Update Status
                 </button>
@@ -160,11 +160,11 @@ export default function ReturnDetailPage() {
                   <StatusPill
                     label={returnData.status.toUpperCase()}
                     tone={
-                      returnData.status === 'pending' ? 'warning' :
-                      returnData.status === 'approved' ? 'success' :
-                      returnData.status === 'rejected' ? 'destructive' :
-                      returnData.status === 'processing' ? 'info' :
-                      returnData.status === 'completed' ? 'success' :
+                      returnData.status === 'pending' ? 'default' :
+                      returnData.status === 'approved' ? 'default' :
+                      returnData.status === 'rejected' ? 'default' :
+                      returnData.status === 'processing' ? 'default' :
+                      returnData.status === 'completed' ? 'default' :
                       'muted'
                     }
                   />
@@ -328,7 +328,7 @@ export default function ReturnDetailPage() {
               >
                 <div className="space-y-3">
                   <div className="flex items-center gap-3">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <div className="w-2 h-2 bg-foreground rounded-full"></div>
                     <div>
                       <p className="text-sm font-medium">Return Requested</p>
                       <p className="text-xs text-muted-foreground">
@@ -338,7 +338,7 @@ export default function ReturnDetailPage() {
                   </div>
                   {returnData.status === 'approved' && (
                     <div className="flex items-center gap-3">
-                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                      <div className="w-2 h-2 bg-foreground rounded-full"></div>
                       <div>
                         <p className="text-sm font-medium">Return Approved</p>
                         <p className="text-xs text-muted-foreground">
@@ -349,7 +349,7 @@ export default function ReturnDetailPage() {
                   )}
                   {returnData.status === 'completed' && (
                     <div className="flex items-center gap-3">
-                      <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                      <div className="w-2 h-2 bg-foreground rounded-full"></div>
                       <div>
                         <p className="text-sm font-medium">Return Completed</p>
                         <p className="text-xs text-muted-foreground">
@@ -384,7 +384,7 @@ export default function ReturnDetailPage() {
                   <div className="flex gap-2 mt-6">
                     <button
                       onClick={handleStatusUpdate}
-                      className="btn btn-primary"
+                      className="btn btn-outline"
                     >
                       Update Status
                     </button>

@@ -19,14 +19,14 @@ export const FormSelect = forwardRef<HTMLSelectElement, FormSelectProps>(
         {label && (
           <label className="block text-sm font-medium text-foreground">
             {label}
-            {required && <span className="text-destructive ml-1">*</span>}
+            {required && <span className="text-foreground ml-1">*</span>}
           </label>
         )}
         <select
           ref={ref}
           className={cn(
             'w-full px-3 py-2 bg-input border border-border rounded-lg form-input text-foreground',
-            fieldError && 'border-destructive focus:border-destructive',
+            fieldError && 'border-border focus:border-border',
             className
           )}
           {...props}
@@ -43,7 +43,7 @@ export const FormSelect = forwardRef<HTMLSelectElement, FormSelectProps>(
           ))}
         </select>
         {fieldError && (
-          <p className="text-sm text-destructive">{fieldError}</p>
+          <p className="text-sm text-foreground">{fieldError}</p>
         )}
         {helperText && !fieldError && (
           <p className="text-sm text-muted-foreground">{helperText}</p>

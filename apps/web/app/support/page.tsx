@@ -69,7 +69,7 @@ interface SupportTicketMessage {
 const statusMeta: Record<KnownTicketStatus, { label: string; badge: BadgeVariant; description: string }> = {
   open: {
     label: "Open",
-    badge: "warning",
+    badge: "default",
     description: "Awaiting a first response",
   },
   in_progress: {
@@ -79,7 +79,7 @@ const statusMeta: Record<KnownTicketStatus, { label: string; badge: BadgeVariant
   },
   closed: {
     label: "Closed",
-    badge: "success",
+    badge: "default",
     description: "Ticket resolved and archived",
   },
 };
@@ -97,12 +97,12 @@ const priorityMeta: Record<KnownTicketPriority, { label: string; badge: BadgeVar
   },
   high: {
     label: "High",
-    badge: "warning",
+    badge: "default",
     description: "Requires quick action",
   },
   urgent: {
     label: "Urgent",
-    badge: "destructive",
+    badge: "default",
     description: "Immediate attention",
   },
 };
@@ -382,7 +382,7 @@ export default function SupportPage() {
                   label={meta.label}
                   value={statusCounts[status] ?? 0}
                   context={meta.description}
-                  tone={meta.badge === 'warning' ? 'warning' : 'default'}
+                  tone={meta.badge === 'default' ? 'default' : 'default'}
                 />
               );
             })}
@@ -413,7 +413,7 @@ export default function SupportPage() {
                       className="flex items-center justify-between rounded-lg border border-border/60 bg-muted/40 px-3 py-2 text-sm"
                     >
                       <div className="flex items-center gap-2">
-                        <StatusPill label={meta.label} tone={meta.badge === 'muted' ? 'muted' : meta.badge === 'info' ? 'info' : meta.badge === 'warning' ? 'warning' : 'destructive'} />
+                        <StatusPill label={meta.label} tone={meta.badge === 'muted' ? 'muted' : meta.badge === 'info' ? 'info' : meta.badge === 'default' ? 'default' : 'default'} />
                         <span className="text-muted-foreground">{meta.description}</span>
                       </div>
                       <span className="font-semibold text-foreground">{priorityCounts[priority] ?? 0}</span>
@@ -443,8 +443,8 @@ export default function SupportPage() {
                             key={ticket.id}
                             onClick={() => setSelectedTicket(ticket.id)}
                             className={cn(
-                              "w-full rounded-xl border border-border/70 bg-card/60 p-4 text-left transition-all hover:border-primary/60 hover:shadow-md",
-                              selectedTicket === ticket.id && "border-primary bg-primary/5 shadow-sm"
+                              "w-full rounded-xl border border-border/70 bg-card/60 p-4 text-left transition-all hover:border-border hover:shadow-md",
+                              selectedTicket === ticket.id && "border-border bg-accent/5 shadow-sm"
                             )}
                           >
                             <div className="flex flex-wrap items-start justify-between gap-3">
@@ -465,8 +465,8 @@ export default function SupportPage() {
                                 </div>
                               </div>
                               <div className="flex flex-col items-end gap-2">
-                                <StatusPill label={priority.label} tone={priority.badge === 'muted' ? 'muted' : priority.badge === 'info' ? 'info' : priority.badge === 'warning' ? 'warning' : 'destructive'} />
-                                <StatusPill label={status.label} tone={status.badge === 'warning' ? 'warning' : status.badge === 'info' ? 'info' : status.badge === 'success' ? 'success' : 'default'} />
+                                <StatusPill label={priority.label} tone={priority.badge === 'muted' ? 'muted' : priority.badge === 'info' ? 'info' : priority.badge === 'default' ? 'default' : 'default'} />
+                                <StatusPill label={status.label} tone={status.badge === 'default' ? 'default' : status.badge === 'info' ? 'info' : status.badge === 'default' ? 'default' : 'default'} />
                               </div>
                             </div>
                           </button>
@@ -525,11 +525,11 @@ export default function SupportPage() {
                   <div className="flex flex-wrap items-center gap-2 mb-6">
                     <StatusPill 
                       label={getPriorityMeta(selectedTicketData.priority).label}
-                      tone={getPriorityMeta(selectedTicketData.priority).badge === 'muted' ? 'muted' : getPriorityMeta(selectedTicketData.priority).badge === 'info' ? 'info' : getPriorityMeta(selectedTicketData.priority).badge === 'warning' ? 'warning' : 'destructive'}
+                      tone={getPriorityMeta(selectedTicketData.priority).badge === 'muted' ? 'muted' : getPriorityMeta(selectedTicketData.priority).badge === 'info' ? 'info' : getPriorityMeta(selectedTicketData.priority).badge === 'default' ? 'default' : 'default'}
                     />
                     <StatusPill 
                       label={getStatusMeta(selectedTicketData.status).label}
-                      tone={getStatusMeta(selectedTicketData.status).badge === 'warning' ? 'warning' : getStatusMeta(selectedTicketData.status).badge === 'info' ? 'info' : getStatusMeta(selectedTicketData.status).badge === 'success' ? 'success' : 'default'}
+                      tone={getStatusMeta(selectedTicketData.status).badge === 'default' ? 'default' : getStatusMeta(selectedTicketData.status).badge === 'info' ? 'info' : getStatusMeta(selectedTicketData.status).badge === 'default' ? 'default' : 'default'}
                     />
                   </div>
                     <div className="max-h-80 space-y-3 overflow-y-auto pr-1">

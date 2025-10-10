@@ -53,7 +53,7 @@ export default function OrderApprovalsPage() {
       setSelectedOrder(null);
       setApprovalNotes("");
       addNotification({
-        type: 'success',
+        type: 'info',
         title: 'Başarılı',
         message: 'Sipariş onaylandı'
       });
@@ -70,7 +70,7 @@ export default function OrderApprovalsPage() {
   const handleReject = async (orderId: string) => {
     if (!rejectionReason.trim()) {
       addNotification({
-        type: 'warning',
+        type: 'info',
         title: 'Eksik Bilgi',
         message: 'Red nedeni gereklidir'
       });
@@ -87,7 +87,7 @@ export default function OrderApprovalsPage() {
       setRejectionReason("");
       setRejectionNotes("");
       addNotification({
-        type: 'success',
+        type: 'info',
         title: 'Başarılı',
         message: 'Sipariş reddedildi'
       });
@@ -191,7 +191,7 @@ export default function OrderApprovalsPage() {
                         </p>
                       </div>
                       <div className="text-right">
-                        <span className="inline-block px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm">
+                        <span className="inline-block px-2 py-1 bg-accent/10 text-foreground rounded-full text-sm">
                           Onay Bekliyor
                         </span>
                       </div>
@@ -253,15 +253,15 @@ export default function OrderApprovalsPage() {
                       <Button
                         onClick={() => handleApprove(order.id)}
                         disabled={approveOrderMutation.isPending}
-                        variant="default"
+                        variant="outline"
                         size="sm"
-                        className="bg-green-600 hover:bg-green-700"
+                        className="bg-foreground hover:bg-muted-foreground"
                       >
                         {approveOrderMutation.isPending ? "Onaylanıyor..." : "Onayla"}
                       </Button>
                       <Button
                         onClick={() => setSelectedOrder(order.id)}
-                        variant="destructive"
+                        variant="outline"
                         size="sm"
                       >
                         Reddet
@@ -346,14 +346,14 @@ export default function OrderApprovalsPage() {
                     onClick={() => handleApprove(selectedOrder)}
                     disabled={approveOrderMutation.isPending}
                     variant="default"
-                    className="bg-green-600 hover:bg-green-700"
+                    className="bg-foreground hover:bg-muted-foreground"
                   >
                     {approveOrderMutation.isPending ? "Onaylanıyor..." : "Onayla"}
                   </Button>
                   <Button
                     onClick={() => handleReject(selectedOrder)}
                     disabled={rejectOrderMutation.isPending}
-                    variant="destructive"
+                    variant="outline"
                   >
                     {rejectOrderMutation.isPending ? "Reddediliyor..." : "Reddet"}
                   </Button>
