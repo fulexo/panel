@@ -30,18 +30,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const contentType = response.headers.get('content-type');
         if (contentType && contentType.includes('application/json')) {
           const data = await response.json();
-          console.log('Auth check successful:', data);
+          if (process.env['NODE_ENV'] === 'development') {
+            // eslint-disable-next-line no-console
+            console.log('Auth check successful');
+          }
           setUser(data.data || data);
         } else {
-          console.log('Auth check failed: Invalid response format');
+          if (process.env['NODE_ENV'] === 'development') {
+            // eslint-disable-next-line no-console
+            console.log('Auth check failed: Invalid response format');
+          }
           setUser(null);
         }
       } else {
-        console.log('Auth check failed:', response.status);
+        if (process.env['NODE_ENV'] === 'development') {
+          // eslint-disable-next-line no-console
+          console.log('Auth check failed:', response.status);
+        }
         setUser(null);
       }
     } catch (error) {
-      console.log('Auth check error:', error);
+      if (process.env['NODE_ENV'] === 'development') {
+        // eslint-disable-next-line no-console
+        console.log('Auth check error');
+      }
       setUser(null);
     } finally {
       setLoading(false);
@@ -50,7 +62,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (email: string, password: string) => {
     try {
-      console.log('Starting login process...');
+      if (process.env['NODE_ENV'] === 'development') {
+        // eslint-disable-next-line no-console
+        console.log('Starting login process...');
+      }
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         credentials: 'include',
@@ -60,16 +75,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         body: JSON.stringify({ email, password }),
       });
 
-      console.log('Login response status:', response.status);
+      if (process.env['NODE_ENV'] === 'development') {
+        // eslint-disable-next-line no-console
+        console.log('Login response status:', response.status);
+      }
 
       if (!response.ok) {
         const errorData = await response.json();
-        console.log('Login error data:', errorData);
+        if (process.env['NODE_ENV'] === 'development') {
+          // eslint-disable-next-line no-console
+          console.log('Login error');
+        }
         throw new Error(errorData.error || errorData.message || 'Login failed');
       }
 
       const data = await response.json();
-      console.log('Login response data:', data);
+      if (process.env['NODE_ENV'] === 'development') {
+        // eslint-disable-next-line no-console
+        console.log('Login response received');
+      }
       
       if (data.requiresTwoFactor) {
         if (data.tempToken) {
@@ -84,22 +108,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw new Error('Invalid response from server');
       }
 
-      console.log('Setting user data:', data.data);
+      if (process.env['NODE_ENV'] === 'development') {
+        // eslint-disable-next-line no-console
+        console.log('Setting user data');
+      }
       setUser(data.data);
       
-      // Set user cookie for middleware
+      // Set user presence cookie for middleware (no PII)
       if (typeof window !== 'undefined') {
-        const cookieValue = JSON.stringify(data.data);
-        document.cookie = `user=${cookieValue}; path=/; max-age=86400; SameSite=Strict`;
-        console.log('User cookie set:', cookieValue);
+        document.cookie = `user=1; path=/; max-age=86400; SameSite=Strict`;
+        if (process.env['NODE_ENV'] === 'development') {
+          // eslint-disable-next-line no-console
+          console.log('User presence cookie set');
+        }
       }
       
-      console.log('Login successful, navigating to dashboard...');
+      if (process.env['NODE_ENV'] === 'development') {
+        // eslint-disable-next-line no-console
+        console.log('Login successful, navigating to dashboard...');
+      }
       
       // Navigate immediately without setTimeout
       router.push('/dashboard');
     } catch (error) {
-      console.error('Login error:', error);
+      if (process.env['NODE_ENV'] === 'development') {
+        // eslint-disable-next-line no-console
+        console.error('Login error');
+      }
       throw error;
     }
   };
@@ -135,7 +170,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Clear user cookie
     if (typeof window !== 'undefined') {
       document.cookie = 'user=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-      console.log('User cookie cleared');
+      if (process.env['NODE_ENV'] === 'development') {
+        // eslint-disable-next-line no-console
+        console.log('User cookie cleared');
+      }
     }
     
     router.push('/login');

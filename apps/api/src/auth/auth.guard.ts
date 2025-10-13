@@ -27,13 +27,18 @@ export class AuthGuard implements CanActivate {
     const request = context.switchToHttp().getRequest();
     const token = this.extractTokenFromHeader(request);
 
-    console.log('Auth Guard - Request headers:', {
-      authorization: request.headers.authorization,
-      cookie: request.headers.cookie,
-      extractedToken: token ? 'present' : 'missing',
-      url: request.url,
-      method: request.method
-    });
+    // Avoid logging sensitive headers in production
+    if (process.env['NODE_ENV'] === 'development') {
+      // Minimal debug without sensitive values
+      // eslint-disable-next-line no-console
+      console.log('Auth Guard - Request received', {
+        hasAuthorization: Boolean(request.headers.authorization),
+        hasCookie: Boolean(request.headers.cookie),
+        tokenPresent: Boolean(token),
+        url: request.url,
+        method: request.method,
+      });
+    }
 
     if (!token) {
       throw new UnauthorizedException('No token provided');

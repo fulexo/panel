@@ -254,7 +254,10 @@ export class WooCommerceService {
 
     for (const url of urlFormats) {
       try {
-        console.log(`Testing URL: ${url}`);
+        if (process.env['NODE_ENV'] === 'development') {
+          // eslint-disable-next-line no-console
+          console.log(`Testing URL: ${url}`);
+        }
         const response = await fetch(url, {
           headers: {
             'Authorization': buildAuthHeader(config.consumerKey, config.consumerSecret),
@@ -262,20 +265,32 @@ export class WooCommerceService {
           },
         });
 
-        console.log(`Response status: ${response.status}`);
+        if (process.env['NODE_ENV'] === 'development') {
+          // eslint-disable-next-line no-console
+          console.log(`Response status: ${response.status}`);
+        }
         
         if (response.ok) {
           const data = await response.json();
-          console.log('Connection successful, response:', data);
+          if (process.env['NODE_ENV'] === 'development') {
+            // eslint-disable-next-line no-console
+            console.log('Connection successful');
+          }
           return { success: true, message: `Connection successful using ${url}` };
         } else if (response.status === 401) {
           const errorText = await response.text();
-          console.log(`401 Error for ${url}:`, errorText);
+          if (process.env['NODE_ENV'] === 'development') {
+            // eslint-disable-next-line no-console
+            console.log(`401 Error for ${url}`);
+          }
           // Try next URL format for 401 errors
           continue;
         } else {
           const errorText = await response.text();
-          console.log(`Error ${response.status} for ${url}:`, errorText);
+          if (process.env['NODE_ENV'] === 'development') {
+            // eslint-disable-next-line no-console
+            console.log(`Error ${response.status} for ${url}`);
+          }
           return { 
             success: false, 
             message: 'Connection failed', 
@@ -283,7 +298,10 @@ export class WooCommerceService {
           };
         }
       } catch (error) {
-        console.log(`Network error for ${url}:`, error);
+        if (process.env['NODE_ENV'] === 'development') {
+          // eslint-disable-next-line no-console
+          console.log(`Network error for ${url}`);
+        }
         // Try next URL format for network errors
         continue;
       }
@@ -336,7 +354,10 @@ export class WooCommerceService {
     let page = 1;
     const perPage = 100;
 
-    console.log(`Starting products sync for store ${storeId}`);
+    if (process.env['NODE_ENV'] === 'development') {
+      // eslint-disable-next-line no-console
+      console.log(`Starting products sync for store ${storeId}`);
+    }
     
     // Try different URL formats for products
     const urlFormats = [
@@ -350,7 +371,10 @@ export class WooCommerceService {
     for (const baseUrl of urlFormats) {
       try {
         const testUrl = `${baseUrl}?page=1&per_page=1`;
-        console.log(`Testing products URL: ${testUrl}`);
+        if (process.env['NODE_ENV'] === 'development') {
+          // eslint-disable-next-line no-console
+          console.log(`Testing products URL: ${testUrl}`);
+        }
         const response = await fetch(testUrl, {
           headers: {
             'Authorization': buildAuthHeader(config.consumerKey, config.consumerSecret),
@@ -358,27 +382,42 @@ export class WooCommerceService {
           },
         });
 
-        console.log(`Products test response status: ${response.status}`);
+        if (process.env['NODE_ENV'] === 'development') {
+          // eslint-disable-next-line no-console
+          console.log(`Products test response status: ${response.status}`);
+        }
         
         if (response.ok) {
           workingUrl = baseUrl;
-          console.log(`Working products URL found: ${baseUrl}`);
+          if (process.env['NODE_ENV'] === 'development') {
+            // eslint-disable-next-line no-console
+            console.log(`Working products URL found: ${baseUrl}`);
+          }
           break;
         }
       } catch (error) {
-        console.log(`Products URL test failed: ${error}`);
+        if (process.env['NODE_ENV'] === 'development') {
+          // eslint-disable-next-line no-console
+          console.log(`Products URL test failed`);
+        }
         continue;
       }
     }
 
     if (!workingUrl) {
-      console.log('No working products URL found');
+      if (process.env['NODE_ENV'] === 'development') {
+        // eslint-disable-next-line no-console
+        console.log('No working products URL found');
+      }
       return products;
     }
     
     while (true) {
       const url = `${workingUrl}?page=${page}&per_page=${perPage}`;
-      console.log(`Fetching products from: ${url}`);
+      if (process.env['NODE_ENV'] === 'development') {
+        // eslint-disable-next-line no-console
+        console.log(`Fetching products from: ${url}`);
+      }
       
       const response = await fetch(url, {
         headers: {
@@ -387,10 +426,16 @@ export class WooCommerceService {
         },
       });
 
-      console.log(`Products response status: ${response.status}`);
+      if (process.env['NODE_ENV'] === 'development') {
+        // eslint-disable-next-line no-console
+        console.log(`Products response status: ${response.status}`);
+      }
       
       if (!response.ok) {
-        console.log(`Products fetch failed: ${response.status} ${response.statusText}`);
+        if (process.env['NODE_ENV'] === 'development') {
+          // eslint-disable-next-line no-console
+          console.log(`Products fetch failed: ${response.status} ${response.statusText}`);
+        }
         break;
       }
 

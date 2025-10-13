@@ -13,6 +13,7 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { register } from 'prom-client';
 import cookieParser from 'cookie-parser';
 import { PrismaService } from './prisma.service';
+import { JwtService } from './jwt';
 import { validateEnvOnStartup } from './config/env.validation';
 import { EnvService } from './config/env.service';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
@@ -278,7 +279,7 @@ async function bootstrap() {
   // JWKS endpoint
   app.getHttpAdapter().get('/auth/.well-known/jwks.json', async (_req, res) => {
     try {
-      const jwtService = app.get('JwtService');
+      const jwtService = app.get(JwtService);
       const jwks = await jwtService.getJwks();
       res.json(jwks);
     } catch {

@@ -1,4 +1,4 @@
-﻿const DEFAULT_LOCAL_API_BASE = 'http://127.0.0.1:3001';
+const DEFAULT_LOCAL_API_BASE = 'http://127.0.0.1:3001';
 
 const ensureHttpUrl = (value?: string | null): string | undefined => {
   if (!value) {
@@ -44,7 +44,10 @@ export const getBackendApiBaseUrl = (): string => {
   );
 
   if (!candidate) {
-    console.log('No candidate found, using default:', DEFAULT_LOCAL_API_BASE);
+    if (process.env['NODE_ENV'] === 'development') {
+      // eslint-disable-next-line no-console
+      console.log('No candidate found, using default');
+    }
     return DEFAULT_LOCAL_API_BASE;
   }
 

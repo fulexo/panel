@@ -23,10 +23,7 @@ import { InternalAuthGuard } from './internal-auth.guard';
     JwtService,
     PrismaService,
     AuditService,
-    {
-      provide: APP_GUARD,
-      useClass: RateLimitGuard,
-    },
+    // Rate limiting is already applied globally in AppModule
     {
       provide: APP_GUARD,
       useClass: AuthGuard,
