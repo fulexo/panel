@@ -177,10 +177,13 @@ const jobProcessors = {
       url.searchParams.set('order', 'asc');
       url.searchParams.set('modified_after', updatedAfter);
       
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
       const res = await fetch(url, {
         headers: { Authorization: 'Basic '+Buffer.from(store.consumerKey+':'+store.consumerSecret).toString('base64') },
-        timeout: 30000 // 30 second timeout
+        signal: controller.signal,
       } as Record<string, unknown>);
+      clearTimeout(timeoutId);
       
       if(!res.ok){ 
         logger.error(`WooCommerce API error: ${res.status} ${res.statusText}`);
@@ -265,10 +268,13 @@ const jobProcessors = {
       const url = new URL(`/wp-json/wc/${store.apiVersion}/products`, store.baseUrl);
       url.searchParams.set('per_page','50');
       url.searchParams.set('page', String(page));
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
       const res = await fetch(url, {
         headers: { Authorization: 'Basic '+Buffer.from(store.consumerKey+':'+store.consumerSecret).toString('base64') },
-        timeout: 30000 // 30 second timeout
+        signal: controller.signal,
       } as Record<string, unknown>);
+      clearTimeout(timeoutId);
       if(!res.ok) { 
         logger.error(`WooCommerce API error: ${res.status} ${res.statusText}`);
         throw new Error('Woo HTTP '+res.status); 
