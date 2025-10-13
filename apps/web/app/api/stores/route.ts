@@ -1,4 +1,4 @@
-﻿import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getBackendApiBaseUrl } from '@/lib/backend-api';
 
 const BACKEND_API_BASE = getBackendApiBaseUrl();
@@ -22,7 +22,10 @@ export async function GET(request: NextRequest) {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Stores API proxy error:', response.status, errorText);
+      if (process.env['NODE_ENV'] === 'development') {
+        // eslint-disable-next-line no-console
+        console.error('Stores API proxy error:', response.status);
+      }
       return NextResponse.json(
         { error: 'Failed to fetch stores', details: errorText },
         { status: response.status }
@@ -35,7 +38,10 @@ export async function GET(request: NextRequest) {
     setCookieHeaders?.forEach((cookie) => nextResponse.headers.append('Set-Cookie', cookie));
     return nextResponse;
   } catch (error) {
-    console.error('Stores API error:', error);
+    if (process.env['NODE_ENV'] === 'development') {
+      // eslint-disable-next-line no-console
+      console.error('Stores API error');
+    }
     return NextResponse.json(
       { error: 'Failed to fetch stores' },
       { status: 500 }
@@ -61,7 +67,10 @@ export async function POST(request: NextRequest) {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Create store proxy error:', response.status, errorText);
+      if (process.env['NODE_ENV'] === 'development') {
+        // eslint-disable-next-line no-console
+        console.error('Create store proxy error:', response.status);
+      }
       return NextResponse.json(
         { error: 'Failed to create store', details: errorText },
         { status: response.status }
@@ -74,7 +83,10 @@ export async function POST(request: NextRequest) {
     setCookieHeaders?.forEach((cookie) => nextResponse.headers.append('Set-Cookie', cookie));
     return nextResponse;
   } catch (error) {
-    console.error('Create store API error:', error);
+    if (process.env['NODE_ENV'] === 'development') {
+      // eslint-disable-next-line no-console
+      console.error('Create store API error');
+    }
     return NextResponse.json(
       { error: 'Failed to create store' },
       { status: 500 }
