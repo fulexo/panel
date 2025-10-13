@@ -11,12 +11,12 @@ import { useDashboardStats, useSalesReport, useProductReport, useCustomerReport 
 import { useState } from 'react';
 
 export default function ReportsPage() {
-  const [selectedStore, setSelectedStore] = useState<string>('');
+  const [_selectedStore] = useState<string>('');
   
-  const { data: dashboardStats, isLoading: statsLoading, error: statsError } = useDashboardStats(selectedStore);
-  const { data: salesReport, isLoading: salesLoading, error: salesError } = useSalesReport({ storeId: selectedStore });
-  const { data: productReport, isLoading: productLoading, error: productError } = useProductReport({ storeId: selectedStore });
-  const { data: customerReport, isLoading: customerLoading, error: customerError } = useCustomerReport({ storeId: selectedStore });
+  const { data: dashboardStats, isLoading: statsLoading, error: statsError } = useDashboardStats(_selectedStore);
+  const { data: salesReport, isLoading: salesLoading, error: salesError } = useSalesReport({ storeId: _selectedStore });
+  const { data: productReport, isLoading: productLoading, error: productError } = useProductReport({ storeId: _selectedStore });
+  const { data: customerReport, isLoading: customerLoading, error: customerError } = useCustomerReport({ storeId: _selectedStore });
 
   const isLoading = statsLoading || salesLoading || productLoading || customerLoading;
   const hasError = statsError || salesError || productError || customerError;
@@ -69,41 +69,41 @@ export default function ReportsPage() {
           />
           
           {/* Dashboard Stats */}
-          {dashboardStats && (
+          {dashboardStats ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <MetricCard
                 title="Total Revenue"
-                value={`$${dashboardStats.totalRevenue?.toLocaleString() || '0'}`}
+                value={`$${(dashboardStats as any).totalRevenue?.toLocaleString() || '0'}`}
                 icon={DollarSign}
-                trend={dashboardStats.revenueGrowth}
+                trend={(dashboardStats as any).revenueGrowth}
                 trendLabel="vs last period"
               />
               <MetricCard
                 title="Total Orders"
-                value={dashboardStats.totalOrders?.toLocaleString() || '0'}
+                value={(dashboardStats as any).totalOrders?.toLocaleString() || '0'}
                 icon={ShoppingCart}
-                trend={dashboardStats.orderGrowth}
+                trend={(dashboardStats as any).orderGrowth}
                 trendLabel="vs last period"
               />
               <MetricCard
                 title="Total Customers"
-                value={dashboardStats.totalCustomers?.toLocaleString() || '0'}
+                value={(dashboardStats as any).totalCustomers?.toLocaleString() || '0'}
                 icon={Users}
-                trend={dashboardStats.customerGrowth}
+                trend={(dashboardStats as any).customerGrowth}
                 trendLabel="vs last period"
               />
               <MetricCard
                 title="Total Products"
-                value={dashboardStats.totalProducts?.toLocaleString() || '0'}
+                value={(dashboardStats as any).totalProducts?.toLocaleString() || '0'}
                 icon={Package}
-                trend={dashboardStats.productGrowth}
+                trend={(dashboardStats as any).productGrowth}
                 trendLabel="vs last period"
               />
             </div>
-          )}
+          ) : null}
 
           {/* Sales Report */}
-          {salesReport && (
+          {salesReport ? (
             <Card className="p-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold">Sales Overview</h3>
@@ -112,29 +112,29 @@ export default function ReportsPage() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <p className="text-sm text-muted-foreground">Total Sales</p>
-                  <p className="text-2xl font-bold">${salesReport.totalSales?.toLocaleString() || '0'}</p>
+                  <p className="text-2xl font-bold">${(salesReport as any).totalSales?.toLocaleString() || '0'}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Average Order Value</p>
-                  <p className="text-2xl font-bold">${salesReport.averageOrderValue?.toFixed(2) || '0'}</p>
+                  <p className="text-2xl font-bold">${(salesReport as any).averageOrderValue?.toFixed(2) || '0'}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Conversion Rate</p>
-                  <p className="text-2xl font-bold">{(salesReport.conversionRate * 100)?.toFixed(1) || '0'}%</p>
+                  <p className="text-2xl font-bold">{((salesReport as any).conversionRate * 100)?.toFixed(1) || '0'}%</p>
                 </div>
               </div>
             </Card>
-          )}
+          ) : null}
 
           {/* Product Report */}
-          {productReport && (
+          {productReport ? (
             <Card className="p-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold">Top Products</h3>
                 <Package className="h-5 w-5 text-muted-foreground" />
               </div>
               <div className="space-y-3">
-                {productReport.topProducts?.slice(0, 5).map((product: any, index: number) => (
+                {(productReport as any).topProducts?.slice(0, 5).map((product: any, index: number) => (
                   <div key={product.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
                     <div className="flex items-center space-x-3">
                       <span className="text-sm font-medium text-muted-foreground">#{index + 1}</span>
@@ -148,10 +148,10 @@ export default function ReportsPage() {
                 ))}
               </div>
             </Card>
-          )}
+          ) : null}
 
           {/* Customer Report */}
-          {customerReport && (
+          {customerReport ? (
             <Card className="p-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold">Customer Insights</h3>
@@ -160,15 +160,15 @@ export default function ReportsPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm text-muted-foreground">New Customers</p>
-                  <p className="text-2xl font-bold">{customerReport.newCustomers || '0'}</p>
+                  <p className="text-2xl font-bold">{(customerReport as any).newCustomers || '0'}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Returning Customers</p>
-                  <p className="text-2xl font-bold">{customerReport.returningCustomers || '0'}</p>
+                  <p className="text-2xl font-bold">{(customerReport as any).returningCustomers || '0'}</p>
                 </div>
               </div>
             </Card>
-          )}
+          ) : null}
 
           {/* Empty State */}
           {!dashboardStats && !salesReport && !productReport && !customerReport && (

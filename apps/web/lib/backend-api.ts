@@ -45,7 +45,7 @@ export const getBackendApiBaseUrl = (): string => {
 
   if (!candidate) {
     if (process.env['NODE_ENV'] === 'development') {
-      // eslint-disable-next-line no-console
+       
       console.log('No candidate found, using default');
     }
     return DEFAULT_LOCAL_API_BASE;

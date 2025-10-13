@@ -7,7 +7,6 @@ import { DashboardStats } from "@/types/api";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { ApiError } from "@/lib/api-client";
 import { formatCurrency } from "@/lib/formatters";
-import { cn } from "@/lib/utils";
 import CalendarWidget from "@/components/CalendarWidget";
 import { MetricCard } from "@/components/patterns/MetricCard";
 import { SectionShell } from "@/components/patterns/SectionShell";

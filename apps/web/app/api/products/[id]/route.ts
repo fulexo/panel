@@ -26,7 +26,7 @@ export async function GET(
     if (!response.ok) {
       const errorText = await response.text();
       if (process.env['NODE_ENV'] === 'development') {
-        // eslint-disable-next-line no-console
+         
         console.error('Backend API error:', response.status);
       }
       return NextResponse.json(
@@ -39,7 +39,7 @@ export async function GET(
     return NextResponse.json(data);
   } catch (error) {
     if (process.env['NODE_ENV'] === 'development') {
-      // eslint-disable-next-line no-console
+       
       console.error('Get product API error');
     }
     return NextResponse.json(
@@ -72,7 +72,7 @@ export async function PUT(
     if (!response.ok) {
       const errorText = await response.text();
       if (process.env['NODE_ENV'] === 'development') {
-        // eslint-disable-next-line no-console
+         
         console.error('Backend API error:', response.status);
       }
       return NextResponse.json(
@@ -85,7 +85,7 @@ export async function PUT(
     return NextResponse.json(data);
   } catch (error) {
     if (process.env['NODE_ENV'] === 'development') {
-      // eslint-disable-next-line no-console
+       
       console.error('Update product API error');
     }
     return NextResponse.json(
@@ -116,7 +116,7 @@ export async function DELETE(
     if (!response.ok) {
       const errorText = await response.text();
       if (process.env['NODE_ENV'] === 'development') {
-        // eslint-disable-next-line no-console
+         
         console.error('Backend API error:', response.status);
       }
       return NextResponse.json(
@@ -129,7 +129,7 @@ export async function DELETE(
     return NextResponse.json(data);
   } catch (error) {
     if (process.env['NODE_ENV'] === 'development') {
-      // eslint-disable-next-line no-console
+       
       console.error('Delete product API error');
     }
     return NextResponse.json(

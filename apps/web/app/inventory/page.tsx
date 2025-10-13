@@ -30,10 +30,7 @@ import {
   Settings,
   CheckCircle,
   Clock,
-  X,
-  MapPin,
-  Users,
-  Filter
+  X
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -60,7 +57,6 @@ export default function InventoryPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [showCreateStockModal, setShowCreateStockModal] = useState(false);
   const [showCreateProductModal, setShowCreateProductModal] = useState(false);
-  const [showBulkModal, setShowBulkModal] = useState(false);
 
   // Form states
   const [stockForm, setStockForm] = useState({
@@ -601,7 +597,7 @@ export default function InventoryPage() {
                       icon={FileText}
                       title="No requests found"
                       description={isAdmin() ? 'No inventory requests to review' : 'Create your first inventory request'}
-                      action={
+                      actions={
                         isCustomer() ? (
                           <div className="flex gap-2">
                             <Button
@@ -862,7 +858,7 @@ export default function InventoryPage() {
                     icon={Edit}
                     title="No stock adjustment requests"
                     description="Create your first stock adjustment request to get started"
-                    action={
+                    actions={
                       <Button
                         onClick={() => setShowCreateStockModal(true)}
                         className="gap-2"
@@ -1071,7 +1067,7 @@ export default function InventoryPage() {
                     icon={Plus}
                     title="No new product requests"
                     description="Create your first new product request to get started"
-                    action={
+                    actions={
                       <Button
                         onClick={() => setShowCreateProductModal(true)}
                         className="gap-2"

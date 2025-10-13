@@ -31,27 +31,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (contentType && contentType.includes('application/json')) {
           const data = await response.json();
           if (process.env['NODE_ENV'] === 'development') {
-            // eslint-disable-next-line no-console
+             
             console.log('Auth check successful');
           }
           setUser(data.data || data);
         } else {
           if (process.env['NODE_ENV'] === 'development') {
-            // eslint-disable-next-line no-console
+             
             console.log('Auth check failed: Invalid response format');
           }
           setUser(null);
         }
       } else {
         if (process.env['NODE_ENV'] === 'development') {
-          // eslint-disable-next-line no-console
+           
           console.log('Auth check failed:', response.status);
         }
         setUser(null);
       }
-    } catch (error) {
+    } catch {
       if (process.env['NODE_ENV'] === 'development') {
-        // eslint-disable-next-line no-console
+         
         console.log('Auth check error');
       }
       setUser(null);
@@ -63,7 +63,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = async (email: string, password: string) => {
     try {
       if (process.env['NODE_ENV'] === 'development') {
-        // eslint-disable-next-line no-console
+         
         console.log('Starting login process...');
       }
       const response = await fetch('/api/auth/login', {
@@ -76,14 +76,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
 
       if (process.env['NODE_ENV'] === 'development') {
-        // eslint-disable-next-line no-console
+         
         console.log('Login response status:', response.status);
       }
 
       if (!response.ok) {
         const errorData = await response.json();
         if (process.env['NODE_ENV'] === 'development') {
-          // eslint-disable-next-line no-console
+           
           console.log('Login error');
         }
         throw new Error(errorData.error || errorData.message || 'Login failed');
@@ -91,7 +91,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       const data = await response.json();
       if (process.env['NODE_ENV'] === 'development') {
-        // eslint-disable-next-line no-console
+         
         console.log('Login response received');
       }
       
@@ -109,7 +109,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (process.env['NODE_ENV'] === 'development') {
-        // eslint-disable-next-line no-console
+         
         console.log('Setting user data');
       }
       setUser(data.data);
@@ -118,13 +118,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (typeof window !== 'undefined') {
         document.cookie = `user=1; path=/; max-age=86400; SameSite=Strict`;
         if (process.env['NODE_ENV'] === 'development') {
-          // eslint-disable-next-line no-console
+           
           console.log('User presence cookie set');
         }
       }
       
       if (process.env['NODE_ENV'] === 'development') {
-        // eslint-disable-next-line no-console
+         
         console.log('Login successful, navigating to dashboard...');
       }
       
@@ -132,7 +132,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       router.push('/dashboard');
     } catch (error) {
       if (process.env['NODE_ENV'] === 'development') {
-        // eslint-disable-next-line no-console
+         
         console.error('Login error');
       }
       throw error;
@@ -171,7 +171,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (typeof window !== 'undefined') {
       document.cookie = 'user=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
       if (process.env['NODE_ENV'] === 'development') {
-        // eslint-disable-next-line no-console
+         
         console.log('User cookie cleared');
       }
     }

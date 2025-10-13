@@ -10,7 +10,6 @@ import { ApiError } from "@/lib/api-client";
 import { 
   Users, 
   Search, 
-  Filter, 
   Download, 
   RefreshCw,
   Edit,
@@ -19,8 +18,6 @@ import {
   ChevronLeft, 
   ChevronRight,
   Mail,
-  Phone,
-  ShoppingBag,
   AlertTriangle,
   UserPlus,
   Building,
@@ -307,7 +304,6 @@ export default function CustomersPage() {
   const adminCount = customers.filter((c: any) => (c.role || '').toUpperCase() === 'ADMIN').length;
   const customerCount = customers.filter((c: any) => (c.role || 'CUSTOMER').toUpperCase() === 'CUSTOMER').length;
   const activeCount = customers.filter((c: any) => c.isActive !== false).length;
-  const inactiveCount = customers.filter((c: any) => c.isActive === false).length;
 
   return (
     <ProtectedRoute>

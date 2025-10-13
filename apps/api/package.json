@@ -1,9 +1,21 @@
 {
-  "name": "fulexo-api",
+  "name": "@fulexo/api",
   "version": "1.0.0",
-  "description": "Fulexo Platform - NestJS Backend API",
+  "description": "Fulexo Platform - NestJS Backend API with Prisma, multi-tenant support, and WooCommerce integration",
   "type": "commonjs",
   "main": "dist/main.js",
+  "private": true,
+  "keywords": [
+    "nestjs",
+    "api",
+    "prisma",
+    "multi-tenant",
+    "woocommerce",
+    "shipping",
+    "fulfillment"
+  ],
+  "author": "Fulexo Team",
+  "license": "ISC",
   "scripts": {
     "build": "tsc",
     "start": "node dist/main.js",

@@ -5,7 +5,7 @@ const config: TestRunnerConfig = {
   async preVisit(page) {
     await injectAxe(page);
   },
-  async postVisit(page, context) {
+  async postVisit(page, _context) {
     await checkA11y(page, '#storybook-root', {
       detailedReport: true,
       detailedReportOptions: {

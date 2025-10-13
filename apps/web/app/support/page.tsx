@@ -465,8 +465,8 @@ export default function SupportPage() {
                                 </div>
                               </div>
                               <div className="flex flex-col items-end gap-2">
-                                <StatusPill label={priority.label} tone={priority.badge === 'muted' ? 'muted' : priority.badge === 'info' ? 'info' : priority.badge === 'default' ? 'default' : 'default'} />
-                                <StatusPill label={status.label} tone={status.badge === 'default' ? 'default' : status.badge === 'info' ? 'info' : status.badge === 'default' ? 'default' : 'default'} />
+                                <StatusPill label={priority.label} tone={priority.badge === 'muted' ? 'muted' : priority.badge === 'info' ? 'info' : 'default'} />
+                                <StatusPill label={status.label} tone={status.badge === 'info' ? 'info' : 'default'} />
                               </div>
                             </div>
                           </button>

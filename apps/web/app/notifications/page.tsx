@@ -226,7 +226,7 @@ export default function NotificationsPage() {
                                   <h3 className="text-sm font-semibold text-foreground">{notification.title}</h3>
                                   <StatusPill 
                                     label={priority.label} 
-                                    tone={priority.badge === 'default' ? 'default' : priority.badge === 'default' ? 'default' : priority.badge === 'info' ? 'info' : 'muted'} 
+                                    tone={priority.badge === 'info' ? 'info' : priority.badge === 'muted' ? 'muted' : 'default'} 
                                   />
                                   {!notification.read && <StatusPill label="Yeni" tone="info" />}
                                 </div>

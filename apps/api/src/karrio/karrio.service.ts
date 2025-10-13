@@ -64,7 +64,7 @@ export class KarrioService {
     let lastError: any;
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       try {
-        const { data } = await firstValueFrom(
+        const response: any = await firstValueFrom(
           requestFactory().pipe(
             catchError((error) => {
               const status = error?.response?.status as number | undefined;
@@ -79,7 +79,7 @@ export class KarrioService {
             }),
           ),
         );
-        return data as T;
+        return response.data as T;
       } catch (error) {
         lastError = error;
         if (attempt < maxAttempts) {

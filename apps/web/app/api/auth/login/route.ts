@@ -6,14 +6,14 @@ const BACKEND_API_BASE = getBackendApiBaseUrl();
 export async function POST(request: NextRequest) {
   try {
     if (process.env['NODE_ENV'] === 'development') {
-      // eslint-disable-next-line no-console
+       
       console.log('Login endpoint called', {
         backendBaseConfigured: Boolean(BACKEND_API_BASE),
       });
     }
     const { email, password } = await request.json();
     if (process.env['NODE_ENV'] === 'development') {
-      // eslint-disable-next-line no-console
+       
       console.log('Login payload received');
     }
 
@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
     let backendResponse;
     try {
       if (process.env['NODE_ENV'] === 'development') {
-        // eslint-disable-next-line no-console
+         
         console.log('Calling backend API...');
       }
       
@@ -48,9 +48,9 @@ export async function POST(request: NextRequest) {
       });
       
       clearTimeout(timeoutId);
-    } catch (fetchError) {
+    } catch {
       if (process.env['NODE_ENV'] === 'development') {
-        // eslint-disable-next-line no-console
+         
         console.error('Backend connection error');
       }
       return NextResponse.json(
@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (process.env['NODE_ENV'] === 'development') {
-      // eslint-disable-next-line no-console
+       
       console.log('Backend response status:', backendResponse.status);
     }
 
@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
         errorData = { message: 'Backend returned an error' };
       }
       if (process.env['NODE_ENV'] === 'development') {
-        // eslint-disable-next-line no-console
+         
         console.log('Backend returned error');
       }
       return NextResponse.json(
@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
 
     const data = await backendResponse.json();
     if (process.env['NODE_ENV'] === 'development') {
-      // eslint-disable-next-line no-console
+       
       console.log('Backend success');
     }
 
@@ -105,9 +105,9 @@ export async function POST(request: NextRequest) {
     }
 
     return response;
-  } catch (error) {
+  } catch {
     if (process.env['NODE_ENV'] === 'development') {
-      // eslint-disable-next-line no-console
+       
       console.error('Login error');
     }
     return NextResponse.json(

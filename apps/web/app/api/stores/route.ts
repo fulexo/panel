@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
     if (!response.ok) {
       const errorText = await response.text();
       if (process.env['NODE_ENV'] === 'development') {
-        // eslint-disable-next-line no-console
+         
         console.error('Stores API proxy error:', response.status);
       }
       return NextResponse.json(
@@ -37,9 +37,9 @@ export async function GET(request: NextRequest) {
     const setCookieHeaders = response.headers.getSetCookie();
     setCookieHeaders?.forEach((cookie) => nextResponse.headers.append('Set-Cookie', cookie));
     return nextResponse;
-  } catch (error) {
+  } catch {
     if (process.env['NODE_ENV'] === 'development') {
-      // eslint-disable-next-line no-console
+       
       console.error('Stores API error');
     }
     return NextResponse.json(
@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
     if (!response.ok) {
       const errorText = await response.text();
       if (process.env['NODE_ENV'] === 'development') {
-        // eslint-disable-next-line no-console
+         
         console.error('Create store proxy error:', response.status);
       }
       return NextResponse.json(
@@ -82,9 +82,9 @@ export async function POST(request: NextRequest) {
     const setCookieHeaders = response.headers.getSetCookie();
     setCookieHeaders?.forEach((cookie) => nextResponse.headers.append('Set-Cookie', cookie));
     return nextResponse;
-  } catch (error) {
+  } catch {
     if (process.env['NODE_ENV'] === 'development') {
-      // eslint-disable-next-line no-console
+       
       console.error('Create store API error');
     }
     return NextResponse.json(

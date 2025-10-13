@@ -1,9 +1,10 @@
 {
-  "name": "workspace",
+  "name": "@fulexo/workspace",
   "version": "1.0.0",
-  "description": "## 🚀 Overview",
+  "description": "Fulexo Fulfillment Platform - Multi-tenant WooCommerce fulfillment with integrated shipping",
   "type": "module",
   "main": "index.js",
+  "private": true,
   "scripts": {
     "test": "jest --config jest.config.cjs",
     "test:watch": "jest --watch --config jest.config.cjs",
@@ -25,8 +26,19 @@
     "type": "git",
     "url": "git+https://github.com/fulexo/panel.git"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "fulfillment",
+    "woocommerce",
+    "shipping",
+    "multi-tenant",
+    "inventory",
+    "order-management",
+    "karrio",
+    "nestjs",
+    "nextjs",
+    "typescript"
+  ],
+  "author": "Fulexo Team",
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/fulexo/panel/issues"

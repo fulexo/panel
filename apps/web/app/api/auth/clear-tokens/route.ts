@@ -31,9 +31,9 @@ export async function POST(_request: NextRequest) {
     }
     
     return nextResponse;
-  } catch (error) {
+  } catch {
     if (process.env['NODE_ENV'] === 'development') {
-      // eslint-disable-next-line no-console
+       
       console.error('Clear tokens error');
     }
     return NextResponse.json(

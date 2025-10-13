@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/components/AuthProvider';
-import { useRBAC } from '@/hooks/useRBAC';
 import { useStores, useStore, useCreateStore, useUpdateStore, useDeleteStore, useSyncStore, useTestStoreConnection } from '@/hooks/useApi';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import ProtectedComponent from '@/components/ProtectedComponent';
@@ -17,7 +16,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
 import { ApiError } from '@/lib/api-client';
 import {
   Building,
@@ -34,24 +32,16 @@ import {
   AlertCircle,
   ExternalLink,
   Globe,
-  Key,
-  Eye,
-  EyeOff,
-  ChevronLeft,
-  ChevronRight,
 } from 'lucide-react';
 
 export default function StoresPage() {
   const { user } = useAuth();
-  const { isAdmin } = useRBAC();
-  const adminView = isAdmin();
   
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingStore, setEditingStore] = useState<string | null>(null);
   const [testingConnection, setTestingConnection] = useState<string | null>(null);
-  const [selectedStores, setSelectedStores] = useState<string[]>([]);
 
   // Form states
   const [formData, setFormData] = useState({
@@ -375,7 +365,7 @@ export default function StoresPage() {
                   <RefreshCw className="h-4 w-4" />
                   <span className="hidden sm:inline">Refresh</span>
                 </Button>
-                <ProtectedComponent permission="stores:create">
+                <ProtectedComponent permission="stores.manage">
                   <Button variant="outline" size="sm" onClick={() => setShowCreateModal(true)} className="gap-2">
                     <Plus className="h-4 w-4" />
                     <span className="hidden sm:inline">Add Store</span>
@@ -474,7 +464,6 @@ export default function StoresPage() {
                   onClick={() => {
                     setSearch("");
                     setStatusFilter("");
-                    setSelectedStores([]);
                     refetchStores();
                   }}
                   className="gap-2"
@@ -588,7 +577,7 @@ export default function StoresPage() {
                                   <RefreshCw className="h-3.5 w-3.5" />
                                   <span className="hidden xl:inline">Sync</span>
                                 </Button>
-                                <ProtectedComponent permission="stores:update">
+                                <ProtectedComponent permission="stores.manage">
                                   <Button
                                     type="button"
                                     variant="outline"
@@ -600,7 +589,7 @@ export default function StoresPage() {
                                     <span className="hidden xl:inline">Edit</span>
                                   </Button>
                                 </ProtectedComponent>
-                                <ProtectedComponent permission="stores:delete">
+                                <ProtectedComponent permission="stores.manage">
                                   <Button
                                     type="button"
                                     variant="outline"
@@ -682,7 +671,7 @@ export default function StoresPage() {
                                 <RefreshCw className="h-4 w-4" />
                                 <span>Sync</span>
                               </Button>
-                              <ProtectedComponent permission="stores:update">
+                              <ProtectedComponent permission="stores.manage">
                                 <Button
                                   type="button"
                                   variant="outline"
@@ -694,7 +683,7 @@ export default function StoresPage() {
                                   <span>Edit</span>
                                 </Button>
                               </ProtectedComponent>
-                              <ProtectedComponent permission="stores:delete">
+                              <ProtectedComponent permission="stores.manage">
                                 <Button
                                   type="button"
                                   variant="outline"

@@ -25,7 +25,7 @@ export function getFieldError<T extends FieldValues>(
 export const commonSchemas = {
   email: z.string().email('Geçerli bir e-posta adresi giriniz'),
   required: z.string().min(1, 'Bu alan zorunludur'),
-  phone: z.string().regex(/^[\+]?[1-9][\d]{0,15}$/, 'Geçerli bir telefon numarası giriniz'),
+  phone: z.string().regex(/^[+]?[1-9][\d]{0,15}$/, 'Geçerli bir telefon numarası giriniz'),
   url: z.string().url('Geçerli bir URL giriniz'),
   positiveNumber: z.number().min(0, 'Pozitif bir sayı giriniz'),
   currency: z.number().min(0, 'Geçerli bir para birimi değeri giriniz'),

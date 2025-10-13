@@ -1,8 +1,18 @@
 {
-  "name": "fulexo-web",
+  "name": "@fulexo/web",
   "version": "1.0.0",
-  "description": "Fulexo Platform - Next.js Frontend",
+  "description": "Fulexo Platform - Next.js 14 Frontend with React 18, TypeScript, and Tailwind CSS",
   "private": true,
+  "keywords": [
+    "nextjs",
+    "react",
+    "typescript",
+    "tailwindcss",
+    "fulfillment",
+    "admin-panel"
+  ],
+  "author": "Fulexo Team",
+  "license": "ISC",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

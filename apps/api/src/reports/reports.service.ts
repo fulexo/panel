@@ -72,9 +72,9 @@ export class ReportsService {
         totalRevenue: Number(totalRevenue),
         lowStockProducts,
       };
-    } catch (error) {
+    } catch {
       if (process.env['NODE_ENV'] === 'development') {
-        // eslint-disable-next-line no-console
+         
         console.error('Error getting dashboard stats');
       }
       throw new Error('Failed to fetch dashboard statistics');
@@ -137,9 +137,9 @@ export class ReportsService {
         averageOrderValue: Number(averageOrderValue),
         conversionRate,
       };
-    } catch (error) {
+    } catch {
       if (process.env['NODE_ENV'] === 'development') {
-        // eslint-disable-next-line no-console
+         
         console.error('Error getting sales report');
       }
       throw new Error('Failed to fetch sales report');
@@ -198,9 +198,9 @@ export class ReportsService {
       return {
         topProducts: productsWithSales,
       };
-    } catch (error) {
+    } catch {
       if (process.env['NODE_ENV'] === 'development') {
-        // eslint-disable-next-line no-console
+         
         console.error('Error getting product report');
       }
       throw new Error('Failed to fetch product report');
@@ -238,9 +238,9 @@ export class ReportsService {
         newCustomers,
         returningCustomers,
       };
-    } catch (error) {
+    } catch {
       if (process.env['NODE_ENV'] === 'development') {
-        // eslint-disable-next-line no-console
+         
         console.error('Error getting customer report');
       }
       throw new Error('Failed to fetch customer report');

@@ -45,7 +45,6 @@ import {
   Eye,
   ChevronLeft, 
   ChevronRight,
-  ShoppingBag,
   AlertTriangle,
   TrendingUp,
   BarChart3,
