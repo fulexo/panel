@@ -114,13 +114,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       setUser(data.data);
       
-      // Set user cookie for middleware
+      // Set user presence cookie for middleware (no PII)
       if (typeof window !== 'undefined') {
-        const cookieValue = JSON.stringify(data.data);
-        document.cookie = `user=${cookieValue}; path=/; max-age=86400; SameSite=Strict`;
+        document.cookie = `user=1; path=/; max-age=86400; SameSite=Strict`;
         if (process.env['NODE_ENV'] === 'development') {
           // eslint-disable-next-line no-console
-          console.log('User cookie set');
+          console.log('User presence cookie set');
         }
       }
       
