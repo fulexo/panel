@@ -78,7 +78,7 @@ export class QueryOptimizationService {
     return this.prisma.forTenant(tenantId).customer.findMany({
       ...options,
       include: {
-        stores: {
+        Store: {
           select: {
             id: true,
             name: true,

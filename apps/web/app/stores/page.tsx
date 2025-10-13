@@ -1,20 +1,24 @@
-"use client";
+'use client';
 
-import { logger } from "@/lib/logger";
-import { useState, useEffect } from "react";
-import { useAuth } from "@/components/AuthProvider";
-import { useRBAC } from "@/hooks/useRBAC";
-import { useStores, useStore, useCreateStore, useUpdateStore, useDeleteStore, useSyncStore, useTestStoreConnection } from "@/hooks/useApi";
-import ProtectedRoute from "@/components/ProtectedRoute";
-import ProtectedComponent from "@/components/ProtectedComponent";
-import { SectionShell } from "@/components/patterns/SectionShell";
-import { MetricCard } from "@/components/patterns/MetricCard";
-import { StatusPill } from "@/components/patterns/StatusPill";
-import type { StatusTone } from "@/components/patterns/StatusPill";
-import { Button } from "@/components/ui/button";
-import { FormField } from "@/components/forms/FormField";
-import { FormSelect } from "@/components/forms/FormSelect";
-import { cn } from "@/lib/utils";
+import { useState, useEffect } from 'react';
+import { useAuth } from '@/components/AuthProvider';
+import { useRBAC } from '@/hooks/useRBAC';
+import { useStores, useStore, useCreateStore, useUpdateStore, useDeleteStore, useSyncStore, useTestStoreConnection } from '@/hooks/useApi';
+import ProtectedRoute from '@/components/ProtectedRoute';
+import ProtectedComponent from '@/components/ProtectedComponent';
+import { PageHeader } from '@/components/PageHeader';
+import { MetricCard } from '@/components/patterns/MetricCard';
+import { StatusPill } from '@/components/patterns/StatusPill';
+import type { StatusTone } from '@/components/patterns/StatusPill';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
+import { ApiError } from '@/lib/api-client';
 import {
   Building,
   Plus,
@@ -29,124 +33,167 @@ import {
   CheckCircle,
   AlertCircle,
   ExternalLink,
-  Settings,
   Globe,
   Key,
   Eye,
   EyeOff,
-} from "lucide-react";
+  ChevronLeft,
+  ChevronRight,
+} from 'lucide-react';
 
 export default function StoresPage() {
   const { user } = useAuth();
-  const { hasPermission } = useRBAC();
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
+  const { isAdmin } = useRBAC();
+  const adminView = isAdmin();
+  
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingStore, setEditingStore] = useState<string | null>(null);
   const [testingConnection, setTestingConnection] = useState<string | null>(null);
+  const [selectedStores, setSelectedStores] = useState<string[]>([]);
 
-  const [createForm, setCreateForm] = useState({
+  // Form states
+  const [formData, setFormData] = useState({
     name: '',
     url: '',
     consumerKey: '',
-    consumerSecret: ''
-  });
-
-  const [editForm, setEditForm] = useState({
-    name: '',
-    url: '',
-    consumerKey: '',
-    consumerSecret: ''
+    consumerSecret: '',
   });
   
-  const { data: storesData, isLoading, error, refetch } = useStores({
-    search: searchTerm,
-  });
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
+  // API hooks
   const createStore = useCreateStore();
   const updateStore = useUpdateStore();
   const deleteStore = useDeleteStore();
   const syncStore = useSyncStore();
   const testConnection = useTestStoreConnection();
 
+  // Fetch stores data
+  const {
+    data: storesData,
+    isLoading,
+    error,
+    refetch: refetchStores,
+  } = useStores({
+    search,
+    ...(statusFilter ? { status: statusFilter } : {}),
+  }) as {
+    data:
+      | {
+          data: Array<any>;
+          pagination: { total: number; pages: number };
+        }
+      | undefined;
+    isLoading: boolean;
+    error: ApiError | null;
+    refetch: () => Promise<unknown>;
+  };
+
   // Fetch store data for editing
   const { data: storeData, isLoading: storeLoading } = useStore(editingStore || '');
 
-  // Update edit form when store data is loaded
+  // Update form when store data is loaded
   useEffect(() => {
     if (storeData && editingStore) {
-      setEditForm({
+      setFormData({
         name: (storeData as any).name || '',
         url: (storeData as any).url || '',
         consumerKey: (storeData as any).consumerKey || '',
-        consumerSecret: (storeData as any).consumerSecret || ''
+        consumerSecret: (storeData as any).consumerSecret || '',
       });
     }
   }, [storeData, editingStore]);
 
-  const handleCreateStore = async () => {
-    if (!createForm.name || !createForm.url || !createForm.consumerKey || !createForm.consumerSecret) {
-      window.alert('Please fill in all required fields.');
-      return;
+  // Form handlers
+  const handleInputChange = (field: string, value: any) => {
+    setFormData((prev: any) => ({ ...prev, [field]: value }));
+    if (formErrors[field]) {
+      setFormErrors((prev: any) => ({ ...prev, [field]: '' }));
     }
+  };
+
+  const validateForm = () => {
+    const errors: Record<string, string> = {};
+    
+    if (!formData.name.trim()) errors['name'] = 'Store name is required';
+    if (!formData.url.trim()) errors['url'] = 'Store URL is required';
+    if (!formData.consumerKey.trim()) errors['consumerKey'] = 'Consumer key is required';
+    if (!formData.consumerSecret.trim()) errors['consumerSecret'] = 'Consumer secret is required';
+    
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const resetForm = () => {
+    setFormData({
+      name: '',
+      url: '',
+      consumerKey: '',
+      consumerSecret: '',
+    });
+    setFormErrors({});
+  };
+
+  const handleCreateStore = async () => {
+    if (!validateForm()) return;
+    
+    setIsSubmitting(true);
+    setErrorMessage(null);
+    setSuccess(null);
 
     try {
       await createStore.mutateAsync({
-        name: createForm.name,
-        url: createForm.url,
-        consumerKey: createForm.consumerKey,
-        consumerSecret: createForm.consumerSecret,
+        name: formData.name,
+        url: formData.url,
+        consumerKey: formData.consumerKey,
+        consumerSecret: formData.consumerSecret,
         customerId: user?.id || 'default-customer-id'
       });
       
-      // Reset form and close modal
-      setCreateForm({
-        name: '',
-        url: '',
-        consumerKey: '',
-        consumerSecret: ''
-      });
+      setSuccess('Store created successfully!');
       setShowCreateModal(false);
-      
-      window.alert('Store created successfully!');
-      refetch();
-    } catch (error) {
-      logger.error('Failed to create store:', error);
-      window.alert('Failed to create store. Please try again.');
+      resetForm();
+      refetchStores();
+    } catch (error: any) {
+      console.error('Failed to create store:', error);
+      setErrorMessage(error?.message || 'Failed to create store. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleUpdateStore = async () => {
-    if (!editingStore || !editForm.name || !editForm.url || !editForm.consumerKey || !editForm.consumerSecret) {
-      window.alert('Please fill in all required fields.');
-      return;
-    }
+    if (!editingStore || !validateForm()) return;
+    
+    setIsSubmitting(true);
+    setErrorMessage(null);
+    setSuccess(null);
     
     try {
       await updateStore.mutateAsync({
         id: editingStore,
         data: {
-          name: editForm.name,
-          url: editForm.url,
-          consumerKey: editForm.consumerKey,
-          consumerSecret: editForm.consumerSecret
+          name: formData.name,
+          url: formData.url,
+          consumerKey: formData.consumerKey,
+          consumerSecret: formData.consumerSecret,
         }
       });
       
-      // Reset form and close modal
-      setEditForm({
-        name: '',
-        url: '',
-        consumerKey: '',
-        consumerSecret: ''
-      });
+      setSuccess('Store updated successfully!');
       setEditingStore(null);
-      
-      window.alert('Store updated successfully!');
-      refetch();
-    } catch (error) {
-      logger.error('Failed to update store:', error);
-      window.alert('Failed to update store. Please try again.');
+      resetForm();
+      refetchStores();
+    } catch (error: any) {
+      console.error('Failed to update store:', error);
+      setErrorMessage(error?.message || 'Failed to update store. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -154,24 +201,24 @@ export default function StoresPage() {
     if (window.confirm('Are you sure you want to delete this store?')) {
       try {
         await deleteStore.mutateAsync(storeId);
-        window.alert('Store deleted successfully!');
-        refetch();
-      } catch (error) {
-        logger.error('Failed to delete store:', error);
-        window.alert('Failed to delete store. Please try again.');
+        setSuccess('Store deleted successfully!');
+        refetchStores();
+      } catch (error: any) {
+        console.error('Failed to delete store:', error);
+        setErrorMessage(error?.message || 'Failed to delete store. Please try again.');
       }
     }
   };
 
   const handleSyncStore = async (storeId: string) => {
     try {
-      window.alert('Syncing store data, this may take a moment...');
+      setSuccess('Syncing store data, this may take a moment...');
       await syncStore.mutateAsync(storeId);
-      window.alert('Store synced successfully!');
-      refetch();
-    } catch (error) {
-      logger.error('Failed to sync store:', error);
-      window.alert('Failed to sync store. Please check connection and try again.');
+      setSuccess('Store synced successfully!');
+      refetchStores();
+    } catch (error: any) {
+      console.error('Failed to sync store:', error);
+      setErrorMessage(error?.message || 'Failed to sync store. Please check connection and try again.');
     }
   };
 
@@ -180,13 +227,13 @@ export default function StoresPage() {
     try {
       const result = await testConnection.mutateAsync(storeId) as any;
       if (result.success) {
-        window.alert('Connection successful!');
+        setSuccess('Connection successful!');
       } else {
-        window.alert(`Connection failed: ${result.message || 'Unknown error'}`);
+        setErrorMessage(`Connection failed: ${result.message || 'Unknown error'}`);
       }
     } catch (error: any) {
-      logger.error('Failed to test connection:', error);
-      window.alert(`Connection failed: ${error.message || 'Please check store URL and API keys.'}`);
+      console.error('Failed to test connection:', error);
+      setErrorMessage(`Connection failed: ${error.message || 'Please check store URL and API keys.'}`);
     } finally {
       setTestingConnection(null);
     }
@@ -195,7 +242,7 @@ export default function StoresPage() {
   const handleExportCSV = async () => {
     try {
       const response = await fetch('/api/stores/export?' + new URLSearchParams({
-        search: searchTerm,
+        search,
         status: statusFilter
       }));
 
@@ -212,470 +259,707 @@ export default function StoresPage() {
     a.click();
       document.body.removeChild(a);
     window.URL.revokeObjectURL(url);
+      setSuccess('Stores exported successfully!');
     } catch (error) {
-      logger.error('Failed to export stores:', error);
-      window.alert('Failed to export stores. Please try again.');
+      console.error('Failed to export stores:', error);
+      setErrorMessage('Failed to export stores. Please try again.');
     }
   };
 
+  const stores = storesData?.data || [];
+  const totalStores = storesData?.pagination?.total || 0;
+
+  const statusCounts = {
+    connected: stores.filter((store: any) => store.status === 'connected').length,
+    disconnected: stores.filter((store: any) => store.status === 'disconnected').length,
+    syncing: stores.filter((store: any) => store.status === 'syncing').length,
+  };
+
+  const storeStatusMeta: Record<string, { label: string; tone: StatusTone }> = {
+    connected: { label: "Connected", tone: "default" },
+    disconnected: { label: "Disconnected", tone: "muted" },
+    syncing: { label: "Syncing", tone: "default" },
+  };
+
   const getStatusBadge = (status: string) => {
-    const statusConfig: Record<string, { tone: StatusTone; icon: any }> = {
-      connected: { tone: "default", icon: CheckCircle },
-      disconnected: { tone: "default", icon: AlertCircle },
-      syncing: { tone: "default", icon: RefreshCw },
-    };
-
-    const config = statusConfig[status] || statusConfig.disconnected;
-    const Icon = config.icon;
-
+    const config = storeStatusMeta[status] || storeStatusMeta.disconnected;
     return (
       <StatusPill 
-        label={status} 
+        label={config.label} 
         tone={config.tone} 
-        icon={<Icon className="w-3 h-3" />} 
       />
     );
   };
 
-  if (!hasPermission('stores:read' as any)) {
+  const storeSummaryCards = [
+    {
+      key: "total",
+      label: "Total Stores",
+      value: totalStores.toLocaleString(),
+      context: "All stores",
+      icon: Building,
+      tone: "default" as const,
+    },
+    {
+      key: "connected",
+      label: "Connected",
+      value: statusCounts.connected.toLocaleString(),
+      context: "Active connections",
+      icon: CheckCircle,
+      tone: "default" as const,
+    },
+    {
+      key: "disconnected",
+      label: "Disconnected",
+      value: statusCounts.disconnected.toLocaleString(),
+      context: "Needs attention",
+      icon: AlertCircle,
+      tone: "default" as const,
+    },
+    {
+      key: "syncing",
+      label: "Syncing",
+      value: statusCounts.syncing.toLocaleString(),
+      context: "In progress",
+      icon: RefreshCw,
+      tone: "default" as const,
+    },
+  ];
+
+  if (isLoading) {
     return (
+      <ProtectedRoute>
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <div className="text-6xl mb-4">🚫</div>
-          <h1 className="text-2xl font-bold text-foreground mb-2">Access Denied</h1>
-          <p className="text-muted-foreground">You don't have permission to access this page.</p>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-foreground mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Loading stores...</p>
+          </div>
         </div>
+      </ProtectedRoute>
+    );
+  }
+
+  if (error) {
+    return (
+      <ProtectedRoute>
+        <div className="min-h-screen bg-background flex items-center justify-center">
+          <Card className="max-w-md mx-auto">
+            <CardHeader>
+              <CardTitle>Error loading stores</CardTitle>
+              <CardDescription>
+                {error instanceof ApiError ? error.message : 'Database operation failed'}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button onClick={() => window.location.reload()} variant="outline">
+                Retry
+              </Button>
+            </CardContent>
+          </Card>
       </div>
+      </ProtectedRoute>
     );
   }
 
   return (
     <ProtectedRoute>
-      <ProtectedComponent 
-        role="ADMIN" 
-        fallback={
-        <div className="min-h-screen bg-background flex items-center justify-center">
-          <div className="text-center">
-            <div className="text-6xl mb-4">🚫</div>
-            <h1 className="text-2xl font-bold text-foreground mb-2">Access Denied</h1>
-            <p className="text-muted-foreground">You don't have permission to access this page.</p>
-          </div>
-        </div>
-        }
-      >
-        <div className="bg-background">
+      <div className="min-h-screen bg-background">
           <main className="mobile-container py-6 space-y-6">
-            {/* Header and Action Buttons */}
-            <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
-              <div className="space-y-1">
-                <h1 className="mobile-heading text-foreground flex items-center gap-3">
-                  <Building className="h-8 w-8 text-foreground" />
-                  Stores Management
-                </h1>
-                <p className="text-muted-foreground mobile-text">
-                  Manage your connected stores and their settings
-                </p>
-              </div>
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                <Button
-                  variant="outline"
-                  size="lg"
-                  onClick={() => refetch()}
-                  className="h-16 w-full flex flex-col items-center justify-center gap-1 text-xs font-medium leading-tight shadow-sm hover:shadow-md"
-                >
-                  <RefreshCw className="h-5 w-5" />
-                  <span>Refresh</span>
+          <PageHeader
+            title="Stores"
+            description="Manage your connected WooCommerce stores and their settings"
+            icon={Building}
+            actions={
+              <div className="flex flex-wrap items-center gap-2">
+                <Button variant="outline" size="sm" onClick={() => refetchStores()} className="gap-2">
+                  <RefreshCw className="h-4 w-4" />
+                  <span className="hidden sm:inline">Refresh</span>
                 </Button>
-                {hasPermission('stores:create' as any) && (
-                  <Button
-                    onClick={() => setShowCreateModal(true)}
-                    size="lg"
-                    className="h-16 w-full flex flex-col items-center justify-center gap-1 text-xs font-medium leading-tight shadow-sm hover:shadow-md"
-                  >
-                    <Plus className="h-5 w-5" />
-                    <span>Add Store</span>
+                <ProtectedComponent permission="stores:create">
+                  <Button variant="outline" size="sm" onClick={() => setShowCreateModal(true)} className="gap-2">
+                    <Plus className="h-4 w-4" />
+                    <span className="hidden sm:inline">Add Store</span>
+                    <span className="sm:hidden">Add</span>
                   </Button>
-                )}
-                <Button
-                  variant="outline"
-                  size="lg"
-                  onClick={handleExportCSV}
-                  className="h-16 w-full flex flex-col items-center justify-center gap-1 text-xs font-medium leading-tight shadow-sm hover:shadow-md"
-                >
-                  <Download className="h-5 w-5" />
-                  <span>Export</span>
+                </ProtectedComponent>
+                <Button variant="outline" size="sm" onClick={handleExportCSV} className="gap-2">
+                  <Download className="h-4 w-4" />
+                  <span className="hidden sm:inline">Export CSV</span>
+                  <span className="sm:hidden">Export</span>
                 </Button>
               </div>
-            </div>
+            }
+          />
 
-            {/* Stats */}
-            {storesData && (
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <MetricCard
-                  title="Total Stores"
-                  value={storesData.pagination?.total || 0}
-                  icon={Building}
-                  trend={null}
-                />
-                <MetricCard
-                  title="Connected"
-                  value={storesData.data?.filter(store => store.status === 'connected').length || 0}
-                  icon={CheckCircle}
-                  trend={null}
-                />
-                <MetricCard
-                  title="Disconnected"
-                  value={storesData.data?.filter(store => store.status === 'disconnected').length || 0}
-                  icon={AlertCircle}
-                  trend={null}
-                />
-                <MetricCard
-                  title="Syncing"
-                  value={storesData.data?.filter(store => store.status === 'syncing').length || 0}
-                  icon={RefreshCw}
-                  trend={null}
-                />
+          {/* Error/Success Messages */}
+          {errorMessage && (
+            <Card className="bg-accent/10 border-border">
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div className="text-foreground">{errorMessage}</div>
+                  <Button variant="outline" size="sm" onClick={() => setErrorMessage(null)}>
+                    <X className="h-4 w-4" />
+                  </Button>
               </div>
-            )}
+              </CardContent>
+            </Card>
+          )}
 
-            {/* Filters */}
-            <SectionShell title="Search & Filter">
-                <div className="flex flex-col sm:flex-row gap-4">
-                <div className="flex-1">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                    <input
-                      type="text"
-                      placeholder="Search stores by name or URL..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2 border border-border rounded-lg text-sm text-foreground bg-background focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
-                    />
-                  </div>
+          {success && (
+            <Card className="bg-accent/10 border-border">
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div className="text-foreground">{success}</div>
+                  <Button variant="outline" size="sm" onClick={() => setSuccess(null)}>
+                    <X className="h-4 w-4" />
+                  </Button>
                 </div>
-                <div className="flex gap-2">
-                  <FormSelect
-                      value={statusFilter}
-                      onChange={(e) => setStatusFilter(e.target.value)}
-                    options={[
-                      { value: "", label: "All Status" },
-                      { value: "connected", label: "Connected" },
-                      { value: "disconnected", label: "Disconnected" },
-                      { value: "syncing", label: "Syncing" },
-                    ]}
-                    className="min-w-[140px]"
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Statistics Cards */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+            {storeSummaryCards.map((card) => (
+              <MetricCard
+                key={card.key}
+                label={card.label}
+                value={card.value}
+                context={card.context}
+                tone={card.tone}
+                icon={card.icon}
+              />
+            ))}
+          </div>
+
+          {/* Filters */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base sm:text-lg">Filters</CardTitle>
+              <CardDescription>Refine the store list by keyword or status</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col gap-4 sm:flex-row">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    type="text"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Search stores by name or URL"
+                    className="pl-10"
                   />
                   </div>
+                <div className="relative w-full sm:w-48">
+                  <Filter className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Select value={statusFilter || "all"} onValueChange={(value) => {
+                    setStatusFilter(value === "all" ? "" : value);
+                  }}>
+                    <SelectTrigger className="pl-10">
+                      <SelectValue placeholder="All Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Status</SelectItem>
+                      <SelectItem value="connected">Connected</SelectItem>
+                      <SelectItem value="disconnected">Disconnected</SelectItem>
+                      <SelectItem value="syncing">Syncing</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-            </SectionShell>
-
-            {/* Stores Table */}
-            <SectionShell title="Stores">
-              <div className="overflow-x-auto">
-                {isLoading ? (
-                  <div className="flex items-center justify-center py-12">
-                    <div className="flex flex-col items-center gap-4">
-                      <div className="spinner"></div>
-                      <div className="text-lg text-foreground">Loading stores...</div>
               </div>
-            </div>
-                ) : error ? (
-                  <div className="flex items-center justify-center py-12">
-                    <div className="text-center">
-                          <AlertCircle className="w-12 h-12 text-foreground mx-auto mb-4" />
-                      <h3 className="text-lg font-semibold text-foreground mb-2">Error Loading Stores</h3>
-                      <p className="text-muted-foreground mb-4">There was an error loading the stores data.</p>
+              <div className="flex flex-col gap-3 sm:flex-row mt-4">
                       <Button
-                        onClick={() => refetch()}
-                      >
-                        <RefreshCw className="w-4 h-4 mr-2" />
-                        Try Again
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setSearch("");
+                    setStatusFilter("");
+                    setSelectedStores([]);
+                    refetchStores();
+                  }}
+                  className="gap-2"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                  Reset Filters
                       </Button>
                       </div>
-                    </div>
-                ) : !storesData?.data || storesData.data.length === 0 ? (
-                  <div className="flex items-center justify-center py-12">
-                    <div className="text-center">
-                      <Building className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                      <h3 className="text-lg font-semibold text-foreground mb-2">No Stores Found</h3>
-                      <p className="text-muted-foreground mb-4">
-                        {searchTerm || statusFilter
-                          ? "No stores match your current filters."
-                          : "You haven't added any stores yet."}
-                      </p>
-                      {hasPermission('stores:create' as any) && (
-                        <Button
-                          onClick={() => setShowCreateModal(true)}
-                        >
-                          <Plus className="w-4 h-4 mr-2" />
-                          Add Your First Store
-                        </Button>
-                      )}
-                </div>
+            </CardContent>
+          </Card>
+
+          {/* Stores List */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base sm:text-lg">All Stores</CardTitle>
+              <CardDescription>
+                Manage your connected WooCommerce stores
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {stores.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12">
+                  <Building className="h-12 w-12 text-muted-foreground/40 mb-4" />
+                  <p className="text-lg font-medium text-muted-foreground mb-2">No stores found</p>
+                  <p className="text-sm text-muted-foreground text-center">
+                    {search || statusFilter ? 
+                      'Try adjusting your filters to see more stores.' :
+                      'Get started by adding your first store.'
+                    }
+                  </p>
               </div>
                 ) : (
+                <>
+                  {/* Desktop Table View */}
+                  <div className="hidden lg:block overflow-x-auto">
                 <table className="w-full">
-                    <thead className="bg-muted/50">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                        Store
-                      </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                        URL
-                      </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                        Status
-                      </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                        Last Sync
-                      </th>
-                        <th className="px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                        Actions
-                      </th>
+                      <thead>
+                        <tr className="border-b border-border">
+                          <th className="text-left p-3 text-sm font-medium text-muted-foreground">Store</th>
+                          <th className="text-left p-3 text-sm font-medium text-muted-foreground">URL</th>
+                          <th className="text-left p-3 text-sm font-medium text-muted-foreground">Status</th>
+                          <th className="text-left p-3 text-sm font-medium text-muted-foreground">Last Sync</th>
+                          <th className="text-left p-3 text-sm font-medium text-muted-foreground">Actions</th>
                     </tr>
                   </thead>
-                    <tbody className="divide-y divide-border">
-                      {storesData.data.map((store) => (
-                        <tr key={store.id} className="hover:bg-muted/50">
-                          <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                              <div className="flex-shrink-0 h-10 w-10">
-                                <div className="h-10 w-10 rounded-lg bg-accent flex items-center justify-center">
-                                  <Building className="h-5 w-5 text-foreground" />
+                      <tbody>
+                        {stores.map((store: any) => (
+                          <tr key={store.id} className="border-b border-border hover:bg-muted/20">
+                            <td className="p-3">
+                              <div className="flex items-center gap-3">
+                                <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-md border border-border bg-muted flex items-center justify-center">
+                                  <Building className="h-6 w-6 text-muted-foreground" />
                                 </div>
-                              </div>
-                              <div className="ml-4">
-                                <div className="text-sm font-medium text-foreground">{store.name}</div>
-                                <div className="text-sm text-muted-foreground">
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-medium text-foreground truncate">
+                                    {store.name}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground">
                                   {store.customer?.email || 'No customer assigned'}
-                              </div>
+                                  </p>
                             </div>
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex items-center">
-                              <Globe className="w-4 h-4 text-muted-foreground mr-2" />
+                            <td className="p-3">
+                              <div className="flex items-center gap-2">
+                                <Globe className="h-4 w-4 text-muted-foreground" />
                           <a 
                             href={store.url} 
                             target="_blank" 
                             rel="noopener noreferrer"
-                                    className="text-sm text-foreground hover:text-muted-foreground flex items-center"
+                                  className="text-sm text-foreground hover:text-muted-foreground flex items-center gap-1"
                           >
                             {store.url}
-                                <ExternalLink className="w-3 h-3 ml-1" />
+                                  <ExternalLink className="h-3 w-3" />
                           </a>
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                            <td className="p-3">
                             {getStatusBadge(store.status)}
                         </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
+                            <td className="p-3">
+                              <div className="text-sm text-muted-foreground">
                             {store.lastSyncAt
                               ? new Date(store.lastSyncAt).toLocaleDateString()
                               : 'Never'}
+                              </div>
+                            </td>
+                            <td className="p-3">
+                              <div className="flex items-center gap-2">
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleTestConnection(store.id)}
+                                  disabled={testingConnection === store.id}
+                                  className="gap-1"
+                                >
+                                  <TestTube className="h-3.5 w-3.5" />
+                                  <span className="hidden xl:inline">
+                                    {testingConnection === store.id ? 'Testing...' : 'Test'}
+                                  </span>
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleSyncStore(store.id)}
+                                  disabled={syncStore.isPending}
+                                  className="gap-1"
+                                >
+                                  <RefreshCw className="h-3.5 w-3.5" />
+                                  <span className="hidden xl:inline">Sync</span>
+                                </Button>
+                                <ProtectedComponent permission="stores:update">
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setEditingStore(store.id)}
+                                    className="gap-1"
+                                  >
+                                    <Edit className="h-3.5 w-3.5" />
+                                    <span className="hidden xl:inline">Edit</span>
+                                  </Button>
+                                </ProtectedComponent>
+                                <ProtectedComponent permission="stores:delete">
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleDeleteStore(store.id)}
+                                    className="gap-1"
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                    <span className="hidden xl:inline">Delete</span>
+                                  </Button>
+                                </ProtectedComponent>
+                              </div>
                         </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <div className="flex items-center justify-end gap-2">
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Mobile Card View */}
+                  <div className="lg:hidden space-y-4">
+                    {stores.map((store: any) => (
+                      <Card key={store.id} className="hover:shadow-md transition-shadow">
+                        <CardContent className="pt-4 sm:pt-6">
+                          <div className="space-y-4">
+                            <div className="flex items-start gap-3">
+                              <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-md border border-border bg-muted flex items-center justify-center">
+                                <Building className="h-8 w-8 text-muted-foreground" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <h3 className="text-base sm:text-lg font-semibold text-foreground mb-1 line-clamp-2">
+                                  {store.name}
+                                </h3>
+                                <div className="flex flex-wrap gap-2 mb-2">
+                                  <Badge variant="outline" className="text-xs">
+                                    {store.customer?.email || 'No customer'}
+                                  </Badge>
+                                  {getStatusBadge(store.status)}
+                                </div>
+                                <div className="flex items-center gap-2 mb-2">
+                                  <Globe className="h-4 w-4 text-muted-foreground" />
+                                  <a 
+                                    href={store.url} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    className="text-sm text-foreground hover:text-muted-foreground flex items-center gap-1"
+                                  >
+                                    {store.url}
+                                    <ExternalLink className="h-3 w-3" />
+                                  </a>
+                                </div>
+                                <div className="text-sm text-muted-foreground mb-3">
+                                  Last Sync: {store.lastSyncAt
+                                    ? new Date(store.lastSyncAt).toLocaleDateString()
+                                    : 'Never'}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
                               <Button
+                                type="button"
                                 variant="outline"
                                 size="sm"
                               onClick={() => handleTestConnection(store.id)}
                               disabled={testingConnection === store.id}
+                                className="gap-2 flex-1 sm:flex-none"
                             >
-                                <TestTube className="w-3 h-3 mr-1" />
-                              {testingConnection === store.id ? 'Testing...' : 'Test'}
+                                <TestTube className="h-4 w-4" />
+                                <span>{testingConnection === store.id ? 'Testing...' : 'Test'}</span>
                               </Button>
                               <Button
+                                type="button"
                                 variant="outline"
                                 size="sm"
                               onClick={() => handleSyncStore(store.id)}
                                 disabled={syncStore.isPending}
+                                className="gap-2 flex-1 sm:flex-none"
                               >
-                                <RefreshCw className="w-3 h-3 mr-1" />
-                                Sync
+                                <RefreshCw className="h-4 w-4" />
+                                <span>Sync</span>
                               </Button>
-                              {hasPermission('stores:update' as any) && (
+                              <ProtectedComponent permission="stores:update">
                                 <Button
+                                  type="button"
                                   variant="outline"
                                   size="sm"
                                   onClick={() => setEditingStore(store.id)}
+                                  className="gap-2 flex-1 sm:flex-none"
                                 >
-                                  <Edit className="w-3 h-3 mr-1" />
-                                  Edit
+                                  <Edit className="h-4 w-4" />
+                                  <span>Edit</span>
                                 </Button>
-                              )}
-                              {hasPermission('stores:delete' as any) && (
+                              </ProtectedComponent>
+                              <ProtectedComponent permission="stores:delete">
                                 <Button
+                                  type="button"
                                   variant="outline"
                                   size="sm"
                                   onClick={() => handleDeleteStore(store.id)}
-                                  className="text-foreground border-border hover:bg-accent"
+                                  className="gap-2 flex-1 sm:flex-none"
                                 >
-                                  <Trash2 className="w-3 h-3 mr-1" />
-                              Delete
+                                  <Trash2 className="h-4 w-4" />
+                                  <span>Delete</span>
                                 </Button>
-                              )}
+                              </ProtectedComponent>
+                            </div>
                           </div>
-                        </td>
-                      </tr>
+                        </CardContent>
+                      </Card>
                     ))}
-                  </tbody>
-                </table>
+                  </div>
+                </>
               )}
-            </div>
-            </SectionShell>
+            </CardContent>
+          </Card>
 
             {/* Create Store Modal */}
-            {showCreateModal && (
-              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-                <div className="bg-background rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
-                  <div className="flex items-center justify-between p-6 border-b border-border">
-                    <h3 className="text-lg font-semibold text-foreground">Add New Store</h3>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setShowCreateModal(false)}
-                    >
-                      <X className="w-5 h-5" />
-                    </Button>
+          <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
+            <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto mx-auto">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-3">
+                  <div className="p-2 bg-accent rounded-lg">
+                    <Plus className="h-6 w-6 text-foreground" />
                   </div>
-                  <div className="p-6 space-y-4">
-                    <FormField
-                      label="Store Name"
+                  <div>
+                    <div>Add New Store</div>
+                    <DialogDescription>Connect a new WooCommerce store to your account</DialogDescription>
+                  </div>
+                </DialogTitle>
+              </DialogHeader>
+              
+              <form onSubmit={(e) => {
+                e.preventDefault();
+                handleCreateStore();
+              }} className="space-y-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Store Name *</Label>
+                    <Input
+                      id="name"
+                      value={formData.name}
+                      onChange={(e) => handleInputChange('name', e.target.value)}
+                      placeholder="Enter store name"
                       required
-                        type="text"
-                        placeholder="Enter store name"
-                        value={createForm.name}
-                        onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
-                      />
-                    <FormField
-                      label="Store URL"
+                    />
+                    {formErrors['name'] && (
+                      <p className="text-sm text-foreground">{formErrors['name']}</p>
+                    )}
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="url">Store URL *</Label>
+                    <Input
+                      id="url"
+                      type="url"
+                      value={formData.url}
+                      onChange={(e) => handleInputChange('url', e.target.value)}
+                      placeholder="https://example.com"
                       required
-                        type="url"
-                        placeholder="https://example.com"
-                        value={createForm.url}
-                        onChange={(e) => setCreateForm({ ...createForm, url: e.target.value })}
-                      />
-                    <FormField
-                      label="WooCommerce Consumer Key"
+                    />
+                    {formErrors['url'] && (
+                      <p className="text-sm text-foreground">{formErrors['url']}</p>
+                    )}
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="consumerKey">Consumer Key *</Label>
+                    <Input
+                      id="consumerKey"
+                      value={formData.consumerKey}
+                      onChange={(e) => handleInputChange('consumerKey', e.target.value)}
+                      placeholder="Enter consumer key"
                       required
-                        type="text"
-                        placeholder="Enter consumer key"
-                        value={createForm.consumerKey}
-                        onChange={(e) => setCreateForm({ ...createForm, consumerKey: e.target.value })}
-                      />
-                    <FormField
-                      label="WooCommerce Consumer Secret"
+                    />
+                    {formErrors['consumerKey'] && (
+                      <p className="text-sm text-foreground">{formErrors['consumerKey']}</p>
+                    )}
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="consumerSecret">Consumer Secret *</Label>
+                    <Input
+                      id="consumerSecret"
+                      type="password"
+                      value={formData.consumerSecret}
+                      onChange={(e) => handleInputChange('consumerSecret', e.target.value)}
+                      placeholder="Enter consumer secret"
                       required
-                        type="password"
-                        placeholder="Enter consumer secret"
-                        value={createForm.consumerSecret}
-                        onChange={(e) => setCreateForm({ ...createForm, consumerSecret: e.target.value })}
                       />
+                    {formErrors['consumerSecret'] && (
+                      <p className="text-sm text-foreground">{formErrors['consumerSecret']}</p>
+                    )}
+                  </div>
                     </div>
-                  <div className="flex flex-col sm:flex-row gap-3 p-6 border-t border-border">
+
+                <div className="flex flex-col sm:flex-row gap-3 pt-4">
+                  <Button
+                    type="submit"
+                    disabled={isSubmitting || createStore.isPending}
+                    className="flex-1 gap-2"
+                  >
+                    {isSubmitting || createStore.isPending ? (
+                      <>
+                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-background border-t-transparent" />
+                        Creating Store...
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="h-4 w-4" />
+                        Create Store
+                      </>
+                    )}
+                  </Button>
                     <Button
+                    type="button"
                       variant="outline"
-                      onClick={() => setShowCreateModal(false)}
-                      className="flex-1 sm:flex-none"
+                    onClick={() => {
+                      setShowCreateModal(false);
+                      resetForm();
+                    }}
+                    disabled={isSubmitting || createStore.isPending}
+                    className="flex-1"
                     >
                       Cancel
                     </Button>
-                    <Button
-                      onClick={handleCreateStore}
-                      disabled={createStore.isPending}
-                      className="flex-1 sm:flex-none"
-                    >
-                      <Plus className="w-4 h-4 mr-2" />
-                      {createStore.isPending ? 'Creating...' : 'Create Store'}
-                    </Button>
-                  </div>
                 </div>
-              </div>
-            )}
+              </form>
+            </DialogContent>
+          </Dialog>
 
             {/* Edit Store Modal */}
-            {editingStore && (
-              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-                <div className="bg-background rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
-                  <div className="flex items-center justify-between p-6 border-b border-border">
-                    <h3 className="text-lg font-semibold text-foreground">Edit Store</h3>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setEditingStore(null)}
-                    >
-                      <X className="w-5 h-5" />
-                    </Button>
+          <Dialog open={!!editingStore} onOpenChange={(open) => {
+            if (!open) {
+              setEditingStore(null);
+              resetForm();
+            }
+          }}>
+            <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto mx-auto">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-3">
+                  <div className="p-2 bg-accent rounded-lg">
+                    <Edit className="h-6 w-6 text-foreground" />
+                  </div>
+                  <div>
+                    <div>Edit Store</div>
+                    <DialogDescription>Update store information and connection settings</DialogDescription>
                       </div>
+                </DialogTitle>
+              </DialogHeader>
+              
                   {storeLoading ? (
                     <div className="flex items-center justify-center py-12">
-                      <div className="flex flex-col items-center gap-4">
-                        <div className="spinner"></div>
-                        <div className="text-lg text-foreground">Loading store data...</div>
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-foreground mx-auto mb-4"></div>
+                    <p className="text-muted-foreground">Loading store data...</p>
                       </div>
                     </div>
                   ) : (
-                  <div className="space-y-4">
-                      <div className="p-6 space-y-4">
-                        <FormField
-                          label="Store Name"
-                          required
-                        type="text"
+                <form onSubmit={(e) => {
+                  e.preventDefault();
+                  if (editingStore) handleUpdateStore();
+                }} className="space-y-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-name">Store Name *</Label>
+                      <Input
+                        id="edit-name"
+                        value={formData.name}
+                        onChange={(e) => handleInputChange('name', e.target.value)}
                         placeholder="Enter store name"
-                          value={editForm.name}
-                          onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                        />
-                        <FormField
-                          label="Store URL"
-                          required
-                        type="url"
-                        placeholder="https://example.com"
-                          value={editForm.url}
-                          onChange={(e) => setEditForm({ ...editForm, url: e.target.value })}
-                        />
-                        <FormField
-                          label="WooCommerce Consumer Key"
-                          required
-                        type="text"
-                        placeholder="Enter consumer key"
-                          value={editForm.consumerKey}
-                          onChange={(e) => setEditForm({ ...editForm, consumerKey: e.target.value })}
-                        />
-                        <FormField
-                          label="WooCommerce Consumer Secret"
-                          required
-                        type="password"
-                        placeholder="Enter consumer secret"
-                          value={editForm.consumerSecret}
-                          onChange={(e) => setEditForm({ ...editForm, consumerSecret: e.target.value })}
+                        required
                       />
+                      {formErrors['name'] && (
+                        <p className="text-sm text-foreground">{formErrors['name']}</p>
+                      )}
                     </div>
-                      <div className="flex flex-col sm:flex-row gap-3 p-6 border-t border-border">
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-url">Store URL *</Label>
+                      <Input
+                        id="edit-url"
+                        type="url"
+                        value={formData.url}
+                        onChange={(e) => handleInputChange('url', e.target.value)}
+                        placeholder="https://example.com"
+                        required
+                      />
+                      {formErrors['url'] && (
+                        <p className="text-sm text-foreground">{formErrors['url']}</p>
+                      )}
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-consumerKey">Consumer Key *</Label>
+                      <Input
+                        id="edit-consumerKey"
+                        value={formData.consumerKey}
+                        onChange={(e) => handleInputChange('consumerKey', e.target.value)}
+                        placeholder="Enter consumer key"
+                        required
+                      />
+                      {formErrors['consumerKey'] && (
+                        <p className="text-sm text-foreground">{formErrors['consumerKey']}</p>
+                      )}
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-consumerSecret">Consumer Secret *</Label>
+                      <Input
+                        id="edit-consumerSecret"
+                        type="password"
+                        value={formData.consumerSecret}
+                        onChange={(e) => handleInputChange('consumerSecret', e.target.value)}
+                        placeholder="Enter consumer secret"
+                        required
+                      />
+                      {formErrors['consumerSecret'] && (
+                        <p className="text-sm text-foreground">{formErrors['consumerSecret']}</p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row gap-3 pt-4">
+                    <Button
+                      type="submit"
+                      disabled={isSubmitting || updateStore.isPending}
+                      className="flex-1 gap-2"
+                    >
+                      {isSubmitting || updateStore.isPending ? (
+                        <>
+                          <div className="h-4 w-4 animate-spin rounded-full border-2 border-background border-t-transparent" />
+                          Saving Changes...
+                        </>
+                      ) : (
+                        <>
+                          <Edit className="h-4 w-4" />
+                          Save Changes
+                        </>
+                      )}
+                    </Button>
                         <Button
+                      type="button"
                           variant="outline"
-                      onClick={() => setEditingStore(null)}
-                          className="flex-1 sm:flex-none"
+                      onClick={() => {
+                        setEditingStore(null);
+                        resetForm();
+                      }}
+                      disabled={isSubmitting || updateStore.isPending}
+                      className="flex-1"
                     >
                       Cancel
                         </Button>
-                        <Button
-                          onClick={handleUpdateStore}
-                          disabled={updateStore.isPending || storeLoading}
-                          className="flex-1 sm:flex-none"
-                    >
-                      <Edit className="w-4 h-4 mr-2" />
-                          {updateStore.isPending ? 'Updating...' : 'Update Store'}
-                        </Button>
                       </div>
-                    </div>
+                </form>
                   )}
-                </div>
-              </div>
-            )}
+            </DialogContent>
+          </Dialog>
           </main>
         </div>
-      </ProtectedComponent>
     </ProtectedRoute>
   );
 }

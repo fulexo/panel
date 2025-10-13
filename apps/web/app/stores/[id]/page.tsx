@@ -58,6 +58,9 @@ export default function StoreDetailPage() {
   const syncStore = useSyncStore();
   const testConnection = useTestStoreConnection();
 
+  const { data: storeStats } = useStoreStats(storeId);
+  const { data: syncLogs } = useStoreSyncLogs(storeId);
+
   if (isLoading) {
     return (
       <ProtectedRoute>
@@ -134,13 +137,6 @@ export default function StoreDetailPage() {
       logger.error('Failed to test connection:', error);
     }
   };
-
-
-
-
-  // Get real store statistics from API
-  const { data: storeStats } = useStoreStats(storeId);
-  const { data: syncLogs } = useStoreSyncLogs(storeId);
 
   // Fallback data structure for display
   const displayStats = {
@@ -510,7 +506,7 @@ export default function StoreDetailPage() {
               <div className="bg-background p-6 rounded-lg border border-border w-full max-w-md shadow-lg">
                 <h3 className="text-lg font-semibold text-foreground mb-4">Delete Store</h3>
                 <p className="text-muted-foreground mb-6">
-                  Are you sure you want to delete "{store.name}"? This action cannot be undone and will remove all associated data.
+                  Are you sure you want to delete &quot;{store.name}&quot;? This action cannot be undone and will remove all associated data.
                 </p>
                 <div className="flex gap-2">
                   <button

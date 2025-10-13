@@ -154,8 +154,8 @@ export default class ErrorBoundary extends Component<Props, State> {
                 Something went wrong
               </h3>
               <p className="mt-2 text-sm text-muted-foreground">
-                We're sorry, but something unexpected happened. 
-                {canRetry ? ' You can try again or refresh the page.' : ' Please refresh the page.'}
+                We&apos;re sorry, but something unexpected happened. 
+                {canRetry ? " You can try again or refresh the page." : " Please refresh the page."}
               </p>
               
               {this.state.errorId && (

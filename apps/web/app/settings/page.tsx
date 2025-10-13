@@ -254,7 +254,7 @@ export default function SettingsPage() {
                             })}
                             className="form-checkbox"
                           />
-                          <span>2FA'yı etkinleştir</span>
+                          <span>2FA&apos;yı etkinleştir</span>
                           {settings.security.twoFactorAuth && (
                             <span className="text-foreground text-sm">✓ Etkin</span>
                           )}
@@ -501,7 +501,7 @@ export default function SettingsPage() {
                             })}
                             className="form-checkbox"
                           />
-                          <span>Sidebar'ı varsayılan olarak daralt</span>
+                          <span>Sidebar&apos;ı varsayılan olarak daralt</span>
                         </label>
                         <label className="flex items-center gap-3">
                           <input

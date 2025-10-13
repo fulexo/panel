@@ -58,7 +58,7 @@ export default function CartPage() {
 
   // Get user's store ID
   useEffect(() => {
-    if (isAdmin() && user?.stores?.length > 0) {
+    if (isAdmin() && user?.stores && user.stores.length > 0) {
       setStoreId(user.stores[0].id);
     } else if (isCustomer() && user?.stores?.[0]?.id) {
       setStoreId(user.stores[0].id);
@@ -78,12 +78,17 @@ export default function CartPage() {
 
   // Filter products based on search and filters
   const filteredProducts = useMemo(() => {
-    if (!productsData?.data) return [];
-    
-    return productsData.data.filter((product: Product) => {
-      const matchesSearch = !searchTerm || 
-        product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.sku.toLowerCase().includes(searchTerm.toLowerCase());
+    const products = (productsData as any)?.data || [];
+    if (!Array.isArray(products)) return [];
+    return products.filter((product: Product) => {
+      const searchValue = searchTerm.trim().toLowerCase();
+      const productName = (product.name ?? "").toLowerCase();
+      const productSku = String(product.sku ?? "").toLowerCase();
+
+      const matchesSearch =
+        !searchValue ||
+        productName.includes(searchValue) ||
+        productSku.includes(searchValue);
       
       const matchesStock = !stockFilter || 
         (stockFilter === 'in-stock' && (product.stockQuantity === null || product.stockQuantity > 0)) ||
@@ -91,7 +96,7 @@ export default function CartPage() {
       
       return matchesSearch && matchesStock;
     });
-  }, [productsData?.data, searchTerm, stockFilter]);
+  }, [productsData, searchTerm, stockFilter]);
 
   const cartItems = (cartData as any)?.cart?.items || [];
   const products = (productsData as any)?.data || [];

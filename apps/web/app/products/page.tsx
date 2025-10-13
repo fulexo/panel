@@ -658,15 +658,15 @@ export default function ProductsPage() {
                 </div>
                 <div className="relative w-full sm:w-48">
                   <Filter className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Select value={category} onValueChange={(value) => {
-                    setCategory(value);
+                  <Select value={category || "all"} onValueChange={(value) => {
+                    setCategory(value === "all" ? "" : value);
                     setPage(1);
                   }}>
                     <SelectTrigger className="pl-10">
                       <SelectValue placeholder="All Categories" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All Categories</SelectItem>
+                      <SelectItem value="all">All Categories</SelectItem>
                       <SelectItem value="electronics">Electronics</SelectItem>
                       <SelectItem value="clothing">Clothing</SelectItem>
                       <SelectItem value="books">Books</SelectItem>
@@ -679,15 +679,15 @@ export default function ProductsPage() {
                 {adminView && (
                   <div className="relative w-full sm:w-52">
                     <Package className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <Select value={storeFilter} onValueChange={(value) => {
-                      setStoreFilter(value);
+                    <Select value={storeFilter || "all"} onValueChange={(value) => {
+                      setStoreFilter(value === "all" ? "" : value);
                       setPage(1);
                     }}>
                       <SelectTrigger className="pl-10">
                         <SelectValue placeholder={`All Stores (${stores.length})`} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">All Stores ({stores.length})</SelectItem>
+                        <SelectItem value="all">All Stores ({stores.length})</SelectItem>
                         {stores.map((store: any) => (
                           <SelectItem key={store.id} value={store.id}>
                             {store.name}

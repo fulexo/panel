@@ -70,6 +70,9 @@ export default function CustomerDetailPage() {
     []
   );
 
+  const { data: customerStats } = useCustomerStats(customerId);
+  const { data: recentOrders } = useCustomerOrders(customerId, { limit: 5 });
+
   if (isLoading) {
     return (
       <ProtectedRoute>
@@ -149,9 +152,6 @@ export default function CustomerDetailPage() {
   };
 
   // Get real customer statistics from API
-  const { data: customerStats } = useCustomerStats(customerId);
-  const { data: recentOrders } = useCustomerOrders(customerId, { limit: 5 });
-
   // Fallback data structure for display
   const displayStats = {
     totalOrders: (customerStats as any)?.totalOrders || 0,
@@ -460,7 +460,7 @@ export default function CustomerDetailPage() {
               <div className="bg-background p-6 rounded-lg border border-border w-full max-w-md shadow-lg">
                 <h3 className="text-lg font-semibold text-foreground mb-4">Delete Customer</h3>
                 <p className="text-muted-foreground mb-6">
-                  Are you sure you want to delete "{customer.firstName} {customer.lastName}"? This action cannot be undone.
+                  Are you sure you want to delete &quot;{customer.firstName} {customer.lastName}&quot;? This action cannot be undone.
                 </p>
                 <div className="flex gap-2">
                   <button

@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import * as bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
@@ -18,7 +18,7 @@ async function main() {
   console.log('✅ Created tenant:', tenant.name);
 
   // Create admin user
-  const adminPassword = await bcrypt.hash(process.env.ADMIN_PASSWORD || 'demo123', 10);
+  const adminPassword = await bcrypt.hash(process.env['ADMIN_PASSWORD'] ?? 'demo123', 10);
   const admin = await prisma.user.upsert({
     where: { email: 'admin@fulexo.com' },
     update: {},
@@ -32,7 +32,7 @@ async function main() {
   console.log('✅ Created admin user:', admin.email);
 
   // Create customer user
-  const customerPassword = await bcrypt.hash(process.env.CUSTOMER_PASSWORD || 'demo123', 10);
+  const customerPassword = await bcrypt.hash(process.env['CUSTOMER_PASSWORD'] ?? 'demo123', 10);
   const customer = await prisma.user.upsert({
     where: { email: 'customer@fulexo.com' },
     update: {},

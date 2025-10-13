@@ -199,6 +199,10 @@ export function useCurrency(): CurrencyContextType {
   return context;
 }
 
+export function useCurrencyOptional(): CurrencyContextType | undefined {
+  return useContext(CurrencyContext);
+}
+
 // Hook for currency selection component
 export function useCurrencySelector() {
   const { currentCurrency, availableCurrencies, setCurrentCurrency, isLoading } = useCurrency();

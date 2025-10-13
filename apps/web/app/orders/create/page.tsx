@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -147,14 +147,14 @@ export default function CreateOrderPage() {
     [shippingOptionsData]
   );
 
-  const clearError = (key: string) => {
+  const clearError = useCallback((key: string) => {
     setFormErrors((prev) => {
       if (!prev[key]) return prev;
       const next = { ...prev };
       delete next[key];
       return next;
     });
-  };
+  }, []);
 
   const handleAddressChange = (
     key: keyof Address,
@@ -180,7 +180,7 @@ export default function CreateOrderPage() {
     setShippingCost(0);
   };
 
-  const applyShippingResponse = (shippingResponse: CalculateShippingResponse) => {
+  const applyShippingResponse = useCallback((shippingResponse: CalculateShippingResponse) => {
     setCalculatedShipping(shippingResponse);
 
     if (shippingResponse.options.length === 1) {
@@ -194,7 +194,7 @@ export default function CreateOrderPage() {
       setSelectedShippingOption("");
       setShippingCost(0);
     }
-  };
+  }, [clearError]);
 
   useEffect(() => {
     if (!selectedShippingZone || cartItems.length === 0) {
@@ -239,6 +239,7 @@ export default function CreateOrderPage() {
     calculateShippingMutation,
     user?.id,
     addNotification,
+    applyShippingResponse,
   ]);
 
   useEffect(() => {

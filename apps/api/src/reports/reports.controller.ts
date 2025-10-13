@@ -20,4 +20,34 @@ export class ReportsController {
   ) {
     return this.reportsService.getDashboardStats(user.tenantId, storeId, user.role);
   }
+
+  @Get('sales')
+  @ApiOperation({ summary: 'Get sales report' })
+  @ApiQuery({ name: 'storeId', required: false, type: String })
+  async getSalesReport(
+    @CurrentUser() user: { id: string; email: string; role: string; tenantId: string },
+    @Query('storeId') storeId?: string
+  ) {
+    return this.reportsService.getSalesReport(user.tenantId, storeId, user.role);
+  }
+
+  @Get('products')
+  @ApiOperation({ summary: 'Get products report' })
+  @ApiQuery({ name: 'storeId', required: false, type: String })
+  async getProductReport(
+    @CurrentUser() user: { id: string; email: string; role: string; tenantId: string },
+    @Query('storeId') storeId?: string
+  ) {
+    return this.reportsService.getProductReport(user.tenantId, storeId, user.role);
+  }
+
+  @Get('customers')
+  @ApiOperation({ summary: 'Get customers report' })
+  @ApiQuery({ name: 'storeId', required: false, type: String })
+  async getCustomerReport(
+    @CurrentUser() user: { id: string; email: string; role: string; tenantId: string },
+    @Query('storeId') storeId?: string
+  ) {
+    return this.reportsService.getCustomerReport(user.tenantId, storeId, user.role);
+  }
 }

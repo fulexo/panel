@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useParams } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
 import { useRBAC } from "@/hooks/useRBAC";
@@ -19,6 +19,29 @@ import { ApiError } from "@/lib/api-client";
 import { formatCurrency } from "@/lib/formatters";
 import { logger } from "@/lib/logger";
 import { Edit, X } from "lucide-react";
+
+const STATUS_META = {
+  active: { label: "Active", tone: "default" as const },
+  draft: { label: "Draft", tone: "default" as const },
+  archived: { label: "Archived", tone: "muted" as const },
+  inactive: { label: "Inactive", tone: "muted" as const },
+};
+
+const STATUS_OPTIONS = [
+  { value: "active", label: "Active" },
+  { value: "draft", label: "Draft" },
+  { value: "archived", label: "Archived" },
+  { value: "inactive", label: "Inactive" },
+];
+
+const CATEGORY_OPTIONS = [
+  { value: "electronics", label: "Electronics" },
+  { value: "clothing", label: "Clothing" },
+  { value: "books", label: "Books" },
+  { value: "home", label: "Home & Garden" },
+  { value: "sports", label: "Sports & Outdoors" },
+  { value: "beauty", label: "Beauty & Health" },
+];
 
 export default function ProductDetailPage() {
   const params = useParams();
@@ -63,16 +86,6 @@ export default function ProductDetailPage() {
   const deleteProduct = useDeleteProduct();
   const isUpdating = updateProduct.isPending;
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
-
-  const statusMeta = useMemo(
-    () => ({
-      active: { label: "Active", tone: "default" as const },
-      draft: { label: "Draft", tone: "default" as const },
-      archived: { label: "Archived", tone: "muted" as const },
-      inactive: { label: "Inactive", tone: "muted" as const },
-    }),
-    []
-  );
 
   if (isLoading) {
     return (
@@ -158,20 +171,17 @@ export default function ProductDetailPage() {
     }
   };
 
-  const productStatus = statusMeta[product.status as keyof typeof statusMeta] ?? {
+  const productStatus = STATUS_META[product.status as keyof typeof STATUS_META] ?? {
     label: product.status,
     tone: "muted" as const,
   };
 
-  const stockStatus = useMemo(() => {
-    if (product.stockQuantity === 0) {
-      return { label: "Out of Stock", tone: "default" as const };
-    }
-    if (product.stockQuantity < 10) {
-      return { label: "Low Stock", tone: "default" as const };
-    }
-    return { label: "In Stock", tone: "default" as const };
-  }, [product.stockQuantity]);
+  const stockStatus =
+    product.stockQuantity === 0
+      ? { label: "Out of Stock", tone: "default" as const }
+      : product.stockQuantity < 10
+        ? { label: "Low Stock", tone: "default" as const }
+        : { label: "In Stock", tone: "default" as const };
 
   const quickActions = [
     { key: "update-stock", label: "Update Stock", onClick: () => console.info("update stock", product.id) },
@@ -186,27 +196,8 @@ export default function ProductDetailPage() {
     { key: "export", label: "Export Data", onClick: () => console.info("export product", product.id) },
   ].filter(Boolean) as Array<{ key: string; label: string; onClick: () => void }>;
 
-  const statusOptions = useMemo(
-    () => [
-      { value: "active", label: "Active" },
-      { value: "draft", label: "Draft" },
-      { value: "archived", label: "Archived" },
-      { value: "inactive", label: "Inactive" },
-    ],
-    []
-  );
-
-  const categoryOptions = useMemo(
-    () => [
-      { value: "electronics", label: "Electronics" },
-      { value: "clothing", label: "Clothing" },
-      { value: "books", label: "Books" },
-      { value: "home", label: "Home & Garden" },
-      { value: "sports", label: "Sports & Outdoors" },
-      { value: "beauty", label: "Beauty & Health" },
-    ],
-    []
-  );
+  const statusOptions = STATUS_OPTIONS;
+  const categoryOptions = CATEGORY_OPTIONS;
 
   return (
     <ProtectedRoute>
@@ -581,7 +572,7 @@ export default function ProductDetailPage() {
               <div className="bg-card w-full max-w-md rounded-xl border border-border p-6 shadow-2xl">
                 <h3 className="text-lg font-semibold text-foreground">Delete Product</h3>
                 <p className="mt-3 text-sm text-muted-foreground">
-                  Are you sure you want to delete "{product.name}"? This action cannot be undone.
+                  Are you sure you want to delete &quot;{product.name}&quot;? This action cannot be undone.
                 </p>
                 <div className="mt-6 flex flex-col gap-2 sm:flex-row">
                   <Button type="button" variant="outline" onClick={handleDelete} className="flex-1">

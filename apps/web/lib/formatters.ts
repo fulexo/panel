@@ -1,3 +1,5 @@
+import { useCurrencyOptional } from '@/contexts/CurrencyProvider';
+
 export interface CurrencyFormatOptions {
   locale?: string;
   currency?: string;
@@ -35,21 +37,19 @@ export function formatCurrency(
 
 // Hook-based formatter that uses CurrencyProvider when available
 export function useCurrencyFormatter() {
-  try {
-    // Try to import and use CurrencyProvider
-    const { useCurrency } = require('@/contexts/CurrencyProvider');
-    const { formatCurrency: contextFormatCurrency, formatNumber: contextFormatNumber } = useCurrency();
+  const context = useCurrencyOptional();
+
+  if (context) {
     return {
-      formatCurrency: contextFormatCurrency,
-      formatNumber: contextFormatNumber,
-    };
-  } catch {
-    // Fallback to static formatters
-    return {
-      formatCurrency,
-      formatNumber,
+      formatCurrency: context.formatCurrency,
+      formatNumber: context.formatNumber,
     };
   }
+
+  return {
+    formatCurrency,
+    formatNumber,
+  };
 }
 
 export function formatNumber(

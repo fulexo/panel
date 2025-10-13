@@ -99,7 +99,10 @@ export default function OrdersPage() {
   //   }
   // };
 
-  const orders = ordersData?.data || [];
+  const orders = useMemo(
+    () => ordersData?.data ?? [],
+    [ordersData?.data]
+  );
   const totalOrders = ordersData?.pagination?.total || 0;
   const totalPages = ordersData?.pagination?.pages || 1;
 
