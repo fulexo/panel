@@ -1012,6 +1012,7 @@ process.on('SIGINT', async () => {
 });
 
 // Handle uncaught exceptions
+// Primary fatal handlers (defined once)
 process.on('uncaughtException', (error) => {
   logger.error('Uncaught Exception:', { error });
   process.exit(1);
@@ -1086,25 +1087,7 @@ process.on('multipleResolves', (type, promise, reason) => {
   logger.warn('Promise multiple resolves:', { type, promise, reason });
 });
 
-process.on('uncaughtException', (error) => {
-  logger.error('Uncaught Exception:', { error });
-  process.exit(1);
-});
-
-process.on('unhandledRejection', (reason, _promise) => {
-  logger.error('Unhandled Rejection:', { reason });
-  process.exit(1);
-});
-
-process.on('SIGTERM', () => {
-  logger.info('SIGTERM received, shutting down gracefully');
-  process.exit(0);
-});
-
-process.on('SIGINT', () => {
-  logger.info('SIGINT received, shutting down gracefully');
-  process.exit(0);
-});
+// Remove duplicate handlers (consolidated above and graceful ones earlier)
 
 process.on('SIGHUP', () => {
   logger.info('SIGHUP received, reloading configuration');
