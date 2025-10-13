@@ -18,7 +18,8 @@ class Logger {
 
   constructor(service: string = 'web') {
     this.service = service;
-    this.level = LOG_LEVELS[process.env['LOG_LEVEL'] as keyof LogLevel] || LOG_LEVELS.INFO;
+    const rawLevel = (process.env['LOG_LEVEL'] || '').toString().toUpperCase();
+    this.level = LOG_LEVELS[(rawLevel as keyof LogLevel)] ?? LOG_LEVELS.INFO;
   }
 
   private shouldLog(level: number): boolean {
@@ -83,7 +84,8 @@ class Logger {
 
   debug(message: string, meta?: Record<string, unknown>): void {
     if (this.shouldLog(LOG_LEVELS.DEBUG)) {
-      logger.info(this.formatMessage('DEBUG', message, meta));
+      // Use console.debug directly with proper formatting
+      console.debug(this.formatMessage('DEBUG', message, meta));
     }
   }
 }
