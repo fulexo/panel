@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
 
     // Debug logging (development only, without sensitive data)
     if (process.env['NODE_ENV'] === 'development') {
-      // eslint-disable-next-line no-console
+       
       console.log('Products API Route - Request received', { page, limit, hasSearch: Boolean(search), hasCategory: Boolean(category), hasStoreId: Boolean(storeId) });
     }
 
@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
     if (!response.ok) {
       const errorText = await response.text();
       if (process.env['NODE_ENV'] === 'development') {
-        // eslint-disable-next-line no-console
+         
         console.error('Backend API error:', response.status);
       }
       return NextResponse.json(
@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(data);
   } catch (error) {
     if (process.env['NODE_ENV'] === 'development') {
-      // eslint-disable-next-line no-console
+       
       console.error('Products API error');
     }
     return NextResponse.json(
@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
     if (!response.ok) {
       const errorText = await response.text();
       if (process.env['NODE_ENV'] === 'development') {
-        // eslint-disable-next-line no-console
+         
         console.error('Backend API error:', response.status);
       }
       return NextResponse.json(
@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(data);
   } catch (error) {
     if (process.env['NODE_ENV'] === 'development') {
-      // eslint-disable-next-line no-console
+       
       console.error('Create product API error');
     }
     return NextResponse.json(

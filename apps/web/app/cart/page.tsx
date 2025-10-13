@@ -15,7 +15,6 @@ import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { FormField } from "@/components/forms/FormField";
 import { FormSelect } from "@/components/forms/FormSelect";
 import { FormCheckbox } from "@/components/forms/FormCheckbox";
@@ -91,15 +90,14 @@ export default function CartPage() {
         productSku.includes(searchValue);
       
       const matchesStock = !stockFilter || 
-        (stockFilter === 'in-stock' && (product.stockQuantity === null || product.stockQuantity > 0)) ||
-        (stockFilter === 'out-of-stock' && product.stockQuantity !== null && product.stockQuantity <= 0);
+        (stockFilter === 'in-stock' && (product.stockQuantity === null || (product.stockQuantity ?? 0) > 0)) ||
+        (stockFilter === 'out-of-stock' && product.stockQuantity !== null && (product.stockQuantity ?? 0) <= 0);
       
       return matchesSearch && matchesStock;
     });
   }, [productsData, searchTerm, stockFilter]);
 
   const cartItems = (cartData as any)?.cart?.items || [];
-  const products = (productsData as any)?.data || [];
 
   const calculateTotal = () => {
     return cartItems.reduce((total: number, item: any) => {
@@ -319,7 +317,7 @@ export default function CartPage() {
                       icon={ShoppingCart}
                       title="Cart is Empty"
                       description="Add products to your cart to get started"
-                      action={
+                      actions={
                         <Button asChild>
                           <Link href="/products" className="gap-2">
                             <Package className="w-4 h-4" />

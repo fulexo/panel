@@ -4,7 +4,7 @@ const API_BASE_URL = getClientApiBaseUrl();
 
 // Debug logging (development only, without PII)
 if (process.env['NODE_ENV'] === 'development') {
-  // eslint-disable-next-line no-console
+   
   console.log('API client initialized', {
     apiBaseResolved: API_BASE_URL ? 'absolute' : 'relative',
     hasPublicApiBase: Boolean(process.env['NEXT_PUBLIC_API_BASE'])
@@ -247,7 +247,7 @@ class ApiClient {
       return await this.request(`/api/products${queryString ? `?${queryString}` : ''}`);
     } catch (error) {
       if (process.env['NODE_ENV'] === 'development') {
-        // eslint-disable-next-line no-console
+         
         console.error('getProducts error');
       }
       if (error instanceof ApiError) {

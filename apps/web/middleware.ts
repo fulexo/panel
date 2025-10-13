@@ -10,7 +10,7 @@ export function middleware(request: NextRequest) {
   
   if (process.env['NODE_ENV'] === 'development') {
     // Minimal debug without leaking sensitive values
-    // eslint-disable-next-line no-console
+     
     console.log('Middleware', {
       pathname,
       hasUserCookie: Boolean(userCookie?.value),
@@ -23,13 +23,13 @@ export function middleware(request: NextRequest) {
     if (userCookie?.value) {
       user = JSON.parse(userCookie.value);
       if (process.env['NODE_ENV'] === 'development') {
-        // eslint-disable-next-line no-console
+         
         console.log('Middleware - parsed user');
       }
     }
-  } catch (error) {
+  } catch {
     if (process.env['NODE_ENV'] === 'development') {
-      // eslint-disable-next-line no-console
+       
       console.log('Middleware - cookie parse error');
     }
     // Invalid user cookie, clear it
@@ -73,7 +73,7 @@ export function middleware(request: NextRequest) {
   // Redirect unauthenticated users to login
   if (!isPublicRoute && !user && !accessToken) {
     if (process.env['NODE_ENV'] === 'development') {
-      // eslint-disable-next-line no-console
+       
       console.log('Middleware - Redirecting to login');
     }
     const loginUrl = new URL('/login', request.url);

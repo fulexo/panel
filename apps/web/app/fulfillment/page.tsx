@@ -34,13 +34,11 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { cn } from "@/lib/utils";
 import {
   Package,
   Plus,
   Trash2,
   Calendar,
-  Euro,
   FileText,
   Settings,
   X,

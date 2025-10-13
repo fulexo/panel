@@ -30,7 +30,7 @@ export class AuthGuard implements CanActivate {
     // Avoid logging sensitive headers in production
     if (process.env['NODE_ENV'] === 'development') {
       // Minimal debug without sensitive values
-      // eslint-disable-next-line no-console
+       
       console.log('Auth Guard - Request received', {
         hasAuthorization: Boolean(request.headers.authorization),
         hasCookie: Boolean(request.headers.cookie),

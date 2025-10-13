@@ -24,7 +24,7 @@ export async function GET(
     if (!response.ok) {
       const errorText = await response.text();
       if (process.env['NODE_ENV'] === 'development') {
-        // eslint-disable-next-line no-console
+         
         console.error('Backend API error:', response.status);
       }
       return NextResponse.json(
@@ -37,7 +37,7 @@ export async function GET(
     return NextResponse.json(data);
   } catch (error) {
     if (process.env['NODE_ENV'] === 'development') {
-      // eslint-disable-next-line no-console
+       
       console.error('Get bundle items API error');
     }
     return NextResponse.json(
@@ -70,7 +70,7 @@ export async function POST(
     if (!response.ok) {
       const errorText = await response.text();
       if (process.env['NODE_ENV'] === 'development') {
-        // eslint-disable-next-line no-console
+         
         console.error('Backend API error:', response.status);
       }
       return NextResponse.json(
@@ -83,7 +83,7 @@ export async function POST(
     return NextResponse.json(data);
   } catch (error) {
     if (process.env['NODE_ENV'] === 'development') {
-      // eslint-disable-next-line no-console
+       
       console.error('Add bundle item API error');
     }
     return NextResponse.json(

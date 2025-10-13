@@ -9,7 +9,6 @@ import { AuditService } from '../audit/audit.service';
 import { APP_GUARD } from '@nestjs/core';
 import { AuthGuard } from './auth.guard';
 import { RolesGuard } from './roles.guard';
-import { RateLimitGuard } from '../rate-limit.guard';
 import { JwtService } from '../jwt';
 import { InternalAuthGuard } from './internal-auth.guard';
 

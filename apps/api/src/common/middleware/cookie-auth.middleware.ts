@@ -8,7 +8,7 @@ export class CookieAuthMiddleware implements NestMiddleware {
     const accessToken = req.cookies?.['access_token'];
     // Avoid logging sensitive data; only minimal debug in development
     if (process.env['NODE_ENV'] === 'development') {
-      // eslint-disable-next-line no-console
+       
       console.log('CookieAuthMiddleware', {
         url: req.url,
         method: req.method,
