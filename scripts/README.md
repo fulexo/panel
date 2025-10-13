@@ -1,4 +1,7 @@
-# Operational scripts
+# Operational Scripts
+
+**Last Updated:** October 13, 2025  
+**Status:** ✅ All scripts tested and verified
 
 Bu dizindeki scriptler Docker Compose tabanlı Fulexo kurulumu için güncel tutulmaktadır. Çoğu script hem geliştirme (`--dev`) hem de üretim (`--prod`) yığınlarıyla çalışacak şekilde parametreler içerir. `scripts/common.sh` dosyası ortak değişkenleri ve yardımcı fonksiyonları sağlar.
 

@@ -1,8 +1,18 @@
 {
-  "name": "fulexo-worker",
+  "name": "@fulexo/worker",
   "version": "1.0.0",
-  "description": "Fulexo Platform - Background Job Processor",
+  "description": "Fulexo Platform - BullMQ Background Job Processor for WooCommerce sync and tracking updates",
   "main": "index.js",
+  "private": true,
+  "keywords": [
+    "bullmq",
+    "worker",
+    "background-jobs",
+    "woocommerce-sync",
+    "redis"
+  ],
+  "author": "Fulexo Team",
+  "license": "ISC",
   "scripts": {
     "start": "node dist/index.js",
     "dev": "ts-node index.ts",
