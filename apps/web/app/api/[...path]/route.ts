@@ -165,7 +165,7 @@ async function handleRequest(
     }
 
     // Copy Set-Cookie headers for authentication
-    const setCookieHeaders = response.headers.getSetCookie();
+    const setCookieHeaders = (response.headers.getSetCookie?.() ?? (response.headers as any).raw?.()?.['set-cookie']) as string[] | undefined;
     if (setCookieHeaders && setCookieHeaders.length > 0) {
       // Create response based on content type
       const nextResponse = isBinary
