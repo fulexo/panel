@@ -8,18 +8,30 @@ export function middleware(request: NextRequest) {
   const userCookie = request.cookies.get('user');
   const accessToken = request.cookies.get('access_token');
   
-  console.log('Middleware - pathname:', pathname);
-  console.log('Middleware - userCookie:', userCookie?.value);
-  console.log('Middleware - accessToken:', accessToken?.value);
+  if (process.env['NODE_ENV'] === 'development') {
+    // Minimal debug without leaking sensitive values
+    // eslint-disable-next-line no-console
+    console.log('Middleware', {
+      pathname,
+      hasUserCookie: Boolean(userCookie?.value),
+      hasAccessToken: Boolean(accessToken?.value),
+    });
+  }
   
   let user = null;
   try {
     if (userCookie?.value) {
       user = JSON.parse(userCookie.value);
-      console.log('Middleware - parsed user:', user);
+      if (process.env['NODE_ENV'] === 'development') {
+        // eslint-disable-next-line no-console
+        console.log('Middleware - parsed user');
+      }
     }
   } catch (error) {
-    console.log('Middleware - cookie parse error:', error);
+    if (process.env['NODE_ENV'] === 'development') {
+      // eslint-disable-next-line no-console
+      console.log('Middleware - cookie parse error');
+    }
     // Invalid user cookie, clear it
   }
 
@@ -60,7 +72,10 @@ export function middleware(request: NextRequest) {
 
   // Redirect unauthenticated users to login
   if (!isPublicRoute && !user && !accessToken) {
-    console.log('Middleware - Redirecting to login. isPublicRoute:', isPublicRoute, 'user:', user, 'accessToken:', accessToken);
+    if (process.env['NODE_ENV'] === 'development') {
+      // eslint-disable-next-line no-console
+      console.log('Middleware - Redirecting to login');
+    }
     const loginUrl = new URL('/login', request.url);
     loginUrl.searchParams.set('from', pathname);
     return NextResponse.redirect(loginUrl);
