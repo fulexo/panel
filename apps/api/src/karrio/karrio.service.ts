@@ -37,44 +37,61 @@ export class KarrioService {
     this.assertConfigured();
     const url = `${this.karrioApiUrl}/v1/proxy/rates`;
     this.logger.debug(`Requesting rates from Karrio for reference: ${payload.reference}`);
-    const { data } = await firstValueFrom(
-      this.httpService.post(url, payload, { headers: this.getHeaders() }).pipe(
-        catchError((error) => {
-          this.logger.error('Karrio rate request failed!', error.response?.data);
-          throw new HttpException('Failed to get rates from carrier.', error.response?.status || 500);
-        }),
-      ),
+    return await this.requestWithRetry(() =>
+      this.httpService.post(url, payload, { headers: this.getHeaders() })
     );
-    return data;
   }
 
   async createShipment(payload: any): Promise<any> {
     this.assertConfigured();
     const url = `${this.karrioApiUrl}/v1/proxy/shipping`;
     this.logger.debug(`Creating shipment with Karrio for reference: ${payload.reference}`);
-    const { data } = await firstValueFrom(
-      this.httpService.post(url, payload, { headers: this.getHeaders() }).pipe(
-        catchError((error) => {
-          this.logger.error('Karrio shipment creation failed!', error.response?.data);
-          throw new HttpException('Failed to create shipment.', error.response?.status || 500);
-        }),
-      ),
+    return await this.requestWithRetry(() =>
+      this.httpService.post(url, payload, { headers: this.getHeaders() })
     );
-    return data;
   }
 
   async trackShipment(carrierName: string, trackingNumber: string): Promise<any> {
     this.assertConfigured();
     const url = `${this.karrioApiUrl}/v1/proxy/tracking/${carrierName}/${trackingNumber}`;
     this.logger.debug(`Tracking shipment with Karrio: ${carrierName}/${trackingNumber}`);
-    const { data } = await firstValueFrom(
-      this.httpService.get(url, { headers: this.getHeaders() }).pipe(
-        catchError((error) => {
-          this.logger.error('Karrio shipment tracking failed!', error.response?.data);
-          throw new HttpException('Failed to track shipment.', error.response?.status || 500);
-        }),
-      ),
+    return await this.requestWithRetry(() =>
+      this.httpService.get(url, { headers: this.getHeaders() })
     );
-    return data;
+  }
+
+  private async requestWithRetry<T>(requestFactory: () => any, maxAttempts = 3, baseDelayMs = 300): Promise<T> {
+    let lastError: any;
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        const { data } = await firstValueFrom(
+          requestFactory().pipe(
+            catchError((error) => {
+              const status = error?.response?.status as number | undefined;
+              const isTransient = status === 429 || (status !== undefined && status >= 500);
+              if (!isTransient) {
+                throw new HttpException(
+                  'Carrier request failed',
+                  status || HttpStatus.BAD_GATEWAY,
+                );
+              }
+              throw error;
+            }),
+          ),
+        );
+        return data as T;
+      } catch (error) {
+        lastError = error;
+        if (attempt < maxAttempts) {
+          const jitter = Math.floor(Math.random() * 100);
+          const delay = baseDelayMs * attempt + jitter;
+          await new Promise((r) => setTimeout(r, delay));
+          continue;
+        }
+      }
+    }
+    const status = (lastError?.response?.status as number | undefined) || HttpStatus.BAD_GATEWAY;
+    this.logger.error('Karrio request failed after retries', { status });
+    throw new HttpException('Carrier service unavailable', status);
   }
 }
