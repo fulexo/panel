@@ -55,6 +55,7 @@ export default defineConfig({
       env: {
         ...process.env,
         NODE_ENV: 'test',
+        PORT: '3001',
       },
     },
   ],

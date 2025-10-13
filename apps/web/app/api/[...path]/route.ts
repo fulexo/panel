@@ -1,4 +1,4 @@
-﻿import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getBackendApiBaseUrl } from '@/lib/backend-api';
 
 const BACKEND_API_BASE = getBackendApiBaseUrl();
@@ -133,7 +133,7 @@ async function handleRequest(
 
     // Prepare response headers
     const responseHeaders: HeadersInit = {
-      'Content-Type': contentType || 'application/json',
+      'Content-Type': responseContentType,
     };
 
     // Copy other important headers
