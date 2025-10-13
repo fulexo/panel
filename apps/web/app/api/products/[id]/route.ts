@@ -1,4 +1,4 @@
-﻿import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getBackendApiBaseUrl } from '@/lib/backend-api';
 
 const BACKEND_API_BASE = getBackendApiBaseUrl();
@@ -25,7 +25,10 @@ export async function GET(
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Backend API error:', response.status, errorText);
+      if (process.env['NODE_ENV'] === 'development') {
+        // eslint-disable-next-line no-console
+        console.error('Backend API error:', response.status);
+      }
       return NextResponse.json(
         { error: 'Failed to fetch product', details: errorText },
         { status: response.status }
@@ -35,7 +38,10 @@ export async function GET(
     const data = await response.json();
     return NextResponse.json(data);
   } catch (error) {
-    console.error('Get product API error:', error);
+    if (process.env['NODE_ENV'] === 'development') {
+      // eslint-disable-next-line no-console
+      console.error('Get product API error');
+    }
     return NextResponse.json(
       { error: 'Database operation failed', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
@@ -65,7 +71,10 @@ export async function PUT(
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Backend API error:', response.status, errorText);
+      if (process.env['NODE_ENV'] === 'development') {
+        // eslint-disable-next-line no-console
+        console.error('Backend API error:', response.status);
+      }
       return NextResponse.json(
         { error: 'Failed to update product', details: errorText },
         { status: response.status }
@@ -75,7 +84,10 @@ export async function PUT(
     const data = await response.json();
     return NextResponse.json(data);
   } catch (error) {
-    console.error('Update product API error:', error);
+    if (process.env['NODE_ENV'] === 'development') {
+      // eslint-disable-next-line no-console
+      console.error('Update product API error');
+    }
     return NextResponse.json(
       { error: 'Database operation failed', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
@@ -103,7 +115,10 @@ export async function DELETE(
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Backend API error:', response.status, errorText);
+      if (process.env['NODE_ENV'] === 'development') {
+        // eslint-disable-next-line no-console
+        console.error('Backend API error:', response.status);
+      }
       return NextResponse.json(
         { error: 'Failed to delete product', details: errorText },
         { status: response.status }
@@ -113,7 +128,10 @@ export async function DELETE(
     const data = await response.json();
     return NextResponse.json(data);
   } catch (error) {
-    console.error('Delete product API error:', error);
+    if (process.env['NODE_ENV'] === 'development') {
+      // eslint-disable-next-line no-console
+      console.error('Delete product API error');
+    }
     return NextResponse.json(
       { error: 'Database operation failed', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }

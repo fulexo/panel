@@ -1,4 +1,4 @@
-﻿import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getBackendApiBaseUrl } from '@/lib/backend-api';
 
 const BACKEND_API_BASE = getBackendApiBaseUrl();
@@ -32,7 +32,10 @@ export async function POST(_request: NextRequest) {
     
     return nextResponse;
   } catch (error) {
-    console.error('Clear tokens error:', error);
+    if (process.env['NODE_ENV'] === 'development') {
+      // eslint-disable-next-line no-console
+      console.error('Clear tokens error');
+    }
     return NextResponse.json(
       { error: 'Internal Server Error' },
       { status: 500 }
