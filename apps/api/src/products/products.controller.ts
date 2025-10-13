@@ -50,19 +50,28 @@ export class ProductsController {
 
     const limitNumber = normalizeLimit(query.limit, 50, 200);
 
-    console.log('Products list request:', { user: user.id, tenantId: user.tenantId, page: pageNumber, limit: limitNumber, search: query.search, status: query.status, category: query.category, storeId: query.storeId });
+    if (process.env['NODE_ENV'] === 'development') {
+      // eslint-disable-next-line no-console
+      console.log('Products list request', { userId: user.id, tenant: Boolean(user.tenantId), page: pageNumber, limit: limitNumber, hasSearch: Boolean(query.search) });
+    }
 
     try {
 
       const result = await this.products.list(user.tenantId, pageNumber, limitNumber, query.search, query.status, query.category, query.storeId);
 
-      console.log('Products list result:', { total: result.pagination.total, count: result.data.length });
+      if (process.env['NODE_ENV'] === 'development') {
+        // eslint-disable-next-line no-console
+        console.log('Products list result', { total: result.pagination.total, count: result.data.length });
+      }
 
       return result;
 
     } catch (error) {
 
-      console.error('Products list error:', error);
+      if (process.env['NODE_ENV'] === 'development') {
+        // eslint-disable-next-line no-console
+        console.error('Products list error');
+      }
 
       throw error;
 
