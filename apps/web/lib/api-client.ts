@@ -1,10 +1,15 @@
-﻿import { getClientApiBaseUrl } from '@/lib/backend-api';
+import { getClientApiBaseUrl } from '@/lib/backend-api';
 
 const API_BASE_URL = getClientApiBaseUrl();
 
-// Debug logging
-console.log('API_BASE_URL (resolved):', API_BASE_URL || '[relative]');
-console.log('NEXT_PUBLIC_API_BASE env:', process.env['NEXT_PUBLIC_API_BASE']);
+// Debug logging (development only, without PII)
+if (process.env['NODE_ENV'] === 'development') {
+  // eslint-disable-next-line no-console
+  console.log('API client initialized', {
+    apiBaseResolved: API_BASE_URL ? 'absolute' : 'relative',
+    hasPublicApiBase: Boolean(process.env['NEXT_PUBLIC_API_BASE'])
+  });
+}
 
 class ApiError extends Error {
   constructor(
@@ -241,7 +246,10 @@ class ApiClient {
       const queryString = searchParams.toString();
       return await this.request(`/api/products${queryString ? `?${queryString}` : ''}`);
     } catch (error) {
-      console.error('getProducts error:', error);
+      if (process.env['NODE_ENV'] === 'development') {
+        // eslint-disable-next-line no-console
+        console.error('getProducts error');
+      }
       if (error instanceof ApiError) {
         throw error;
       }

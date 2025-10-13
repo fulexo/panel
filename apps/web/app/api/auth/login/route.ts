@@ -1,21 +1,21 @@
-﻿import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getBackendApiBaseUrl } from '@/lib/backend-api';
 
 const BACKEND_API_BASE = getBackendApiBaseUrl();
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('Login endpoint called');
-    console.log('BACKEND_API_BASE:', BACKEND_API_BASE);
-    console.log('Environment variables:', {
-      BACKEND_API_BASE: process.env['BACKEND_API_BASE'],
-      API_BASE_URL: process.env['API_BASE_URL'],
-      NEXT_PUBLIC_API_BASE: process.env['NEXT_PUBLIC_API_BASE'],
-      DOMAIN_API: process.env['DOMAIN_API'],
-      NODE_ENV: process.env['NODE_ENV']
-    });
+    if (process.env['NODE_ENV'] === 'development') {
+      // eslint-disable-next-line no-console
+      console.log('Login endpoint called', {
+        backendBaseConfigured: Boolean(BACKEND_API_BASE),
+      });
+    }
     const { email, password } = await request.json();
-    console.log('Email:', email);
+    if (process.env['NODE_ENV'] === 'development') {
+      // eslint-disable-next-line no-console
+      console.log('Login payload received');
+    }
 
     if (!email || !password) {
       return NextResponse.json(
@@ -29,7 +29,10 @@ export async function POST(request: NextRequest) {
     // Check if backend is running
     let backendResponse;
     try {
-      console.log('Calling backend API...');
+      if (process.env['NODE_ENV'] === 'development') {
+        // eslint-disable-next-line no-console
+        console.log('Calling backend API...');
+      }
       
       // Add timeout to prevent hanging
       const controller = new globalThis.AbortController();
@@ -46,14 +49,20 @@ export async function POST(request: NextRequest) {
       
       clearTimeout(timeoutId);
     } catch (fetchError) {
-      console.error('Backend connection error:', fetchError);
+      if (process.env['NODE_ENV'] === 'development') {
+        // eslint-disable-next-line no-console
+        console.error('Backend connection error');
+      }
       return NextResponse.json(
         { error: 'Backend service is not available. Please check if API server is running.' },
         { status: 503 }
       );
     }
 
-    console.log('Backend response status:', backendResponse.status);
+    if (process.env['NODE_ENV'] === 'development') {
+      // eslint-disable-next-line no-console
+      console.log('Backend response status:', backendResponse.status);
+    }
 
     if (!backendResponse.ok) {
       let errorData;
@@ -62,7 +71,10 @@ export async function POST(request: NextRequest) {
       } catch {
         errorData = { message: 'Backend returned an error' };
       }
-      console.log('Backend error:', errorData);
+      if (process.env['NODE_ENV'] === 'development') {
+        // eslint-disable-next-line no-console
+        console.log('Backend returned error');
+      }
       return NextResponse.json(
         { error: errorData.message || 'Login failed' },
         { status: backendResponse.status }
@@ -70,7 +82,10 @@ export async function POST(request: NextRequest) {
     }
 
     const data = await backendResponse.json();
-    console.log('Backend success data:', data);
+    if (process.env['NODE_ENV'] === 'development') {
+      // eslint-disable-next-line no-console
+      console.log('Backend success');
+    }
 
     // Set cookies for authentication
     const response = NextResponse.json({
@@ -91,7 +106,10 @@ export async function POST(request: NextRequest) {
 
     return response;
   } catch (error) {
-    console.error('Login error:', error);
+    if (process.env['NODE_ENV'] === 'development') {
+      // eslint-disable-next-line no-console
+      console.error('Login error');
+    }
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

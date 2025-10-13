@@ -1,4 +1,4 @@
-﻿import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getBackendApiBaseUrl } from '@/lib/backend-api';
 
 const BACKEND_API_BASE = getBackendApiBaseUrl();
@@ -12,11 +12,11 @@ export async function GET(request: NextRequest) {
     const category = searchParams.get('category') || '';
     const storeId = searchParams.get('storeId') || '';
 
-    // Debug logging
-    const cookies = request.headers.get('cookie') || '';
-    console.log('Products API Route - Request cookies:', cookies);
-    console.log('Products API Route - Request params:', { page, limit, search, category, storeId });
-    console.log('Products API Route - All headers:', Object.fromEntries(request.headers.entries()));
+    // Debug logging (development only, without sensitive data)
+    if (process.env['NODE_ENV'] === 'development') {
+      // eslint-disable-next-line no-console
+      console.log('Products API Route - Request received', { page, limit, hasSearch: Boolean(search), hasCategory: Boolean(category), hasStoreId: Boolean(storeId) });
+    }
 
     // Forward request to backend API
     const backendUrl = new URL('/api/products', BACKEND_API_BASE);
@@ -38,7 +38,10 @@ export async function GET(request: NextRequest) {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Backend API error:', response.status, errorText);
+      if (process.env['NODE_ENV'] === 'development') {
+        // eslint-disable-next-line no-console
+        console.error('Backend API error:', response.status);
+      }
       return NextResponse.json(
         { error: 'Failed to fetch products', details: errorText },
         { status: response.status }
@@ -48,7 +51,10 @@ export async function GET(request: NextRequest) {
     const data = await response.json();
     return NextResponse.json(data);
   } catch (error) {
-    console.error('Products API error:', error);
+    if (process.env['NODE_ENV'] === 'development') {
+      // eslint-disable-next-line no-console
+      console.error('Products API error');
+    }
     return NextResponse.json(
       { error: 'Database operation failed', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
@@ -74,7 +80,10 @@ export async function POST(request: NextRequest) {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Backend API error:', response.status, errorText);
+      if (process.env['NODE_ENV'] === 'development') {
+        // eslint-disable-next-line no-console
+        console.error('Backend API error:', response.status);
+      }
       return NextResponse.json(
         { error: 'Failed to create product', details: errorText },
         { status: response.status }
@@ -84,7 +93,10 @@ export async function POST(request: NextRequest) {
     const data = await response.json();
     return NextResponse.json(data);
   } catch (error) {
-    console.error('Create product API error:', error);
+    if (process.env['NODE_ENV'] === 'development') {
+      // eslint-disable-next-line no-console
+      console.error('Create product API error');
+    }
     return NextResponse.json(
       { error: 'Database operation failed', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
