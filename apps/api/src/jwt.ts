@@ -1,4 +1,5 @@
-import * as jose from 'jose';
+// Use dynamic import to support ESM-only 'jose' in a CommonJS build
+type JoseModule = typeof import('jose');
 import { PrismaService } from './prisma.service';
 import { Logger } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
@@ -19,6 +20,7 @@ export class JwtService {
   private keyId: string | null = null;
   private initialized: boolean = false;
   private readonly logger = new Logger(JwtService.name);
+  private joseModule?: JoseModule;
 
   constructor(private prisma: PrismaService) {
     // Initialize immediately
@@ -44,8 +46,16 @@ export class JwtService {
     }
   }
 
+  private async getJose(): Promise<JoseModule> {
+    if (!this.joseModule) {
+      this.joseModule = await import('jose');
+    }
+    return this.joseModule;
+  }
+
   private async initRSAKeys() {
     try {
+      const jose = await this.getJose();
       // Mevcut aktif key'i kontrol et
       const existingKey = await this.prisma.jwtKey.findFirst({
         where: { active: true },
@@ -55,7 +65,7 @@ export class JwtService {
       if (existingKey && existingKey.privatePem) {
         // Mevcut key'i kullan
         this.privateKey = await jose.importPKCS8(existingKey.privatePem, 'RS256');
-        this.publicKey = await jose.importJWK(existingKey.publicJwk as jose.JWK, 'RS256') as CryptoKey;
+        this.publicKey = await jose.importJWK(existingKey.publicJwk as unknown as Record<string, unknown>, 'RS256') as CryptoKey;
         this.keyId = existingKey.kid;
       } else {
         // Yeni key pair oluştur
@@ -169,6 +179,7 @@ export class JwtService {
       }
     }
 
+    const jose = await this.getJose();
     const now = Math.floor(Date.now() / 1000);
     const jti = `jti_${userId}_${now}`;
 
@@ -192,7 +203,7 @@ export class JwtService {
       jti: `refresh_${jti}`
     };
 
-    const accessToken = await new jose.SignJWT(accessPayload as unknown as jose.JWTPayload)
+    const accessToken = await new jose.SignJWT(accessPayload as unknown as Record<string, unknown>)
       .setProtectedHeader({ 
         alg: process.env['NODE_ENV'] === 'production' ? 'RS256' : 'HS256',
         ...(this.keyId && { kid: this.keyId })
@@ -201,7 +212,7 @@ export class JwtService {
       .setExpirationTime('15m')
       .sign(this.privateKey);
 
-    const refreshToken = await new jose.SignJWT(refreshPayload as unknown as jose.JWTPayload)
+    const refreshToken = await new jose.SignJWT(refreshPayload as unknown as Record<string, unknown>)
       .setProtectedHeader({ 
         alg: process.env['NODE_ENV'] === 'production' ? 'RS256' : 'HS256',
         ...(this.keyId && { kid: this.keyId })
@@ -225,6 +236,7 @@ export class JwtService {
     }
 
     try {
+      const jose = await this.getJose();
       const { payload } = await jose.jwtVerify(token, this.publicKey, {
         algorithms: [process.env['NODE_ENV'] === 'production' ? 'RS256' : 'HS256'],
         clockTolerance: 30, // 30 seconds tolerance
@@ -243,6 +255,7 @@ export class JwtService {
 
       return payload as unknown as JWTPayload;
     } catch (error) {
+      const jose = await this.getJose();
       if (error instanceof jose.errors.JWTExpired) {
         throw new Error('Token has expired');
       } else if (error instanceof jose.errors.JWTInvalid) {
@@ -264,6 +277,7 @@ export class JwtService {
     }
 
     try {
+      const jose = await this.getJose();
       const { payload } = await jose.jwtVerify(token, this.publicKey, {
         algorithms: [process.env['NODE_ENV'] === 'production' ? 'RS256' : 'HS256']
       });
@@ -286,6 +300,7 @@ export class JwtService {
 
     try {
       // Export the public key in JWK format
+      const jose = await this.getJose();
       const jwk = await jose.exportJWK(this.publicKey);
       
       return {

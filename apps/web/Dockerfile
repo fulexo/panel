@@ -1,5 +1,5 @@
 # Multi-stage Dockerfile for Web App
-FROM node:18-alpine AS base
+FROM node:20-alpine AS base
 
 # Install dependencies only when needed
 FROM base AS deps
@@ -16,11 +16,11 @@ RUN cd apps/web && npm ci --only=production
 # Rebuild the source code only when needed
 FROM base AS builder
 WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/apps/web/node_modules ./apps/web/node_modules
 COPY . .
 
-# Build the application
-RUN cd apps/web && npm run build
+# Build the application (skip lint to avoid devDeps in production image)
+RUN cd apps/web && npm run build -- --no-lint
 
 # Production image
 FROM base AS production
@@ -30,11 +30,12 @@ WORKDIR /app
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-# Copy built application
-COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/static ./apps/web/.next/static
-COPY --from=builder --chown=nextjs:nodejs /app/apps/web/public ./apps/web/public
+# Copy runtime artifacts
+COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next /app/apps/web/.next
+COPY --from=deps --chown=nextjs:nodejs /app/apps/web/node_modules /app/apps/web/node_modules
+COPY --from=builder --chown=nextjs:nodejs /app/apps/web/package*.json /app/apps/web/
 
+WORKDIR /app/apps/web
 USER nextjs
 
 EXPOSE 3000
@@ -43,4 +44,4 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
   CMD curl -f http://localhost:3000 || exit 1
 
-CMD ["node", "server.js"]
+CMD ["npm", "run", "start"]

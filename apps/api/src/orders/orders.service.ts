@@ -11,7 +11,13 @@ import { ApproveOrderDto, RejectOrderDto } from './dto/approve-order.dto';
 // import { AddToCartDto, UpdateCartItemDto } from './dto/cart.dto';
 import { PrismaClient } from '@prisma/client';
 import { Decimal } from 'decimal.js';
-import * as jose from 'jose';
+// Defer import of ESM-only 'jose' to runtime to work in CJS
+type JoseModule = typeof import('jose');
+let josePromise: Promise<JoseModule> | null = null;
+function getJose(): Promise<JoseModule> {
+  if (!josePromise) josePromise = import('jose');
+  return josePromise;
+}
 import { toPrismaJsonValue } from '../common/utils/prisma-json.util';
 
 @Injectable()
@@ -643,6 +649,7 @@ export class OrdersService {
     
     // Create short-lived token (24h) with order reference
     const secret = new TextEncoder().encode(shareSecret);
+    const jose = await getJose();
     const token = await new jose.SignJWT({ orderId: order.id })
       .setProtectedHeader({ alg: 'HS256' })
       .setIssuedAt()
@@ -660,6 +667,7 @@ export class OrdersService {
     }
     
     const secret = new TextEncoder().encode(shareSecret);
+    const jose = await getJose();
     try {
       const { payload } = await jose.jwtVerify(token, secret);
       const orderId = String(payload['orderId']);

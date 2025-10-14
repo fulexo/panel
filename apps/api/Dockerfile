@@ -1,5 +1,5 @@
 # Multi-stage Dockerfile for API
-FROM node:18-alpine AS base
+FROM node:20-alpine AS base
 
 # Install dependencies only when needed
 FROM base AS deps
@@ -16,7 +16,7 @@ RUN cd apps/api && npm ci --only=production
 # Rebuild the source code only when needed
 FROM base AS builder
 WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/apps/api/node_modules ./apps/api/node_modules
 COPY . .
 
 # Generate Prisma client
