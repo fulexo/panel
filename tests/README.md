@@ -1,129 +1,161 @@
-# Test Suite
+# Test Organization
 
-## Test Structure
+Bu klasör tüm test dosyalarının merkezi organizasyonunu içerir.
+
+## 📁 Klasör Yapısı
 
 ```
 tests/
-├── unit/           # Unit tests
-│   ├── api/        # API unit tests
-│   ├── web/        # Web unit tests
-│   └── worker/     # Worker unit tests
-├── integration/    # Integration tests
-└── e2e/           # End-to-end tests
+├── unit/                 # Unit testleri
+│   ├── api/             # Backend API testleri
+│   ├── web/             # Frontend component testleri
+│   └── worker/          # Worker service testleri
+├── integration/         # Entegrasyon testleri
+├── e2e/                # End-to-end testleri
+├── fixtures/           # Test verileri ve mock'lar
+├── utils/              # Test yardımcı fonksiyonları
+└── README.md           # Bu dosya
 ```
 
-## Running Tests
+## 🧪 Test Türleri
 
-### Unit Tests
+### Unit Tests (`tests/unit/`)
+- **API Tests**: Backend servislerinin unit testleri
+- **Web Tests**: React component'lerinin unit testleri  
+- **Worker Tests**: Background job'ların unit testleri
+
+### Integration Tests (`tests/integration/`)
+- API endpoint'lerinin entegrasyon testleri
+- Servisler arası etkileşim testleri
+- Database entegrasyon testleri
+
+### E2E Tests (`tests/e2e/`)
+- Playwright ile end-to-end testleri
+- Kullanıcı senaryolarının tam testleri
+
+## 🚀 Test Çalıştırma
+
+### Tüm Testleri Çalıştır
 ```bash
-# Run all unit tests
-npm run test
+npm test
+```
 
-# Run specific project tests
-npm run test -- --selectProjects api
-npm run test -- --selectProjects web
-npm run test -- --selectProjects worker
-npm run test -- --selectProjects integration
+### Belirli Test Türlerini Çalıştır
+```bash
+# Sadece unit testleri
+npm run test:unit
 
-# Run with coverage
+# Sadece entegrasyon testleri
+npm run test:integration
+
+# Sadece E2E testleri
+npm run test:e2e
+```
+
+### Belirli Servis Testlerini Çalıştır
+```bash
+# API testleri
+npm run test:unit:api
+
+# Web testleri
+npm run test:unit:web
+
+# Worker testleri
+npm run test:unit:worker
+```
+
+### Coverage Raporu
+```bash
 npm run test:coverage
 ```
 
-### End-to-End Tests
-```bash
-# Run E2E tests
-npm run test:e2e
+## 📋 Test Standartları
 
-# Run E2E tests with UI
-npm run test:e2e:ui
+### Dosya Adlandırma
+- Unit testler: `*.test.ts` veya `*.test.tsx`
+- Integration testler: `*.test.ts`
+- E2E testler: `*.test.ts`
 
-# Run E2E tests in headed mode
-npm run test:e2e:headed
+### Test Yapısı
+```typescript
+describe('Component/Service Name', () => {
+  describe('Method/Feature Name', () => {
+    it('should do something specific', () => {
+      // Test implementation
+    });
+  });
+});
 ```
 
-### All Tests
+### Mock Kullanımı
+- Test verileri için `fixtures/test-data.ts` kullanın
+- Yardımcı fonksiyonlar için `utils/test-helpers.ts` kullanın
+- Servis mock'ları için `createMock*` fonksiyonlarını kullanın
+
+## 🔧 Test Konfigürasyonu
+
+### Jest Konfigürasyonu
+- `jest.config.cjs` - Ana Jest konfigürasyonu
+- `jest.setup.js` - Test setup dosyası
+
+### Playwright Konfigürasyonu
+- `playwright.config.ts` - E2E test konfigürasyonu
+
+## 📊 Coverage Hedefleri
+
+- **Unit Tests**: %90+ coverage
+- **Integration Tests**: %80+ coverage
+- **E2E Tests**: Kritik user journey'ler %100
+
+## 🐛 Test Debugging
+
+### Verbose Output
 ```bash
-# Run all tests
-npm run test:all
+npm test -- --verbose
 ```
 
-## Test Configuration
-
-- **Jest**: Unit and integration tests
-- **Playwright**: End-to-end tests
-- **Coverage**: HTML and LCOV reports in `coverage/` directory
-- **Reports**: Playwright reports in `playwright-report/` directory
-
-## Test Environment
-
-- **Unit Tests**: Node.js environment
-- **Web Tests**: jsdom environment
-- **E2E Tests**: Real browser environment (Chrome, Firefox, Safari)
-
-## Writing Tests
-
-### Unit Tests
-- Place in `tests/unit/[service]/` directory
-- Use `.test.ts` or `.test.tsx` extension
-- Follow Jest testing patterns
-
-### Integration Tests
-- Place in `tests/integration/` directory
-- Test service interactions
-- Use `.test.ts` extension
-
-### E2E Tests
-- Place in `tests/e2e/` directory
-- Use `.spec.ts` extension
-- Follow Playwright testing patterns
-
-## Test Data
-
-- Use test fixtures for consistent data
-- Mock external API calls
-- Use test database for integration tests
-- Clean up test data after each test
-
-## Best Practices
-
-1. **Test Isolation**: Each test should be independent
-2. **Descriptive Names**: Use clear, descriptive test names
-3. **Arrange-Act-Assert**: Follow AAA pattern
-4. **Mock External Dependencies**: Don't make real API calls
-5. **Test Edge Cases**: Test both success and failure scenarios
-6. **Maintain Test Data**: Keep test data up to date
-7. **Fast Tests**: Keep unit tests fast (< 100ms each)
-8. **Reliable Tests**: Avoid flaky tests
-
-## Coverage Goals
-
-- **Unit Tests**: > 80% coverage
-- **Integration Tests**: > 60% coverage
-- **E2E Tests**: Critical user journeys covered
-
-## Troubleshooting
-
-### Common Issues
-
-1. **Test Timeout**: Increase timeout in test configuration
-2. **Flaky Tests**: Add retries or improve test stability
-3. **Environment Issues**: Check test environment setup
-4. **Mock Issues**: Verify mock implementations
-
-### Debug Mode
-
+### Specific Test
 ```bash
-# Run tests in debug mode
-npm run test -- --verbose
-npm run test:e2e -- --debug
+npm test -- --testNamePattern="specific test name"
 ```
 
-## Continuous Integration
+### Watch Mode
+```bash
+npm test -- --watch
+```
 
-Tests run automatically on:
-- Pull requests
-- Main branch pushes
-- Scheduled runs
+## 📝 Test Yazma Rehberi
 
-All tests must pass before merging to main branch.
+### 1. Test Yazmadan Önce
+- Test edilecek fonksiyon/component'i anlayın
+- Gerekli mock'ları hazırlayın
+- Test senaryolarını planlayın
 
+### 2. Test Yazarken
+- Açıklayıcı test isimleri kullanın
+- Her test tek bir şeyi test etsin
+- Arrange-Act-Assert pattern'ini takip edin
+
+### 3. Test Yazdıktan Sonra
+- Test'in çalıştığından emin olun
+- Coverage'a katkısını kontrol edin
+- Gereksiz testleri temizleyin
+
+## 🔄 Test Maintenance
+
+### Düzenli Kontroller
+- Haftalık test çalıştırma
+- Aylık coverage raporu inceleme
+- Çeyreklik test organizasyonu gözden geçirme
+
+### Test Temizliği
+- Kullanılmayan test dosyalarını silin
+- Duplicate testleri birleştirin
+- Outdated testleri güncelleyin
+
+## 📚 Faydalı Kaynaklar
+
+- [Jest Documentation](https://jestjs.io/docs/getting-started)
+- [Testing Library](https://testing-library.com/)
+- [Playwright Documentation](https://playwright.dev/)
+- [React Testing Best Practices](https://kentcdodds.com/blog/common-mistakes-with-react-testing-library)
