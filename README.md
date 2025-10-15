@@ -30,7 +30,7 @@ docker-compose -f docker-compose.dev.yml up -d
 sleep 30
 
 # Run migrations
-docker exec fulexo-api npx prisma migrate deploy
+docker-compose exec api npx prisma migrate deploy
 ```
 
 ### 4. Access the Platform
@@ -85,10 +85,10 @@ docker-compose logs -f api
 docker-compose logs -f web
 
 # Run migrations
-docker exec fulexo-api npx prisma migrate deploy
+docker-compose exec api npx prisma migrate deploy
 
 # Open Prisma Studio
-docker exec fulexo-api npx prisma studio
+docker-compose exec api npx prisma studio
 
 # Stop services
 docker-compose down
@@ -128,6 +128,7 @@ npm run start:dev
 ```bash
 # Use production compose file
 cd compose
+cp ../.env .env   # ensure compose/.env exists for production compose
 docker-compose up -d
 
 # Or use the alternative production file
@@ -143,6 +144,9 @@ Production requires proper values for:
 - `DOMAIN_API=https://api.yourdomain.com`
 - `DOMAIN_APP=https://panel.yourdomain.com`
 - Strong secrets for JWT_SECRET, ENCRYPTION_KEY, etc.
+
+### Docker Swarm (Optional)
+See `compose/README-stack.md` and `compose/docker-stack.yml` for Swarm deployment.
 
 ## 📊 Features
 

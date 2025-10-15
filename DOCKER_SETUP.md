@@ -35,8 +35,8 @@ This starts all services with HTTP only (no SSL certificates required).
 # Wait for services to start (about 30 seconds)
 sleep 30
 
-# Run database migrations
-docker exec fulexo-api npx prisma migrate deploy
+# Run database migrations (from compose directory)
+docker-compose exec api npx prisma migrate deploy
 ```
 
 ### Step 5: Access the Application
@@ -79,13 +79,14 @@ S3_BUCKET=fulexo-cache
 - HTTP only (no SSL required)
 - Local-friendly configuration
 - All services exposed on localhost
-- Hot reloading enabled
+- Note: Hot reloading is disabled inside Docker; run outside Docker for HMR
 
 ### Production Stack (`docker-compose.yml`)
 - HTTPS with Let's Encrypt
 - Production optimizations
 - Requires valid SSL certificates
 - Full monitoring stack
+ - Uses env_file from `compose/.env` (copy your root `.env` here)
 
 ### Test Stack (`docker-compose.test.yml`)
 - For running tests
@@ -176,7 +177,7 @@ docker-compose up -d
 **Solution**: Change the port mapping in docker-compose file or stop the conflicting service
 
 ### Issue: Nginx SSL certificate errors (production)
-**Solution**: Use `docker-compose.dev.yml` for local development (HTTP only)
+**Solution**: Ensure certs exist under `/etc/letsencrypt/live/<host>/...`. Nginx derives `API_HOST`/`APP_HOST` from full `DOMAIN_*` URLs, so set `DOMAIN_API`/`DOMAIN_APP` as full URLs. For local dev, use `docker-compose.dev.yml` (HTTP only).
 
 ### Issue: MinIO not accessible
 **Solution**: Check if MinIO is running and ports 9000/9001 are not blocked
@@ -189,19 +190,35 @@ docker-compose up -d
 3. Production environment variables configured
 
 ### Deployment Steps
-1. Set up production `.env` file with real values
-2. Obtain SSL certificates:
+1. Set up production `.env` file with real values at repo root
+2. Copy env into compose directory:
    ```bash
-   certbot certonly --standalone -d api.fulexo.com -d panel.fulexo.com
+   cd compose
+   cp ../.env .env
    ```
-3. Start production stack:
+3. Obtain SSL certificates (match your domains):
+   ```bash
+   # Required
+   certbot certonly --standalone -d api.fulexo.com -d panel.fulexo.com
+
+   # Optional (Karrio public endpoints)
+   certbot certonly --standalone -d karrio.fulexo.com -d dashboard.karrio.fulexo.com
+
+   # Optional (if exposing worker externally)
+   # server_name is worker.<API_HOST> per template
+   certbot certonly --standalone -d worker.api.fulexo.com
+   ```
+4. Start production stack:
    ```bash
    docker-compose -f docker-compose.yml up -d
    ```
-4. Run migrations:
+5. Run migrations:
    ```bash
    ./scripts/migrate-prod.sh
    ```
+
+### Swarm (Optional)
+See `compose/README-stack.md` for Swarm deployment using `compose/docker-stack.yml`.
 
 ## 📊 Monitoring
 

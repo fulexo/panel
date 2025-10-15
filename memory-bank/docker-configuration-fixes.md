@@ -113,6 +113,16 @@ This document details all Docker and environment configuration issues resolved i
 **Solution**: Added MinIO service to docker-compose.prod.yml
 **Status**: ✅ FIXED
 
+### 18. Nginx host derivation for TLS with full URLs
+**Issue**: `DOMAIN_API`/`DOMAIN_APP` are full URLs (for CORS) but Nginx `server_name` and cert paths need bare hostnames.
+**Solution**: Compose derives `API_HOST`/`APP_HOST` from the URLs and template uses these variables.
+**Files**: `compose/docker-compose.yml`, `compose/nginx/conf.d/app.conf.template`
+
+### 19. Swarm-ready stack file
+**Issue**: No stack file and overlay network configuration for Swarm.
+**Solution**: Added `compose/docker-stack.yml` plus `compose/README-stack.md` with deployment steps.
+**Status**: ✅ FIXED
+
 ## Configuration Files Updated
 
 ### Primary Files Modified:
