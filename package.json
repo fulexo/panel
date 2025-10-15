@@ -9,7 +9,10 @@
     "test": "jest --config jest.config.cjs",
     "test:watch": "jest --watch --config jest.config.cjs",
     "test:coverage": "jest --coverage --config jest.config.cjs",
-    "test:unit": "jest --config jest.config.cjs --selectProjects api,web,worker",
+    "test:unit": "jest --config jest.config.cjs --selectProjects unit-api,unit-web,unit-worker",
+    "test:unit:api": "jest --config jest.config.cjs --selectProjects unit-api",
+    "test:unit:web": "jest --config jest.config.cjs --selectProjects unit-web",
+    "test:unit:worker": "jest --config jest.config.cjs --selectProjects unit-worker",
     "test:integration": "jest --config jest.config.cjs --selectProjects integration",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
@@ -75,5 +78,14 @@
     "playwright": "^1.55.0",
     "supertest": "^7.1.4",
     "ts-jest": "^29.4.4"
+  },
+  "dependencies": {
+    "@nestjs/common": "^11.1.6",
+    "@nestjs/core": "^11.1.6",
+    "@nestjs/platform-express": "^11.1.6",
+    "@nestjs/testing": "^11.1.6",
+    "next": "^15.5.5",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
   }
 }

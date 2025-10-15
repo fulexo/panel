@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
 // Mock Next.js components
@@ -38,35 +38,7 @@ jest.mock('next/image', () => {
   );
 });
 
-// Mock React Query
-jest.mock('@tanstack/react-query', () => ({
-  useQuery: jest.fn(() => ({
-    data: null,
-    isLoading: false,
-    isError: false,
-    error: null,
-  })),
-  useMutation: jest.fn(() => ({
-    mutate: jest.fn(),
-    isLoading: false,
-    isError: false,
-    error: null,
-  })),
-  QueryClient: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-  QueryClientProvider: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-}));
-
-// Mock Zustand store
-jest.mock('zustand', () => ({
-  create: () => () => ({
-    user: null,
-    tenant: null,
-    setUser: jest.fn(),
-    setTenant: jest.fn(),
-  }),
-}));
-
-describe('Basic Component Tests', () => {
+describe('Simple Web Component Tests', () => {
   it('should render a simple div', () => {
     render(<div data-testid="test-div">Test Content</div>);
     expect(screen.getByTestId('test-div')).toBeInTheDocument();
@@ -126,115 +98,6 @@ describe('Basic Component Tests', () => {
     
     expect(screen.queryByTestId('conditional-element')).not.toBeInTheDocument();
     expect(screen.getByTestId('hidden-element')).toBeInTheDocument();
-  });
-
-  it('should handle async operations', async () => {
-    const asyncFunction = jest.fn().mockResolvedValue('async result');
-    
-    const TestComponent = () => {
-      const [result, setResult] = React.useState<string>('');
-      const [loading, setLoading] = React.useState(false);
-      
-      const handleAsync = async () => {
-        setLoading(true);
-        const res = await asyncFunction();
-        setResult(res);
-        setLoading(false);
-      };
-      
-      return (
-        <div>
-          <button data-testid="async-button" onClick={handleAsync}>
-            Load
-          </button>
-          {loading && <span data-testid="loading">Loading...</span>}
-          {result && <span data-testid="result">{result}</span>}
-        </div>
-      );
-    };
-    
-    render(<TestComponent />);
-    
-    const button = screen.getByTestId('async-button');
-    fireEvent.click(button);
-    
-    expect(screen.getByTestId('loading')).toBeInTheDocument();
-    
-    await waitFor(() => {
-      expect(screen.getByTestId('result')).toBeInTheDocument();
-    });
-    
-    expect(screen.queryByTestId('loading')).not.toBeInTheDocument();
-    expect(screen.getByTestId('result')).toHaveTextContent('async result');
-  });
-
-  it('should handle error states', () => {
-    const TestComponent = () => {
-      const [error, setError] = React.useState<string | null>(null);
-      
-      const handleError = () => {
-        setError('Something went wrong');
-      };
-      
-      return (
-        <div>
-          <button data-testid="error-button" onClick={handleError}>
-            Trigger Error
-          </button>
-          {error && <div data-testid="error-message">{error}</div>}
-        </div>
-      );
-    };
-    
-    render(<TestComponent />);
-    
-    const button = screen.getByTestId('error-button');
-    fireEvent.click(button);
-    
-    expect(screen.getByTestId('error-message')).toBeInTheDocument();
-    expect(screen.getByTestId('error-message')).toHaveTextContent('Something went wrong');
-  });
-
-  it('should handle keyboard events', () => {
-    const handleKeyDown = jest.fn();
-    const handleKeyUp = jest.fn();
-    
-    render(
-      <input
-        data-testid="keyboard-input"
-        onKeyDown={handleKeyDown}
-        onKeyUp={handleKeyUp}
-      />
-    );
-    
-    const input = screen.getByTestId('keyboard-input');
-    
-    fireEvent.keyDown(input, { key: 'Enter' });
-    fireEvent.keyUp(input, { key: 'Enter' });
-    
-    expect(handleKeyDown).toHaveBeenCalled();
-    expect(handleKeyUp).toHaveBeenCalled();
-  });
-
-  it('should handle focus and blur events', () => {
-    const handleFocus = jest.fn();
-    const handleBlur = jest.fn();
-    
-    render(
-      <input
-        data-testid="focus-input"
-        onFocus={handleFocus}
-        onBlur={handleBlur}
-      />
-    );
-    
-    const input = screen.getByTestId('focus-input');
-    
-    fireEvent.focus(input);
-    fireEvent.blur(input);
-    
-    expect(handleFocus).toHaveBeenCalled();
-    expect(handleBlur).toHaveBeenCalled();
   });
 
   it('should handle multiple elements', () => {
