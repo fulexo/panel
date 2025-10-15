@@ -145,6 +145,9 @@ Production requires proper values for:
 - `DOMAIN_APP=https://panel.yourdomain.com`
 - Strong secrets for JWT_SECRET, ENCRYPTION_KEY, etc.
 
+### Docker Swarm (Optional)
+See `compose/README-stack.md` and `compose/docker-stack.yml` for Swarm deployment.
+
 ## 📊 Features
 
 - **Multi-tenant Architecture**: Complete tenant isolation

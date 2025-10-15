@@ -51,6 +51,7 @@
 - [x] `api_backend` points to `api:3000`
 - [x] `worker_backend` points to `worker:3002`
 - [x] Monitoring backend commented out (no service available)
+- [x] Nginx derives `API_HOST`/`APP_HOST` from full `DOMAIN_*` URLs
 - [x] `API_HOST`/`APP_HOST` derived from full URLs for TLS cert paths
 
 ## ✅ Health Checks
@@ -66,6 +67,7 @@
 - [x] Production uses HTTPS (requires certificates)
 - [x] Environment templates have dev-friendly defaults
 - [x] Clear separation in docker-compose files
+ - [x] Production compose reads env from `compose/.env`
 
 ## ✅ Common Issues Fixed
 - [x] Missing environment variables added
@@ -107,6 +109,10 @@ docker-compose up -d
 # or
 docker-compose -f ../docker-compose.prod.yml up -d
 ```
+
+## 🐝 Optional: Swarm
+- [x] `compose/docker-stack.yml` available and uses overlay network
+- [x] Images built and pushed before `docker stack deploy`
 
 ## 🐝 Swarm (Optional)
 - [x] `compose/docker-stack.yml` present with overlay network

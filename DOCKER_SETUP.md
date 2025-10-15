@@ -35,8 +35,8 @@ This starts all services with HTTP only (no SSL certificates required).
 # Wait for services to start (about 30 seconds)
 sleep 30
 
-# Run database migrations
-docker exec fulexo-api npx prisma migrate deploy
+# Run database migrations (from compose directory)
+docker-compose exec api npx prisma migrate deploy
 ```
 
 ### Step 5: Access the Application
