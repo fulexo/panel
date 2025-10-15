@@ -32,7 +32,7 @@ upstream worker_backend {
 # Main server block
 server {
     listen 80;
-    server_name ${DOMAIN_API} ${DOMAIN_APP};
+    server_name ${API_HOST} ${APP_HOST};
     
     # Redirect HTTP to HTTPS
     return 301 https://$server_name$request_uri;
@@ -41,11 +41,11 @@ server {
 # API server
 server {
     listen 443 ssl http2;
-    server_name ${DOMAIN_API};
+    server_name ${API_HOST};
 
     # SSL configuration
-    ssl_certificate /etc/letsencrypt/live/${DOMAIN_API}/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/${DOMAIN_API}/privkey.pem;
+    ssl_certificate /etc/letsencrypt/live/${API_HOST}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${API_HOST}/privkey.pem;
     ssl_protocols TLSv1.2 TLSv1.3;
     ssl_ciphers ECDHE-RSA-AES256-GCM-SHA512:DHE-RSA-AES256-GCM-SHA512:ECDHE-RSA-AES256-GCM-SHA384:DHE-RSA-AES256-GCM-SHA384;
     ssl_prefer_server_ciphers off;
@@ -199,11 +199,11 @@ server {
 # Web server
 server {
     listen 443 ssl http2;
-    server_name ${DOMAIN_APP};
+    server_name ${APP_HOST};
 
     # SSL configuration
-    ssl_certificate /etc/letsencrypt/live/${DOMAIN_APP}/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/${DOMAIN_APP}/privkey.pem;
+    ssl_certificate /etc/letsencrypt/live/${APP_HOST}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${APP_HOST}/privkey.pem;
     ssl_protocols TLSv1.2 TLSv1.3;
     ssl_ciphers ECDHE-RSA-AES256-GCM-SHA512:DHE-RSA-AES256-GCM-SHA512:ECDHE-RSA-AES256-GCM-SHA384:DHE-RSA-AES256-GCM-SHA384;
     ssl_prefer_server_ciphers off;
@@ -286,11 +286,11 @@ server {
 # Worker server (internal access only)
 server {
     listen 443 ssl http2;
-    server_name worker.${DOMAIN_API};
+    server_name worker.${API_HOST};
 
     # SSL configuration
-    ssl_certificate /etc/letsencrypt/live/worker.${DOMAIN_API}/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/worker.${DOMAIN_API}/privkey.pem;
+    ssl_certificate /etc/letsencrypt/live/worker.${API_HOST}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/worker.${API_HOST}/privkey.pem;
     ssl_protocols TLSv1.2 TLSv1.3;
     ssl_ciphers ECDHE-RSA-AES256-GCM-SHA512:DHE-RSA-AES256-GCM-SHA512:ECDHE-RSA-AES256-GCM-SHA384:DHE-RSA-AES256-GCM-SHA384;
     ssl_prefer_server_ciphers off;

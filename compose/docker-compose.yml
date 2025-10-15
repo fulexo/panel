@@ -9,7 +9,7 @@ services:
   nginx:
     image: nginx:1.25
     volumes:
-      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d
       - /etc/letsencrypt:/etc/letsencrypt:ro
     ports: ["80:80", "443:443"]
     depends_on: [api, web]
@@ -19,7 +19,10 @@ services:
       - DOMAIN_APP=${DOMAIN_APP}
     command: >
       sh -c "
-        envsubst '$$DOMAIN_API $$DOMAIN_APP' < /etc/nginx/conf.d/app.conf.template > /etc/nginx/conf.d/app.conf &&
+        API_HOST=$(printf '%s' "$DOMAIN_API" | sed -E 's#^https?://##; s#/.*$##') && \
+        APP_HOST=$(printf '%s' "$DOMAIN_APP" | sed -E 's#^https?://##; s#/.*$##') && \
+        export API_HOST APP_HOST && \
+        envsubst '$$API_HOST $$APP_HOST' < /etc/nginx/conf.d/app.conf.template > /etc/nginx/conf.d/app.conf && \
         nginx -g 'daemon off;'
       "
     networks:
@@ -27,7 +30,7 @@ services:
 
   postgres:
     image: postgres:16
-    env_file: ${ENV_FILE:-../.env}
+    env_file: .env
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
@@ -70,7 +73,7 @@ services:
       dockerfile: apps/api/Dockerfile
       args:
         - NODE_ENV=production
-    env_file: ../.env
+    env_file: .env
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       REDIS_URL: ${REDIS_URL}
@@ -83,6 +86,8 @@ services:
       MASTER_KEY_HEX: ${MASTER_KEY_HEX}
       DOMAIN_API: ${DOMAIN_API}
       DOMAIN_APP: ${DOMAIN_APP}
+      NEXT_PUBLIC_API_BASE: ${NEXT_PUBLIC_API_BASE}
+      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL}
       FRONTEND_URL: ${FRONTEND_URL}
       WEB_URL: ${WEB_URL}
       NODE_ENV: ${NODE_ENV}
@@ -102,7 +107,7 @@ services:
       dockerfile: apps/web/Dockerfile
       args:
         - NODE_ENV=production
-    env_file: ${ENV_FILE:-../.env}
+    env_file: .env
     environment:
       NODE_ENV: ${NODE_ENV}
       BACKEND_API_BASE: ${BACKEND_API_BASE}
@@ -111,6 +116,8 @@ services:
       FRONTEND_URL: ${FRONTEND_URL}
       WEB_URL: ${WEB_URL}
       SHARE_BASE_URL: ${SHARE_BASE_URL}
+      DOMAIN_API: ${DOMAIN_API}
+      DOMAIN_APP: ${DOMAIN_APP}
     depends_on: [api]
     restart: unless-stopped
     ports:
@@ -124,7 +131,7 @@ services:
       dockerfile: apps/worker/Dockerfile
       args:
         - NODE_ENV=production
-    env_file: ../.env
+    env_file: .env
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       REDIS_URL: ${REDIS_URL}

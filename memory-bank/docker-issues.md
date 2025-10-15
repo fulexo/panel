@@ -65,6 +65,21 @@ This document tracks all Docker configuration issues discovered and their soluti
 **Status**: Partially fixed - added development-friendly values
 **Recommendation**: Use `docker-compose.dev.yml` for local development
 
+### 12. Nginx TLS host derivation from full URLs (New)
+**Issue**: `app.conf.template` referenced `DOMAIN_API`/`DOMAIN_APP` directly for `server_name` and certificate paths. When these are full URLs (required for CORS), Nginx would misinterpret values and certificate paths would be invalid.
+**Fix**: Introduced derived `API_HOST`/`APP_HOST` via compose command using `sed` to strip scheme and path, and updated template to reference these. This makes production TLS consistent while keeping envs as full URLs.
+**Files**: `compose/nginx/conf.d/app.conf.template`, `compose/docker-compose.yml`
+
+### 13. Inconsistent env propagation to API/Web (New)
+**Issue**: API and Web services did not receive `NEXT_PUBLIC_API_BASE` and `NEXT_PUBLIC_APP_URL` consistently.
+**Fix**: Added both vars to `api` service environment and ensured `web` also receives `DOMAIN_API`/`DOMAIN_APP` for SSR URL logic.
+**Files**: `compose/docker-compose.yml`
+
+### 14. Compose env_file relative path confusion (New)
+**Issue**: Using `../.env` in compose could break in Swarm or when using different working directories.
+**Fix**: Point services to `compose/.env` (copied from root) by setting `env_file: .env` within compose dir context.
+**Files**: `compose/docker-compose.yml`
+
 ### 12. Duplicate Environment Variables
 **Status**: Fixed - removed duplicate SHARE_TOKEN_SECRET definition
 **File**: `.env`
