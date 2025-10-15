@@ -5,19 +5,21 @@
 # =============================================================================
 # DOMAIN CONFIGURATION
 # =============================================================================
-DOMAIN_API=api.fulexo.com
-DOMAIN_APP=panel.fulexo.com
+# For production: use full URLs with https://
+# For development: use http://localhost:PORT
+DOMAIN_API=http://localhost:3000
+DOMAIN_APP=http://localhost:3001
 
 # =============================================================================
 # APPLICATION SETTINGS
 # =============================================================================
-NODE_ENV=production
-PUBLIC_API_BASE=https://api.fulexo.com
+NODE_ENV=development
+PUBLIC_API_BASE=http://localhost:3000
 
 # Backend API Base URL (for web service to connect to API service)
 # Development: http://api:3000 (Docker internal network)
 # Production: https://api.fulexo.com (external domain)
-BACKEND_API_BASE=https://api.fulexo.com
+BACKEND_API_BASE=http://api:3000
 
 # =============================================================================
 # DATABASE CONFIGURATION
@@ -37,8 +39,8 @@ REDIS_URL=redis://valkey:6379/0
 # JWT Secret (minimum 64 characters for production)
 JWT_SECRET=your_very_long_and_secure_jwt_secret_key_minimum_64_characters_long
 
-# Encryption key for sensitive data (32 characters)
-ENCRYPTION_KEY=your_32_character_encryption_key
+# Encryption key for sensitive data (exactly 32 characters)
+ENCRYPTION_KEY=12345678901234567890123456789012
 
 # =============================================================================
 # OBJECT STORAGE (MinIO) CONFIGURATION
@@ -72,13 +74,22 @@ GF_SECURITY_ADMIN_PASSWORD=your_secure_grafana_password
 SHARE_TOKEN_SECRET=your_share_token_secret_32_chars
 
 # App URL for email links
-NEXT_PUBLIC_APP_URL=https://panel.fulexo.com
+NEXT_PUBLIC_APP_URL=http://localhost:3001
 
 # Frontend API base URL
-NEXT_PUBLIC_API_BASE=https://api.fulexo.com
+NEXT_PUBLIC_API_BASE=http://localhost:3000
 
 # Share base URL for public order links
-SHARE_BASE_URL=https://panel.fulexo.com
+SHARE_BASE_URL=http://localhost:3001
+
+# Frontend URL for web service
+FRONTEND_URL=http://localhost:3001
+
+# Web URL for web service
+WEB_URL=http://localhost:3001
+
+# Master key for additional encryption (64 hex characters)
+MASTER_KEY_HEX=2c5e373def84c8229739b50511a6bba6e87db7755a2fb0b7bc8414880d55e65b
 
 # =============================================================================
 # KARRIO INTEGRATION CONFIGURATION
@@ -101,11 +112,8 @@ PORT=3000
 # Worker Port (default: 3002)
 WORKER_PORT=3002
 
-# Share Base URL for public order info
-SHARE_BASE_URL=http://localhost:3001
-
-# Share Token Secret for JWT signing
-SHARE_TOKEN_SECRET=your-share-token-secret-here-min-32-chars
+# Karrio Secret Key (required for production)
+KARRIO_SECRET_KEY=change-me-to-a-secure-secret-key-in-production
 
 # Log Level (ERROR, WARN, LOG, DEBUG, VERBOSE)
 LOG_LEVEL=LOG
@@ -127,10 +135,21 @@ ALERT_EMAIL=admin@fulexo.com
 SLACK_WEBHOOK_URL=
 
 # =============================================================================
-# DEVELOPMENT ONLY
+# KARRIO DATABASE CONFIGURATION
 # =============================================================================
-# Uncomment for development environment
-# NODE_ENV=development
-# DOMAIN_API=localhost:3000
-# DOMAIN_APP=localhost:3001
-# BACKEND_API_BASE=http://api:3000
+# Karrio database settings (separate from main database)
+KARRIO_POSTGRES_USER=karrio
+KARRIO_POSTGRES_PASSWORD=karrio
+KARRIO_POSTGRES_DB=karrio
+
+# Karrio settings
+KARRIO_ALLOWED_HOSTS=localhost,127.0.0.1,karrio-server
+KARRIO_CORS_ALLOWED_ORIGINS=http://localhost:3001,http://localhost:5001
+
+# =============================================================================
+# UPS CARRIER CONFIGURATION (Optional)
+# =============================================================================
+# Configure if using UPS shipping
+# UPS_USERNAME=your_ups_username
+# UPS_PASSWORD=your_ups_password
+# UPS_ACCESS_LICENSE_NUMBER=your_ups_license

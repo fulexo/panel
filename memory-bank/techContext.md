@@ -52,45 +52,64 @@
 ```bash
 git clone <repository-url>
 cd panel
-npm install
 ```
 
 #### 2. Environment Configuration
 ```bash
+# Use the development-friendly example
+cp .env.development.example .env
+
+# Or use the template for customization
 cp compose/env-template .env
-# Edit .env with your configuration
+
+# Copy to compose directory
 cp .env compose/.env
 ```
 
-#### 3. Infrastructure Services
+#### 3. Start Development Stack (Recommended)
 ```bash
 cd compose
-docker-compose up -d postgres valkey minio
+docker-compose -f docker-compose.dev.yml up -d
 ```
 
-#### 4. Application Services
+This starts all services with HTTP only (no SSL certificates required).
+
+#### 4. Initialize Database
 ```bash
-# Terminal 1: API
+# Wait for services to start
+sleep 30
+
+# Run database migrations
+docker exec fulexo-api npx prisma migrate deploy
+```
+
+#### 5. Access Services
+- **Web Panel**: http://localhost:3001
+- **API**: http://localhost:3000
+- **MinIO Console**: http://localhost:9001 (minioadmin/minioadmin)
+- **Karrio Dashboard**: http://localhost:5001
+
+#### Alternative: Manual Service Start
+If you prefer running services outside Docker:
+```bash
+# Terminal 1: Infrastructure
+cd compose
+docker-compose -f docker-compose.dev.yml up -d postgres valkey minio karrio-db karrio-redis
+
+# Terminal 2: API
 cd apps/api
 npm install
 npm run start:dev
 
-# Terminal 2: Web
+# Terminal 3: Web
 cd apps/web
 npm install
 npm run dev
 
-# Terminal 3: Worker
+# Terminal 4: Worker
 cd apps/worker
 npm install
 npm run start:dev
-```
-
-#### 5. Database Setup
-```bash
-cd apps/api
-npm run prisma:migrate:deploy
-npm run prisma:generate
 ```
 
 ### Development Tools
@@ -246,59 +265,79 @@ npm run prisma:migrate:reset
 
 ### Docker Workflow
 ```bash
-# Development
+# Development (HTTP only, no SSL required)
+cd compose
+docker-compose -f docker-compose.dev.yml up -d
+
+# Production (HTTPS with SSL certificates)
+cd compose
 docker-compose up -d
 
-# Production
-docker-compose -f docker-compose.prod.yml up -d
+# Alternative production file
+docker-compose -f ../docker-compose.prod.yml up -d
 
 # Cleanup
-docker-compose down -v
-docker system prune -a
+docker-compose down
+docker-compose down -v  # Also removes volumes (data loss!)
+docker system prune -a  # Clean all unused images/containers
 ```
 
 ## Environment Configuration
 
-### Development Environment
+### Development Environment (.env.development.example)
 ```bash
+# Core Settings
 NODE_ENV=development
-PORT=3000
-WORKER_PORT=3002
+DOMAIN_API=http://localhost:3000
+DOMAIN_APP=http://localhost:3001
 
 # Database
-DATABASE_URL=postgresql://fulexo:password@localhost:5433/fulexo_dev
+DATABASE_URL=postgresql://fulexo_user:localdev123@postgres:5432/fulexo
 
-# Redis
-REDIS_URL=redis://localhost:6380
+# Redis/Valkey
+REDIS_URL=redis://valkey:6379/0
 
-# Security
-JWT_SECRET=development-secret-key
-ENCRYPTION_KEY=development-encryption-key
+# Security (dev defaults - CHANGE IN PRODUCTION!)
+JWT_SECRET=dev_jwt_secret_key_minimum_64_characters_for_local_development_only_change_this
+ENCRYPTION_KEY=devkey1234567890123456789012dev!
 
-# External Services
-WOOCOMMERCE_API_URL=https://your-store.com/wp-json/wc/v3
-KARRIO_API_URL=http://localhost:5002
+# S3/MinIO
+S3_ENDPOINT=http://minio:9000
+S3_ACCESS_KEY=minioadmin
+S3_SECRET_KEY=minioadmin
+S3_BUCKET=fulexo-cache
+
+# Karrio Integration
+KARRIO_API_URL=http://karrio-server:5002
+KARRIO_SECRET_KEY=dev_karrio_secret_key_change_in_production_minimum_32_chars
 ```
 
 ### Production Environment
 ```bash
+# Core Settings
 NODE_ENV=production
-PORT=3000
-WORKER_PORT=3002
+DOMAIN_API=https://api.fulexo.com
+DOMAIN_APP=https://panel.fulexo.com
 
 # Database
-DATABASE_URL=postgresql://user:password@db:5432/fulexo_prod
+DATABASE_URL=postgresql://user:strong_password@postgres:5432/fulexo_prod
 
 # Redis
-REDIS_URL=redis://redis:6379
+REDIS_URL=redis://valkey:6379/0
 
 # Security (use strong, unique values)
-JWT_SECRET=production-jwt-secret-64-chars-minimum
-ENCRYPTION_KEY=production-encryption-key-32-chars
+JWT_SECRET=<generate with: openssl rand -hex 32>  # 64+ chars
+ENCRYPTION_KEY=<generate with: openssl rand -hex 16>  # exactly 32 chars
+
+# S3/MinIO or AWS S3
+S3_ENDPOINT=https://s3.amazonaws.com
+S3_ACCESS_KEY=<your_aws_access_key>
+S3_SECRET_KEY=<your_aws_secret_key>
+S3_BUCKET=fulexo-production
 
 # External Services
-WOOCOMMERCE_API_URL=https://your-store.com/wp-json/wc/v3
 KARRIO_API_URL=https://karrio.yourdomain.com
+KARRIO_SECRET_KEY=<strong_unique_secret_minimum_32_chars>
 ```
 
 ## Deployment Architecture
