@@ -10,13 +10,21 @@ WORKDIR /app
 COPY package*.json ./
 COPY apps/web/package*.json ./apps/web/
 
-# Install dependencies
+# Install production dependencies
 RUN cd apps/web && npm ci --only=production
 
 # Rebuild the source code only when needed
 FROM base AS builder
 WORKDIR /app
-COPY --from=deps /app/apps/web/node_modules ./apps/web/node_modules
+
+# Copy package files
+COPY package*.json ./
+COPY apps/web/package*.json ./apps/web/
+
+# Install ALL dependencies (including devDependencies) for build
+RUN cd apps/web && npm ci
+
+# Copy source code
 COPY . .
 
 # Build the application (skip lint to avoid devDeps in production image)

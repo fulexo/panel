@@ -10,13 +10,21 @@ WORKDIR /app
 COPY package*.json ./
 COPY apps/api/package*.json ./apps/api/
 
-# Install dependencies
+# Install production dependencies
 RUN cd apps/api && npm ci --only=production
 
 # Rebuild the source code only when needed
 FROM base AS builder
 WORKDIR /app
-COPY --from=deps /app/apps/api/node_modules ./apps/api/node_modules
+
+# Copy package files
+COPY package*.json ./
+COPY apps/api/package*.json ./apps/api/
+
+# Install ALL dependencies (including devDependencies) for build
+RUN cd apps/api && npm ci
+
+# Copy source code
 COPY . .
 
 # Generate Prisma client
