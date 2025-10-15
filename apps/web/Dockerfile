@@ -30,6 +30,9 @@ WORKDIR /app
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
+# Install curl for HEALTHCHECK
+RUN apk add --no-cache curl
+
 # Copy runtime artifacts
 COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next /app/apps/web/.next
 COPY --from=deps --chown=nextjs:nodejs /app/apps/web/node_modules /app/apps/web/node_modules

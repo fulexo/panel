@@ -14,6 +14,11 @@ DOMAIN_APP=panel.fulexo.com
 NODE_ENV=production
 PUBLIC_API_BASE=https://api.fulexo.com
 
+# Backend API Base URL (for web service to connect to API service)
+# Development: http://api:3000 (Docker internal network)
+# Production: https://api.fulexo.com (external domain)
+BACKEND_API_BASE=https://api.fulexo.com
+
 # =============================================================================
 # DATABASE CONFIGURATION
 # =============================================================================
@@ -128,3 +133,4 @@ SLACK_WEBHOOK_URL=
 # NODE_ENV=development
 # DOMAIN_API=localhost:3000
 # DOMAIN_APP=localhost:3001
+# BACKEND_API_BASE=http://api:3000

@@ -33,9 +33,14 @@ WORKDIR /app
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 worker
 
+# Install curl for HEALTHCHECK
+RUN apk add --no-cache curl
+
 # Copy built application
 COPY --from=builder --chown=worker:nodejs /app/apps/worker/dist ./dist
 COPY --from=builder --chown=worker:nodejs /app/apps/worker/node_modules ./node_modules
+COPY --from=builder --chown=worker:nodejs /app/apps/api/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder --chown=worker:nodejs /app/apps/api/node_modules/@prisma ./node_modules/@prisma
 COPY --from=builder --chown=worker:nodejs /app/apps/worker/package*.json ./
 COPY --from=builder --chown=worker:nodejs /app/apps/api/prisma ./prisma
 

@@ -1,9 +1,10 @@
 module.exports = {
   preset: 'ts-jest',
-  roots: ['<rootDir>/apps'],
+  roots: ['<rootDir>/apps', '<rootDir>/tests/unit'],
   testMatch: [
     '**/__tests__/**/*.{ts,tsx}',
-    '**/?(*.)+(spec|test).{ts,tsx}'
+    '**/?(*.)+(spec|test).{ts,tsx}',
+    '<rootDir>/tests/unit/**/*.{ts,tsx}'
   ],
   transform: {
     '^.+\\.(ts|tsx)$': ['babel-jest', {
@@ -53,19 +54,25 @@ module.exports = {
   projects: [
     {
       displayName: 'api',
-      testMatch: ['<rootDir>/apps/api/**/*.test.ts'],
+      testMatch: ['<rootDir>/apps/api/**/*.test.ts', '<rootDir>/tests/unit/api/**/*.test.ts'],
       testEnvironment: 'node',
       setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
     },
     {
       displayName: 'web',
-      testMatch: ['<rootDir>/apps/web/**/*.test.{ts,tsx}'],
+      testMatch: ['<rootDir>/apps/web/**/*.test.{ts,tsx}', '<rootDir>/tests/unit/web/**/*.test.{ts,tsx}'],
       testEnvironment: 'jsdom',
       setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
     },
     {
       displayName: 'worker',
-      testMatch: ['<rootDir>/apps/worker/**/*.test.ts'],
+      testMatch: ['<rootDir>/apps/worker/**/*.test.ts', '<rootDir>/tests/unit/worker/**/*.test.ts'],
+      testEnvironment: 'node',
+      setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
+    },
+    {
+      displayName: 'integration',
+      testMatch: ['<rootDir>/tests/integration/**/*.test.{ts,tsx}'],
       testEnvironment: 'node',
       setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
     }

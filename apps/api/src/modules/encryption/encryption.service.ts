@@ -20,11 +20,19 @@ export class EncryptionService {
       this.key = crypto.scryptSync('default-dev-key', 'salt', 32)
     } else {
       if (keyString.length !== 32) {
-        throw new Error('ENCRYPTION_KEY must be exactly 32 characters long')
+        // For development, pad or truncate the key to 32 characters
+        if (process.env['NODE_ENV'] === 'production') {
+          throw new Error('ENCRYPTION_KEY must be exactly 32 characters long')
+        }
+        // Development: pad with zeros or truncate to 32 chars
+        const paddedKey = keyString.padEnd(32, '0').substring(0, 32)
+        const salt = crypto.createHash('sha256').update(paddedKey).digest()
+        this.key = crypto.scryptSync(paddedKey, salt, 32)
+      } else {
+        // Derive key from the provided string using scrypt
+        const salt = crypto.createHash('sha256').update(keyString).digest()
+        this.key = crypto.scryptSync(keyString, salt, 32)
       }
-      // Derive key from the provided string using scrypt
-      const salt = crypto.createHash('sha256').update(keyString).digest()
-      this.key = crypto.scryptSync(keyString, salt, 32)
     }
   }
 

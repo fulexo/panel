@@ -1,12 +1,13 @@
-# Web uygulamasini baslat
-Write-Host "Web uygulamasi baslatiliyor..." -ForegroundColor Yellow
+# Web Uygulaması Başlatıcı
+# Kullanım: .\start-web.ps1
+Write-Host "🌐 Web uygulaması başlatılıyor..." -ForegroundColor Yellow
 
 # Web dizinine git
 Set-Location "apps/web"
 
-# Bagimliliklari kontrol et
+# Bağımlılıkları kontrol et
 if (!(Test-Path "node_modules")) {
-    Write-Host "Bagimliliklar yukleniyor..." -ForegroundColor Yellow
+    Write-Host "📦 Bağımlılıklar yükleniyor..." -ForegroundColor Yellow
     npm install
 }
 
@@ -19,5 +20,6 @@ NEXT_PUBLIC_APP_URL=http://localhost:3001
 
 $envContent | Out-File -FilePath ".env.local" -Encoding UTF8
 
-Write-Host "Web uygulamasi baslatiliyor (Port 3001)..." -ForegroundColor Green
+Write-Host "🚀 Web uygulaması başlatılıyor (Port 3001)..." -ForegroundColor Green
+Write-Host "🌐 Panel: http://localhost:3001" -ForegroundColor Cyan
 $env:PORT=3001; npm run dev

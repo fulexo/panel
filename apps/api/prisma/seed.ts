@@ -45,7 +45,20 @@ async function main() {
   });
   console.log('✅ Created customer user:', customer.email);
 
-  // Create a temporary customer record first (without storeId)
+  // Create default store linked to customer
+  const store = await prisma.store.create({
+    data: {
+      name: 'Demo Store',
+      url: 'https://demo-store.com',
+      consumerKey: 'demo_key',
+      consumerSecret: 'demo_secret',
+      status: 'connected',
+      customerId: customer.id,
+    },
+  });
+  console.log('✅ Created default store:', store.name);
+
+  // Create customer record with storeId
   const customerRecord = await prisma.customer.create({
     data: {
       tenantId: tenant.id,
@@ -57,29 +70,17 @@ async function main() {
       company: 'Demo Company',
       city: 'Istanbul',
       country: 'TR',
+      storeId: store.id,
     },
   });
   console.log('✅ Created customer record:', customerRecord.name);
 
-  // Create default store
-  const store = await prisma.store.create({
-    data: {
-      customerId: customerRecord.id,
-      name: 'Demo Store',
-      url: 'https://demo-store.com',
-      consumerKey: 'demo_key',
-      consumerSecret: 'demo_secret',
-      status: 'connected',
-    },
+  // Update store with customerId
+  await prisma.store.update({
+    where: { id: store.id },
+    data: { customerId: customerRecord.id },
   });
-  console.log('✅ Created default store:', store.name);
-
-  // Update customer with storeId
-  await prisma.customer.update({
-    where: { id: customerRecord.id },
-    data: { storeId: store.id },
-  });
-  console.log('✅ Updated customer with store ID');
+  console.log('✅ Updated store with customer ID');
 
   // Create WooCommerce store for products
   const wooStore = await prisma.wooStore.create({

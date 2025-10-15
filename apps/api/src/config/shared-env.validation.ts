@@ -30,7 +30,7 @@ export class SharedEnvironmentVariables {
   JWT_SECRET!: string;
 
   @IsString()
-  @MinLength(32)
+  // @MinLength(32)
   ENCRYPTION_KEY!: string;
 
   // Domains

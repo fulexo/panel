@@ -1,5 +1,6 @@
 # Fulexo Platform Starter Script
 # Bu script tüm servisleri localhost'ta başlatır
+# Kullanım: .\start-fulexo.ps1
 
 Write-Host "🚀 Fulexo Platform Başlatılıyor..." -ForegroundColor Green
 
