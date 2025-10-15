@@ -60,6 +60,18 @@ services:
       KARRIO_API_URL: http://karrio-server:5002
       FULEXO_TO_KARRIO_API_TOKEN: ${FULEXO_TO_KARRIO_API_TOKEN:-}
       FULEXO_INTERNAL_API_TOKEN: ${FULEXO_INTERNAL_API_TOKEN:-}
+      # Required by NestJS validator
+      DOMAIN_API: ${DOMAIN_API:-https://api.fulexo.com}
+      DOMAIN_APP: ${DOMAIN_APP:-https://panel.fulexo.com}
+      NEXT_PUBLIC_API_BASE: ${NEXT_PUBLIC_API_BASE:-https://api.fulexo.com}
+      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-https://panel.fulexo.com}
+      S3_ENDPOINT: ${S3_ENDPOINT:-http://minio:9000}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:-minioadmin}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:-minioadmin}
+      S3_BUCKET: ${S3_BUCKET:-fulexo-cache}
+      MASTER_KEY_HEX: ${MASTER_KEY_HEX:-2c5e373def84c8229739b50511a6bba6e87db7755a2fb0b7bc8414880d55e65b}
+      FRONTEND_URL: ${FRONTEND_URL:-https://panel.fulexo.com}
+      WEB_URL: ${WEB_URL:-https://panel.fulexo.com}
     ports:
       - "3000:3000"
     depends_on:
@@ -87,9 +99,15 @@ services:
     restart: unless-stopped
     environment:
       NODE_ENV: production
-      NEXT_PUBLIC_API_BASE: ${NEXT_PUBLIC_API_BASE:-http://localhost:3000}
-      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3001}
-      SHARE_BASE_URL: ${SHARE_BASE_URL:-http://localhost:3001}
+      NEXT_PUBLIC_API_BASE: ${NEXT_PUBLIC_API_BASE:-https://api.fulexo.com}
+      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-https://panel.fulexo.com}
+      SHARE_BASE_URL: ${SHARE_BASE_URL:-https://panel.fulexo.com}
+      # Missing variables for getBackendApiBaseUrl
+      BACKEND_API_BASE: ${BACKEND_API_BASE:-http://api:3000}
+      DOMAIN_API: ${DOMAIN_API:-https://api.fulexo.com}
+      DOMAIN_APP: ${DOMAIN_APP:-https://panel.fulexo.com}
+      FRONTEND_URL: ${FRONTEND_URL:-https://panel.fulexo.com}
+      WEB_URL: ${WEB_URL:-https://panel.fulexo.com}
     ports:
       - "3001:3000"
     depends_on:
@@ -137,6 +155,28 @@ services:
       - fulexo-network
     volumes:
       - ./logs:/app/logs
+
+  # MinIO Object Storage
+  minio:
+    image: minio/minio:latest
+    container_name: fulexo-minio
+    restart: unless-stopped
+    environment:
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY:-minioadmin}
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - fulexo-network
 
   # Nginx Reverse Proxy
   nginx:
@@ -223,7 +263,9 @@ services:
     container_name: karrio-dashboard
     restart: unless-stopped
     environment:
-      NEXT_PUBLIC_KARRIO_PUBLIC_URL: https://karrio.fulexo.com
+      NEXT_PUBLIC_KARRIO_PUBLIC_URL: ${KARRIO_PUBLIC_URL:-https://karrio.fulexo.com}
+      NEXT_PUBLIC_DASHBOARD_URL: ${KARRIO_DASHBOARD_URL:-https://dashboard.karrio.fulexo.com}
+      NEXTAUTH_URL: ${KARRIO_DASHBOARD_URL:-https://dashboard.karrio.fulexo.com}
       KARRIO_URL: http://karrio-server:5002
     depends_on:
       - karrio-server
@@ -236,6 +278,8 @@ volumes:
   postgres_data:
     driver: local
   redis_data:
+    driver: local
+  minio_data:
     driver: local
   nginx_logs:
     driver: local
