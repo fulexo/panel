@@ -289,6 +289,18 @@ export function ErrorBoundary({ children }: { children: React.ReactNode }) {
 - **Pagination**: Efficient data pagination
 
 ## Security Patterns
+## Deployment & Templating Patterns
+
+### Nginx Host Derivation for TLS
+- Problem: `DOMAIN_API`/`DOMAIN_APP` are full URLs (needed for CORS and app config), but Nginx requires hostnames for `server_name` and certificate paths.
+- Solution: Derive `API_HOST`/`APP_HOST` in the container entry command and template using `envsubst`.
+- Outcome: Single source of truth for domains; robust TLS configuration with full-URL envs.
+
+### Swarm Stack Strategy
+- Use an overlay network `fulexo-network` for inter-service discovery.
+- Pre-build and push images (CI preferred); `docker-stack.yml` references immutable tags.
+- Keep secrets/tokens in `.env` or Swarm secrets (future enhancement).
+
 
 ### Authentication Security
 - **JWT Security**: Secure token generation and validation

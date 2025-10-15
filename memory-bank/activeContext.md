@@ -3,7 +3,7 @@
 ## Current Work Focus
 
 ### Immediate Priorities (This Week)
-1. **Docker Configuration Fixes**: ✅ COMPLETED - Fixed all critical Docker issues
+1. **Docker/Swarm Deployment Hardening**: ✅ COMPLETED
 2. **Memory Bank System Setup**: Establishing comprehensive documentation system
 3. **Documentation Consolidation**: Migrating from scattered docs to Memory Bank
 4. **Production Readiness**: Final preparations for production deployment
@@ -29,6 +29,12 @@
 - **Separated dev and prod configurations** clearly
 - **Added production migration script** for database updates
 - **Documented all fixes** in memory-bank/docker-configuration-fixes.md
+
+### October 2025 - Swarm & TLS Host Normalization
+- **Nginx Host Derivation**: Now derive `API_HOST`/`APP_HOST` from full `DOMAIN_*` URLs for TLS cert paths
+- **Compose Env Consistency**: Services use `compose/.env`; ensured `NEXT_PUBLIC_*` propagated to API/Web
+- **Swarm Stack**: Added `compose/docker-stack.yml` and `compose/README-stack.md`
+- **Karrio**: Confirmed dashboard/API upstreams and explicit server blocks
 
 ### December 2024 - Documentation Reorganization
 - **Eliminated 20+ redundant documentation files**

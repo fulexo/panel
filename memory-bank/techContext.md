@@ -282,6 +282,22 @@ docker-compose down -v  # Also removes volumes (data loss!)
 docker system prune -a  # Clean all unused images/containers
 ```
 
+### Swarm Workflow
+```bash
+# Initialize Swarm (if not already)
+docker swarm init
+
+# Prepare env
+cd compose
+cp ../.env .env
+
+# Build and push images externally (CI or manual), then deploy
+docker stack deploy -c docker-stack.yml fulexo
+
+# Inspect services
+docker stack services fulexo
+```
+
 ## Environment Configuration
 
 ### Development Environment (.env.development.example)
@@ -338,6 +354,19 @@ S3_BUCKET=fulexo-production
 # External Services
 KARRIO_API_URL=https://karrio.yourdomain.com
 KARRIO_SECRET_KEY=<strong_unique_secret_minimum_32_chars>
+```
+
+## Nginx Host Derivation Pattern
+
+- `DOMAIN_API` and `DOMAIN_APP` are full URLs for CORS correctness
+- Nginx needs bare hostnames for `server_name` and certificate paths
+- Compose entrypoint derives `API_HOST`/`APP_HOST` via `sed` and templates with `envsubst`
+
+Example:
+```bash
+API_HOST=$(printf '%s' "$DOMAIN_API" | sed -E 's#^https?://##; s#/.*$##')
+APP_HOST=$(printf '%s' "$DOMAIN_APP" | sed -E 's#^https?://##; s#/.*$##')
+envsubst '$$API_HOST $$APP_HOST' < app.conf.template > app.conf
 ```
 
 ## Deployment Architecture
