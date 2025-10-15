@@ -34,6 +34,7 @@
 - [x] `docker-compose.prod.yml` - Alternative production setup
 - [x] All files have valid YAML syntax
 - [x] All required environment variables passed to services
+- [x] `compose/.env` present and used by production compose
 
 ## ✅ Service Configuration
 - [x] API service - port 3000:3000
@@ -50,6 +51,7 @@
 - [x] `api_backend` points to `api:3000`
 - [x] `worker_backend` points to `worker:3002`
 - [x] Monitoring backend commented out (no service available)
+- [x] `API_HOST`/`APP_HOST` derived from full URLs for TLS cert paths
 
 ## ✅ Health Checks
 - [x] API: `/health`
@@ -100,10 +102,15 @@ docker-compose -f docker-compose.dev.yml up -d
 ### Production:
 ```bash
 cd compose
+cp ../.env .env
 docker-compose up -d
 # or
 docker-compose -f ../docker-compose.prod.yml up -d
 ```
+
+## 🐝 Swarm (Optional)
+- [x] `compose/docker-stack.yml` present with overlay network
+- [x] See `compose/README-stack.md` for deploy commands
 
 ## ⚠️ Remaining Warnings (Non-Critical)
 - [ ] SMTP configuration (optional)
