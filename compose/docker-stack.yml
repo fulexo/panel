@@ -73,9 +73,6 @@ services:
 
   api:
     image: fulexo/api:latest
-    build:
-      context: ..
-      dockerfile: apps/api/Dockerfile
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       REDIS_URL: ${REDIS_URL}
@@ -104,9 +101,6 @@ services:
 
   web:
     image: fulexo/web:latest
-    build:
-      context: ..
-      dockerfile: apps/web/Dockerfile
     environment:
       NODE_ENV: ${NODE_ENV}
       BACKEND_API_BASE: ${BACKEND_API_BASE}
@@ -122,9 +116,6 @@ services:
 
   worker:
     image: fulexo/worker:latest
-    build:
-      context: ..
-      dockerfile: apps/worker/Dockerfile
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       REDIS_URL: ${REDIS_URL}
