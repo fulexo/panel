@@ -68,7 +68,7 @@ services:
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -153,13 +153,11 @@ services:
     depends_on:
       - web
       - api
-      - monitoring
     networks:
       - fulexo-network
     environment:
       - DOMAIN_API=api.fulexo.com
       - DOMAIN_APP=panel.fulexo.com
-      - DOMAIN_MONITORING=monitor.fulexo.com
       - DOMAIN_KARRIO_API=karrio.fulexo.com
       - DOMAIN_KARRIO_DASHBOARD=dashboard.karrio.fulexo.com
 
