@@ -81,7 +81,6 @@ celerybeat-schedule
 # SageMath parsed files
 *.sage.py
 
-# Environments - REMOVED to prevent .env files from being ignored
 
 # Spyder project settings
 .spyderproject
@@ -124,7 +123,6 @@ apps/api/karrio/server/staticfiles/*
 
 .karrio/
 packages/karriojs/api/generated
-!docker/.env
 
 # Karrio plugins
 plugins/*

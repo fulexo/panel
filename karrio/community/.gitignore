@@ -127,7 +127,6 @@ celerybeat.pid
 # SageMath parsed files
 *.sage.py
 
-# Environments - REMOVED to prevent .env files from being ignored
 
 # Spyder project settings
 .spyderproject

@@ -47,8 +47,11 @@ USER karrio
 
 COPY --chown=karrio:karrio --from=compile-image /karrio/ /karrio/
 RUN mkdir -p $WORK_DIR $LOG_DIR $WORKER_DB_DIR $STATIC_ROOT_DIR $KARRIO_PLUGINS
-COPY apps/api/gunicorn-cfg.py docker/api/entrypoint docker/api/worker $WORK_DIR/
+COPY --chown=karrio:karrio apps/api/gunicorn-cfg.py $WORK_DIR/
+COPY --chown=karrio:karrio docker/api/entrypoint $WORK_DIR/
+COPY --chown=karrio:karrio docker/api/worker $WORK_DIR/
 COPY --chown=karrio:karrio plugins/ $KARRIO_PLUGINS/
+RUN chmod +x $WORK_DIR/entrypoint $WORK_DIR/worker
 
 WORKDIR $WORK_DIR
 
@@ -56,4 +59,4 @@ WORKDIR $WORK_DIR
 ENV PATH="/karrio/venv/bin:$PATH"
 
 ENTRYPOINT ["/karrio/venv/bin/dumb-init", "--"]
-CMD ["./entrypoint"]
+CMD ["/karrio/app/entrypoint"]

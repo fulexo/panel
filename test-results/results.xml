@@ -1,0 +1,83 @@
+<testsuites id="" name="" tests="3" failures="3" skipped="0" errors="0" time="46.970888">
+<testsuite name="basic.spec.ts" timestamp="2025-10-22T14:05:52.140Z" hostname="chromium" tests="3" failures="3" skipped="0" time="112.821" errors="0">
+<testcase name="Basic E2E Tests › should load the homepage" classname="basic.spec.ts" time="40.151">
+<failure message="basic.spec.ts:4:3 should load the homepage" type="FAILURE">
+<![CDATA[  [chromium] › basic.spec.ts:4:3 › Basic E2E Tests › should load the homepage ──────────────────────
+
+    Test timeout of 30000ms exceeded.
+
+    Error: page.goto: net::ERR_ABORTED; maybe frame was detached?
+    Call log:
+      - navigating to "http://localhost:3000/", waiting until "load"
+
+
+      3 | test.describe('Basic E2E Tests', () => {
+      4 |   test('should load the homepage', async ({ page }) => {
+    > 5 |     await page.goto('/');
+        |                ^
+      6 |     
+      7 |     // Wait for the page to load
+      8 |     await page.waitForLoadState('networkidle');
+        at C:\Users\mrade\Documents\GitHub\panel\tests\e2e\basic.spec.ts:5:16
+]]>
+</failure>
+</testcase>
+<testcase name="Basic E2E Tests › should have basic navigation" classname="basic.spec.ts" time="40.19">
+<failure message="basic.spec.ts:15:3 should have basic navigation" type="FAILURE">
+<![CDATA[  [chromium] › basic.spec.ts:15:3 › Basic E2E Tests › should have basic navigation ─────────────────
+
+    Test timeout of 30000ms exceeded.
+
+    Error: page.goto: net::ERR_ABORTED; maybe frame was detached?
+    Call log:
+      - navigating to "http://localhost:3000/", waiting until "load"
+
+
+      14 |
+      15 |   test('should have basic navigation', async ({ page }) => {
+    > 16 |     await page.goto('/');
+         |                ^
+      17 |     
+      18 |     // Wait for the page to load
+      19 |     await page.waitForLoadState('networkidle');
+        at C:\Users\mrade\Documents\GitHub\panel\tests\e2e\basic.spec.ts:16:16
+]]>
+</failure>
+</testcase>
+<testcase name="Basic E2E Tests › should handle 404 pages gracefully" classname="basic.spec.ts" time="32.48">
+<failure message="basic.spec.ts:26:3 should handle 404 pages gracefully" type="FAILURE">
+<![CDATA[  [chromium] › basic.spec.ts:26:3 › Basic E2E Tests › should handle 404 pages gracefully ───────────
+
+    Test timeout of 30000ms exceeded.
+
+    Error: page.goto: net::ERR_CONNECTION_RESET at http://localhost:3000/non-existent-page
+    Call log:
+      - navigating to "http://localhost:3000/non-existent-page", waiting until "load"
+
+
+      25 |
+      26 |   test('should handle 404 pages gracefully', async ({ page }) => {
+    > 27 |     const response = await page.goto('/non-existent-page');
+         |                                 ^
+      28 |     expect(response?.status()).toBe(404);
+      29 |   });
+      30 | });
+        at C:\Users\mrade\Documents\GitHub\panel\tests\e2e\basic.spec.ts:27:33
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ..\..\test-results\basic-Basic-E2E-Tests-should-handle-404-pages-gracefully-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ..\..\test-results\basic-Basic-E2E-Tests-should-handle-404-pages-gracefully-chromium\error-context.md
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|basic-Basic-E2E-Tests-should-handle-404-pages-gracefully-chromium\test-failed-1.png]]
+
+[[ATTACHMENT|basic-Basic-E2E-Tests-should-handle-404-pages-gracefully-chromium\error-context.md]]
+]]>
+</system-out>
+</testcase>
+</testsuite>
+</testsuites>

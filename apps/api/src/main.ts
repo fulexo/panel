@@ -302,13 +302,17 @@ async function bootstrap() {
 
   const port = parseInt(envService.port, 10);
   await app.listen(port);
-  // Application started successfully
-  // API Documentation: http://localhost:${port}/api/docs
-  // Health Check: http://localhost:${port}/health
-  // Metrics: http://localhost:${port}/metrics
+  
+  logger.log(`🚀 Application started successfully`);
+  logger.log(`📡 API listening on: http://localhost:${port}/api`);
+  logger.log(`📚 API Documentation: http://localhost:${port}/docs`);
+  logger.log(`❤️  Health Check: http://localhost:${port}/health`);
+  logger.log(`📊 Metrics: http://localhost:${port}/metrics`);
 }
 
-bootstrap().catch((_error) => {
-  // Failed to start application
+bootstrap().catch((error) => {
+  const logger = new Logger('Bootstrap');
+  logger.error('❌ Failed to start application:', error);
+  logger.error('Stack trace:', error.stack);
   process.exit(1);
 });
