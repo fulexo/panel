@@ -1,5 +1,7 @@
 # Docker Configuration Checklist
 
+Note: This checklist is superseded by the Memory Bank. See `memory-bank/docker.md` and `memory-bank/environment.md`.
+
 ## ✅ Environment Files
 - [x] `.env` exists with all required variables
 - [x] `compose/.env` synchronized with main `.env`

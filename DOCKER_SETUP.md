@@ -1,5 +1,7 @@
 # Docker Setup Guide for Fulexo Platform
 
+Note: Canonical Docker docs live under `memory-bank/docker.md` and `memory-bank/services.md`. For a quickstart flow, see `AGENTS.md`.
+
 ## 🚀 Quick Start (Development)
 
 ### Prerequisites

@@ -1,5 +1,7 @@
 # Fulexo Docker Stack (Swarm) Quickstart
 
+Note: Primary docs are in `memory-bank/docker.md`. Use `AGENTS.md` for standard dev/prod setup before Swarm.
+
 ## Files
 - compose/docker-stack.yml: Swarm-ready stack file
 - compose/.env: Environment variables (copy from project root .env)

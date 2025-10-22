@@ -1,4 +1,6 @@
 # Docker Uyumluluk ve Sistem Durumu Raporu
+
+Not: Güncel ve tekil dökümantasyon kaynağı `memory-bank/*` altındadır. Hızlı başlamak için `AGENTS.md` dokümanını kullanın.
 **Tarih:** 2025-10-22  
 **Analiz Edilen Sistem:** Fulexo Platform Docker Kurulumu
 

@@ -1,5 +1,7 @@
 # Operational Scripts
 
+Note: Prefer `memory-bank/runbooks.md` for operator workflows. This page lists script inventory only.
+
 **Last Updated:** October 13, 2025  
 **Status:** ✅ All scripts tested and verified
 
