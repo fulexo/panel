@@ -1,5 +1,14 @@
 # Active Context
 
+Note: Canonical operational docs have been consolidated. Start with `AGENTS.md` for quickstart, then see `memory-bank/*` for details:
+- `memory-bank/environment.md`
+- `memory-bank/docker.md`
+- `memory-bank/services.md`
+- `memory-bank/api-auth.md`
+- `memory-bank/runbooks.md`
+- `memory-bank/troubleshooting.md`
+- `memory-bank/local-development.md`
+
 ## Current Work Focus
 
 ### Immediate Priorities (This Week)

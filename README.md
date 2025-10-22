@@ -1,5 +1,8 @@
 # Fulexo Platform
 
+Note: This repository now uses the Memory Bank as the canonical documentation source. For setup and operations, start with `AGENTS.md`, then see `memory-bank/*` for details.
+
+
 A comprehensive multi-tenant fulfillment platform that centralizes WooCommerce store management, warehouse operations, and parcel shipping through a unified control panel.
 
 ## 🚀 Quick Start
