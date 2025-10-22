@@ -44,8 +44,8 @@ docker-compose exec api npx prisma migrate deploy
 
 ## 📚 Documentation
 
-- **[Docker Setup Guide](DOCKER_SETUP.md)** - Comprehensive Docker configuration and troubleshooting
-- **[Memory Bank](memory-bank/)** - Project documentation and context
+- **[Agent Quickstart](AGENTS.md)** - Single-page quickstart for agents/operators
+- **[Memory Bank](memory-bank/)** - Canonical project documentation
 - **[Scripts](scripts/README.md)** - Automation scripts for various tasks
 
 ## 🏗️ Architecture
@@ -196,8 +196,8 @@ This project is proprietary software. All rights reserved.
 
 ## 🆘 Support
 
-- Check [DOCKER_SETUP.md](DOCKER_SETUP.md) for troubleshooting
-- Review [Memory Bank](memory-bank/) for project context
+- Start with `AGENTS.md` and `memory-bank/troubleshooting.md`
+- Review `memory-bank/` for project context
 - Create an issue for bug reports or feature requests
 
 ---
