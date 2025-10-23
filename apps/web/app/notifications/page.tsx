@@ -19,25 +19,26 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import { useAuth } from "@/components/AuthProvider";
 import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
+import { LoadingState } from "@/components/LoadingState";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { StatusPill } from "@/components/patterns/StatusPill";
+import {
+  useNotifications,
+  useMarkAsRead,
+  useMarkAllAsRead,
+  useDeleteNotification,
+  useUpdateNotificationPreferences,
+  type Notification,
+} from "@/hooks/useNotifications";
+import { formatDistanceToNow } from "date-fns";
+import { tr } from "date-fns/locale";
 
 type NotificationType = "order" | "inventory" | "customer" | "system" | "return";
 type NotificationPriority = "urgent" | "high" | "medium" | "low";
-
-interface Notification {
-  id: number;
-  type: NotificationType;
-  title: string;
-  message: string;
-  time: string;
-  read: boolean;
-  priority: NotificationPriority;
-}
 
 const typeMeta: Record<NotificationType, { label: string; icon: typeof Bell }> = {
   order: { label: "Sipariş", icon: Package },
@@ -57,53 +58,25 @@ const priorityMeta: Record<NotificationPriority, { label: string; badge: Compone
 export default function NotificationsPage() {
   useAuth();
   const [activeTab, setActiveTab] = useState<string>("all");
-  const [notifications, setNotifications] = useState<Notification[]>([
-    {
-      id: 1,
-      type: "order",
-      title: "Yeni Sipariş",
-      message: "Sipariş #12345 alındı - 1.250,00 TL",
-      time: "2 dakika önce",
-      read: false,
-      priority: "high",
-    },
-    {
-      id: 2,
-      type: "inventory",
-      title: "Düşük Stok Uyarısı",
-      message: "iPhone 15 Pro stok seviyesi kritik (5 adet kaldı)",
-      time: "1 saat önce",
-      read: false,
-      priority: "urgent",
-    },
-    {
-      id: 3,
-      type: "customer",
-      title: "Müşteri Mesajı",
-      message: "Ahmet Yılmaz yeni bir destek talebi oluşturdu",
-      time: "3 saat önce",
-      read: true,
-      priority: "medium",
-    },
-    {
-      id: 4,
-      type: "system",
-      title: "Sistem Güncellemesi",
-      message: "Sistem başarıyla güncellendi v2.1.0",
-      time: "1 gün önce",
-      read: true,
-      priority: "low",
-    },
-    {
-      id: 5,
-      type: "return",
-      title: "İade Talebi",
-      message: "Sipariş #12340 için iade talebi oluşturuldu",
-      time: "2 gün önce",
-      read: true,
-      priority: "medium",
-    },
-  ]);
+  const [typeFilter, setTypeFilter] = useState<string>("");
+  const [readFilter, setReadFilter] = useState<boolean | undefined>(undefined);
+
+  // Fetch notifications with filters
+  const {
+    data: notificationsData,
+    isLoading,
+    error,
+  } = useNotifications({
+    type: typeFilter || undefined,
+    read: readFilter,
+    limit: 100,
+  });
+
+  const markAsRead = useMarkAsRead();
+  const markAllAsRead = useMarkAllAsRead();
+  const deleteNotification = useDeleteNotification();
+
+  const notifications = notificationsData?.data || [];
 
   const [settings, setSettings] = useState({
     email: {
@@ -143,21 +116,79 @@ export default function NotificationsPage() {
 
   const filteredNotifications = useMemo(() => {
     if (activeTab === "all") return notifications;
-    if (activeTab === "unread") return notifications.filter((notification) => !notification.read);
-    return notifications.filter((notification) => notification.type === activeTab);
+    if (activeTab === "unread") return notifications.filter((notification: Notification) => !notification.read);
+    return notifications.filter((notification: Notification) => notification.type === activeTab);
   }, [notifications, activeTab]);
 
-  const markAsRead = (id: number) => {
-    setNotifications((prev) => prev.map((notification) => (notification.id === id ? { ...notification, read: true } : notification)));
+  const handleMarkAsRead = async (id: string) => {
+    try {
+      await markAsRead.mutateAsync(id);
+    } catch (error) {
+      console.error('Failed to mark notification as read:', error);
+    }
   };
 
-  const markAllAsRead = () => {
-    setNotifications((prev) => prev.map((notification) => ({ ...notification, read: true })));
+  const handleMarkAllAsRead = async () => {
+    try {
+      await markAllAsRead.mutateAsync();
+    } catch (error) {
+      console.error('Failed to mark all as read:', error);
+    }
   };
 
-  const deleteNotification = (id: number) => {
-    setNotifications((prev) => prev.filter((notification) => notification.id !== id));
+  const handleDeleteNotification = async (id: string) => {
+    try {
+      await deleteNotification.mutateAsync(id);
+    } catch (error) {
+      console.error('Failed to delete notification:', error);
+    }
   };
+
+  const formatTimeAgo = (dateString: string) => {
+    try {
+      return formatDistanceToNow(new Date(dateString), { addSuffix: true, locale: tr });
+    } catch {
+      return dateString;
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <ProtectedRoute>
+        <div className="min-h-screen bg-background">
+          <main className="mobile-container space-y-8 py-8">
+            <PageHeader
+              title="Bildirimler"
+              description="Siparişler, stok durumları ve sistem uyarıları için gerçek zamanlı bildirimleri yönetin."
+              icon={Bell}
+            />
+            <LoadingState message="Bildirimler yükleniyor..." />
+          </main>
+        </div>
+      </ProtectedRoute>
+    );
+  }
+
+  if (error) {
+    return (
+      <ProtectedRoute>
+        <div className="min-h-screen bg-background">
+          <main className="mobile-container space-y-8 py-8">
+            <PageHeader
+              title="Bildirimler"
+              description="Siparişler, stok durumları ve sistem uyarıları için gerçek zamanlı bildirimleri yönetin."
+              icon={Bell}
+            />
+            <EmptyState
+              icon={ShieldAlert}
+              title="Bildirimler yüklenemedi"
+              description="Bildirimler yüklenirken bir hata oluştu. Lütfen sayfayı yenileyin."
+            />
+          </main>
+        </div>
+      </ProtectedRoute>
+    );
+  }
 
   return (
     <ProtectedRoute>
@@ -169,7 +200,13 @@ export default function NotificationsPage() {
             icon={Bell}
             actions={
               <div className="flex flex-wrap items-center gap-2">
-                <Button variant="outline" size="sm" className="gap-2" onClick={markAllAsRead}>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="gap-2" 
+                  onClick={handleMarkAllAsRead}
+                  disabled={markAllAsRead.isPending || notifications.filter((n: Notification) => !n.read).length === 0}
+                >
                   <CheckCircle2 className="h-4 w-4" /> Tümünü okundu işaretle
                 </Button>
                 <Button variant="outline" size="sm" className="gap-2">
@@ -208,9 +245,9 @@ export default function NotificationsPage() {
                         description="Seçtiğiniz filtre için herhangi bir bildirim bulunamadı."
                       />
                     ) : (
-                      filteredNotifications.map((notification) => {
-                        const meta = typeMeta[notification.type];
-                        const priority = priorityMeta[notification.priority];
+                      filteredNotifications.map((notification: Notification) => {
+                        const meta = typeMeta[notification.type as NotificationType] || typeMeta.system;
+                        const priority = priorityMeta[notification.priority as NotificationPriority] || priorityMeta.medium;
 
                         return (
                           <div
@@ -231,19 +268,25 @@ export default function NotificationsPage() {
                                   {!notification.read && <StatusPill label="Yeni" tone="info" />}
                                 </div>
                                 <p className="text-sm text-muted-foreground">{notification.message}</p>
-                                <span className="text-xs text-muted-foreground/80">{notification.time}</span>
+                                <span className="text-xs text-muted-foreground/80">{formatTimeAgo(notification.createdAt)}</span>
                               </div>
                             </div>
                             <div className="flex flex-wrap items-center gap-2">
                               {!notification.read && (
-                                <Button variant="muted" size="sm" onClick={() => markAsRead(notification.id)}>
+                                <Button 
+                                  variant="muted" 
+                                  size="sm" 
+                                  onClick={() => handleMarkAsRead(notification.id)}
+                                  disabled={markAsRead.isPending}
+                                >
                                   Okundu işaretle
                                 </Button>
                               )}
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => deleteNotification(notification.id)}
+                                onClick={() => handleDeleteNotification(notification.id)}
+                                disabled={deleteNotification.isPending}
                                 className="text-muted-foreground hover:text-foreground"
                               >
                                 <Trash2 className="h-4 w-4" />

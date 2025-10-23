@@ -29,6 +29,7 @@ model Tenant {
   inboundShipments        InboundShipment[]
   inventoryRequests       InventoryRequest[]
   invoices                Invoice[]
+  notifications           Notification[]
   oauthCredentials        OAuthCredential[]
   orders                  Order[]
   ownershipRules          OwnershipRule[]
@@ -69,6 +70,7 @@ model User {
   carts                   Cart[]
   fulfillmentInvoices     FulfillmentInvoice[]
   inventoryRequests       InventoryRequest[]
+  notifications           Notification[]
   requests                Request[]
   requestComments         RequestComment[]
   sessions                Session[]
@@ -1217,4 +1219,29 @@ model FulfillmentInvoice {
   @@index([status])
   @@index([dueDate])
   @@index([tenantId, month, year])
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  tenantId  String
+  userId    String?
+  type      String
+  title     String
+  message   String
+  priority  String   @default("medium")
+  read      Boolean  @default(false)
+  metadata  Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([userId])
+  @@index([type])
+  @@index([priority])
+  @@index([read])
+  @@index([createdAt])
+  @@index([tenantId, userId, read])
+  @@index([tenantId, type, createdAt])
 }

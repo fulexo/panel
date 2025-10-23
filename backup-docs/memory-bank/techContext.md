@@ -352,7 +352,7 @@ S3_SECRET_KEY=<your_aws_secret_key>
 S3_BUCKET=fulexo-production
 
 # External Services
-KARRIO_API_URL=https://karrio.yourdomain.com
+KARRIO_API_URL=https://karrio.fulexo.com
 KARRIO_SECRET_KEY=<strong_unique_secret_minimum_32_chars>
 ```
 
