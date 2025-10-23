@@ -30,6 +30,7 @@ import { SyncModule } from './sync/sync.module';
 import { WooCommerceModule } from './woocommerce/woo.module';
 import { StoresModule } from './stores/stores.module';
 import { InventoryModule } from './inventory/inventory.module';
+import { NotificationsModule } from './notifications/notifications.module';
 import { SecurityModule } from './security/security.module';
 import { RateLimitModule } from './rate-limit/rate-limit.module';
 import { RateLimitGuard } from './rate-limit.guard';
@@ -108,6 +109,7 @@ import { EnvService } from './config/env.service';
     WooCommerceModule,
     StoresModule,
     InventoryModule,
+    NotificationsModule,
     SecurityModule,
     RateLimitModule,
     CacheModule,
