@@ -1,551 +1,677 @@
 "use client";
 
-import { logger } from "@/lib/logger";
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/components/AuthProvider";
-import { useRBAC } from "@/hooks/useRBAC";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import { Settings, Shield, Link, Palette } from 'lucide-react';
-import { SectionShell } from "@/components/patterns/SectionShell";
+import ProtectedComponent from "@/components/ProtectedComponent";
+import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { 
+  Settings as SettingsIcon, 
+  Mail, 
+  Bell, 
+  Shield, 
+  Building2,
+  Save,
+  TestTube,
+  CheckCircle,
+  XCircle,
+  Loader2,
+  AlertTriangle,
+  Info
+} from "lucide-react";
+import { useSettings, useUpdateSettings, useTestEmailConnection } from "@/hooks/useSettings";
+import type { EmailSettings, NotificationSettings, GeneralSettings } from "@/hooks/useSettings";
 
 export default function SettingsPage() {
   useAuth();
-  useRBAC();
   const [activeTab, setActiveTab] = useState("general");
-  const [settings, setSettings] = useState({
-    general: {
-      siteName: "Fulexo Panel",
-      timezone: "Europe/Istanbul",
-      language: "tr",
-      dateFormat: "DD/MM/YYYY",
-      currency: "EUR",
-      notifications: true,
-      emailNotifications: true,
-      smsNotifications: false,
-    },
-    security: {
-      twoFactorAuth: false,
-      sessionTimeout: 30,
-      passwordExpiry: 90,
-      loginAttempts: 5,
-      ipWhitelist: "",
-    },
-    integrations: {
-      woocommerce: {
-        enabled: true,
-        autoSync: true,
-        syncInterval: 15,
-      },
-      email: {
-        smtpHost: "",
-        smtpPort: 587,
-        smtpUser: "",
-        smtpPass: "",
-      },
-    },
-    appearance: {
-      theme: "dark",
-      sidebarCollapsed: false,
-      compactMode: false,
-      showAnimations: true,
-    },
+  const [hasChanges, setHasChanges] = useState(false);
+  const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
+
+  // Email settings
+  const { data: emailData, isLoading: emailLoading } = useSettings('email');
+  const updateEmail = useUpdateSettings('email');
+  const testEmail = useTestEmailConnection();
+  const [emailSettings, setEmailSettings] = useState<EmailSettings>({
+    smtp_host: '',
+    smtp_port: '587',
+    smtp_user: '',
+    smtp_pass: '',
+    smtp_secure: 'false',
+    smtp_from: '',
   });
 
-  const tabs = [
-    { id: "general", label: "Genel Ayarlar", icon: Settings },
-    { id: "security", label: "Güvenlik", icon: Shield },
-    { id: "integrations", label: "Entegrasyonlar", icon: Link },
-    { id: "appearance", label: "Görünüm", icon: Palette },
-  ];
+  // Notification settings
+  const { data: notificationData, isLoading: notificationLoading } = useSettings('notification');
+  const updateNotification = useUpdateSettings('notification');
+  const [notificationSettings, setNotificationSettings] = useState<NotificationSettings>({
+    email_notifications: 'true',
+    push_notifications: 'true',
+    sms_notifications: 'false',
+    low_stock_threshold: '10',
+    order_notifications: 'true',
+  });
 
-  const handleSave = (section: string) => {
-    logger.info(`Saving ${section} settings:`, settings[section as keyof typeof settings]);
-    // API call to save settings
+  // General settings
+  const { data: generalData, isLoading: generalLoading } = useSettings('general');
+  const updateGeneral = useUpdateSettings('general');
+  const [generalSettings, setGeneralSettings] = useState<GeneralSettings>({
+    company_name: 'Fulexo',
+    support_email: '',
+    contact_phone: '',
+    address: '',
+    timezone: 'Europe/Istanbul',
+    currency: 'TRY',
+    date_format: 'DD/MM/YYYY',
+    time_format: '24h',
+  });
+
+  // Load settings from API
+  useEffect(() => {
+    if (emailData) {
+      setEmailSettings((prev) => ({ ...prev, ...(emailData as any) }));
+    }
+  }, [emailData]);
+
+  useEffect(() => {
+    if (notificationData) {
+      setNotificationSettings((prev) => ({ ...prev, ...(notificationData as any) }));
+    }
+  }, [notificationData]);
+
+  useEffect(() => {
+    if (generalData) {
+      setGeneralSettings((prev) => ({ ...prev, ...(generalData as any) }));
+    }
+  }, [generalData]);
+
+  const handleEmailChange = (key: keyof EmailSettings, value: string) => {
+    setEmailSettings((prev) => ({ ...prev, [key]: value }));
+    setHasChanges(true);
   };
+
+  const handleNotificationChange = (key: keyof NotificationSettings, value: string) => {
+    setNotificationSettings((prev) => ({ ...prev, [key]: value }));
+    setHasChanges(true);
+  };
+
+  const handleGeneralChange = (key: keyof GeneralSettings, value: string) => {
+    setGeneralSettings((prev) => ({ ...prev, [key]: value }));
+    setHasChanges(true);
+  };
+
+  const handleSaveEmail = async () => {
+    try {
+      await updateEmail.mutateAsync(emailSettings);
+      setHasChanges(false);
+      setTestResult({ success: true, message: 'Email settings saved successfully!' });
+    } catch (error: any) {
+      setTestResult({ success: false, message: error.message || 'Failed to save email settings' });
+    }
+  };
+
+  const handleTestEmail = async () => {
+    setTestResult(null);
+    try {
+      const result = await testEmail.mutateAsync();
+      const data = result as any;
+      setTestResult({ 
+        success: data.connected, 
+        message: data.message || (data.connected ? 'Connection successful!' : 'Connection failed') 
+      });
+    } catch (error: any) {
+      setTestResult({ success: false, message: error.message || 'Connection test failed' });
+    }
+  };
+
+  const handleSaveNotifications = async () => {
+    try {
+      await updateNotification.mutateAsync(notificationSettings);
+      setHasChanges(false);
+      setTestResult({ success: true, message: 'Notification settings saved successfully!' });
+    } catch (error: any) {
+      setTestResult({ success: false, message: error.message || 'Failed to save notification settings' });
+    }
+  };
+
+  const handleSaveGeneral = async () => {
+    try {
+      await updateGeneral.mutateAsync(generalSettings);
+      setHasChanges(false);
+      setTestResult({ success: true, message: 'General settings saved successfully!' });
+    } catch (error: any) {
+      setTestResult({ success: false, message: error.message || 'Failed to save general settings' });
+    }
+  };
+
+  const isLoading = emailLoading || notificationLoading || generalLoading;
 
   return (
     <ProtectedRoute>
       <div className="min-h-screen bg-background">
         <main className="mobile-container py-6 space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <h1 className="mobile-heading text-foreground">Settings</h1>
-              <p className="text-muted-foreground mobile-text">
-                Manage your account settings and preferences
-              </p>
-            </div>
-          </div>
+          <PageHeader
+            title="Settings"
+            description="Configure your platform settings, email notifications, and integrations"
+            icon={SettingsIcon}
+          />
 
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-            {/* Settings Navigation */}
-            <div className="lg:col-span-1">
-              <SectionShell
-                title="Settings Navigation"
-                description="Manage your application settings"
-              >
-                <nav className="space-y-2">
-                  {tabs.map((tab) => {
-                    const IconComponent = tab.icon as React.ComponentType<{ className?: string }>;
-                    return (
-                      <Button
-                        key={tab.id}
-                        onClick={() => setActiveTab(tab.id)}
-                        variant={activeTab === tab.id ? "outline" : "ghost"}
-                        className={cn(
-                          "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors justify-start",
-                          activeTab === tab.id
-                            ? "bg-background text-foreground"
-                            : "hover:bg-accent text-foreground"
-                        )}
-                      >
-                        <IconComponent className="w-5 h-5" />
-                        <span className="font-medium">{tab.label}</span>
-                      </Button>
-                    );
-                  })}
-                </nav>
-              </SectionShell>
-            </div>
+          {/* Status Messages */}
+          {testResult && (
+            <Card className={testResult.success ? "bg-accent/10 border-border" : "bg-accent/10 border-border"}>
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-3">
+                  {testResult.success ? (
+                    <CheckCircle className="h-5 w-5 text-foreground" />
+                  ) : (
+                    <XCircle className="h-5 w-5 text-foreground" />
+                  )}
+                  <span className="text-foreground">{testResult.message}</span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setTestResult(null)}
+                    className="ml-auto"
+                  >
+                    Dismiss
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
-            {/* Settings Content */}
-            <div className="lg:col-span-3">
-              <SectionShell
-                title="Settings Content"
-                description="Configure your application settings"
-              >
-                {/* General Settings */}
-                {activeTab === "general" && (
-                  <div className="space-y-6">
-                    <h2 className="text-xl font-semibold text-foreground">Genel Ayarlar</h2>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <label className="form-label">Site Adı</label>
-                        <input
-                          type="text"
-                          value={settings.general.siteName}
-                          onChange={(e) => setSettings({
-                            ...settings,
-                            general: { ...settings.general, siteName: e.target.value }
-                          })}
-                          className="form-input"
-                        />
-                      </div>
-                      <div>
-                        <label className="form-label">Saat Dilimi</label>
-                        <select
-                          value={settings.general.timezone}
-                          onChange={(e) => setSettings({
-                            ...settings,
-                            general: { ...settings.general, timezone: e.target.value }
-                          })}
-                          className="form-select"
-                        >
-                          <option value="Europe/Istanbul">Europe/Istanbul</option>
-                          <option value="Europe/London">Europe/London</option>
-                          <option value="America/New_York">America/New_York</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="form-label">Dil</label>
-                        <select
-                          value={settings.general.language}
-                          onChange={(e) => setSettings({
-                            ...settings,
-                            general: { ...settings.general, language: e.target.value }
-                          })}
-                          className="form-select"
-                        >
-                          <option value="tr">Türkçe</option>
-                          <option value="en">English</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="form-label">Para Birimi</label>
-                        <select
-                          value={settings.general.currency}
-                          onChange={(e) => setSettings({
-                            ...settings,
-                            general: { ...settings.general, currency: e.target.value }
-                          })}
-                          className="form-select"
-                        >
-                          <option value="EUR">€ EUR</option>
-                          <option value="USD">$ USD</option>
-                          <option value="TRY">TRY</option>
-                        </select>
-                      </div>
-                    </div>
+          {isLoading ? (
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-foreground" />
+                  <span className="ml-3 text-foreground">Loading settings...</span>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <CardContent className="pt-6">
+                <Tabs value={activeTab} onValueChange={setActiveTab}>
+                  <TabsList className="grid w-full grid-cols-3 lg:grid-cols-5">
+                    <TabsTrigger value="general" className="gap-2">
+                      <Building2 className="h-4 w-4" />
+                      <span className="hidden sm:inline">General</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="email" className="gap-2">
+                      <Mail className="h-4 w-4" />
+                      <span className="hidden sm:inline">Email</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="notifications" className="gap-2">
+                      <Bell className="h-4 w-4" />
+                      <span className="hidden sm:inline">Notifications</span>
+                    </TabsTrigger>
+                  </TabsList>
 
+                  {/* General Settings */}
+                  <TabsContent value="general" className="space-y-6 mt-6">
                     <div className="space-y-4">
-                      <h3 className="text-lg font-semibold text-foreground">Bildirimler</h3>
-                      <div className="space-y-3">
-                        <label className="flex items-center gap-3">
-                          <input
-                            type="checkbox"
-                            checked={settings.general.notifications}
-                            onChange={(e) => setSettings({
-                              ...settings,
-                              general: { ...settings.general, notifications: e.target.checked }
-                            })}
-                            className="form-checkbox"
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="company_name">Company Name</Label>
+                          <Input
+                            id="company_name"
+                            value={generalSettings.company_name}
+                            onChange={(e) => handleGeneralChange('company_name', e.target.value)}
+                            placeholder="Your Company Name"
                           />
-                          <span>Bildirimleri etkinleştir</span>
-                        </label>
-                        <label className="flex items-center gap-3">
-                          <input
-                            type="checkbox"
-                            checked={settings.general.emailNotifications}
-                            onChange={(e) => setSettings({
-                              ...settings,
-                              general: { ...settings.general, emailNotifications: e.target.checked }
-                            })}
-                            className="form-checkbox"
-                          />
-                          <span>E-posta bildirimleri</span>
-                        </label>
-                        <label className="flex items-center gap-3">
-                          <input
-                            type="checkbox"
-                            checked={settings.general.smsNotifications}
-                            onChange={(e) => setSettings({
-                              ...settings,
-                              general: { ...settings.general, smsNotifications: e.target.checked }
-                            })}
-                            className="form-checkbox"
-                          />
-                          <span>SMS bildirimleri</span>
-                        </label>
-                      </div>
-                    </div>
+                        </div>
 
-                    <div className="flex gap-2">
-                      <Button
-                        onClick={() => handleSave("general")}
-                        variant="outline"
-                      >
-                        Kaydet
-                      </Button>
-                      <Button variant="outline">
-                        Sıfırla
-                      </Button>
-                    </div>
-                  </div>
-                )}
-
-                {/* Security Settings */}
-                {activeTab === "security" && (
-                  <div className="space-y-6">
-                    <h2 className="text-xl font-semibold text-foreground">Güvenlik Ayarları</h2>
-                    
-                    <div className="space-y-4">
-                      <div>
-                        <label className="form-label">İki Faktörlü Kimlik Doğrulama</label>
-                        <div className="flex items-center gap-3">
-                          <input
-                            type="checkbox"
-                            checked={settings.security.twoFactorAuth}
-                            onChange={(e) => setSettings({
-                              ...settings,
-                              security: { ...settings.security, twoFactorAuth: e.target.checked }
-                            })}
-                            className="form-checkbox"
+                        <div className="space-y-2">
+                          <Label htmlFor="support_email">Support Email</Label>
+                          <Input
+                            id="support_email"
+                            type="email"
+                            value={generalSettings.support_email}
+                            onChange={(e) => handleGeneralChange('support_email', e.target.value)}
+                            placeholder="support@fulexo.com"
                           />
-                          <span>2FA&apos;yı etkinleştir</span>
-                          {settings.security.twoFactorAuth && (
-                            <span className="text-foreground text-sm">✓ Etkin</span>
-                          )}
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="contact_phone">Contact Phone</Label>
+                          <Input
+                            id="contact_phone"
+                            type="tel"
+                            value={generalSettings.contact_phone}
+                            onChange={(e) => handleGeneralChange('contact_phone', e.target.value)}
+                            placeholder="+90 XXX XXX XX XX"
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="timezone">Timezone</Label>
+                          <Select 
+                            value={generalSettings.timezone} 
+                            onValueChange={(value) => handleGeneralChange('timezone', value)}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Europe/Istanbul">Europe/Istanbul (GMT+3)</SelectItem>
+                              <SelectItem value="Europe/London">Europe/London (GMT+0)</SelectItem>
+                              <SelectItem value="America/New_York">America/New York (GMT-5)</SelectItem>
+                              <SelectItem value="Asia/Dubai">Asia/Dubai (GMT+4)</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="currency">Currency</Label>
+                          <Select 
+                            value={generalSettings.currency} 
+                            onValueChange={(value) => handleGeneralChange('currency', value)}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="TRY">TRY (₺)</SelectItem>
+                              <SelectItem value="USD">USD ($)</SelectItem>
+                              <SelectItem value="EUR">EUR (€)</SelectItem>
+                              <SelectItem value="GBP">GBP (£)</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="date_format">Date Format</Label>
+                          <Select 
+                            value={generalSettings.date_format} 
+                            onValueChange={(value) => handleGeneralChange('date_format', value)}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="DD/MM/YYYY">DD/MM/YYYY</SelectItem>
+                              <SelectItem value="MM/DD/YYYY">MM/DD/YYYY</SelectItem>
+                              <SelectItem value="YYYY-MM-DD">YYYY-MM-DD</SelectItem>
+                            </SelectContent>
+                          </Select>
                         </div>
                       </div>
 
-                      <div>
-                        <label className="form-label">Oturum Zaman Aşımı (dakika)</label>
-                        <input
-                          type="number"
-                          value={settings.security.sessionTimeout}
-                          onChange={(e) => setSettings({
-                            ...settings,
-                            security: { ...settings.security, sessionTimeout: parseInt(e.target.value) }
-                          })}
-                          className="form-input w-32"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="form-label">Şifre Geçerlilik Süresi (gün)</label>
-                        <input
-                          type="number"
-                          value={settings.security.passwordExpiry}
-                          onChange={(e) => setSettings({
-                            ...settings,
-                            security: { ...settings.security, passwordExpiry: parseInt(e.target.value) }
-                          })}
-                          className="form-input w-32"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="form-label">Maksimum Giriş Denemesi</label>
-                        <input
-                          type="number"
-                          value={settings.security.loginAttempts}
-                          onChange={(e) => setSettings({
-                            ...settings,
-                            security: { ...settings.security, loginAttempts: parseInt(e.target.value) }
-                          })}
-                          className="form-input w-32"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="form-label">IP Beyaz Liste (virgülle ayırın)</label>
-                        <textarea
-                          value={settings.security.ipWhitelist}
-                          onChange={(e) => setSettings({
-                            ...settings,
-                            security: { ...settings.security, ipWhitelist: e.target.value }
-                          })}
-                          className="form-textarea"
-                          rows={3}
-                          placeholder="192.168.1.1, 10.0.0.1"
+                      <div className="space-y-2">
+                        <Label htmlFor="address">Business Address</Label>
+                        <Input
+                          id="address"
+                          value={generalSettings.address}
+                          onChange={(e) => handleGeneralChange('address', e.target.value)}
+                          placeholder="Enter your business address"
                         />
                       </div>
                     </div>
 
-                    <div className="flex gap-2">
+                    <div className="flex justify-end gap-3 pt-4 border-t border-border">
                       <Button
-                        onClick={() => handleSave("security")}
                         variant="outline"
+                        onClick={() => {
+                          setGeneralSettings({
+                            company_name: 'Fulexo',
+                            support_email: '',
+                            contact_phone: '',
+                            address: '',
+                            timezone: 'Europe/Istanbul',
+                            currency: 'TRY',
+                            date_format: 'DD/MM/YYYY',
+                            time_format: '24h',
+                          });
+                          setHasChanges(false);
+                        }}
                       >
-                        Kaydet
+                        Reset
                       </Button>
-                      <Button variant="outline">
-                        Sıfırla
+                      <Button
+                        onClick={handleSaveGeneral}
+                        disabled={updateGeneral.isPending || !hasChanges}
+                        className="gap-2"
+                      >
+                        {updateGeneral.isPending ? (
+                          <>
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            Saving...
+                          </>
+                        ) : (
+                          <>
+                            <Save className="h-4 w-4" />
+                            Save Changes
+                          </>
+                        )}
                       </Button>
                     </div>
-                  </div>
-                )}
+                  </TabsContent>
 
-                {/* Integrations Settings */}
-                {activeTab === "integrations" && (
-                  <div className="space-y-6">
-                    <h2 className="text-xl font-semibold text-foreground">Entegrasyonlar</h2>
-                    
-                    <div className="space-y-6">
-                      <div className="border border-border rounded-lg p-4">
-                        <h3 className="text-lg font-semibold text-foreground mb-4">WooCommerce</h3>
-                        <div className="space-y-4">
-                          <label className="flex items-center gap-3">
-                            <input
-                              type="checkbox"
-                              checked={settings.integrations.woocommerce.enabled}
-                              onChange={(e) => setSettings({
-                                ...settings,
-                                integrations: {
-                                  ...settings.integrations,
-                                  woocommerce: { ...settings.integrations.woocommerce, enabled: e.target.checked }
-                                }
-                              })}
-                              className="form-checkbox"
-                            />
-                            <span>WooCommerce entegrasyonunu etkinleştir</span>
-                          </label>
-                          <label className="flex items-center gap-3">
-                            <input
-                              type="checkbox"
-                              checked={settings.integrations.woocommerce.autoSync}
-                              onChange={(e) => setSettings({
-                                ...settings,
-                                integrations: {
-                                  ...settings.integrations,
-                                  woocommerce: { ...settings.integrations.woocommerce, autoSync: e.target.checked }
-                                }
-                              })}
-                              className="form-checkbox"
-                            />
-                            <span>Otomatik senkronizasyon</span>
-                          </label>
-                          <div>
-                            <label className="form-label">Senkronizasyon Aralığı (dakika)</label>
-                            <input
-                              type="number"
-                              value={settings.integrations.woocommerce.syncInterval}
-                              onChange={(e) => setSettings({
-                                ...settings,
-                                integrations: {
-                                  ...settings.integrations,
-                                  woocommerce: { ...settings.integrations.woocommerce, syncInterval: parseInt(e.target.value) }
-                                }
-                              })}
-                              className="form-input w-32"
-                            />
+                  {/* Email Settings */}
+                  <TabsContent value="email" className="space-y-6 mt-6">
+                    <ProtectedComponent permission="settings.manage">
+                      <div className="rounded-lg border border-border bg-accent/5 p-4 mb-6">
+                        <div className="flex gap-3">
+                          <Info className="h-5 w-5 text-foreground flex-shrink-0 mt-0.5" />
+                          <div className="space-y-1">
+                            <p className="text-sm font-medium text-foreground">Email Configuration</p>
+                            <p className="text-sm text-muted-foreground">
+                              Configure SMTP settings to enable email notifications, welcome emails, password resets, and order notifications.
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-2">
+                              💡 For Gmail: Use App Password (not regular password) - 
+                              <a href="https://support.google.com/accounts/answer/185833" target="_blank" className="underline ml-1">
+                                Learn more
+                              </a>
+                            </p>
                           </div>
                         </div>
                       </div>
 
-                      <div className="border border-border rounded-lg p-4">
-                        <h3 className="text-lg font-semibold text-foreground mb-4">E-posta SMTP</h3>
+                      <div className="space-y-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                            <label className="form-label">SMTP Host</label>
-                            <input
-                              type="text"
-                              value={settings.integrations.email.smtpHost}
-                              onChange={(e) => setSettings({
-                                ...settings,
-                                integrations: {
-                                  ...settings.integrations,
-                                  email: { ...settings.integrations.email, smtpHost: e.target.value }
-                                }
-                              })}
-                              className="form-input"
+                          <div className="space-y-2">
+                            <Label htmlFor="smtp_host">SMTP Host *</Label>
+                            <Input
+                              id="smtp_host"
+                              value={emailSettings.smtp_host}
+                              onChange={(e) => handleEmailChange('smtp_host', e.target.value)}
                               placeholder="smtp.gmail.com"
                             />
+                            <p className="text-xs text-muted-foreground">
+                              Common: smtp.gmail.com, smtp.office365.com
+                            </p>
                           </div>
-                          <div>
-                            <label className="form-label">SMTP Port</label>
-                            <input
-                              type="number"
-                              value={settings.integrations.email.smtpPort}
-                              onChange={(e) => setSettings({
-                                ...settings,
-                                integrations: {
-                                  ...settings.integrations,
-                                  email: { ...settings.integrations.email, smtpPort: parseInt(e.target.value) }
-                                }
-                              })}
-                              className="form-input"
+
+                          <div className="space-y-2">
+                            <Label htmlFor="smtp_port">SMTP Port *</Label>
+                            <Select 
+                              value={emailSettings.smtp_port} 
+                              onValueChange={(value) => handleEmailChange('smtp_port', value)}
+                            >
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="587">587 (TLS)</SelectItem>
+                                <SelectItem value="465">465 (SSL)</SelectItem>
+                                <SelectItem value="25">25 (Plain)</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label htmlFor="smtp_user">SMTP Username *</Label>
+                            <Input
+                              id="smtp_user"
+                              type="email"
+                              value={emailSettings.smtp_user}
+                              onChange={(e) => handleEmailChange('smtp_user', e.target.value)}
+                              placeholder="yourapp@gmail.com"
                             />
                           </div>
-                          <div>
-                            <label className="form-label">SMTP Kullanıcı</label>
-                            <input
-                              type="text"
-                              value={settings.integrations.email.smtpUser}
-                              onChange={(e) => setSettings({
-                                ...settings,
-                                integrations: {
-                                  ...settings.integrations,
-                                  email: { ...settings.integrations.email, smtpUser: e.target.value }
-                                }
-                              })}
-                              className="form-input"
-                            />
-                          </div>
-                          <div>
-                            <label className="form-label">SMTP Şifre</label>
-                            <input
+
+                          <div className="space-y-2">
+                            <Label htmlFor="smtp_pass">SMTP Password *</Label>
+                            <Input
+                              id="smtp_pass"
                               type="password"
-                              value={settings.integrations.email.smtpPass}
-                              onChange={(e) => setSettings({
-                                ...settings,
-                                integrations: {
-                                  ...settings.integrations,
-                                  email: { ...settings.integrations.email, smtpPass: e.target.value }
+                              value={emailSettings.smtp_pass}
+                              onChange={(e) => handleEmailChange('smtp_pass', e.target.value)}
+                              placeholder="••••••••••••••••"
+                            />
+                            <p className="text-xs text-muted-foreground">
+                              Gmail: Use App Password, not account password
+                            </p>
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label htmlFor="smtp_from">From Email *</Label>
+                            <Input
+                              id="smtp_from"
+                              type="email"
+                              value={emailSettings.smtp_from}
+                              onChange={(e) => handleEmailChange('smtp_from', e.target.value)}
+                              placeholder="noreply@fulexo.com"
+                            />
+                          </div>
+
+                          <div className="space-y-3">
+                            <Label>Security</Label>
+                            <div className="flex items-center justify-between rounded-lg border border-border bg-background p-4">
+                              <div>
+                                <p className="text-sm font-medium text-foreground">Use TLS/SSL</p>
+                                <p className="text-xs text-muted-foreground">Enable for ports 465, 587</p>
+                              </div>
+                              <Switch
+                                checked={emailSettings.smtp_secure === 'true'}
+                                onCheckedChange={(checked) =>
+                                  handleEmailChange('smtp_secure', checked ? 'true' : 'false')
                                 }
-                              })}
-                              className="form-input"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex justify-end gap-3 pt-4 border-t border-border">
+                        <Button
+                          variant="outline"
+                          onClick={handleTestEmail}
+                          disabled={testEmail.isPending || !emailSettings.smtp_host || !emailSettings.smtp_user}
+                          className="gap-2"
+                        >
+                          {testEmail.isPending ? (
+                            <>
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                              Testing...
+                            </>
+                          ) : (
+                            <>
+                              <TestTube className="h-4 w-4" />
+                              Test Connection
+                            </>
+                          )}
+                        </Button>
+                        <Button
+                          onClick={handleSaveEmail}
+                          disabled={updateEmail.isPending || !hasChanges}
+                          className="gap-2"
+                        >
+                          {updateEmail.isPending ? (
+                            <>
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                              Saving...
+                            </>
+                          ) : (
+                            <>
+                              <Save className="h-4 w-4" />
+                              Save Email Settings
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    </ProtectedComponent>
+                  </TabsContent>
+
+                  {/* Notification Settings */}
+                  <TabsContent value="notifications" className="space-y-6 mt-6">
+                    <div className="rounded-lg border border-border bg-accent/5 p-4 mb-6">
+                      <div className="flex gap-3">
+                        <Bell className="h-5 w-5 text-foreground flex-shrink-0 mt-0.5" />
+                        <div>
+                          <p className="text-sm font-medium text-foreground">Notification Channels</p>
+                          <p className="text-sm text-muted-foreground">
+                            Configure which events trigger notifications and through which channels.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div className="space-y-3">
+                        <Label>Notification Channels</Label>
+                        
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between rounded-lg border border-border bg-background p-4">
+                            <div>
+                              <p className="text-sm font-medium text-foreground">Email Notifications</p>
+                              <p className="text-xs text-muted-foreground">Send notifications via email</p>
+                            </div>
+                            <Switch
+                              checked={notificationSettings.email_notifications === 'true'}
+                              onCheckedChange={(checked) =>
+                                handleNotificationChange('email_notifications', checked ? 'true' : 'false')
+                              }
+                            />
+                          </div>
+
+                          <div className="flex items-center justify-between rounded-lg border border-border bg-background p-4">
+                            <div>
+                              <p className="text-sm font-medium text-foreground">Push Notifications</p>
+                              <p className="text-xs text-muted-foreground">Browser push notifications</p>
+                            </div>
+                            <Switch
+                              checked={notificationSettings.push_notifications === 'true'}
+                              onCheckedChange={(checked) =>
+                                handleNotificationChange('push_notifications', checked ? 'true' : 'false')
+                              }
+                            />
+                          </div>
+
+                          <div className="flex items-center justify-between rounded-lg border border-border bg-background p-4">
+                            <div>
+                              <p className="text-sm font-medium text-foreground">SMS Notifications</p>
+                              <p className="text-xs text-muted-foreground">Send notifications via SMS</p>
+                            </div>
+                            <Switch
+                              checked={notificationSettings.sms_notifications === 'true'}
+                              onCheckedChange={(checked) =>
+                                handleNotificationChange('sms_notifications', checked ? 'true' : 'false')
+                              }
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-3">
+                        <Label>Notification Rules</Label>
+                        
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between rounded-lg border border-border bg-background p-4">
+                            <div>
+                              <p className="text-sm font-medium text-foreground">Order Notifications</p>
+                              <p className="text-xs text-muted-foreground">Notify on new orders</p>
+                            </div>
+                            <Switch
+                              checked={notificationSettings.order_notifications === 'true'}
+                              onCheckedChange={(checked) =>
+                                handleNotificationChange('order_notifications', checked ? 'true' : 'false')
+                              }
+                            />
+                          </div>
+
+                          <div className="rounded-lg border border-border bg-background p-4">
+                            <div className="flex items-center justify-between mb-3">
+                              <div>
+                                <p className="text-sm font-medium text-foreground">Low Stock Threshold</p>
+                                <p className="text-xs text-muted-foreground">Alert when stock falls below this number</p>
+                              </div>
+                              <Badge variant="outline">{notificationSettings.low_stock_threshold} units</Badge>
+                            </div>
+                            <Input
+                              type="number"
+                              min="1"
+                              max="100"
+                              value={notificationSettings.low_stock_threshold}
+                              onChange={(e) => handleNotificationChange('low_stock_threshold', e.target.value)}
                             />
                           </div>
                         </div>
                       </div>
                     </div>
 
-                    <div className="flex gap-2">
+                    <div className="flex justify-end gap-3 pt-4 border-t border-border">
                       <Button
-                        onClick={() => handleSave("integrations")}
                         variant="outline"
+                        onClick={() => {
+                          setNotificationSettings({
+                            email_notifications: 'true',
+                            push_notifications: 'true',
+                            sms_notifications: 'false',
+                            low_stock_threshold: '10',
+                            order_notifications: 'true',
+                          });
+                          setHasChanges(false);
+                        }}
                       >
-                        Kaydet
+                        Reset to Defaults
                       </Button>
-                      <Button variant="outline">
-                        Sıfırla
-                      </Button>
-                    </div>
-                  </div>
-                )}
-
-                {/* Appearance Settings */}
-                {activeTab === "appearance" && (
-                  <div className="space-y-6">
-                    <h2 className="text-xl font-semibold text-foreground">Görünüm Ayarları</h2>
-                    
-                    <div className="space-y-4">
-                      <div>
-                        <label className="form-label">Tema</label>
-                        <select
-                          value={settings.appearance.theme}
-                          onChange={(e) => setSettings({
-                            ...settings,
-                            appearance: { ...settings.appearance, theme: e.target.value }
-                          })}
-                          className="form-select"
-                        >
-                          <option value="light">Açık</option>
-                          <option value="dark">Koyu</option>
-                          <option value="system">Sistem</option>
-                        </select>
-                      </div>
-
-                      <div className="space-y-3">
-                        <label className="flex items-center gap-3">
-                          <input
-                            type="checkbox"
-                            checked={settings.appearance.sidebarCollapsed}
-                            onChange={(e) => setSettings({
-                              ...settings,
-                              appearance: { ...settings.appearance, sidebarCollapsed: e.target.checked }
-                            })}
-                            className="form-checkbox"
-                          />
-                          <span>Sidebar&apos;ı varsayılan olarak daralt</span>
-                        </label>
-                        <label className="flex items-center gap-3">
-                          <input
-                            type="checkbox"
-                            checked={settings.appearance.compactMode}
-                            onChange={(e) => setSettings({
-                              ...settings,
-                              appearance: { ...settings.appearance, compactMode: e.target.checked }
-                            })}
-                            className="form-checkbox"
-                          />
-                          <span>Kompakt mod</span>
-                        </label>
-                        <label className="flex items-center gap-3">
-                          <input
-                            type="checkbox"
-                            checked={settings.appearance.showAnimations}
-                            onChange={(e) => setSettings({
-                              ...settings,
-                              appearance: { ...settings.appearance, showAnimations: e.target.checked }
-                            })}
-                            className="form-checkbox"
-                          />
-                          <span>Animasyonları göster</span>
-                        </label>
-                      </div>
-                    </div>
-
-                    <div className="flex gap-2">
                       <Button
-                        onClick={() => handleSave("appearance")}
-                        variant="outline"
+                        onClick={handleSaveNotifications}
+                        disabled={updateNotification.isPending || !hasChanges}
+                        className="gap-2"
                       >
-                        Kaydet
-                      </Button>
-                      <Button variant="outline">
-                        Sıfırla
+                        {updateNotification.isPending ? (
+                          <>
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            Saving...
+                          </>
+                        ) : (
+                          <>
+                            <Save className="h-4 w-4" />
+                            Save Notification Settings
+                          </>
+                        )}
                       </Button>
                     </div>
-                  </div>
-                )}
-              </SectionShell>
-            </div>
-          </div>
+                  </TabsContent>
+                </Tabs>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Help Card */}
+          <Card className="bg-accent/5 border-border">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <AlertTriangle className="h-5 w-5 text-foreground" />
+                Configuration Help
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-foreground">Email Configuration (Gmail):</p>
+                <div className="text-xs text-muted-foreground space-y-1 pl-4">
+                  <p>1. Enable 2-Factor Authentication on your Google account</p>
+                  <p>2. Go to: Google Account → Security → 2-Step Verification → App Passwords</p>
+                  <p>3. Generate an "App Password" for "Mail"</p>
+                  <p>4. Use that password in SMTP Password field above</p>
+                  <p>5. SMTP Host: smtp.gmail.com, Port: 587</p>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-foreground">Other Email Providers:</p>
+                <div className="text-xs text-muted-foreground space-y-1 pl-4">
+                  <p>• Office 365: smtp.office365.com:587</p>
+                  <p>• Outlook: smtp-mail.outlook.com:587</p>
+                  <p>• Yahoo: smtp.mail.yahoo.com:587</p>
+                  <p>• SendGrid: smtp.sendgrid.net:587</p>
+                  <p>• Mailgun: smtp.mailgun.org:587</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </main>
       </div>
     </ProtectedRoute>

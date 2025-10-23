@@ -144,8 +144,8 @@ docker-compose -f ../docker-compose.prod.yml up -d
 ### Environment Variables
 Production requires proper values for:
 - `NODE_ENV=production`
-- `DOMAIN_API=https://api.yourdomain.com`
-- `DOMAIN_APP=https://panel.yourdomain.com`
+- `DOMAIN_API=https://api.fulexo.com`
+- `DOMAIN_APP=https://panel.fulexo.com`
 - Strong secrets for JWT_SECRET, ENCRYPTION_KEY, etc.
 
 ### Docker Swarm (Optional)

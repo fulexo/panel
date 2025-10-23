@@ -114,8 +114,8 @@ nano compose/.env
 # Update DOMAIN_API, DOMAIN_APP, and all secrets
 
 # 5. Obtain SSL Certificates
-certbot certonly --standalone -d api.yourdomain.com
-certbot certonly --standalone -d panel.yourdomain.com
+certbot certonly --standalone -d api.fulexo.com
+certbot certonly --standalone -d panel.fulexo.com
 
 # 6. Deploy Services
 cd compose
@@ -125,20 +125,20 @@ docker-compose up -d --build
 docker-compose exec api npx prisma migrate deploy
 
 # 8. Verify Deployment
-curl -f https://api.yourdomain.com/health
-curl -f https://panel.yourdomain.com
+curl -f https://api.fulexo.com/health
+curl -f https://panel.fulexo.com
 ```
 
 ### Post-Deployment Verification
 ```bash
 # Test API
-curl -X POST https://api.yourdomain.com/api/auth/login \
+curl -X POST https://api.fulexo.com/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"admin@fulexo.com","password":"demo123"}'
 
 # Test Notifications
 curl -H "Authorization: Bearer $TOKEN" \
-  https://api.yourdomain.com/api/notifications
+  https://api.fulexo.com/api/notifications
 
 # Check Logs
 docker-compose logs -f --tail=100
@@ -326,9 +326,9 @@ docker-compose ps
 - `AGENTS.md` - Quick start guide
 
 ### Monitoring
-- **Grafana:** https://yourdomain.com:3003
-- **Uptime Kuma:** https://yourdomain.com:3004
-- **API Docs:** https://api.yourdomain.com/docs
+- **Grafana:** https://fulexo.com:3003
+- **Uptime Kuma:** https://fulexo.com:3004
+- **API Docs:** https://api.fulexo.com/docs
 
 ### Emergency Commands
 ```bash

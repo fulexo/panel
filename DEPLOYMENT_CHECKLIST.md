@@ -88,8 +88,8 @@ Fulexo Platform, DigitalOcean sunucusuna deployment için **%95 hazır** durumda
 ### 3.1 Core Variables (✅ Configured)
 ```bash
 NODE_ENV=production
-DOMAIN_API=https://api.yourdomain.com     # 🔧 UPDATE
-DOMAIN_APP=https://panel.yourdomain.com   # 🔧 UPDATE
+DOMAIN_API=https://api.fulexo.com     # 🔧 UPDATE
+DOMAIN_APP=https://panel.fulexo.com   # 🔧 UPDATE
 ```
 
 ### 3.2 Database (✅ Configured)
@@ -167,10 +167,10 @@ cd fulexo-panel
 apt-get install certbot -y
 
 # Get certificates
-certbot certonly --standalone -d api.yourdomain.com
-certbot certonly --standalone -d panel.yourdomain.com
-certbot certonly --standalone -d karrio.yourdomain.com
-certbot certonly --standalone -d dashboard.karrio.yourdomain.com
+certbot certonly --standalone -d api.fulexo.com
+certbot certonly --standalone -d panel.fulexo.com
+certbot certonly --standalone -d karrio.fulexo.com
+certbot certonly --standalone -d dashboard.karrio.fulexo.com
 
 # Auto-renewal
 certbot renew --dry-run
@@ -213,13 +213,13 @@ docker-compose logs web | tail -50
 ### 4.5 Verification
 ```bash
 # 1. Check API health
-curl -f https://api.yourdomain.com/health
+curl -f https://api.fulexo.com/health
 
 # 2. Check Web health  
-curl -f https://panel.yourdomain.com
+curl -f https://panel.fulexo.com
 
 # 3. Test login
-curl -X POST https://api.yourdomain.com/api/auth/login \
+curl -X POST https://api.fulexo.com/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"admin@fulexo.com","password":"demo123"}'
 
@@ -248,15 +248,15 @@ docker-compose logs -f --tail=100
 
 ### 6.1 Immediate Verification (First Hour)
 - [ ] All containers running: `docker-compose ps`
-- [ ] API health: `curl https://api.yourdomain.com/health`
-- [ ] Web health: `curl https://panel.yourdomain.com`
+- [ ] API health: `curl https://api.fulexo.com/health`
+- [ ] Web health: `curl https://panel.fulexo.com`
 - [ ] Database connectivity: Check API logs
 - [ ] SSL certificates valid: Browser check
 - [ ] Login functionality: Test with seed user
 - [ ] Create test order: Full workflow test
 
 ### 6.2 Monitoring Setup (First Day)
-- [ ] Access Grafana: `https://yourdomain.com:3003` (admin/[GF_PASSWORD])
+- [ ] Access Grafana: `https://fulexo.com:3003` (admin/[GF_PASSWORD])
 - [ ] Configure dashboards
 - [ ] Set up alerts in Prometheus
 - [ ] Test alert notifications
@@ -337,14 +337,14 @@ docker-compose exec api npx prisma migrate deploy
 
 # 5. Verify
 docker-compose ps
-curl -f https://api.yourdomain.com/health
+curl -f https://api.fulexo.com/health
 ```
 
 ### 8.3 Monitoring & Alerts
-- **Grafana:** https://yourdomain.com:3003
+- **Grafana:** https://fulexo.com:3003
 - **Prometheus:** Internal only
 - **Loki:** Log aggregation
-- **Uptime Kuma:** https://yourdomain.com:3004
+- **Uptime Kuma:** https://fulexo.com:3004
 
 ---
 
@@ -417,7 +417,7 @@ curl -f https://api.yourdomain.com/health
 - Memory Bank: `/workspace/memory-bank/`
 - AGENTS.md: Quick start guide
 - Docker Docs: `/workspace/memory-bank/docker.md`
-- API Docs: https://api.yourdomain.com/docs
+- API Docs: https://api.fulexo.com/docs
 
 ### Emergency Procedures
 ```bash
