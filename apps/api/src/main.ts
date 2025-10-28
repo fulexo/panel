@@ -108,11 +108,8 @@ async function bootstrap() {
       }
 
       if (!origin) {
-        // Only allow requests with no origin in development
-        if (isDevelopment) {
-          return callback(null, true);
-        }
-        return callback(new Error('Origin required in production'), false);
+        // Allow same-origin and server-to-server requests without Origin
+        return callback(null, true);
       }
 
       // Validate origin format
@@ -125,7 +122,25 @@ async function bootstrap() {
         return callback(new Error('Invalid origin format'), false);
       }
 
+      // Allow exact matches
       if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      // Allow subdomains of configured domains
+      const allowSubdomain = (candidate?: string) => {
+        if (!candidate) return false;
+        try {
+          const host = new URL(candidate).host;
+          const originHost = new URL(origin).host;
+          return originHost === host || originHost.endsWith(`.${host}`);
+        } catch { return false; }
+      };
+
+      if (
+        allowSubdomain(envService.domainApp) ||
+        allowSubdomain(envService.nextPublicAppUrl || undefined)
+      ) {
         return callback(null, true);
       }
 
@@ -206,68 +221,7 @@ async function bootstrap() {
     },
   });
 
-  // Health check endpoint
-  app.getHttpAdapter().get('/health', async (_req, res) => {
-    try {
-      // Check database connection
-      let dbHealthy = false;
-      try {
-        await (app.get(PrismaService) as any).$queryRaw`SELECT 1`;
-        dbHealthy = true;
-      } catch (error) {
-        // Log database health check failure
-        if (process.env['NODE_ENV'] === 'development') {
-          logger.error('Database health check failed:', error);
-        }
-      }
-      
-      // Check Redis connection
-      let redisHealthy = false;
-      try {
-        const Redis = require('ioredis');
-        const redis = new Redis(envService.redisUrl);
-        await redis.ping();
-        redisHealthy = true;
-        await redis.quit();
-      } catch (error) {
-        // Log Redis health check failure
-        if (process.env['NODE_ENV'] === 'development') {
-          logger.error('Redis health check failed:', error);
-        }
-      }
-      
-      const overallHealthy = dbHealthy && redisHealthy;
-      
-      if (overallHealthy) {
-        res.json({
-          status: 'healthy',
-          timestamp: new Date().toISOString(),
-          uptime: process.uptime(),
-          service: 'api',
-          version: process.env['npm_package_version'] || '1.0.0',
-          checks: {
-            database: dbHealthy,
-            redis: redisHealthy,
-          }
-        });
-      } else {
-        res.status(503).json({
-          status: 'unhealthy',
-          timestamp: new Date().toISOString(),
-          checks: {
-            database: dbHealthy,
-            redis: redisHealthy,
-          }
-        });
-      }
-    } catch (error) {
-      res.status(503).json({
-        status: 'unhealthy',
-        timestamp: new Date().toISOString(),
-        error: error instanceof Error ? error.message : 'Unknown error',
-      });
-    }
-  });
+  // Health check endpoint is provided by HealthModule at /health
 
   // Metrics endpoint
   app.getHttpAdapter().get('/metrics', async (_req, res) => {

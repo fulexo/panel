@@ -1,4 +1,4 @@
-﻿import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getBackendApiBaseUrl } from '@/lib/backend-api';
 
 const BACKEND_API_BASE = getBackendApiBaseUrl();
@@ -133,7 +133,7 @@ async function handleRequest(
 
     // Prepare response headers
     const responseHeaders: HeadersInit = {
-      'Content-Type': contentType || 'application/json',
+      'Content-Type': responseContentType,
     };
 
     // Copy other important headers
@@ -165,7 +165,7 @@ async function handleRequest(
     }
 
     // Copy Set-Cookie headers for authentication
-    const setCookieHeaders = response.headers.getSetCookie();
+    const setCookieHeaders = (response.headers.getSetCookie?.() ?? (response.headers as any).raw?.()?.['set-cookie']) as string[] | undefined;
     if (setCookieHeaders && setCookieHeaders.length > 0) {
       // Create response based on content type
       const nextResponse = isBinary

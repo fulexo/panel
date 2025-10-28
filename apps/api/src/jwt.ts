@@ -294,6 +294,11 @@ export class JwtService {
   }
 
   async getJwks() {
+    // In non-production (HS256) mode, never expose keys
+    if (process.env['NODE_ENV'] !== 'production') {
+      return { keys: [] };
+    }
+
     if (!this.publicKey || !this.keyId) {
       return { keys: [] };
     }

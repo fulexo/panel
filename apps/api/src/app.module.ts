@@ -43,6 +43,7 @@ import { envValidationSchema } from './config/env.validation';
 import { CookieAuthMiddleware } from './common/middleware/cookie-auth.middleware';
 import { MonitoringService } from './common/services/monitoring.service';
 import { MonitoringModule } from './monitoring/monitoring.module';
+import { HealthModule } from './health/health.module';
 import { ReportsModule } from './reports/reports.module';
 import { SettingsModule } from './modules/settings/settings.module';
 import { FileUploadModule } from './modules/file-upload/file-upload.module';
@@ -115,6 +116,7 @@ import { EnvService } from './config/env.service';
     CacheModule,
     AuditModule,
     MonitoringModule,
+    HealthModule,
     ReportsModule,
     SettingsModule,
     FileUploadModule,
